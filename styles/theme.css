@@ -1,0 +1,199 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --background: #EFE9E1;
+  /* brand-cream — REGAL */
+  --foreground: #11100F;
+  /* brand-black — REGAL */
+  --card: #FDFAF7;
+  --card-foreground: #11100F;
+  --popover: #FDFAF7;
+  --popover-foreground: #11100F;
+  --primary: #38140C;
+  /* brand-burgundy — REGAL */
+  --primary-foreground: #ffffff;
+  --secondary: #FFD93D;
+  /* brand-gold — REGAL */
+  --secondary-foreground: #ffffff;
+  --muted: #F0EAE1;
+  --muted-foreground: #899481;
+  /* brand-sage — REGAL */
+  --accent: #EDE5DB;
+  --accent-foreground: #38140C;
+  --destructive: #B91C1C;
+  --destructive-foreground: #ffffff;
+  --border: #CDBCAB;
+  /* brand-taupe — REGAL */
+  --input: transparent;
+  --input-background: #F0EAE1;
+  --switch-background: #CDBCAB;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #38140C;
+
+  --radius: 8px;
+}
+
+@theme inline {
+  --animate-fadeIn: fadeIn 0.3s ease-out forwards;
+  --animate-fadeInUp: fadeInUp 0.3s ease-out forwards;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+
+  /* REGAL Brand Color Tokens */
+  --color-brand-navy: #38140C;
+  /* burgundy — replaces navy */
+  --color-brand-gold: #FFD93D;
+  /* warm gold/bronze */
+  --color-brand-cream: #EFE9E1;
+  /* warm cream */
+  --color-brand-burgundy: #38140C;
+  /* explicit alias */
+  --color-brand-sage: #899481;
+  /* sage green */
+  --color-brand-taupe: #CDBCAB;
+  /* warm taupe */
+  --color-brand-black: #11100F;
+  /* near black */
+
+  /* Neutral scale — warm-tinted to match REGAL */
+  --color-neutral-900: #11100F;
+  --color-neutral-700: #3A2020;
+  --color-neutral-500: #7A6E65;
+  --color-neutral-300: #CDBCAB;
+  --color-neutral-100: #F0EAE1;
+  --color-neutral-white: #FFFFFF;
+
+  /* Semantic (kept readable on warm bg) */
+  --color-semantic-success: #2D7A4F;
+  --color-semantic-warning: #B45309;
+  --color-semantic-error: #B91C1C;
+  --color-semantic-info: #1D4ED8;
+
+  /* Tier colors — tuned to palette */
+  --color-tier-free: #7A6E65;
+  --color-tier-member: #899481;
+  /* sage */
+  --color-tier-vip: #FFD93D;
+  /* warm gold */
+
+  /* Fonts */
+  --font-sans: 'Inter',
+  sans-serif;
+  --font-serif: 'Playfair Display',
+  Georgia,
+  serif;
+  --font-mono: 'JetBrains Mono',
+  monospace;
+
+  /* Typography */
+  --text-display-xl: 48px;
+  --text-display-lg: 36px;
+  --text-heading-h1: 28px;
+  --text-heading-h2: 22px;
+  --text-heading-h3: 18px;
+  --text-body-lg: 16px;
+  --text-body-md: 14px;
+  --text-body-sm: 13px;
+  --text-label-md: 13px;
+  --text-label-sm: 12px;
+  --text-mono: 13px;
+
+  /* Line Heights */
+  --text-body-lg--line-height: 1.7;
+  --text-body-md--line-height: 1.6;
+  --text-body-sm--line-height: 1.5;
+
+  /* Spacing */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+
+  /* Border Radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Border Width */
+  --border-width-thin: 0.5px;
+  --border-width-default: 1px;
+  --border-width-thick: 2px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(17, 16, 15, 0.06);
+  --shadow-md: 0 4px 12px rgba(17, 16, 15, 0.08);
+  --shadow-lg: 0 8px 24px rgba(17, 16, 15, 0.10);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+}

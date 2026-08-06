@@ -1,0 +1,117 @@
+'use client';
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+
+export interface TryOnResult {
+  id: string;
+  productId?: string;
+  category: string;
+  resultUrl: string;
+  mode?: string;
+  createdAt: string;
+  isCached?: boolean;
+  isCacheHit?: boolean;
+  product?: {
+    name: string;
+    price: number;
+  };
+}
+
+export interface TryOnRequest {
+  productId?: string;
+  garmentImage?: File;
+  humanImage: File;
+  garmentCategory?: 'UPPER' | 'LOWER' | 'FULL_BODY';
+}
+
+export function useTryOn() {
+  const queryClient = useQueryClient();
+
+  const tryOnMutation = useMutation({
+    mutationFn: async (payload: TryOnRequest) => {
+      const formData = new FormData();
+      formData.append('humanImage', payload.humanImage);
+      if (payload.garmentImage) formData.append('garmentImage', payload.garmentImage);
+      if (payload.productId) formData.append('productId', payload.productId);
+      if (payload.garmentCategory) formData.append('garmentCategory', payload.garmentCategory);
+
+      const res = await api.post('/try-on', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 180000,
+      });
+      return res.data as TryOnResult;
+    },
+    onSuccess: () => {
+      // Invalidate history and quota
+      queryClient.invalidateQueries({ queryKey: ['try-on-history'] });
+      queryClient.invalidateQueries({ queryKey: ['quota'] });
+    },
+  });
+
+  return {
+    tryOn: tryOnMutation.mutate,
+    tryOnAsync: tryOnMutation.mutateAsync,
+    isSubmitting: tryOnMutation.isPending,
+    error: tryOnMutation.error,
+    reset: tryOnMutation.reset,
+  };
+}
+
+export function useTryOnHistory() {
+  const query = useQuery<TryOnResult[]>({
+    queryKey: ['try-on-history'],
+    queryFn: async () => {
+      const res = await api.get('/try-on/history');
+      return (res.data || []) as TryOnResult[];
+    },
+  });
+
+  return {
+    history: query.data || [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
+  };
+}
+
+export function useDeleteTryOnHistory() {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/try-on/history/${id}`);
+      return id;
+    },
+    onSuccess: (id) => {
+      queryClient.setQueryData<TryOnResult[]>(['try-on-history'], (old) => {
+        if (!old) return [];
+        return old.filter(item => item.id !== id);
+      });
+      queryClient.invalidateQueries({ queryKey: ['quota'] });
+    },
+  });
+
+  const deleteBulkMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      // Execute deletions sequentially or via Promise.all if supported
+      await Promise.all(ids.map(id => api.delete(`/try-on/history/${id}`)));
+      return ids;
+    },
+    onSuccess: (ids) => {
+      queryClient.setQueryData<TryOnResult[]>(['try-on-history'], (old) => {
+        if (!old) return [];
+        const toDelete = new Set(ids);
+        return old.filter(item => !toDelete.has(item.id));
+      });
+      queryClient.invalidateQueries({ queryKey: ['quota'] });
+    },
+  });
+
+  return {
+    deleteHistoryItem: deleteMutation.mutate,
+    isDeleting: deleteMutation.isPending,
+    deleteBulkItems: deleteBulkMutation.mutate,
+    isBulkDeleting: deleteBulkMutation.isPending,
+  };
+}

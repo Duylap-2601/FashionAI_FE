@@ -1,0 +1,155 @@
+You are designing FashionAI — a premium AI-powered office wear 
+e-commerce platform for Vietnamese professionals. Before creating 
+any screens, establish the complete design foundation.
+
+━━━ BRAND IDENTITY ━━━
+
+Brand personality: Premium · Intelligent · Trustworthy · Modern
+Competitive reference: Zara.com (clean editorial) + Thread (AI styling) 
++ Shopify Dawn theme (e-commerce trust signals)
+Target: Vietnamese professionals, 25–40 years old, urban
+
+Logo concept: Wordmark "FashionAI" — Inter 600, tracking +20,
+where "AI" is styled in brand purple (#6B5CE7)
+Favicon: Simple "F" monogram in a rounded square, black
+
+━━━ COLOR SYSTEM ━━━
+
+Brand colors (use these exact hex values):
+--brand-black:    #111111   (primary text, CTAs, navbar)
+--brand-white:    #FFFFFF   (surfaces, cards)
+--brand-purple:   #6B5CE7   (AI features ONLY — Try-On, Stylist, badges)
+--brand-purple-light: #EEF0FD (purple tinted backgrounds)
+--brand-gray-50:  #F8F7F5   (page background — warm off-white)
+--brand-gray-100: #F0EEE9   (dividers, skeleton)
+--brand-gray-300: #C4C1B8   (borders, placeholders)
+--brand-gray-500: #8B8880   (secondary text, captions)
+--brand-gray-700: #4A4845   (body text)
+--brand-gray-900: #1A1917   (headings)
+
+Semantic:
+--success:  #1A9C6B  (saved, confirmed, tier upgrades)
+--warning:  #D97706  (quota low, unsaved changes)
+--danger:   #DC2626  (errors, quota empty, delete)
+--info:     #2563EB  (informational banners)
+
+Tier colors:
+--tier-free:    #8B8880 (gray — muted)
+--tier-member:  #2563EB (blue — trustworthy)
+--tier-vip:     #B45309 (amber — premium)
+
+━━━ TYPOGRAPHY ━━━
+
+Font: Inter (Google Fonts)
+Scale:
+  Display-1:  56px / 700 / -1.5px tracking  (hero headline)
+  Display-2:  40px / 700 / -1px tracking    (section hero)
+  H1:         32px / 600 / -0.5px           (page titles)
+  H2:         24px / 600 / -0.3px           (section headings)
+  H3:         20px / 600 / 0               (card headings)
+  H4:         16px / 600 / 0               (labels, subheadings)
+  Body-L:     18px / 400 / 0 / lh 1.7      (landing page body)
+  Body:       15px / 400 / 0 / lh 1.6      (app body text)
+  Body-S:     13px / 400 / 0 / lh 1.5      (captions, meta)
+  Price:      22px / 700 / -0.3px          (product prices)
+  Price-S:    16px / 600 / 0               (inline prices)
+  Label:      11px / 600 / +0.8px / UPPERCASE (badges, tags)
+
+━━━ SPACING & LAYOUT ━━━
+
+Base unit: 4px
+Scale: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96, 128px
+
+Breakpoints:
+  Mobile:   375px  (1 column)
+  Tablet:   768px  (2 columns)
+  Desktop:  1280px (max-width container: 1200px, padding: 0 24px)
+  Wide:     1440px (max-width container: 1360px)
+
+Grid: 12 columns, 24px gutters, 48px margin desktop
+
+Border radius system:
+  --radius-sm:   4px  (badges, tags, pills)
+  --radius-md:   8px  (inputs, buttons, chips)
+  --radius-lg:   12px (cards, dropdowns)
+  --radius-xl:   16px (modals, sheets, panels)
+  --radius-2xl:  24px (large feature cards)
+  --radius-full: 9999px (avatar, toggle, pill CTA)
+
+Shadows (use sparingly — only for elevated elements):
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08)
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.10)
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.12)
+
+━━━ COMPONENT TOKENS ━━━
+
+Navbar height: 64px (desktop), 56px (mobile)
+Sidebar width: 240px
+Card padding: 20px 24px
+Section vertical padding: 80px (desktop), 48px (mobile)
+Product image aspect ratio: 3:4 (portrait)
+
+━━━ BASE COMPONENTS (create as reusable Figma components) ━━━
+
+BUTTONS — 5 variants:
+1. Primary: bg #111111, text white, 44px height, 16px h-padding,
+   radius-md. Hover: bg #2A2A2A. Active: scale 0.98.
+2. Primary-AI: bg #6B5CE7, text white, same sizing.
+   Always prefix with ✦ sparkle icon (16px). 
+   Used ONLY for Try-On and Stylist actions.
+3. Secondary: bg white, border 1px #111111, text #111111.
+   Hover: bg #F8F7F5.
+4. Ghost: no border, no bg, text #111111, underline on hover.
+   Used for "Bỏ qua", "Xem thêm", inline actions.
+5. Danger: bg #DC2626, text white. For destructive actions only.
+All buttons: disabled state = 40% opacity, not-allowed cursor.
+
+INPUTS — 3 variants:
+1. Default: 44px height, border 1px #C4C1B8, radius-md,
+   focus ring 2px #6B5CE7 (AI pages) or #111111 (standard pages),
+   placeholder color #8B8880
+2. Error: border 1px #DC2626, bg #FEF2F2, 
+   + red error message below (13px, #DC2626)
+3. Success: border 1px #1A9C6B, + green check icon inside right
+
+BADGES / PILLS:
+- Category: bg #F0EEE9, text #4A4845, Label size, radius-sm
+- AI feature: bg #EEF0FD, text #534AB7, + ✦ prefix
+- Tier Free: bg #F0EEE9, text #8B8880
+- Tier Member: bg #EFF6FF, text #1D4ED8
+- Tier VIP: bg #FFFBEB, text #92400E, + ★ prefix
+- Status success: bg #ECFDF5, text #065F46
+- Status warning: bg #FFFBEB, text #92400E
+- Status danger: bg #FEF2F2, text #991B1B
+
+PRODUCT CARD (key component):
+Width: flexible (fits grid)
+Image area: aspect-ratio 3:4, bg #F8F7F5, overflow hidden
+  - Category badge: absolute top-left, 12px from edge
+  - Wishlist heart icon: absolute top-right, 12px from edge
+    (outline → filled red on toggle)
+  - Quick "✦ Thử ngay" button: absolute bottom, full width,
+    bg #6B5CE7, text white, 40px height, 
+    slides up on card hover (transform translateY)
+    Hidden by default, visible on :hover
+Info area: 12px padding top
+  - Brand name: Body-S, color #8B8880, uppercase
+  - Product name: Body, 500 weight, color #1A1917, 1 line clamp
+  - Color swatches: 4 circles 14px diameter, 
+    + "+N" text if more than 4 colors
+  - Price row: Price-S (current) + strikethrough if discounted
+Mobile: remove hover behavior, show "Thử ngay" button always
+
+QUOTA INDICATOR (persistent component):
+Pill shape, 32px height, border 1px
+  - Full (green): "✦ 3/3 lượt" + 3 filled dots
+  - Mid (default): "✦ 2/3 lượt" + 2 filled + 1 empty dot  
+  - Low (orange): "⚠ 1/3 lượt" + 1 filled + 2 empty dots
+  - Empty (red): "✕ 0/3 lượt" + lock icon, all dots empty
+  - VIP: "✦ Không giới hạn" + infinity symbol, gold border
+
+LOADING STATES:
+- Skeleton: bg #F0EEE9, animated shimmer
+- Spinner: 20px, thin ring, brand-purple for AI actions
+- AI Processing bar: full-width, indeterminate, purple, 
+  with label "AI đang xử lý..."
