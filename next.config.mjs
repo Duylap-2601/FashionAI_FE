@@ -18,13 +18,14 @@ const nextConfig = {
   },
 };
 
-export default withPWA({
+const isDev = process.env.NODE_ENV === 'development';
+
+export default (isDev ? nextConfig : withPWA({
   dest: 'public',
   cacheOnFrontEndNav: false,
   aggressiveFrontEndNavCaching: false,
   reloadOnOnline: true,
-  disable: process.env.NODE_ENV === 'development',
   workboxOptions: {
     disableDevLogs: true,
   },
-})(nextConfig);
+})(nextConfig));

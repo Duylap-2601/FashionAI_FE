@@ -34,7 +34,7 @@ export default function Login() {
       } else {
         const isAdmin = email.toLowerCase().includes('admin');
         if (isAdmin) {
-          router.push('/admin');
+          router.push('/admin/dashboard');
         } else {
           setShowOnboarding(true);
         }

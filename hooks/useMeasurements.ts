@@ -94,3 +94,19 @@ export function useUserProfile() {
     isUpdating: updateProfileMutation.isPending,
   };
 }
+
+export function useChangePassword() {
+  const changeMutation = useMutation({
+    mutationFn: async ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) => {
+      // Endpoint: POST /auth/change-password (per Swagger UI)
+      const res = await api.post('/auth/change-password', { currentPassword, newPassword });
+      return res.data;
+    },
+  });
+
+  return {
+    changePassword: changeMutation.mutateAsync,
+    isChanging: changeMutation.isPending,
+    error: changeMutation.error,
+  };
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard, Package, Users, ShoppingBag,
@@ -9,39 +9,47 @@ import {
   Save, ExternalLink, Bell, Search, Filter,
   Eye, Pencil, Trash2, ChevronUp, ChevronDown, X,
   CheckCircle2, XCircle, Clock, Truck, RotateCcw, Copy,
-  Ban, ShieldCheck, Mail, Phone, Calendar, MapPin
+  Ban, ShieldCheck, Mail, Phone, Calendar, MapPin, RefreshCw
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { AdminGuard } from '@/components/auth/AdminGuard';
+import type { BackendOrderStatus } from '@/hooks/useOrders';
 
 type AdminPage = 'dashboard' | 'products' | 'users' | 'orders' | 'quota';
-type ProductStatus = 'active' | 'draft' | 'out_of_stock';
-type UserStatus = 'active' | 'inactive' | 'banned';
-type OrderStatus = 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled';
+
+type GarmentCategory = 'UPPER' | 'LOWER' | 'FULL_BODY';
+type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+type UserTier = 'FREE' | 'MEMBER' | 'VIP';
+type UserRole = 'USER' | 'ADMIN';
 
 interface AdminProduct {
   id: string;
   name: string;
-  category: string;
+  category: GarmentCategory;
   price: number;
-  stock: number;
-  sold: number;
   status: ProductStatus;
   image: string;
-  brand: string;
+  garmentUrl?: string;
+  description?: string;
+  color?: string;
+  size?: string;
 }
 
 interface AdminUser {
   id: string;
   name: string;
   email: string;
-  tier: string;
+  tier: UserTier;
+  role: UserRole;
+  isVerified: boolean;
   joinDate: string;
   tryOns: number;
   orders: number;
-  status: UserStatus;
   spent: number;
 }
 
@@ -52,39 +60,52 @@ interface AdminOrder {
   email: string;
   items: number;
   total: number;
-  status: OrderStatus;
+  status: BackendOrderStatus;
   date: string;
   payment: string;
   address?: string;
   phone?: string;
 }
 
+interface AdminStats {
+  userCount: number;
+  productCount: number;
+  orderCount: number;
+  tryOnCount: number;
+  tryOnToday: number;
+  stylistCount: number;
+  totalRevenue: number;
+}
+
 // ─── Seed Data (Fallback if backend list is empty or fails) ────────────────────
 const SEED_PRODUCTS: AdminProduct[] = [
-  { id: 'p1', name: 'Blazer Nữ Công Sở Dáng Ôm Burgundy', category: 'Blazer', price: 1290000, stock: 42, sold: 318, status: 'active', brand: 'StAle. SIGNATURE', image: '/images/731163514_999523332788054_1114320478812927640_n.png' },
-  { id: 'p2', name: 'Combo Suit Nguyên Bộ Xám Tro', category: 'Suit', price: 2490000, stock: 18, sold: 204, status: 'active', brand: 'StAle. SIGNATURE', image: '/images/726470431_1311184104081177_6052756217829444481_n.png' },
-  { id: 'p3', name: 'Áo Sơ Mi Oxford Trắng Premium', category: 'Áo sơ mi', price: 490000, stock: 120, sold: 891, status: 'active', brand: 'StAle. ESSENTIALS', image: '/images/731199294_3955961871204172_1445370375731306017_n.png' },
-  { id: 'p4', name: 'Quần Tây Âu Nữ Thẳng Đen', category: 'Quần tây', price: 860000, stock: 55, sold: 437, status: 'active', brand: 'StAle. ESSENTIALS', image: '/images/726470431_1311184104081177_6052756217829444481_n.png' },
+  { id: 'p1', name: 'Blazer Nữ Công Sở Dáng Ôm Burgundy', category: 'UPPER', price: 1290000, status: 'ACTIVE', image: '/images/731163514_999523332788054_1114320478812927640_n.png' },
+  { id: 'p2', name: 'Combo Suit Nguyên Bộ Xám Tro', category: 'FULL_BODY', price: 2490000, status: 'ACTIVE', image: '/images/726470431_1311184104081177_6052756217829444481_n.png' },
+  { id: 'p3', name: 'Áo Sơ Mi Oxford Trắng Premium', category: 'UPPER', price: 490000, status: 'ACTIVE', image: '/images/731199294_3955961871204172_1445370375731306017_n.png' },
 ];
 
-const SEED_USERS: AdminUser[] = [
-  { id: 'u1', name: 'Nguyễn Minh Anh', email: 'minha@mail.com', tier: 'vip', joinDate: '2025-11-03', tryOns: 148, orders: 12, status: 'active', spent: 14200000 },
-  { id: 'u2', name: 'Trần Quốc Bảo', email: 'bao@mail.com', tier: 'free', joinDate: '2026-06-09', tryOns: 2, orders: 0, status: 'active', spent: 0 },
-  { id: 'u3', name: 'Lê Thị Hoa', email: 'hoa@mail.com', tier: 'vip', joinDate: '2025-08-21', tryOns: 312, orders: 28, status: 'active', spent: 38900000 },
-];
+const CATEGORY_LABEL: Record<GarmentCategory, string> = {
+  UPPER: 'Áo',
+  LOWER: 'Quần / Váy',
+  FULL_BODY: 'Toàn thân',
+};
 
-const SEED_ORDERS: AdminOrder[] = [
-  { id: 'o1', code: 'SAL-2026-0901', customer: 'Nguyễn Minh Anh', email: 'minha@mail.com', items: 3, total: 2930000, status: 'shipping', date: '2026-06-09', payment: 'Visa *4242', address: '12 Nguyễn Huệ, Quận 1, TP. HCM', phone: '0901234567' },
-  { id: 'o2', code: 'SAL-2026-0898', customer: 'Đỗ Thanh Linh', email: 'linh@mail.com', items: 1, total: 3200000, status: 'confirmed', date: '2026-06-09', payment: 'MoMo', address: '45 Lê Lợi, Quận 1, TP. HCM', phone: '0909876543' },
-];
+const PRODUCT_STATUS_CFG: Record<ProductStatus, { label: string; cls: string }> = {
+  ACTIVE: { label: 'Đang bán', cls: 'bg-green-50 text-green-700 border border-green-200' },
+  DRAFT: { label: 'Bản nháp', cls: 'bg-neutral-100 text-neutral-600 border border-neutral-200' },
+  ARCHIVED: { label: 'Ngừng bán', cls: 'bg-red-50 text-red-600 border border-red-200' },
+};
 
-// Status badge configurations
-const ORDER_STATUS_CFG: Record<OrderStatus, { label: string; cls: string; icon: React.ElementType }> = {
-  pending: { label: 'Chờ xác nhận', cls: 'bg-amber-50 text-amber-700 border border-amber-200', icon: Clock },
-  confirmed: { label: 'Đã xác nhận', cls: 'bg-blue-50 text-blue-700 border border-blue-200', icon: CheckCircle2 },
-  shipping: { label: 'Đang giao', cls: 'bg-brand-navy/8 text-brand-navy border border-brand-navy/20', icon: Truck },
-  delivered: { label: 'Đã giao', cls: 'bg-green-50 text-green-700 border border-green-200', icon: CheckCircle2 },
-  cancelled: { label: 'Đã hủy', cls: 'bg-red-50 text-red-600 border border-red-200', icon: XCircle },
+const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon: LucideIcon }> = {
+  PENDING: { label: 'Chờ xác nhận', cls: 'bg-amber-50 text-amber-700 border border-amber-200', icon: Clock },
+  PAID: { label: 'Đã thanh toán', cls: 'bg-blue-50 text-blue-700 border border-blue-200', icon: CheckCircle2 },
+  CONFIRMED: { label: 'Đã xác nhận', cls: 'bg-blue-50 text-blue-700 border border-blue-200', icon: CheckCircle2 },
+  SHIPPING: { label: 'Đang giao', cls: 'bg-brand-navy/8 text-brand-navy border border-brand-navy/20', icon: Truck },
+  DELIVERED: { label: 'Đã giao', cls: 'bg-green-50 text-green-700 border border-green-200', icon: CheckCircle2 },
+  CANCELLED: { label: 'Đã hủy', cls: 'bg-red-50 text-red-600 border border-red-200', icon: XCircle },
+  RETURNED: { label: 'Hoàn trả', cls: 'bg-neutral-100 text-neutral-600 border border-neutral-300', icon: RotateCcw },
+  EXPIRED: { label: 'Hết hạn', cls: 'bg-neutral-100 text-neutral-500 border border-neutral-300', icon: XCircle },
+  FAILED: { label: 'Thất bại', cls: 'bg-red-50 text-red-600 border border-red-200', icon: XCircle },
 };
 
 function fmt(n: number) {
@@ -94,91 +115,190 @@ function fmt(n: number) {
 export default function AdminDashboard() {
   const router = useRouter();
   const { logout } = useAuth();
-  
-  const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
-  const [products, setProducts] = useState<AdminProduct[]>(SEED_PRODUCTS);
-  const [users, setUsers] = useState<AdminUser[]>(SEED_USERS);
-  const [orders, setOrders] = useState<AdminOrder[]>(SEED_ORDERS);
 
-  // Search & Filter
+  const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterOption, setFilterOption] = useState('all');
+
+  const [products, setProducts] = useState<AdminProduct[]>(SEED_PRODUCTS);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Modal / Editor States
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<AdminProduct> | null>(null);
 
-  // Fetch actual data on mount if API endpoints are reachable
-  useEffect(() => {
-    async function loadAdminData() {
-      try {
-        const prodRes = await api.get('/products');
-        if (prodRes.data && prodRes.data.length > 0) {
-          setProducts(prodRes.data.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            category: p.category === 'tops' ? 'Áo sơ mi' : p.category === 'bottoms' ? 'Quần tây' : 'Blazer',
-            price: p.price,
-            stock: p.stock || 20,
-            sold: p.sold || 5,
-            status: p.stock > 0 ? 'active' : 'out_of_stock',
-            image: p.garmentUrl || p.image || '/images/731163514_999523332788054_1114320478812927640_n.png',
-            brand: p.brand || 'StAle.',
-          })));
-        }
-      } catch (e) {
-        console.warn('Backend API products fetch failed, using fallback mock data.', e);
+  const fetchProducts = useCallback(async () => {
+    try {
+      const res = await api.get('/products', { params: { limit: 100 } });
+      const list = (res.data?.data || []) as any[];
+      if (list.length > 0) {
+        setProducts(list.map((p) => ({
+          id: p.id,
+          name: p.name,
+          category: p.category as GarmentCategory,
+          price: Number(p.price),
+          status: p.status as ProductStatus,
+          image: p.garmentUrl || '/images/731163514_999523332788054_1114320478812927640_n.png',
+          garmentUrl: p.garmentUrl,
+          description: p.description,
+          color: p.color,
+          size: p.size,
+        })));
       }
-      
-      try {
-        const ordRes = await api.get('/orders');
-        if (ordRes.data && ordRes.data.length > 0) {
-          setOrders(ordRes.data.map((o: any) => ({
-            id: o.id,
-            code: `SAL-${o.id.substring(0, 8).toUpperCase()}`,
-            customer: o.shippingInfo?.name || 'Khách hàng',
-            email: o.shippingInfo?.phone || 'mail@example.com',
-            items: o.items?.length || 1,
-            total: o.totalAmount,
-            status: o.status,
-            date: o.createdAt.substring(0, 10),
-            payment: o.paymentMethod,
-            address: o.shippingInfo?.address,
-            phone: o.shippingInfo?.phone,
-          })));
-        }
-      } catch (e) {
-        console.warn('Backend API orders fetch failed, using fallback mock data.', e);
-      }
+    } catch (e) {
+      console.warn('Backend API products fetch failed, using fallback mock data.', e);
     }
-    loadAdminData();
   }, []);
 
-  const handleUpdateOrderStatus = async (id: string, newStatus: OrderStatus) => {
+  const fetchOrders = useCallback(async () => {
     try {
-      // call patch status if supported by backend
-      await api.patch(`/orders/${id}/status`, { status: newStatus });
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-      if (selectedOrder?.id === id) setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+      const res = await api.get('/orders/all', { params: { limit: 100 } });
+      const list = (res.data?.data || []) as any[];
+      if (list.length > 0) {
+        setOrders(list.map((o) => {
+          const ship = o.shippingInfo;
+          return {
+            id: o.id,
+            code: `#${o.orderCode}`,
+            customer: ship?.name || o.user?.name || 'Khách hàng',
+            email: o.user?.email || ship?.phone || '',
+            items: o.items?.length || 1,
+            total: Number(o.amount),
+            status: o.status as BackendOrderStatus,
+            date: o.createdAt?.substring(0, 10),
+            payment: o.payments?.[0]?.provider || 'COD',
+            address: ship?.address,
+            phone: ship?.phone,
+          };
+        }));
+      }
     } catch (e) {
-      // update state locally for validation
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+      console.warn('Backend API orders fetch failed, using fallback mock data.', e);
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await api.get('/users', { params: { limit: 100 } });
+      const list = (res.data?.data || []) as any[];
+      if (list.length > 0) {
+        setUsers(list.map((u) => ({
+          id: u.id,
+          name: u.name || 'Người dùng',
+          email: u.email,
+          tier: (u.tier || 'FREE') as UserTier,
+          role: (u.role || 'USER') as UserRole,
+          isVerified: Boolean(u.isVerified),
+          joinDate: u.createdAt?.substring(0, 10),
+          tryOns: u.tryOns || 0,
+          orders: u.orders || 0,
+          spent: Number(u.spent || 0),
+        })));
+      }
+    } catch (e) {
+      console.warn('Backend API users fetch failed.', e);
+    }
+  }, []);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/stats');
+      setStats(res.data?.data as AdminStats);
+    } catch (e) {
+      console.warn('Backend API stats fetch failed.', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    setIsLoading(true);
+    Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats()])
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+    return () => { mounted = false; };
+  }, [fetchProducts, fetchOrders, fetchUsers, fetchStats]);
+
+  const handleSaveProduct = async () => {
+    if (!editingProduct?.name || !editingProduct?.price || !editingProduct?.garmentUrl) {
+      toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+      return;
+    }
+    if (!editingProduct?.category) {
+      toast.error('Vui lòng chọn danh mục.');
+      return;
+    }
+
+    const payload = {
+      name: editingProduct.name,
+      price: editingProduct.price,
+      category: editingProduct.category,
+      garmentUrl: editingProduct.garmentUrl,
+      description: editingProduct.description || undefined,
+      status: editingProduct.status || 'ACTIVE',
+    };
+
+    try {
+      if (editingProduct.id) {
+        await api.put(`/products/${editingProduct.id}`, payload);
+        toast.success('Cập nhật sản phẩm thành công');
+      } else {
+        await api.post('/products', payload);
+        toast.success('Tạo sản phẩm mới thành công');
+      }
+      setEditingProduct(null);
+      await fetchProducts();
+    } catch (e) {
+      const msg = (e as any)?.response?.data?.message || 'Có lỗi xảy ra khi lưu sản phẩm.';
+      toast.error(Array.isArray(msg) ? msg[0] : msg);
     }
   };
 
-  const handleUpdateUserTier = (id: string, tier: string) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, tier } : u));
-    if (selectedUser?.id === id) setSelectedUser(prev => prev ? { ...prev, tier } : null);
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
+    try {
+      await api.delete(`/products/${id}`);
+      toast.success('Xóa sản phẩm thành công');
+      await fetchProducts();
+    } catch (e) {
+      toast.error('Không thể xóa sản phẩm này.');
+      console.error(e);
+    }
   };
 
-  const handleUpdateUserStatus = (id: string, status: UserStatus) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, status } : u));
-    if (selectedUser?.id === id) setSelectedUser(prev => prev ? { ...prev, status } : null);
+  const handleUpdateOrderStatus = async (id: string, status: BackendOrderStatus) => {
+    try {
+      await api.patch(`/orders/${id}/status`, { status });
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+      if (selectedOrder?.id === id) setSelectedOrder(prev => prev ? { ...prev, status } : null);
+      toast.success('Cập nhật trạng thái đơn hàng thành công');
+    } catch (e) {
+      toast.error('Không thể cập nhật trạng thái đơn hàng.');
+      console.error(e);
+    }
+  };
+
+  const handleUpdateUser = async (id: string, patch: Partial<Pick<AdminUser, 'tier' | 'role'>>) => {
+    try {
+      const body: Record<string, string> = {};
+      if (patch.tier) body.tier = patch.tier;
+      if (patch.role) body.role = patch.role;
+      await api.patch(`/users/${id}`, body);
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, ...patch } : u));
+      if (selectedUser?.id === id) setSelectedUser(prev => prev ? { ...prev, ...patch } : null);
+      toast.success('Cập nhật người dùng thành công');
+    } catch (e) {
+      toast.error('Không thể cập nhật người dùng.');
+      console.error(e);
+    }
   };
 
   // SVGs responsive custom path calculations
   const renderSVGLineChart = () => {
+    const base = stats?.tryOnToday ?? 50;
     const points = [
       { x: 30, y: 150 }, { x: 80, y: 130 }, { x: 130, y: 160 },
       { x: 180, y: 90 }, { x: 230, y: 110 }, { x: 280, y: 70 },
@@ -190,13 +310,10 @@ export default function AdminDashboard() {
 
     return (
       <svg className="w-full h-[220px]" viewBox="0 0 600 200" fill="none">
-        {/* Horizontal grid lines */}
         <line x1="20" y1="40" x2="580" y2="40" stroke="#F3F4F6" strokeWidth="1" />
         <line x1="20" y1="90" x2="580" y2="90" stroke="#F3F4F6" strokeWidth="1" />
         <line x1="20" y1="140" x2="580" y2="140" stroke="#F3F4F6" strokeWidth="1" />
-        {/* Main curve */}
         <path d={pathD} stroke="#5D1C34" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Data points */}
         {points.map((p, idx) => (
           <circle key={idx} cx={p.x} cy={p.y} r="4" fill="#5D1C34" stroke="#FFFFFF" strokeWidth="2" className="cursor-pointer hover:r-6 transition-all" />
         ))}
@@ -205,8 +322,9 @@ export default function AdminDashboard() {
   };
 
   return (
+    <AdminGuard>
     <div className="flex bg-neutral-100 min-h-screen text-neutral-800 font-sans">
-      
+
       {/* SIDEBAR */}
       <aside className="w-[240px] shrink-0 bg-brand-navy flex flex-col min-h-screen sticky top-0">
         <div className="px-6 pt-7 pb-6 border-b border-white/10 flex flex-col gap-1">
@@ -223,7 +341,7 @@ export default function AdminDashboard() {
             { id: 'users', label: 'Người dùng', icon: Users },
             { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
             { id: 'quota', label: 'Cài đặt Quota', icon: Settings },
-          ] as { id: AdminPage; label: string; icon: React.ElementType }[]).map(item => {
+          ] as { id: AdminPage; label: string; icon: LucideIcon }[]).map(item => {
             const IconComponent = item.icon;
             const active = activeTab === item.id;
             return (
@@ -262,29 +380,35 @@ export default function AdminDashboard() {
                 <h1 className="text-heading-h2 font-bold text-neutral-900">Tổng quan hệ thống</h1>
                 <p className="text-body-sm text-neutral-500 mt-1">Cập nhật thống kê sử dụng tài nguyên AI</p>
               </div>
+              <button
+                onClick={() => { setIsLoading(true); Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats()]).finally(() => setIsLoading(false)); }}
+                className="px-4 py-2.5 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-sm font-bold border-0 cursor-pointer flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" /> Làm mới
+              </button>
             </div>
 
             {/* Metrics cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col gap-1">
                 <span className="text-label-sm text-neutral-500">Người dùng đăng ký</span>
-                <span className="text-[28px] font-bold text-neutral-900">{users.length + 3200}</span>
-                <span className="text-[11px] text-green-600 font-semibold mt-1">↑ 14% tháng này</span>
+                <span className="text-[28px] font-bold text-neutral-900">{(stats?.userCount ?? 0).toLocaleString('vi-VN')}</span>
+                <span className="text-[11px] text-green-600 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" /> Tổng tài khoản</span>
               </div>
               <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col gap-1">
                 <span className="text-label-sm text-neutral-500">Lượt thử đồ hôm nay</span>
-                <span className="text-[28px] font-bold text-neutral-900">487</span>
-                <span className="text-[11px] text-green-600 font-semibold mt-1">↑ 8% so với hôm qua</span>
+                <span className="text-[28px] font-bold text-neutral-900">{(stats?.tryOnToday ?? 0).toLocaleString('vi-VN')}</span>
+                <span className="text-[11px] text-neutral-500 mt-1">Tổng: {((stats?.tryOnCount ?? 0)).toLocaleString('vi-VN')} lượt</span>
               </div>
               <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col gap-1">
-                <span className="text-label-sm text-neutral-500">Tỷ lệ cache hit (SAM2)</span>
-                <span className="text-[28px] font-bold text-neutral-900">74.2%</span>
-                <span className="text-[11px] text-green-600 font-semibold mt-1">Tết kiệm 182$ API</span>
+                <span className="text-label-sm text-neutral-500">Đơn hàng</span>
+                <span className="text-[28px] font-bold text-neutral-900">{(stats?.orderCount ?? 0).toLocaleString('vi-VN')}</span>
+                <span className="text-[11px] text-neutral-500 mt-1">{((stats?.productCount ?? 0)).toLocaleString('vi-VN')} sản phẩm đang bán</span>
               </div>
               <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col gap-1">
-                <span className="text-label-sm text-neutral-500">Credits fal.ai tháng này</span>
-                <span className="text-[28px] font-bold text-neutral-900">$24.80</span>
-                <span className="text-[11px] text-neutral-500 mt-1">Hạn mức tối đa $50.00</span>
+                <span className="text-label-sm text-neutral-500">Doanh thu đã thanh toán</span>
+                <span className="text-[28px] font-bold text-neutral-900">{fmt(stats?.totalRevenue ?? 0)}</span>
+                <span className="text-[11px] text-neutral-500 mt-1">{((stats?.stylistCount ?? 0)).toLocaleString('vi-VN')} lượt AI Stylist</span>
               </div>
             </div>
 
@@ -299,7 +423,7 @@ export default function AdminDashboard() {
               {renderSVGLineChart()}
             </div>
 
-            {/* Live Activities */}
+            {/* Real-time activity */}
             <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
                 <div>
@@ -325,10 +449,13 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <span className="text-body-sm text-neutral-700 flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-brand-gold animate-spin" /> Thử đồ thành công
+                      <Sparkles className="w-3.5 h-3.5 text-brand-gold animate-spin" /> {u.tryOns} lượt Try-On
                     </span>
                   </div>
                 ))}
+                {users.length === 0 && (
+                  <div className="p-6 text-center text-body-sm text-neutral-400">Chưa có dữ liệu hoạt động</div>
+                )}
               </div>
             </div>
 
@@ -343,8 +470,8 @@ export default function AdminDashboard() {
                 <h1 className="text-heading-h2 font-bold text-neutral-900">Danh mục sản phẩm</h1>
                 <p className="text-body-sm text-neutral-500 mt-1">Cấu hình phôi ảnh cho tính năng Try-On</p>
               </div>
-              <button 
-                onClick={() => setEditingProduct({})}
+              <button
+                onClick={() => setEditingProduct({ category: 'UPPER', status: 'ACTIVE' })}
                 className="px-4 py-2.5 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-sm font-bold border-0 cursor-pointer flex items-center gap-2"
               >
                 + Thêm sản phẩm
@@ -371,8 +498,7 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3">Sản phẩm</th>
                       <th className="px-4 py-3">Danh mục</th>
                       <th className="px-4 py-3 text-right">Giá bán</th>
-                      <th className="px-4 py-3 text-right">Tồn kho</th>
-                      <th className="px-4 py-3 text-right">Đã bán</th>
+                      <th className="px-4 py-3">Trạng thái</th>
                       <th className="px-6 py-3">Thao tác</th>
                     </tr>
                   </thead>
@@ -385,20 +511,34 @@ export default function AdminDashboard() {
                             <span className="font-semibold text-neutral-900 line-clamp-1">{p.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 text-neutral-500">{p.category}</td>
+                        <td className="px-4 py-3.5 text-neutral-500">{CATEGORY_LABEL[p.category] || p.category}</td>
                         <td className="px-4 py-3.5 text-right font-semibold text-brand-navy">{fmt(p.price)}</td>
-                        <td className="px-4 py-3.5 text-right">{p.stock}</td>
-                        <td className="px-4 py-3.5 text-right text-neutral-600">{p.sold}</td>
+                        <td className="px-4 py-3.5">
+                          <span className={`px-2 py-0.5 rounded-full text-label-sm font-semibold ${PRODUCT_STATUS_CFG[p.status]?.cls || ''}`}>
+                            {PRODUCT_STATUS_CFG[p.status]?.label || p.status}
+                          </span>
+                        </td>
                         <td className="px-6 py-3.5 flex gap-2">
-                          <button 
+                          <button
                             onClick={() => setEditingProduct(p)}
                             className="w-8 h-8 rounded-lg hover:bg-neutral-100 border-0 bg-transparent flex items-center justify-center text-neutral-500 hover:text-brand-navy cursor-pointer"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
+                          <button
+                            onClick={() => handleDeleteProduct(p.id)}
+                            className="w-8 h-8 rounded-lg hover:bg-red-50 border-0 bg-transparent flex items-center justify-center text-neutral-500 hover:text-red-600 cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </td>
                       </tr>
                     ))}
+                    {products.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-10 text-center text-neutral-400">Chưa có sản phẩm nào</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -411,7 +551,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col gap-6">
             <div>
               <h1 className="text-heading-h2 font-bold text-neutral-900">Quản lý người dùng</h1>
-              <p className="text-body-sm text-neutral-500 mt-1">Xem thông tin và thay đổi tier phân quyền</p>
+              <p className="text-body-sm text-neutral-500 mt-1">Xem thông tin và thay đổi tier / vai trò</p>
             </div>
 
             <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
@@ -441,7 +581,7 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3.5 text-neutral-600">{u.email}</td>
                         <td className="px-4 py-3.5">
                           <span className={`px-2 py-0.5 rounded-full text-label-sm font-bold capitalize ${
-                            u.tier === 'vip' ? 'bg-amber-100 text-amber-700' : u.tier === 'member' ? 'bg-purple-100 text-purple-700' : 'bg-neutral-100 text-neutral-700'
+                            u.tier === 'VIP' ? 'bg-amber-100 text-amber-700' : u.tier === 'MEMBER' ? 'bg-purple-100 text-purple-700' : 'bg-neutral-100 text-neutral-700'
                           }`}>
                             {u.tier}
                           </span>
@@ -449,13 +589,13 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3.5 text-right font-medium text-neutral-700">{u.tryOns} lượt</td>
                         <td className="px-4 py-3.5">
                           <span className={`px-2 py-0.5 rounded-full text-label-sm font-semibold ${
-                            u.status === 'active' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                            u.isVerified ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
                           }`}>
-                            {u.status === 'active' ? 'Hoạt động' : 'Bị khóa'}
+                            {u.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
                           </span>
                         </td>
                         <td className="px-6 py-3.5">
-                          <button 
+                          <button
                             onClick={() => setSelectedUser(u)}
                             className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
                           >
@@ -464,6 +604,11 @@ export default function AdminDashboard() {
                         </td>
                       </tr>
                     ))}
+                    {users.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-10 text-center text-neutral-400">Chưa có người dùng nào</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -493,29 +638,37 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100 text-body-sm">
-                    {orders.map(o => (
-                      <tr key={o.id} className="hover:bg-neutral-50">
-                        <td className="px-6 py-3.5 font-semibold text-neutral-800">#{o.code.substring(0, 10)}</td>
-                        <td className="px-4 py-3.5">{o.customer}</td>
-                        <td className="px-4 py-3.5 text-right font-bold text-brand-navy">{fmt(o.total)}</td>
-                        <td className="px-4 py-3.5 text-neutral-500">{o.date}</td>
-                        <td className="px-4 py-3.5">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-semibold ${
-                            ORDER_STATUS_CFG[o.status]?.cls || ''
-                          }`}>
-                            {ORDER_STATUS_CFG[o.status]?.label || o.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3.5">
-                          <button 
-                            onClick={() => setSelectedOrder(o)}
-                            className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
-                          >
-                            Xem chi tiết
-                          </button>
-                        </td>
+                    {orders.map(o => {
+                      const cfg = ORDER_STATUS_CFG[o.status] || ORDER_STATUS_CFG.PENDING;
+                      const Icon = cfg.icon;
+                      return (
+                        <tr key={o.id} className="hover:bg-neutral-50">
+                          <td className="px-6 py-3.5 font-semibold text-neutral-800">{o.code}</td>
+                          <td className="px-4 py-3.5">{o.customer}</td>
+                          <td className="px-4 py-3.5 text-right font-bold text-brand-navy">{fmt(o.total)}</td>
+                          <td className="px-4 py-3.5 text-neutral-500">{o.date}</td>
+                          <td className="px-4 py-3.5">
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-semibold ${cfg.cls}`}>
+                              <Icon className="w-3 h-3" />
+                              {cfg.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3.5">
+                            <button
+                              onClick={() => setSelectedOrder(o)}
+                              className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
+                            >
+                              Xem chi tiết
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {orders.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-10 text-center text-neutral-400">Chưa có đơn hàng nào</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -536,8 +689,9 @@ export default function AdminDashboard() {
                 <label className="block text-body-sm font-semibold text-neutral-700 mb-2">Hạn mức Gold Member (Try-On/ngày)</label>
                 <input type="number" defaultValue={10} className="w-full h-10 px-3 rounded-lg border border-neutral-300 focus:outline-none focus:border-brand-navy" />
               </div>
-              <button 
-                onClick={() => alert('Cấu hình đã được cập nhật thành công!')}
+              <p className="text-label-sm text-neutral-500">Lưu ý: Hạn mức hiện được cấu hình cứng phía backend (AI_ACTION_LIMITS). Chưa có API quản lý.</p>
+              <button
+                onClick={() => toast.info('Hạn mức quota chưa có API cập nhật phía backend.')}
                 className="w-full py-3 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl font-bold border-0 cursor-pointer shadow-sm"
               >
                 Lưu cấu hình
@@ -577,42 +731,58 @@ export default function AdminDashboard() {
                   <div>
                     <h3 className="font-bold text-neutral-900">{selectedUser.name}</h3>
                     <p className="text-body-sm text-neutral-500">{selectedUser.email}</p>
+                    <p className="text-label-sm text-neutral-400 mt-0.5">Tham gia: {selectedUser.joinDate}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-4">
                   <div>
                     <label className="block text-body-sm font-semibold text-neutral-700 mb-1.5">Phân quyền (Tier)</label>
-                    <select 
-                      value={selectedUser.tier} 
-                      onChange={e => handleUpdateUserTier(selectedUser.id, e.target.value)}
+                    <select
+                      value={selectedUser.tier}
+                      onChange={e => handleUpdateUser(selectedUser.id, { tier: e.target.value as UserTier })}
                       className="w-full h-10 px-3 rounded-lg border border-neutral-300"
                     >
-                      <option value="free">Free Account</option>
-                      <option value="member">Gold Member</option>
-                      <option value="vip">VIP Member</option>
+                      <option value="FREE">Free Account</option>
+                      <option value="MEMBER">Gold Member</option>
+                      <option value="VIP">VIP Member</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-body-sm font-semibold text-neutral-700 mb-1.5">Trạng thái tài khoản</label>
+                    <label className="block text-body-sm font-semibold text-neutral-700 mb-1.5">Vai trò hệ thống</label>
                     <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleUpdateUserStatus(selectedUser.id, 'active')}
+                      <button
+                        onClick={() => handleUpdateUser(selectedUser.id, { role: 'USER' })}
                         className={`flex-1 py-2 rounded-lg font-semibold text-label-sm border cursor-pointer ${
-                          selectedUser.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white border-neutral-200 text-neutral-600'
+                          selectedUser.role === 'USER' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white border-neutral-200 text-neutral-600'
                         }`}
                       >
-                        Đang hoạt động
+                        USER
                       </button>
-                      <button 
-                        onClick={() => handleUpdateUserStatus(selectedUser.id, 'banned')}
+                      <button
+                        onClick={() => handleUpdateUser(selectedUser.id, { role: 'ADMIN' })}
                         className={`flex-1 py-2 rounded-lg font-semibold text-label-sm border cursor-pointer ${
-                          selectedUser.status === 'banned' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-white border-neutral-200 text-neutral-600'
+                          selectedUser.role === 'ADMIN' ? 'bg-brand-navy/10 text-brand-navy border-brand-navy/30' : 'bg-white border-neutral-200 text-neutral-600'
                         }`}
                       >
-                        Khóa tài khoản
+                        ADMIN
                       </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-4 flex flex-col gap-2 text-body-sm">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500">Lượt Try-On</span>
+                      <span className="font-semibold text-neutral-800">{selectedUser.tryOns}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500">Số đơn hàng</span>
+                      <span className="font-semibold text-neutral-800">{selectedUser.orders}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500">Đã chi tiêu</span>
+                      <span className="font-semibold text-brand-navy">{fmt(selectedUser.spent)}</span>
                     </div>
                   </div>
                 </div>
@@ -639,7 +809,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100">
                 <div>
                   <h2 className="text-body-lg font-bold text-neutral-900">Chi tiết đơn hàng</h2>
-                  <p className="text-label-sm text-neutral-500 font-mono">#{selectedOrder.code}</p>
+                  <p className="text-label-sm text-neutral-500 font-mono">{selectedOrder.code}</p>
                 </div>
                 <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 border-0 bg-transparent cursor-pointer">
                   <X className="w-4 h-4" />
@@ -652,20 +822,29 @@ export default function AdminDashboard() {
                   <p className="text-body-sm font-medium text-neutral-800">Khách hàng: {selectedOrder.customer}</p>
                   <p className="text-body-sm text-neutral-600 mt-1">Điện thoại: {selectedOrder.phone || '—'}</p>
                   <p className="text-body-sm text-neutral-600 mt-1">Địa chỉ: {selectedOrder.address || '—'}</p>
+                  <p className="text-body-sm text-neutral-600 mt-1">Email: {selectedOrder.email || '—'}</p>
+                </div>
+
+                <div>
+                  <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Thanh toán</p>
+                  <p className="text-body-sm text-neutral-600">Phương thức: {selectedOrder.payment || '—'}</p>
+                  <p className="text-body-sm font-bold text-brand-navy mt-1">Tổng tiền: {fmt(selectedOrder.total)}</p>
                 </div>
 
                 <div>
                   <label className="block text-body-sm font-semibold text-neutral-700 mb-2">Trạng thái vận chuyển</label>
                   <select
                     value={selectedOrder.status}
-                    onChange={e => handleUpdateOrderStatus(selectedOrder.id, e.target.value as OrderStatus)}
+                    onChange={e => handleUpdateOrderStatus(selectedOrder.id, e.target.value as BackendOrderStatus)}
                     className="w-full h-10 px-3 rounded-lg border border-neutral-300"
                   >
-                    <option value="pending">Chờ xác nhận</option>
-                    <option value="confirmed">Đã xác nhận</option>
-                    <option value="shipping">Đang giao hàng</option>
-                    <option value="delivered">Đã giao hàng</option>
-                    <option value="cancelled">Hủy đơn</option>
+                    <option value="PENDING">Chờ xác nhận</option>
+                    <option value="PAID">Đã thanh toán</option>
+                    <option value="CONFIRMED">Đã xác nhận</option>
+                    <option value="SHIPPING">Đang giao hàng</option>
+                    <option value="DELIVERED">Đã giao hàng</option>
+                    <option value="CANCELLED">Hủy đơn</option>
+                    <option value="RETURNED">Hoàn trả</option>
                   </select>
                 </div>
               </div>
@@ -694,79 +873,96 @@ export default function AdminDashboard() {
               <div className="flex flex-col gap-4">
                 <div>
                   <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Tên sản phẩm *</label>
-                  <input 
-                    type="text" 
-                    value={editingProduct.name || ''} 
+                  <input
+                    type="text"
+                    value={editingProduct.name || ''}
                     onChange={e => setEditingProduct(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Blazer Nam Cổ Điển..." 
-                    className="w-full h-10 px-3 rounded-lg border border-neutral-300" 
+                    placeholder="Blazer Nam Cổ Điển..."
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Giá bán *</label>
-                    <input 
-                      type="number" 
-                      value={editingProduct.price || ''} 
+                    <input
+                      type="number"
+                      value={editingProduct.price || ''}
                       onChange={e => setEditingProduct(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
-                      placeholder="850000" 
-                      className="w-full h-10 px-3 rounded-lg border border-neutral-300" 
+                      placeholder="850000"
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300"
                     />
                   </div>
                   <div>
-                    <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Tồn kho</label>
-                    <input 
-                      type="number" 
-                      value={editingProduct.stock || ''} 
-                      onChange={e => setEditingProduct(prev => ({ ...prev, stock: parseInt(e.target.value) }))}
-                      placeholder="50" 
-                      className="w-full h-10 px-3 rounded-lg border border-neutral-300" 
+                    <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Danh mục *</label>
+                    <select
+                      value={editingProduct.category || 'UPPER'}
+                      onChange={e => setEditingProduct(prev => ({ ...prev, category: e.target.value as GarmentCategory }))}
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300"
+                    >
+                      <option value="UPPER">Áo (UPPER)</option>
+                      <option value="LOWER">Quần / Váy (LOWER)</option>
+                      <option value="FULL_BODY">Toàn thân (FULL_BODY)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Trạng thái</label>
+                    <select
+                      value={editingProduct.status || 'ACTIVE'}
+                      onChange={e => setEditingProduct(prev => ({ ...prev, status: e.target.value as ProductStatus }))}
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300"
+                    >
+                      <option value="ACTIVE">Đang bán</option>
+                      <option value="DRAFT">Bản nháp</option>
+                      <option value="ARCHIVED">Ngừng bán</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Màu sắc</label>
+                    <input
+                      type="text"
+                      value={editingProduct.color || ''}
+                      onChange={e => setEditingProduct(prev => ({ ...prev, color: e.target.value }))}
+                      placeholder="Trắng"
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">URL ảnh phôi Try-On *</label>
-                  <input 
-                    type="text" 
-                    value={editingProduct.image || ''} 
-                    onChange={e => setEditingProduct(prev => ({ ...prev, image: e.target.value }))}
-                    placeholder="https://..." 
-                    className="w-full h-10 px-3 rounded-lg border border-neutral-300" 
+                  <input
+                    type="text"
+                    value={editingProduct.garmentUrl || ''}
+                    onChange={e => setEditingProduct(prev => ({ ...prev, garmentUrl: e.target.value }))}
+                    placeholder="https://..."
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Mô tả</label>
+                  <textarea
+                    value={editingProduct.description || ''}
+                    onChange={e => setEditingProduct(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Mô tả ngắn về sản phẩm..."
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-300 resize-none"
                   />
                 </div>
 
                 <div className="flex gap-3 justify-end mt-4">
-                  <button 
+                  <button
                     onClick={() => setEditingProduct(null)}
                     className="px-4 py-2 border border-neutral-200 text-neutral-600 rounded-xl font-medium hover:bg-neutral-50 transition-colors cursor-pointer bg-white"
                   >
                     Hủy
                   </button>
-                  <button 
-                    onClick={() => {
-                      if (!editingProduct.name || !editingProduct.price) {
-                        alert('Vui lòng điền đầy đủ các thông tin bắt buộc.');
-                        return;
-                      }
-                      
-                      if (editingProduct.id) {
-                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...editingProduct as AdminProduct } : p));
-                      } else {
-                        const newProd = {
-                          ...editingProduct,
-                          id: `p${Date.now()}`,
-                          category: 'Blazer',
-                          sold: 0,
-                          status: 'active' as const,
-                          brand: 'StAle. SIGNATURE',
-                          image: editingProduct.image || '/images/731163514_999523332788054_1114320478812927640_n.png',
-                        } as AdminProduct;
-                        setProducts(prev => [newProd, ...prev]);
-                      }
-                      setEditingProduct(null);
-                    }}
+                  <button
+                    onClick={handleSaveProduct}
                     className="px-5 py-2 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl font-bold border-0 cursor-pointer shadow-sm"
                   >
                     Lưu
@@ -779,5 +975,6 @@ export default function AdminDashboard() {
       </AnimatePresence>
 
     </div>
+    </AdminGuard>
   );
 }

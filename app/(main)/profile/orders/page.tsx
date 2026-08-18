@@ -6,25 +6,29 @@ import {
   Truck, CheckCircle2, Clock, XCircle, RotateCcw,
   MapPin, Phone, Copy, ExternalLink, Sparkles, ShoppingBag,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { motion, AnimatePresence } from 'motion/react';
 import { useOrders, useCancelOrder, Order, OrderItem } from '@/hooks/useOrders';
 
-type OrderStatus = 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled' | 'returned';
+type OrderStatus = 'PENDING' | 'PAID' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' | 'RETURNED' | 'EXPIRED' | 'FAILED';
 
 const STATUS_CONFIG: Record<string, {
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   badge: string;
   step: number;
 }> = {
-  pending:   { label: 'Chờ xác nhận', icon: Clock,        badge: 'bg-amber-50 text-amber-700 border border-amber-200',   step: 0 },
-  confirmed: { label: 'Đã xác nhận',  icon: CheckCircle2, badge: 'bg-blue-50 text-blue-700 border border-blue-200',       step: 1 },
-  shipping:  { label: 'Đang giao',    icon: Truck,         badge: 'bg-brand-navy/8 text-brand-navy border border-brand-navy/20', step: 2 },
-  delivered: { label: 'Đã giao',      icon: CheckCircle2, badge: 'bg-green-50 text-green-700 border border-green-200',    step: 3 },
-  cancelled: { label: 'Đã hủy',       icon: XCircle,      badge: 'bg-red-50 text-red-600 border border-red-200',          step: -1 },
-  returned:  { label: 'Hoàn trả',     icon: RotateCcw,    badge: 'bg-neutral-100 text-neutral-600 border border-neutral-300', step: -1 },
+  PENDING:   { label: 'Chờ xác nhận', icon: Clock,        badge: 'bg-amber-50 text-amber-700 border border-amber-200',   step: 0 },
+  PAID:      { label: 'Đã thanh toán', icon: CheckCircle2, badge: 'bg-blue-50 text-blue-700 border border-blue-200',       step: 1 },
+  CONFIRMED: { label: 'Đã xác nhận',  icon: CheckCircle2, badge: 'bg-blue-50 text-blue-700 border border-blue-200',       step: 1 },
+  SHIPPING:  { label: 'Đang giao',    icon: Truck,         badge: 'bg-brand-navy/8 text-brand-navy border border-brand-navy/20', step: 2 },
+  DELIVERED: { label: 'Đã giao',      icon: CheckCircle2, badge: 'bg-green-50 text-green-700 border border-green-200',    step: 3 },
+  CANCELLED: { label: 'Đã hủy',       icon: XCircle,      badge: 'bg-red-50 text-red-600 border border-red-200',          step: -1 },
+  RETURNED:  { label: 'Hoàn trả',     icon: RotateCcw,    badge: 'bg-neutral-100 text-neutral-600 border border-neutral-300', step: -1 },
+  EXPIRED:   { label: 'Hết hạn',      icon: XCircle,      badge: 'bg-neutral-100 text-neutral-500 border border-neutral-300', step: -1 },
+  FAILED:    { label: 'Thất bại',     icon: XCircle,      badge: 'bg-red-50 text-red-600 border border-red-200',          step: -1 },
 };
 
 const FILTER_TABS = [
@@ -103,8 +107,8 @@ function OrderCard({ order }: { order: Order }) {
   const { cancelOrder, isCancelling } = useCancelOrder();
   const [copied, setCopied] = useState(false);
 
-  const status = order.status || 'pending';
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+  const status = order.status || 'PENDING';
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
   const Icon = cfg.icon;
   const orderCode = order.id.substring(0, 8).toUpperCase();
 
@@ -176,7 +180,7 @@ function OrderCard({ order }: { order: Order }) {
 
         {/* CTA actions */}
         <div className="ml-auto flex items-center gap-2 shrink-0">
-          {status === 'delivered' && (
+          {status === 'DELIVERED' && (
             <Link
               href="/try-on"
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-brand-navy/8 text-brand-navy rounded-lg text-label-sm font-medium hover:bg-brand-navy/12 transition-colors"
@@ -184,7 +188,7 @@ function OrderCard({ order }: { order: Order }) {
               <Sparkles className="w-3.5 h-3.5" /> Try-On lại
             </Link>
           )}
-          {status === 'pending' && (
+          {status === 'PENDING' && (
             <button 
               onClick={handleCancel}
               disabled={isCancelling}
@@ -193,7 +197,7 @@ function OrderCard({ order }: { order: Order }) {
               Hủy đơn
             </button>
           )}
-          {status === 'delivered' && (
+          {status === 'DELIVERED' && (
             <Link href="/products" className="px-3 py-1.5 border border-neutral-200 text-neutral-600 rounded-lg text-label-sm font-medium hover:bg-neutral-50 transition-colors">
               Mua lại
             </Link>

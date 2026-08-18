@@ -1,4 +1,4 @@
-﻿import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getSession, signIn } from 'next-auth/react';
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -11,10 +11,37 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+// ─── Session token cache ────────────────────────────────────────────────────
+// Tránh gọi getSession() (1 network round-trip tới /api/auth/session) trên
+// MỖI request. Nhiều request song song sẽ dùng chung 1 lần fetch duy nhất.
+let cachedSessionPromise: Promise<string | null> | null = null;
+let cachedSessionAt = 0;
+const SESSION_TTL = 60 * 1000; // 60s
+
+async function getAccessToken(): Promise<string | null> {
+  const now = Date.now();
+  if (cachedSessionPromise && now - cachedSessionAt < SESSION_TTL) {
+    return cachedSessionPromise;
+  }
+
+  cachedSessionAt = now;
+  cachedSessionPromise = (async () => {
+    const session = await getSession();
+    return (session?.user as any)?.accessToken || null;
+  })();
+
+  return cachedSessionPromise;
+}
+
+function invalidateSessionCache() {
+  cachedSessionPromise = null;
+  cachedSessionAt = 0;
+}
+
 api.interceptors.request.use(async (config) => {
-  const session = await getSession();
-  if (session?.user?.accessToken) {
-    config.headers.Authorization = `Bearer ${session.user.accessToken}`;
+  const accessToken = await getAccessToken();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
   }
   return config;
 }, (error) => {
@@ -36,13 +63,22 @@ api.interceptors.response.use((response) => {
   originalRequest._retry = true;
 
   try {
-    const refreshResponse = await axios.post(`${baseURL.replace(/\/$/, '')}/auth/refresh`, null, {
-      withCredentials: true,
-      headers: { 'Content-Type': 'application/json' },
+    // Dùng cookie-based refresh: không gửi body, browser tự đính kèm refresh token cookie
+    const refreshRes = await fetch(`${baseURL.replace(/\/$/, '')}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include', // gửi cookie, không set body hay Content-Type
     });
 
-    const payload = refreshResponse.data?.data ?? refreshResponse.data;
+    if (!refreshRes.ok) {
+      invalidateSessionCache();
+      return Promise.reject(error);
+    }
+
+    const body = await refreshRes.json().catch(() => null);
+    const payload = body?.data ?? body;
+
     if (!payload?.accessToken || !payload?.user) {
+      invalidateSessionCache();
       return Promise.reject(error);
     }
 
@@ -53,9 +89,11 @@ api.interceptors.response.use((response) => {
       redirect: false,
     });
 
+    invalidateSessionCache();
     originalRequest.headers.Authorization = `Bearer ${payload.accessToken}`;
     return api(originalRequest);
   } catch (refreshError) {
+    invalidateSessionCache();
     return Promise.reject(refreshError);
   }
 });

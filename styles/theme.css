@@ -2,6 +2,10 @@
 
 :root {
   --font-size: 16px;
+  /* Font stacks khai báo trong :root để var() hoạt động bên ngoài @theme */
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
   --background: #EFE9E1;
   /* brand-cream — REGAL */
   --foreground: #11100F;
@@ -121,13 +125,9 @@
   /* warm gold */
 
   /* Fonts */
-  --font-sans: 'Inter',
-  sans-serif;
-  --font-serif: 'Playfair Display',
-  Georgia,
-  serif;
-  --font-mono: 'JetBrains Mono',
-  monospace;
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   /* Typography */
   --text-display-xl: 48px;
@@ -193,7 +193,8 @@
   h2,
   h3,
   h4 {
-    font-family: var(--font-serif);
+    /* Dùng @apply thay vì var() vì @theme inline không tạo CSS custom properties */
+    @apply font-serif;
     letter-spacing: -0.01em;
   }
 }

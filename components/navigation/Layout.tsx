@@ -12,6 +12,7 @@ import {
 import { Drawer } from 'vaul';
 import { CartSlideOver } from '../cart/CartSlideOver';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useMeasurements';
 import { useCart } from '@/store/cartStore';
 
 export type UserRole = 'guest' | 'user' | 'admin';
@@ -38,6 +39,10 @@ export function useApp() {
 
 export function Navigation() {
   const { currentUser, logout } = useAuth();
+  // Lấy name từ API /users/me để tránh mojibake từ session
+  const { profile } = useUserProfile();
+  const displayName = profile?.name || currentUser.name;
+  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : '?';
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { isCartOpen, setIsCartOpen, totalItems } = useCart();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -66,10 +71,7 @@ export function Navigation() {
   const tryOnHref = currentUser.role === 'guest' ? '/login' : '/try-on';
   const navLinks = currentUser.role === 'admin'
     ? [
-        { label: 'Dashboard', href: '/admin' },
-        { label: 'Sản phẩm', href: '/products' },
-        { label: 'Người dùng', href: '/admin/users' },
-        { label: 'Cấu hình', href: '/admin/settings' },
+        { label: 'Dashboard', href: '/admin/dashboard' },
       ]
     : [
         { label: 'Sản phẩm', href: '/products' },
@@ -122,10 +124,10 @@ export function Navigation() {
                   {currentUser.role !== 'guest' && (
                     <div className="flex items-center gap-3 p-4 bg-neutral-50 rounded-xl mb-6 border border-neutral-100">
                       <div className="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-body-md shrink-0">
-                        {currentUser.avatar ? <img src={currentUser.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" /> : currentUser.name.charAt(0)}
+                        {currentUser.avatar ? <img src={currentUser.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" /> : displayInitial}
                       </div>
                       <div className="flex-col flex">
-                        <span className="font-semibold text-neutral-900 text-body-sm">{currentUser.name}</span>
+                        <span className="font-semibold text-neutral-900 text-body-sm">{displayName}</span>
                         {currentUser.role === 'admin' ? (
                           <span className="text-xs text-semantic-error font-medium">Admin</span>
                         ) : (
@@ -152,8 +154,14 @@ export function Navigation() {
                     
                     {currentUser.role !== 'guest' && currentUser.role !== 'admin' && (
                       <div className="mt-4 pt-4 border-t border-neutral-100 flex flex-col gap-2">
+                        <Link href="/profile" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
+                          <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
+                        </Link>
                         <Link href="/profile/measurements" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
-                          <Ruler className="w-4 h-4" /> Hồ sơ & số đo
+                          <Ruler className="w-4 h-4" /> Số đo & chi tiết
+                        </Link>
+                        <Link href="/profile/stylist-history" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
+                          <Sparkles className="w-4 h-4" /> Lịch sử AI Stylist
                         </Link>
                         <Link href="/profile/orders" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
                           <Package className="w-4 h-4" /> Đơn hàng
@@ -246,9 +254,9 @@ export function Navigation() {
                 className="w-8 h-8 md:w-8 md:h-8 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-label-sm ring-2 ring-transparent hover:ring-neutral-200 transition-all"
               >
                 {currentUser.avatar ? (
-                  <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full rounded-full object-cover" />
+                  <img src={currentUser.avatar} alt={displayName} className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  currentUser.name.charAt(0)
+                  displayInitial
                 )}
                 {currentUser.role === 'admin' && (
                   <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-semantic-error border-2 border-white rounded-full"></div>
@@ -260,10 +268,10 @@ export function Navigation() {
                 <div className="absolute right-0 top-full mt-2 w-[240px] bg-white rounded-xl shadow-lg border border-neutral-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 hidden md:block">
                   <div className="px-4 py-3 border-b border-neutral-100 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-body-md shrink-0">
-                      {currentUser.avatar ? <img src={currentUser.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" /> : currentUser.name.charAt(0)}
+                      {currentUser.avatar ? <img src={currentUser.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" /> : displayInitial}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-label-md font-semibold text-neutral-900 truncate">{currentUser.name}</span>
+                      <span className="text-label-md font-semibold text-neutral-900 truncate">{displayName}</span>
                       {currentUser.role === 'admin' ? (
                         <span className="text-xs text-semantic-error font-medium">Admin</span>
                       ) : (
@@ -276,14 +284,20 @@ export function Navigation() {
 
                   {currentUser.role !== 'admin' ? (
                     <div className="py-1 border-b border-neutral-100">
-                      <Link href="/profile/measurements" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <Ruler className="w-4 h-4" /> Hồ sơ & số đo
+                      <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                        <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
                       </Link>
-                      <Link href="/profile/orders" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <Package className="w-4 h-4" /> Đơn hàng
+                      <Link href="/profile/measurements" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                        <Ruler className="w-4 h-4" /> Số đo & chi tiết
                       </Link>
                       <Link href="/profile/history" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                         <History className="w-4 h-4" /> Lịch sử Try-On
+                      </Link>
+                      <Link href="/profile/stylist-history" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                        <Sparkles className="w-4 h-4" /> Lịch sử AI Stylist
+                      </Link>
+                      <Link href="/profile/orders" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                        <Package className="w-4 h-4" /> Đơn hàng
                       </Link>
                     </div>
                   ) : (

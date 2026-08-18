@@ -9,54 +9,42 @@ export function formatPrice(price: number): string {
   return price.toLocaleString('vi-VN') + 'đ';
 }
 
+/**
+ * Sửa lỗi mojibake: tên tiếng Việt bị encode sai (UTF-8 bytes đọc như Latin-1).
+ * Ví dụ: "Tú Anh" → lưu thành "TÃº Anh" hoặc "Tấ° Anh" do double-encoding.
+ *
+ * Nguyên nhân: backend trả name đúng UTF-8, nhưng đâu đó trong pipeline
+ * (NextAuth JWT serialize / cookie / JSON parse) bị interpret như Latin-1.
+ *
+ * Fix đúng: decode lại bytes bằng TextDecoder thay vì regex vá thủ công.
+ */
 export function formatUserName(name: string): string {
   if (!name) return '';
-  return name
-    .replace(/Lâºp/gi, 'Lập')
-    .replace(/âº/g, 'ậ')
-    .replace(/áº­/g, 'ậ')
-    .replace(/áº¡/g, 'ạ')
-    .replace(/áº£/g, 'ả')
-    .replace(/áº¥/g, 'ấ')
-    .replace(/áº§/g, 'ầ')
-    .replace(/áº©/g, 'ẩ')
-    .replace(/áº«/g, 'ẫ')
-    .replace(/áº¯/g, 'ắ')
-    .replace(/áº±/g, 'ằ')
-    .replace(/áº³/g, 'ẳ')
-    .replace(/áºµ/g, 'ẵ')
-    .replace(/áº·/g, 'ặ')
-    .replace(/áº¹/g, 'ẹ')
-    .replace(/áº»/g, 'ẻ')
-    .replace(/áº½/g, 'ẽ')
-    .replace(/áº¿/g, 'ế')
-    .replace(/á» /g, 'ề')
-    .replace(/á»ƒ/g, 'ể')
-    .replace(/á»…/g, 'ễ')
-    .replace(/á»‡/g, 'ệ')
-    .replace(/á»‰/g, 'ỉ')
-    .replace(/á»‹/g, 'ị')
-    .replace(/á» /g, 'ọ')
-    .replace(/á» /g, 'ỏ')
-    .replace(/á»‘/g, 'ố')
-    .replace(/á»“/g, 'ồ')
-    .replace(/á»•/g, 'ổ')
-    .replace(/á»—/g, 'ỗ')
-    .replace(/á»™/g, 'ộ')
-    .replace(/á»›/g, 'ớ')
-    .replace(/á» /g, 'ờ')
-    .replace(/á»Ÿ/g, 'ở')
-    .replace(/á»¡/g, 'ỡ')
-    .replace(/á»£/g, 'ợ')
-    .replace(/á»¥/g, 'ụ')
-    .replace(/á»§/g, 'ủ')
-    .replace(/á»©/g, 'ứ')
-    .replace(/á»«/g, 'ừ')
-    .replace(/á»/g, 'ử')
-    .replace(/á»¯/g, 'ữ')
-    .replace(/á»±/g, 'ự')
-    .replace(/á»³/g, 'ỳ')
-    .replace(/á»µ/g, 'ỵ')
-    .replace(/á»·/g, 'ỷ')
-    .replace(/á»¹/g, 'ỹ');
+
+  try {
+    // Kiểm tra có phải mojibake không:
+    // Các ký tự Ã (C3), Â (C2) thường xuất hiện khi UTF-8 bị đọc như Latin-1
+    const hasMojibake = /[\u00C0-\u00C3\u00C5-\u00CB\u00D0-\u00D3\u00DA-\u00DB\u00E0-\u00EB\u00ED-\u00EF\u00F0-\u00F3\u00F5-\u00FB]/.test(name);
+
+    if (!hasMojibake) {
+      return name; // Chuỗi sạch, không cần xử lý
+    }
+
+    // Re-encode sang bytes Latin-1 rồi decode lại như UTF-8
+    const bytes = new Uint8Array(name.length);
+    for (let i = 0; i < name.length; i++) {
+      bytes[i] = name.charCodeAt(i) & 0xFF;
+    }
+
+    const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+
+    // Chỉ dùng kết quả nếu decode thành công (không có replacement char U+FFFD)
+    if (decoded && !decoded.includes('\uFFFD')) {
+      return decoded;
+    }
+
+    return name;
+  } catch {
+    return name;
+  }
 }

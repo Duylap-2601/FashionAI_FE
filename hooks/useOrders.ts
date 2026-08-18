@@ -21,14 +21,25 @@ export interface ShippingInfo {
 export interface CreateOrderRequest {
   items: OrderItemInput[];
   shippingInfo: ShippingInfo;
-  paymentMethod: 'COD' | 'Bank' | 'EWallet';
+  paymentMethod?: 'COD' | 'Bank' | 'EWallet';
   couponCode?: string;
   discountAmount?: number;
   shippingFee?: number;
-  totalAmount: number;
+  totalAmount?: number;
   targetTier?: 'MEMBER' | 'VIP';
-  provider?: 'MOMO' | 'PAYOS';
+  provider?: 'MOMO' | 'PAYOS' | 'SEPAY'; // Per Swagger: PAYOS | MOMO | SEPAY
 }
+
+export type BackendOrderStatus =
+  | 'PENDING'
+  | 'PAID'
+  | 'CONFIRMED'
+  | 'SHIPPING'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'RETURNED'
+  | 'EXPIRED'
+  | 'FAILED';
 
 export interface OrderItem {
   id: string;
@@ -39,13 +50,14 @@ export interface OrderItem {
   price: number;
   product?: {
     name: string;
-    images?: string[] | { url: string; isPrimary: boolean }[];
+    images?: string[];
   };
 }
 
 export interface Order {
   id: string;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  orderCode: number;
+  status: BackendOrderStatus;
   totalAmount: number;
   shippingInfo: ShippingInfo;
   paymentMethod: string;
@@ -53,19 +65,84 @@ export interface Order {
   items: OrderItem[];
 }
 
+interface BackendOrderItem {
+  id: string;
+  productId: string;
+  quantity: number;
+  size?: string | null;
+  color?: string | null;
+  price: number | string;
+  product?: {
+    name: string;
+    images?: { imageUrl: string; isMain: boolean }[];
+  };
+}
+
+interface BackendOrder {
+  id: string;
+  orderCode: number;
+  status: BackendOrderStatus;
+  amount: number | string;
+  shippingInfo?: ShippingInfo | null;
+  createdAt: string;
+  items?: BackendOrderItem[];
+  payments?: { provider?: string }[];
+}
+
+function mapOrder(order: BackendOrder): Order {
+  const shippingInfo = order.shippingInfo ?? ({} as ShippingInfo);
+  return {
+    id: order.id,
+    orderCode: order.orderCode,
+    status: order.status,
+    totalAmount: Number(order.amount),
+    shippingInfo: {
+      name: shippingInfo.name || '',
+      phone: shippingInfo.phone || '',
+      address: shippingInfo.address || '',
+      notes: shippingInfo.notes,
+    },
+    paymentMethod: order.payments?.[0]?.provider || 'COD',
+    createdAt: order.createdAt,
+    items: (order.items || []).map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      quantity: item.quantity,
+      size: item.size || 'M',
+      color: item.color || '',
+      price: Number(item.price),
+      product: item.product
+        ? {
+            name: item.product.name,
+            images: item.product.images?.map((img) => img.imageUrl) || [],
+          }
+        : undefined,
+    })),
+  };
+}
+
 export function useCreateOrder() {
   const queryClient = useQueryClient();
 
   const createOrderMutation = useMutation({
     mutationFn: async (payload: CreateOrderRequest) => {
-      const res = await api.post('/payments/checkout', {
-        targetTier: payload.targetTier ?? 'MEMBER',
-        provider: payload.provider ?? 'MOMO',
+      const res = await api.post('/orders', {
+        items: payload.items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color,
+        })),
+        shippingInfo: {
+          name: payload.shippingInfo.name,
+          phone: payload.shippingInfo.phone,
+          address: payload.shippingInfo.address,
+          note: payload.shippingInfo.notes,
+        },
       });
-      return res.data;
+      return res.data as BackendOrder;
     },
     onSuccess: () => {
-      // Invalidate orders queries
       queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
   });
@@ -82,8 +159,8 @@ export function useOrders() {
   const query = useQuery<Order[]>({
     queryKey: ['orders'],
     queryFn: async () => {
-      const res = await api.get('/payments/orders');
-      return res.data || [];
+      const res = await api.get('/orders');
+      return ((res.data || []) as BackendOrder[]).map(mapOrder);
     },
   });
 
@@ -99,8 +176,15 @@ export function useOrder(id: string) {
   const query = useQuery<Order>({
     queryKey: ['order', id],
     queryFn: async () => {
-      const res = await api.get('/payments/orders');
-      return (res.data || []).find((order: Order) => order.id === id);
+      try {
+        const res = await api.get(`/orders/${id}`);
+        return mapOrder(res.data as BackendOrder);
+      } catch {
+        const res = await api.get('/orders');
+        const order = (res.data || []).find((item: BackendOrder) => item.id === id);
+        if (!order) throw new Error('Không tìm thấy đơn hàng');
+        return mapOrder(order);
+      }
     },
     enabled: !!id,
   });
@@ -118,7 +202,8 @@ export function useCancelOrder() {
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
-      throw new Error(`Cancel order is not supported by the backend yet: ${id}`);
+      const res = await api.patch(`/orders/${id}/cancel`);
+      return res.data;
     },
     onSuccess: (data, id) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });

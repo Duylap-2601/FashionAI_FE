@@ -58,11 +58,12 @@ export function useTryOn() {
   };
 }
 
-export function useTryOnHistory() {
+export function useTryOnHistory(page = 1, limit = 50) {
   const query = useQuery<TryOnResult[]>({
-    queryKey: ['try-on-history'],
+    queryKey: ['try-on-history', page, limit],
     queryFn: async () => {
-      const res = await api.get('/try-on/history');
+      // page & limit are required per Swagger spec
+      const res = await api.get('/try-on/history', { params: { page, limit } });
       return (res.data || []) as TryOnResult[];
     },
   });

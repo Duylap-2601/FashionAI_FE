@@ -14,6 +14,9 @@ import { useTryOn } from '@/hooks/useTryOn';
 import { useQuota } from '@/hooks/useQuota';
 import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useProducts } from '@/hooks/useProducts';
+import { useMyAvatar, resolveGlbUrl } from '@/hooks/useAvatar';
+import SizePresetSelector from '@/components/mannequin/SizePresetSelector';
+import { SIZE_PRESETS, AvatarMeasurements } from '@/types/avatar';
 import dynamic from 'next/dynamic';
 
 const MannequinViewer = dynamic(() => import('@/components/mannequin/MannequinViewer'), { ssr: false });
@@ -411,18 +414,27 @@ function VirtualTryOnContent() {
   const [userPhotoFile, setUserPhotoFile] = useState<File | null>(null);
   const [resultPhotoUrl, setResultPhotoUrl] = useState<string | null>(null);
 
-  // Mannequin states
+  // Mannequin & Avatar states
+  const { avatar: myAvatar, isLoading: isAvatarLoading } = useMyAvatar();
+  const [currentGlbUrl, setCurrentGlbUrl] = useState<string | null>(null);
   const [captureFn, setCaptureFn] = useState<(() => string) | null>(null);
   const [generatedMannequinSnapshot, setGeneratedMannequinSnapshot] = useState<string | null>(null);
-  const [mannequinParams, setMannequinParams] = useState({
-    height: 165,
-    weight: 55,
-    shoulder: 38,
-    chest: 85,
-    waist: 65,
-    hip: 90,
-    gender: 'female' as 'male' | 'female',
+  const [mannequinParams, setMannequinParams] = useState<AvatarMeasurements & { gender: 'male' | 'female' }>({
+    height: 162,
+    weight: 56,
+    shoulder: 39,
+    chest: 88,
+    waist: 70,
+    hip: 94,
+    gender: 'female',
   });
+
+  // Sync user's latest Blender GLB avatar if exists
+  useEffect(() => {
+    if (myAvatar?.glbUrl) {
+      setCurrentGlbUrl(resolveGlbUrl(myAvatar.glbUrl) || null);
+    }
+  }, [myAvatar]);
 
   // Prefill measurements — chỉ chạy một lần khi data load xong lần đầu
   const prefillDone = React.useRef(false);
@@ -679,7 +691,7 @@ function VirtualTryOnContent() {
             ) : (
               <div className="flex flex-col gap-4">
                 {/* Canvas Container */}
-                <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-900" style={{ height: 400 }}>
+                <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-900 shadow-md" style={{ height: 420 }}>
                   <MannequinViewer
                     height={mannequinParams.height}
                     weight={mannequinParams.weight}
@@ -688,166 +700,20 @@ function VirtualTryOnContent() {
                     waist={mannequinParams.waist}
                     hip={mannequinParams.hip}
                     gender={mannequinParams.gender}
+                    glbUrl={currentGlbUrl}
                     onCaptureReady={setCaptureFn}
                   />
                 </div>
 
-                {/* Sliders Grid */}
-                <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-200 flex flex-col gap-4">
-                  <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
-                    <span className="text-body-sm font-semibold text-neutral-800">Tùy chỉnh số đo Mannequin</span>
-                    <div className="flex bg-neutral-200 rounded-lg p-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setMannequinParams(p => ({ ...p, gender: 'female' }))}
-                        className={`px-3 py-1 rounded-md text-label-xs font-semibold transition-all border-0 ${
-                          mannequinParams.gender === 'female'
-                            ? 'bg-white text-brand-navy shadow-sm'
-                            : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
-                        }`}
-                      >
-                        Nữ
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setMannequinParams(p => ({ ...p, gender: 'male' }))}
-                        className={`px-3 py-1 rounded-md text-label-xs font-semibold transition-all border-0 ${
-                          mannequinParams.gender === 'male'
-                            ? 'bg-white text-brand-navy shadow-sm'
-                            : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
-                        }`}
-                      >
-                        Nam
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Height */}
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex justify-between text-[12px]">
-                        <span className="text-neutral-500 font-medium">Chiều cao</span>
-                        <span className="text-brand-navy font-bold">{mannequinParams.height} cm</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={130}
-                        max={220}
-                        value={mannequinParams.height}
-                        onChange={(e) => setMannequinParams(p => ({ ...p, height: parseInt(e.target.value) }))}
-                        className="w-full accent-brand-navy h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Weight */}
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex justify-between text-[12px]">
-                        <span className="text-neutral-500 font-medium">Cân nặng</span>
-                        <span className="text-brand-navy font-bold">{mannequinParams.weight} kg</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={35}
-                        max={150}
-                        value={mannequinParams.weight}
-                        onChange={(e) => setMannequinParams(p => ({ ...p, weight: parseInt(e.target.value) }))}
-                        className="w-full accent-brand-navy h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Shoulder */}
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex justify-between text-[12px]">
-                        <span className="text-neutral-500 font-medium">Vai</span>
-                        <span className="text-brand-navy font-bold">{mannequinParams.shoulder} cm</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={30}
-                        max={70}
-                        value={mannequinParams.shoulder}
-                        onChange={(e) => setMannequinParams(p => ({ ...p, shoulder: parseInt(e.target.value) }))}
-                        className="w-full accent-brand-navy h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Chest */}
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex justify-between text-[12px]">
-                        <span className="text-neutral-500 font-medium">Vòng ngực</span>
-                        <span className="text-brand-navy font-bold">{mannequinParams.chest} cm</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={60}
-                        max={140}
-                        value={mannequinParams.chest}
-                        onChange={(e) => setMannequinParams(p => ({ ...p, chest: parseInt(e.target.value) }))}
-                        className="w-full accent-brand-navy h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Waist */}
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex justify-between text-[12px]">
-                        <span className="text-neutral-500 font-medium">Vòng eo</span>
-                        <span className="text-brand-navy font-bold">{mannequinParams.waist} cm</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={50}
-                        max={130}
-                        value={mannequinParams.waist}
-                        onChange={(e) => setMannequinParams(p => ({ ...p, waist: parseInt(e.target.value) }))}
-                        className="w-full accent-brand-navy h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Hip */}
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex justify-between text-[12px]">
-                        <span className="text-neutral-500 font-medium">Vòng mông</span>
-                        <span className="text-brand-navy font-bold">{mannequinParams.hip} cm</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={60}
-                        max={145}
-                        value={mannequinParams.hip}
-                        onChange={(e) => setMannequinParams(p => ({ ...p, hip: parseInt(e.target.value) }))}
-                        className="w-full accent-brand-navy h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                  
-                  {measurements && (
-                    <div className="flex justify-between items-center pt-2 border-t border-neutral-100 mt-2">
-                      <Link
-                        href="/profile/measurements"
-                        className="text-label-xs font-semibold text-neutral-500 hover:text-brand-navy underline"
-                      >
-                        Xem chi tiết số đo
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMannequinParams({
-                            height: measurements.height || 165,
-                            weight: measurements.weight || 55,
-                            shoulder: measurements.shoulder || 38,
-                            chest: measurements.chest || 85,
-                            waist: measurements.waist || 65,
-                            hip: measurements.hip || 90,
-                            gender: (profile?.gender === 'male' || profile?.gender === 'female') ? profile.gender : 'female',
-                          });
-                        }}
-                        className="text-label-xs font-semibold text-brand-navy hover:underline flex items-center gap-1 bg-transparent border-0 cursor-pointer"
-                      >
-                        <RefreshCw className="w-3 h-3" /> Số đo cá nhân
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {/* Size Presets, Personal Measurements & Blender Generator */}
+                <SizePresetSelector
+                  gender={mannequinParams.gender}
+                  onGenderChange={(g) => setMannequinParams((prev) => ({ ...prev, gender: g }))}
+                  measurements={mannequinParams}
+                  onMeasurementsChange={(m) => setMannequinParams((prev) => ({ ...prev, ...m }))}
+                  currentGlbUrl={currentGlbUrl}
+                  onGlbUrlChange={setCurrentGlbUrl}
+                />
               </div>
             )}
 

@@ -9,6 +9,7 @@ import { useCart } from '@/store/cartStore';
 import { toast } from 'sonner';
 import { PRODUCTS } from '@/lib/data';
 import { useProduct } from '@/hooks/useProducts';
+import { useMeasurements } from '@/hooks/useMeasurements';
 
 const imgSuit = '/images/726470431_1311184104081177_6052756217829444481_n.png';
 const imgBlazer = '/images/731163514_999523332788054_1114320478812927640_n.png';
@@ -21,6 +22,7 @@ export default function ProductDetail() {
   const id = params?.id as string;
   const router = useRouter();
   const { product: apiProduct } = useProduct(id);
+  const { measurements } = useMeasurements();
 
   // Find product by id (from route). Fallback to p2 (Combo Suit) if not found
   const product = apiProduct ||
@@ -37,18 +39,6 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('Mô tả sản phẩm');
   const [isCustomSize, setIsCustomSize] = useState(false);
-  const [userMeasurements, setUserMeasurements] = useState<Record<string, string> | null>(null);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('user_measurements');
-      if (stored) {
-        setUserMeasurements(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error('Failed to load user measurements', e);
-    }
-  }, []);
 
   // Reset values when switching products
   useEffect(() => {
@@ -94,26 +84,9 @@ export default function ProductDetail() {
   ];
 
   const handleCustomSizeToggle = () => {
-    try {
-      const stored = localStorage.getItem('user_measurements');
-      const parsed = stored ? JSON.parse(stored) : null;
-      // Check if at least height and weight are provided
-      const hasVals = parsed && Object.keys(parsed).length > 0 && Object.values(parsed).some(v => v !== '');
-      
-      if (!hasVals) {
-        toast.error("Chưa có số đo cơ thể!", {
-          description: "Vui lòng nhập số đo trong profile của bạn trước khi chọn may đo.",
-          action: {
-            label: "Nhập số đo",
-            onClick: () => router.push("/profile/measurements")
-          }
-        });
-        return;
-      }
-      
-      setUserMeasurements(parsed);
-      setIsCustomSize(!isCustomSize);
-    } catch {
+    const hasVals = Boolean(measurements && (measurements.height || measurements.weight));
+
+    if (!hasVals) {
       toast.error("Chưa có số đo cơ thể!", {
         description: "Vui lòng nhập số đo trong profile của bạn trước khi chọn may đo.",
         action: {
@@ -121,7 +94,10 @@ export default function ProductDetail() {
           onClick: () => router.push("/profile/measurements")
         }
       });
+      return;
     }
+
+    setIsCustomSize(!isCustomSize);
   };
 
   const handleAddToCart = () => {
@@ -390,12 +366,12 @@ export default function ProductDetail() {
                   <span>✨</span> Sử dụng số đo từ Profile của bạn:
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-[11px] font-semibold text-neutral-500">
-                  <div>Vai: <strong className="text-brand-navy">{userMeasurements?.shoulder || '—'} cm</strong></div>
-                  <div>Ngực: <strong className="text-brand-navy">{userMeasurements?.chest || '—'} cm</strong></div>
-                  <div>Eo: <strong className="text-brand-navy">{userMeasurements?.waist || '—'} cm</strong></div>
-                  <div>Hông: <strong className="text-brand-navy">{userMeasurements?.hip || '—'} cm</strong></div>
-                  <div>Chiều cao: <strong className="text-brand-navy">{userMeasurements?.height || '—'} cm</strong></div>
-                  <div>Cân nặng: <strong className="text-brand-navy">{userMeasurements?.weight || '—'} kg</strong></div>
+                  <div>Vai: <strong className="text-brand-navy">{measurements?.shoulder || '—'} cm</strong></div>
+                  <div>Ngực: <strong className="text-brand-navy">{measurements?.chest || '—'} cm</strong></div>
+                  <div>Eo: <strong className="text-brand-navy">{measurements?.waist || '—'} cm</strong></div>
+                  <div>Hông: <strong className="text-brand-navy">{measurements?.hip || '—'} cm</strong></div>
+                  <div>Chiều cao: <strong className="text-brand-navy">{measurements?.height || '—'} cm</strong></div>
+                  <div>Cân nặng: <strong className="text-brand-navy">{measurements?.weight || '—'} kg</strong></div>
                 </div>
                 <div className="text-[10px] text-neutral-400 mt-2 italic">
                   * Số đo được tự động áp dụng khi thực hiện may đo bộ trang phục này.
