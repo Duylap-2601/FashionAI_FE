@@ -14,6 +14,7 @@ import { useQuota } from '@/hooks/useQuota';
 import { useMyAvatar, useGenerateAvatar, resolveGlbUrl } from '@/hooks/useAvatar';
 
 const MannequinViewer = dynamic(() => import('@/components/mannequin/MannequinViewer'), { ssr: false });
+const MiniMannequinPreview = dynamic(() => import('@/components/mannequin/MiniMannequinPreview'), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type BodyType = 'slim' | 'regular' | 'athletic' | 'plus';
@@ -654,53 +655,21 @@ function MeasurementsTab() {
           </div>
         </div>
 
-        <div className="p-6 md:p-8 flex flex-col lg:flex-row gap-8 lg:gap-12">
-          {/* Visual Side */}
-          <div className="lg:w-[320px] shrink-0 flex flex-col gap-3">
+        <div className="p-6 md:p-8 flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+          {/* Sticky Visual Side */}
+          <div className="w-full lg:w-[320px] shrink-0 lg:sticky lg:top-[88px]">
             {visualMode === '3d' ? (
-              <div className="flex flex-col gap-3">
-                <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-900 shadow-inner" style={{ height: 380 }}>
-                  <MannequinViewer
-                    height={currentHeight}
-                    weight={currentWeight}
-                    shoulder={currentShoulder}
-                    chest={currentChest}
-                    waist={currentWaist}
-                    hip={currentHip}
-                    gender={gender === 'male' ? 'male' : 'female'}
-                    glbUrl={glbUrl}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleGenerateBlenderAvatar}
-                  disabled={isGeneratingAvatar}
-                  className={`w-full py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-label-xs font-semibold transition-all border-0 shadow-sm ${
-                    isGeneratingAvatar
-                      ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
-                      : 'bg-brand-navy text-white hover:bg-brand-navy/90 cursor-pointer'
-                  }`}
-                >
-                  {isGeneratingAvatar ? (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5 animate-spin text-brand-gold" />
-                      <span>Đang tạo Avatar 3D...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5 text-brand-gold" />
-                      <span>Cập nhật Avatar 3D (Blender)</span>
-                    </>
-                  )}
-                </button>
-
-                {avatarNotice && (
-                  <p className="text-[11px] text-brand-navy font-medium text-center bg-brand-navy/5 p-2 rounded-lg border border-brand-navy/10">
-                    {avatarNotice}
-                  </p>
-                )}
-              </div>
+              <MiniMannequinPreview
+                gender={gender === 'male' ? 'male' : 'female'}
+                measurements={{
+                  height: currentHeight,
+                  weight: currentWeight,
+                  shoulder: currentShoulder,
+                  chest: currentChest,
+                  waist: currentWaist,
+                  hip: currentHip,
+                }}
+              />
             ) : (
               <div className="bg-neutral-50 rounded-xl border border-neutral-100 p-5 flex flex-col items-center">
                 <BodyDiagram values={values} gender={gender} />

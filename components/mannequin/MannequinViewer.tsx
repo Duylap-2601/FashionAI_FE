@@ -2,9 +2,11 @@
 
 import React, { useRef, useState, useEffect, Suspense } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, Center, useGLTF, ContactShadows, Html } from '@react-three/drei';
+import { OrbitControls, Center, useGLTF, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
-import { RotateCw, Sparkles, Eye, Camera, RefreshCw, ZoomIn } from 'lucide-react';
+import { RotateCw, RefreshCw } from 'lucide-react';
+import { MeasureField } from '@/types/avatar';
+import { applyMorphTargets } from '@/lib/applyMorphTargets';
 
 interface MannequinProps {
   height: number;      // 130 - 220 cm
@@ -157,7 +159,15 @@ function ProceduralMannequin({ height, weight, shoulder, chest, waist, hip, gend
   );
 }
 
-function GLBLoader({ url }: { url: string }) {
+function GLBMorphLoader({
+  url,
+  morphDeltasCm,
+  morphFactors,
+}: {
+  url: string;
+  morphDeltasCm?: Partial<Record<MeasureField, number>> | null;
+  morphFactors?: Partial<Record<MeasureField, number>> | null;
+}) {
   const { scene } = useGLTF(url);
   const cloned = React.useMemo(() => {
     const clone = scene.clone();
@@ -170,6 +180,12 @@ function GLBLoader({ url }: { url: string }) {
     });
     return clone;
   }, [scene]);
+
+  // Apply morph targets whenever parameters change
+  useEffect(() => {
+    if (!cloned) return;
+    applyMorphTargets(cloned, { morphDeltasCm, morphFactors });
+  }, [cloned, morphDeltasCm, morphFactors]);
 
   return <primitive object={cloned} position={[0, -1.75, 0]} />;
 }
@@ -196,6 +212,12 @@ export interface MannequinViewerProps extends MannequinProps {
   className?: string;
   autoRotate?: boolean;
   onRefresh?: () => void;
+  morphDeltasCm?: Partial<Record<MeasureField, number>> | null;
+  morphFactors?: Partial<Record<MeasureField, number>> | null;
+  isPresetGlb?: boolean;
+  hideControls?: boolean;
+  hideBadges?: boolean;
+  hideBottomHint?: boolean;
 }
 
 export default function MannequinViewer({
@@ -211,7 +233,12 @@ export default function MannequinViewer({
   onCaptureReady,
   className = '',
   autoRotate = false,
-  onRefresh,
+  morphDeltasCm,
+  morphFactors,
+  isPresetGlb = false,
+  hideControls = false,
+  hideBadges = false,
+  hideBottomHint = false,
 }: MannequinViewerProps) {
   const [controlsAutoRotate, setControlsAutoRotate] = useState(autoRotate);
   const [cameraKey, setCameraKey] = useState(0);
@@ -221,7 +248,7 @@ export default function MannequinViewer({
   };
 
   return (
-    <div className={`w-full h-full relative select-none ${className}`} style={{ minHeight: 420 }}>
+    <div className={`w-full h-full relative select-none ${className}`} style={{ minHeight: 320 }}>
       {/* 3D Canvas */}
       <Canvas
         key={cameraKey}
@@ -258,7 +285,11 @@ export default function MannequinViewer({
                 />
               }
             >
-              <GLBLoader url={glbUrl} />
+              <GLBMorphLoader
+                url={glbUrl}
+                morphDeltasCm={morphDeltasCm}
+                morphFactors={morphFactors}
+              />
             </Suspense>
           ) : (
             <ProceduralMannequin
@@ -298,54 +329,66 @@ export default function MannequinViewer({
       </Canvas>
 
       {/* Top Floating Badges */}
-      <div className="absolute top-3 left-3 flex items-center gap-2">
-        <div className="px-2.5 py-1 bg-black/60 backdrop-blur-md rounded-lg text-white text-[11px] font-medium border border-white/10 flex items-center gap-1.5 shadow-sm">
-          <span className={`w-2 h-2 rounded-full ${glbUrl ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-          <span>{glbUrl ? 'Avatar 3D Blender (GLB)' : 'Mannequin 3D'}</span>
-        </div>
-
-        {isGlbLoading && (
-          <div className="px-2.5 py-1 bg-brand-navy/80 backdrop-blur-md rounded-lg text-white text-[11px] font-medium border border-brand-navy/30 flex items-center gap-1.5 shadow-sm animate-pulse">
-            <RefreshCw className="w-3 h-3 animate-spin text-brand-gold" />
-            <span>Đang nạp model 3D...</span>
+      {!hideBadges && (
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <div className="px-2.5 py-1 bg-black/60 backdrop-blur-md rounded-lg text-white text-[11px] font-medium border border-white/10 flex items-center gap-1.5 shadow-sm">
+            <span className={`w-2 h-2 rounded-full ${glbUrl ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            <span>
+              {glbUrl
+                ? isPresetGlb
+                  ? 'Avatar 3D Preset (Morph)'
+                  : 'Avatar 3D Blender (GLB)'
+                : 'Mannequin 3D'}
+            </span>
           </div>
-        )}
-      </div>
+
+          {isGlbLoading && (
+            <div className="px-2.5 py-1 bg-brand-navy/80 backdrop-blur-md rounded-lg text-white text-[11px] font-medium border border-brand-navy/30 flex items-center gap-1.5 shadow-sm animate-pulse">
+              <RefreshCw className="w-3 h-3 animate-spin text-brand-gold" />
+              <span>Đang nạp model 3D...</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Top Right Quick Action Tools */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={() => setControlsAutoRotate((prev) => !prev)}
-          title="Tự động xoay 360°"
-          className={`p-2 rounded-lg backdrop-blur-md border transition-all text-xs flex items-center justify-center ${
-            controlsAutoRotate
-              ? 'bg-brand-gold text-brand-navy border-brand-gold font-bold shadow-md'
-              : 'bg-black/50 text-white/80 border-white/10 hover:bg-black/70 hover:text-white'
-          }`}
-        >
-          <RotateCw className="w-3.5 h-3.5" />
-        </button>
+      {!hideControls && (
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setControlsAutoRotate((prev) => !prev)}
+            title="Tự động xoay 360°"
+            className={`p-2 rounded-lg backdrop-blur-md border transition-all text-xs flex items-center justify-center ${
+              controlsAutoRotate
+                ? 'bg-brand-gold text-brand-navy border-brand-gold font-bold shadow-md'
+                : 'bg-black/50 text-white/80 border-white/10 hover:bg-black/70 hover:text-white'
+            }`}
+          >
+            <RotateCw className="w-3.5 h-3.5" />
+          </button>
 
-        <button
-          type="button"
-          onClick={resetCamera}
-          title="Đặt lại góc nhìn camera"
-          className="p-2 rounded-lg bg-black/50 text-white/80 border border-white/10 hover:bg-black/70 hover:text-white backdrop-blur-md transition-all"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={resetCamera}
+            title="Đặt lại góc nhìn camera"
+            className="p-2 rounded-lg bg-black/50 text-white/80 border border-white/10 hover:bg-black/70 hover:text-white backdrop-blur-md transition-all"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Bottom Hint */}
-      <div className="absolute bottom-3 inset-x-3 flex items-center justify-between pointer-events-none">
-        <div className="bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/70 text-[11px] font-normal border border-white/5">
-          🖱️ Kéo để xoay 360° · Cuộn để phóng to
+      {!hideBottomHint && (
+        <div className="absolute bottom-3 inset-x-3 flex items-center justify-between pointer-events-none">
+          <div className="bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/70 text-[11px] font-normal border border-white/5">
+            🖱️ Kéo để xoay 360° · Cuộn để phóng to
+          </div>
+          <div className="bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/70 text-[11px] font-mono border border-white/5">
+            {height}cm · {weight}kg · {gender === 'female' ? 'Nữ' : 'Nam'}
+          </div>
         </div>
-        <div className="bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/70 text-[11px] font-mono border border-white/5">
-          {height}cm · {weight}kg · {gender === 'female' ? 'Nữ' : 'Nam'}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

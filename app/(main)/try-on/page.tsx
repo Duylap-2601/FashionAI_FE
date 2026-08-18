@@ -16,7 +16,7 @@ import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useProducts } from '@/hooks/useProducts';
 import { useMyAvatar, resolveGlbUrl } from '@/hooks/useAvatar';
 import SizePresetSelector from '@/components/mannequin/SizePresetSelector';
-import { SIZE_PRESETS, AvatarMeasurements } from '@/types/avatar';
+import { SIZE_PRESETS, AvatarMeasurements, MeasureField } from '@/types/avatar';
 import dynamic from 'next/dynamic';
 
 const MannequinViewer = dynamic(() => import('@/components/mannequin/MannequinViewer'), { ssr: false });
@@ -417,6 +417,11 @@ function VirtualTryOnContent() {
   // Mannequin & Avatar states
   const { avatar: myAvatar, isLoading: isAvatarLoading } = useMyAvatar();
   const [currentGlbUrl, setCurrentGlbUrl] = useState<string | null>(null);
+  const [presetMorphData, setPresetMorphData] = useState<{
+    morphDeltasCm: Record<MeasureField, number>;
+    morphFactors: Record<MeasureField, number>;
+    isPresetGlb: boolean;
+  } | null>(null);
   const [captureFn, setCaptureFn] = useState<(() => string) | null>(null);
   const [generatedMannequinSnapshot, setGeneratedMannequinSnapshot] = useState<string | null>(null);
   const [mannequinParams, setMannequinParams] = useState<AvatarMeasurements & { gender: 'male' | 'female' }>({
@@ -701,6 +706,9 @@ function VirtualTryOnContent() {
                     hip={mannequinParams.hip}
                     gender={mannequinParams.gender}
                     glbUrl={currentGlbUrl}
+                    morphDeltasCm={presetMorphData?.morphDeltasCm}
+                    morphFactors={presetMorphData?.morphFactors}
+                    isPresetGlb={presetMorphData?.isPresetGlb}
                     onCaptureReady={setCaptureFn}
                   />
                 </div>
@@ -713,6 +721,7 @@ function VirtualTryOnContent() {
                   onMeasurementsChange={(m) => setMannequinParams((prev) => ({ ...prev, ...m }))}
                   currentGlbUrl={currentGlbUrl}
                   onGlbUrlChange={setCurrentGlbUrl}
+                  onPresetDataChange={setPresetMorphData}
                 />
               </div>
             )}

@@ -56,4 +56,20 @@ export const SIZE_PRESETS: Record<'female' | 'male', Record<SizePresetName, Avat
     XL:  { height: 181, weight: 85, chest: 107, waist: 92, hip: 107, shoulder: 48.5 },
     XXL: { height: 185, weight: 95, chest: 114, waist: 99, hip: 113, shoulder: 50.5 },
   },
-};
+};export type MeasureField = 'chest' | 'waist' | 'hip' | 'shoulder';
+
+export interface PresetInfo {
+  id?: string;
+  gender?: 'male' | 'female';
+  height: number;
+  weight: number;
+  glbUrl: string;
+}
+
+export interface PresetNearest {
+  gender?: 'male' | 'female';
+  preset: PresetInfo;
+  presetMeasurements: Record<MeasureField, number>;
+  morphDeltasCm: Record<MeasureField, number>;
+  morphFactors: Record<MeasureField, number>;
+}
