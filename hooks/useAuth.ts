@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { formatUserName } from '@/lib/utils';
@@ -47,16 +47,22 @@ export function useAuth() {
         ok: false,
         error: body?.details?.[0] || body?.message || 'LOGIN_FAILED',
         status: response.status,
+        user: undefined,
       };
     }
 
     const payload = body?.data ?? body;
-    return signIn('backend-session', {
+    const signInRes = await signIn('backend-session', {
       accessToken: payload.accessToken,
       accessTokenExpiresAt: payload.accessTokenExpiresAt,
       user: JSON.stringify(payload.user),
       redirect: false,
     });
+
+    return {
+      ...signInRes,
+      user: payload.user,
+    };
   };
 
   const logout = async () => {

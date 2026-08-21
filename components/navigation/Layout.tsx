@@ -51,7 +51,6 @@ export function Navigation() {
 
   const handleLogout = () => {
     logout();
-    router.push('/');
   };
 
   useEffect(() => {

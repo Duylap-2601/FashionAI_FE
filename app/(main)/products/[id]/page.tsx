@@ -8,7 +8,7 @@ import { useApp } from '@/components/navigation/Layout';
 import { useCart } from '@/store/cartStore';
 import { toast } from 'sonner';
 import { PRODUCTS } from '@/lib/data';
-import { useProduct } from '@/hooks/useProducts';
+import { useProduct, useProducts } from '@/hooks/useProducts';
 import { useMeasurements } from '@/hooks/useMeasurements';
 
 const imgSuit = '/images/726470431_1311184104081177_6052756217829444481_n.png';
@@ -22,6 +22,7 @@ export default function ProductDetail() {
   const id = params?.id as string;
   const router = useRouter();
   const { product: apiProduct } = useProduct(id);
+  const { products: allApiProducts } = useProducts();
   const { measurements } = useMeasurements();
 
   // Find product by id (from route). Fallback to p2 (Combo Suit) if not found
@@ -31,10 +32,13 @@ export default function ProductDetail() {
                   PRODUCTS.find(p => p.id === 'p2') || 
                   PRODUCTS[1];
 
-  const isComboSuit = product.id === 'p2' || product.id === 'p4' || product.name.toLowerCase().includes('combo suit');
+  const allAvailableProducts = allApiProducts.length > 0 ? allApiProducts : PRODUCTS;
+  const relatedProducts = allAvailableProducts.filter(p => p.id !== product.id).slice(0, 4);
+
+  const isComboSuit = product.id === 'p2' || product.id === 'p4' || product.name.toLowerCase().includes('combo suit') || product.name.toLowerCase().includes('suit');
   const [selectedType, setSelectedType] = useState<'combo' | 'blazer' | 'retail'>('combo');
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.name || 'Trắng');
-  const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'M');
   const [activeThumb, setActiveThumb] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('Mô tả sản phẩm');
@@ -43,17 +47,18 @@ export default function ProductDetail() {
   // Reset values when switching products
   useEffect(() => {
     setSelectedColor(product.colors?.[0]?.name || 'Trắng');
+    setSelectedSize(product.sizes?.[0] || 'M');
     setActiveThumb(0);
     setSelectedType('combo');
     setQuantity(1);
     setIsCustomSize(false);
-  }, [product.id]);
+  }, [product.id, product.colors, product.sizes]);
 
-  const thumbs = product.gallery || [product.image];
+  const thumbs = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
 
-  const sizes = (product.sizes || ['S', 'M', 'L', 'XL', 'XXL']).map(sizeLabel => ({
+  const sizes = (product.sizes && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL', 'XXL']).map(sizeLabel => ({
     label: sizeLabel,
-    inStock: sizeLabel !== 'XL'
+    inStock: (product.stock ?? 1) > 0
   }));
 
   const handleSelectThumb = (idx: number) => {
@@ -184,6 +189,9 @@ export default function ProductDetail() {
             <img 
               src={thumbs[activeThumb]} 
               alt="Product Main" 
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+              }}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
             />
             {/* Zoom hint */}
@@ -591,23 +599,41 @@ export default function ProductDetail() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {[1, 2, 3, 4].map(i => (
-              <Link href={`/products/${i}`} key={i} className="group flex flex-col bg-white border border-neutral-100 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
+            {relatedProducts.map(rel => (
+              <Link href={`/products/${rel.id}`} key={rel.id} className="group flex flex-col bg-white border border-neutral-100 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
                   <img 
-                    src={[imgSuit, imgBlazer, imgShirt, imgSuit][i - 1]} 
-                    alt="Product" 
+                    src={rel.image} 
+                    alt={rel.name} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <button className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-brand-navy shadow-sm opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all cursor-pointer">
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      addToCart({
+                        productId: rel.id,
+                        name: rel.name,
+                        price: rel.numericPrice,
+                        quantity: 1,
+                        image: rel.image,
+                        size: rel.sizes?.[0] || 'M',
+                        color: rel.colors?.[0]?.name || 'Mặc định',
+                        variant: `Màu: ${rel.colors?.[0]?.name || 'Mặc định'} | Size: ${rel.sizes?.[0] || 'M'}`
+                      });
+                      toast.success(`Đã thêm ${rel.name} vào giỏ!`);
+                    }}
+                    className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-brand-navy shadow-sm opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all cursor-pointer hover:bg-brand-navy hover:text-white"
+                    title="Thêm vào giỏ"
+                  >
                     <ShoppingBag className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="p-4 flex flex-col gap-1.5">
-                  <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">StAle.</div>
-                  <h4 className="text-body-sm font-medium text-brand-navy line-clamp-2">Áo Sơ Mi Oxford Màu</h4>
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{rel.brand}</div>
+                  <h4 className="text-body-sm font-medium text-brand-navy line-clamp-2">{rel.name}</h4>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-body-sm font-bold text-brand-navy">890,000đ</span>
+                    <span className="text-body-sm font-bold text-brand-navy">{rel.price}</span>
                   </div>
                 </div>
               </Link>

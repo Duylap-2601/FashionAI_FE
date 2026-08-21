@@ -27,7 +27,7 @@ export interface CreateOrderRequest {
   shippingFee?: number;
   totalAmount?: number;
   targetTier?: 'MEMBER' | 'VIP';
-  provider?: 'MOMO' | 'PAYOS' | 'SEPAY'; // Per Swagger: PAYOS | MOMO | SEPAY
+  provider?: 'PAYOS' | 'SEPAY';
 }
 
 export type BackendOrderStatus =
@@ -132,6 +132,7 @@ export function useCreateOrder() {
           quantity: item.quantity,
           size: item.size,
           color: item.color,
+          price: item.price,
         })),
         shippingInfo: {
           name: payload.shippingInfo.name,
@@ -139,6 +140,12 @@ export function useCreateOrder() {
           address: payload.shippingInfo.address,
           note: payload.shippingInfo.notes,
         },
+        paymentMethod: payload.paymentMethod,
+        provider: payload.provider,
+        couponCode: payload.couponCode,
+        discountAmount: payload.discountAmount,
+        shippingFee: payload.shippingFee,
+        totalAmount: payload.totalAmount,
       });
       return res.data as BackendOrder;
     },

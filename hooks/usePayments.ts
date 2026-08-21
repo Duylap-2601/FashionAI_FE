@@ -3,12 +3,13 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
-export type PaymentProvider = 'PAYOS' | 'MOMO' | 'SEPAY';
+export type PaymentProvider = 'PAYOS' | 'SEPAY';
 export type TargetTier = 'MEMBER' | 'VIP';
 
 export interface CheckoutRequest {
-  targetTier: TargetTier;
-  provider?: PaymentProvider; // Default: SEPAY per Swagger
+  orderId?: string;
+  targetTier?: TargetTier;
+  provider?: PaymentProvider;
 }
 
 export interface CheckoutResponse {
@@ -17,6 +18,13 @@ export interface CheckoutResponse {
   orderCode?: number;
   qrCode?: string;
   provider?: PaymentProvider;
+  extra?: {
+    formAction?: string;
+    formMethod?: string;
+    formFields?: Record<string, string>;
+    invoiceNumber?: string;
+    [key: string]: any;
+  };
 }
 
 export interface PaymentOrder {
@@ -48,10 +56,10 @@ function extractErrorMessage(error: unknown): string {
 export function useCheckout() {
   const mutation = useMutation({
     mutationFn: async (payload: CheckoutRequest): Promise<CheckoutResponse> => {
-      const res = await api.post('/payments/checkout', {
-        targetTier: payload.targetTier,
-        provider: payload.provider ?? 'SEPAY', // Default SEPAY per Swagger
-      });
+      const body: Record<string, any> = { provider: payload.provider ?? 'SEPAY' };
+      if (payload.orderId) body.orderId = payload.orderId;
+      if (payload.targetTier) body.targetTier = payload.targetTier;
+      const res = await api.post('/payments/checkout', body);
       return res.data as CheckoutResponse;
     },
   });

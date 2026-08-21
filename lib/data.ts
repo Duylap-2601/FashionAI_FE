@@ -8,12 +8,20 @@ export interface Product {
   brand: string;
   price: string;
   numericPrice: number;
+  originalPrice?: number;
+  originalPriceFormatted?: string;
   category: string;
   image: string;
   gallery: string[];
   colors: { name: string; hex: string }[];
   sizes: string[];
   isGuest: boolean;
+  description?: string;
+  stock?: number;
+  soldCount?: number;
+  isNew?: boolean;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export const PRODUCTS: Product[] = [

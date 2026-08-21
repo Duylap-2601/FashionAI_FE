@@ -1,30 +1,41 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, CreditCard, Building2, Smartphone, Sparkles, ShoppingBag } from 'lucide-react';
+import { ChevronRight, CreditCard, Building2, Sparkles, ShoppingBag, CheckCircle2 } from 'lucide-react';
 import { useCart } from '@/store/cartStore';
 import { useUserProfile } from '@/hooks/useMeasurements';
 import { useCreateOrder } from '@/hooks/useOrders';
+import { useCheckout } from '@/hooks/usePayments';
+import { VIETNAM_PROVINCES } from '@/lib/vietnam-provinces';
+import { toast } from 'sonner';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems: items, totalPrice, clearCart } = useCart();
   const { profile } = useUserProfile();
   const { createOrderAsync, isSubmitting } = useCreateOrder();
+  const { checkout, isLoading: isCheckoutLoading } = useCheckout();
 
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bank' | 'ewallet'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bank'>('cod');
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [couponMessage, setCouponMessage] = useState('');
 
   // Form fields state
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [addressDetail, setAddressDetail] = useState('');
-  const [province, setProvince] = useState('');
-  const [district, setDistrict] = useState('');
+  const [provinceId, setProvinceId] = useState('hcm');
+  const [districtId, setDistrictId] = useState('q1');
   const [notes, setNotes] = useState('');
+
+  const currentProvince = useMemo(() => {
+    return VIETNAM_PROVINCES.find(p => p.id === provinceId) || VIETNAM_PROVINCES[0];
+  }, [provinceId]);
+
+  const availableDistricts = currentProvince.districts;
 
   // Prefill profile data if available
   useEffect(() => {
@@ -34,35 +45,51 @@ export default function CheckoutPage() {
       if (profile.address) setAddressDetail(profile.address);
       if (profile.city) {
         const cityLower = profile.city.toLowerCase();
-        if (cityLower.includes('hồ chí minh') || cityLower.includes('hcm') || cityLower.includes('sg')) {
-          setProvince('sg');
-          setDistrict('q1');
-        } else if (cityLower.includes('hà nội') || cityLower.includes('hn')) {
-          setProvince('hn');
-        } else {
-          setProvince(profile.city);
+        const matched = VIETNAM_PROVINCES.find(p => 
+          cityLower.includes(p.name.toLowerCase()) || p.id === cityLower
+        );
+        if (matched) {
+          setProvinceId(matched.id);
+          setDistrictId(matched.districts[0]?.id || '');
         }
       }
     }
   }, [profile]);
 
   const shippingFee = paymentMethod === 'cod' ? 50000 : 0;
-  const total = totalPrice - discount + shippingFee;
+  const total = Math.max(0, totalPrice - discount + shippingFee);
 
   const handleApplyCoupon = () => {
-    if (coupon.toUpperCase() === 'WELCOME') {
-      setDiscount(100000);
+    const code = coupon.trim().toUpperCase();
+    if (!code) return;
+
+    if (code === 'WELCOME') {
+      const disc = Math.min(100000, totalPrice);
+      setDiscount(disc);
+      setCouponMessage('Mã WELCOME: Giảm 100.000đ');
+      toast.success('Áp dụng mã WELCOME thành công!');
+    } else if (code === 'STALE10') {
+      const disc = Math.round(totalPrice * 0.1);
+      setDiscount(disc);
+      setCouponMessage('Mã STALE10: Giảm 10%');
+      toast.success('Áp dụng mã STALE10 thành công!');
+    } else if (code === 'FASHIONAI') {
+      const disc = Math.min(150000, totalPrice);
+      setDiscount(disc);
+      setCouponMessage('Mã FASHIONAI: Giảm 150.000đ');
+      toast.success('Áp dụng mã FASHIONAI thành công!');
     } else {
-      alert('Mã giảm giá không hợp lệ');
+      toast.error('Mã giảm giá không hợp lệ hoặc đã hết hạn.');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.length === 0 || isSubmitting) return;
+    if (items.length === 0 || isSubmitting || isCheckoutLoading) return;
 
-    const formattedProvince = province === 'sg' ? 'TP. Hồ Chí Minh' : province === 'hn' ? 'Hà Nội' : province;
-    const formattedDistrict = district === 'q1' ? 'Quận 1' : district;
+    const formattedProvince = currentProvince.name;
+    const currentDistrict = availableDistricts.find(d => d.id === districtId);
+    const formattedDistrict = currentDistrict ? currentDistrict.name : '';
     const fullAddress = `${addressDetail}, ${formattedDistrict ? formattedDistrict + ', ' : ''}${formattedProvince}`;
 
     const orderPayload = {
@@ -79,7 +106,7 @@ export default function CheckoutPage() {
         address: fullAddress,
         notes: notes,
       },
-      paymentMethod: (paymentMethod === 'cod' ? 'COD' : paymentMethod === 'bank' ? 'Bank' : 'EWallet') as 'COD' | 'Bank' | 'EWallet',
+      paymentMethod: (paymentMethod === 'cod' ? 'COD' : 'Bank') as 'COD' | 'Bank',
       couponCode: discount > 0 ? coupon.toUpperCase() : undefined,
       discountAmount: discount || undefined,
       shippingFee: shippingFee,
@@ -88,12 +115,58 @@ export default function CheckoutPage() {
 
     try {
       const order = await createOrderAsync(orderPayload);
-      clearCart();
-      // Redirect to success page with order ID
-      router.push(`/orders/${order.id}/success`);
+      const orderId = order?.id;
+
+      if (!orderId) {
+        throw new Error('Không nhận được ID đơn hàng từ server');
+      }
+
+      // COD: redirect to success page directly
+      if (paymentMethod === 'cod') {
+        clearCart();
+        toast.success('Đặt hàng thành công!');
+        router.push(`/orders/${orderId}/success`);
+        return;
+      }
+
+      // Bank/SePay/PayOS: create checkout link and redirect to payment gateway
+      try {
+        const checkoutResult = await checkout({ orderId, provider: 'SEPAY' });
+        
+        if (checkoutResult.checkoutUrl) {
+          clearCart();
+          // SePay returns form fields for POST redirect, PayOS returns direct URL
+          if (checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
+            // SePay: submit form via POST
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = checkoutResult.extra.formAction;
+            Object.entries(checkoutResult.extra.formFields).forEach(([key, value]) => {
+              const input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = key;
+              input.value = String(value);
+              form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+          } else {
+            // PayOS: direct GET redirect
+            window.location.href = checkoutResult.checkoutUrl;
+          }
+        } else {
+          throw new Error('Không nhận được link thanh toán');
+        }
+      } catch (checkoutError) {
+        // Order created but checkout failed - don't clear cart, redirect to order detail
+        console.error('Checkout failed, order still pending:', checkoutError);
+        toast.error('Tạo đơn hàng thành công nhưng không thể chuyển tới cổng thanh toán. Vui lòng thanh toán lại từ trang đơn hàng.');
+        router.push(`/orders/${orderId}`);
+      }
     } catch (error) {
       console.error('Failed to create order:', error);
-      alert('Đã xảy ra lỗi khi đặt hàng. Vui lòng thử lại.');
+      toast.error('Đã xảy ra lỗi khi tạo đơn hàng. Vui lòng thử lại.');
+      // Don't clear cart, don't redirect to fake order
     }
   };
 
@@ -118,11 +191,11 @@ export default function CheckoutPage() {
 
         {/* Progress Steps */}
         <div className="flex items-center gap-3 text-label-sm font-medium mb-12">
-          <span className="text-brand-navy">1. Thông tin</span>
+          <span className="text-brand-navy font-bold">1. Thông tin giao hàng</span>
           <ChevronRight className="w-4 h-4 text-neutral-400" />
-          <span className="text-neutral-400">2. Xác nhận</span>
+          <span className="text-brand-navy font-bold">2. Thanh toán</span>
           <ChevronRight className="w-4 h-4 text-neutral-400" />
-          <span className="text-neutral-400">3. Hoàn tất</span>
+          <span className="text-neutral-400">3. Hoàn tất đơn</span>
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[60%_1fr] gap-12 items-start">
@@ -150,23 +223,41 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Tỉnh/Thành phố *</label>
-                  <select required value={province} onChange={e => setProvince(e.target.value)} className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_16px_center] bg-no-repeat">
-                    <option value="">Chọn Tỉnh/Thành phố</option>
-                    <option value="sg">TP. Hồ Chí Minh</option>
-                    <option value="hn">Hà Nội</option>
+                  <select
+                    required
+                    value={provinceId}
+                    onChange={e => {
+                      const newProvId = e.target.value;
+                      setProvinceId(newProvId);
+                      const prov = VIETNAM_PROVINCES.find(p => p.id === newProvId);
+                      if (prov && prov.districts.length > 0) {
+                        setDistrictId(prov.districts[0].id);
+                      }
+                    }}
+                    className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer"
+                  >
+                    {VIETNAM_PROVINCES.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Quận/Huyện *</label>
-                  <select required value={district} onChange={e => setDistrict(e.target.value)} className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_16px_center] bg-no-repeat">
-                    <option value="">Chọn Quận/Huyện</option>
-                    <option value="q1">Quận 1</option>
+                  <select
+                    required
+                    value={districtId}
+                    onChange={e => setDistrictId(e.target.value)}
+                    className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer"
+                  >
+                    {availableDistricts.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
               <div>
                 <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Ghi chú cho người giao hàng</label>
-                <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all resize-none"></textarea>
+                <textarea rows={3} placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi giao..." value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all resize-none"></textarea>
               </div>
             </section>
 
@@ -200,27 +291,15 @@ export default function CheckoutPage() {
                           {paymentMethod === 'bank' && <div className="w-[10px] h-[10px] rounded-full bg-brand-navy"></div>}
                         </div>
                         <Building2 className="w-5 h-5 text-brand-navy" />
-                        <span className="text-[15px] font-medium text-brand-navy">Chuyển khoản ngân hàng</span>
+                        <span className="text-[15px] font-medium text-brand-navy">Chuyển khoản ngân hàng (QR Pay / VietQR / SePay)</span>
                       </label>
                       {paymentMethod === 'bank' && (
-                        <div className="text-[12px] text-green-700 font-semibold px-4 py-2 bg-green-50/50 border border-green-200 rounded-xl animate-in slide-in-from-top-1 duration-200">
-                          ✨ Miễn phí vận chuyển (Freeship) nếu khách Chuyển khoản 100%
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className={`relative p-4 rounded-[16px] cursor-pointer transition-all flex items-center gap-4 bg-white border ${paymentMethod === 'ewallet' ? 'border-brand-navy' : 'border-transparent hover:border-neutral-200'} shadow-sm`}>
-                        <input type="radio" name="payment" value="ewallet" checked={paymentMethod === 'ewallet'} onChange={() => setPaymentMethod('ewallet')} className="peer sr-only" />
-                        <div className={`w-[20px] h-[20px] rounded-full border-[1.5px] flex items-center justify-center ${paymentMethod === 'ewallet' ? 'border-brand-navy' : 'border-[#b5b0a8]'}`}>
-                          {paymentMethod === 'ewallet' && <div className="w-[10px] h-[10px] rounded-full bg-brand-navy"></div>}
-                        </div>
-                        <Smartphone className="w-5 h-5 text-brand-navy" />
-                        <span className="text-[15px] font-medium text-brand-navy">Ví điện tử (MoMo / ZaloPay)</span>
-                      </label>
-                      {paymentMethod === 'ewallet' && (
-                        <div className="text-[12px] text-green-700 font-semibold px-4 py-2 bg-green-50/50 border border-green-200 rounded-xl animate-in slide-in-from-top-1 duration-200">
-                          ✨ Miễn phí vận chuyển (Freeship) nếu khách Chuyển khoản 100%
+                        <div className="text-[12px] text-green-700 font-semibold px-4 py-3 bg-green-50 border border-green-200 rounded-xl animate-in slide-in-from-top-1 duration-200 flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            <span>Miễn phí vận chuyển (Freeship) khi Chuyển khoản 100%</span>
+                          </div>
+                          <p className="text-[11px] text-neutral-600 pl-5">Sau khi bấm &quot;Xác nhận đặt hàng&quot;, hệ thống sẽ cung cấp mã QR chuyển khoản chính xác.</p>
                         </div>
                       )}
                     </div>

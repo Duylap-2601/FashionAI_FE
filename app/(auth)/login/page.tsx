@@ -1,20 +1,22 @@
-﻿'use client';
+'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { AuthSplitLayout, GoogleButton } from '@/components/auth/AuthLayout';
 import { OnboardingModal } from '@/components/auth/OnboardingModal';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function Login() {
+function LoginFormContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,8 +34,10 @@ export default function Login() {
       if (res?.error) {
         setError('Email hoặc mật khẩu không chính xác');
       } else {
-        const isAdmin = email.toLowerCase().includes('admin');
-        if (isAdmin) {
+        const role = res?.user?.role;
+        if (callbackUrl) {
+          router.push(callbackUrl);
+        } else if (role === 'ADMIN') {
           router.push('/admin/dashboard');
         } else {
           setShowOnboarding(true);
@@ -47,7 +51,7 @@ export default function Login() {
 
   const handleOnboardingClose = () => {
     setShowOnboarding(false);
-    router.push('/products');
+    router.push(callbackUrl || '/products');
   };
 
   return (
@@ -142,5 +146,17 @@ export default function Login() {
 
       <OnboardingModal isOpen={showOnboarding} onClose={handleOnboardingClose} />
     </AuthSplitLayout>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-[#EFE9E1]">
+        <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginFormContent />
+    </Suspense>
   );
 }

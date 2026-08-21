@@ -38,6 +38,9 @@ interface AdminProduct {
   description?: string;
   color?: string;
   size?: string;
+  colors?: { name: string; hex: string }[];
+  sizes?: string[];
+  stock?: number;
 }
 
 interface AdminUser {
@@ -77,18 +80,13 @@ interface AdminStats {
   totalRevenue: number;
 }
 
-// ─── Seed Data (Fallback if backend list is empty or fails) ────────────────────
-const SEED_PRODUCTS: AdminProduct[] = [
-  { id: 'p1', name: 'Blazer Nữ Công Sở Dáng Ôm Burgundy', category: 'UPPER', price: 1290000, status: 'ACTIVE', image: '/images/731163514_999523332788054_1114320478812927640_n.png' },
-  { id: 'p2', name: 'Combo Suit Nguyên Bộ Xám Tro', category: 'FULL_BODY', price: 2490000, status: 'ACTIVE', image: '/images/726470431_1311184104081177_6052756217829444481_n.png' },
-  { id: 'p3', name: 'Áo Sơ Mi Oxford Trắng Premium', category: 'UPPER', price: 490000, status: 'ACTIVE', image: '/images/731199294_3955961871204172_1445370375731306017_n.png' },
-];
-
 const CATEGORY_LABEL: Record<GarmentCategory, string> = {
   UPPER: 'Áo',
   LOWER: 'Quần / Váy',
   FULL_BODY: 'Toàn thân',
 };
+
+const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL', 'Free'];
 
 const PRODUCT_STATUS_CFG: Record<ProductStatus, { label: string; cls: string }> = {
   ACTIVE: { label: 'Đang bán', cls: 'bg-green-50 text-green-700 border border-green-200' },
@@ -119,7 +117,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [products, setProducts] = useState<AdminProduct[]>(SEED_PRODUCTS);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -129,84 +127,131 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<AdminProduct> | null>(null);
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+
+  const handleSelectImage = useCallback((file: File | null) => {
+    setProductImageFile(file);
+    setProductImagePreview(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
+  }, []);
+
+  const openProductEditor = useCallback((product: Partial<AdminProduct> | null) => {
+    handleSelectImage(null);
+    setEditingProduct(product ? product : { stock: 0, status: 'ACTIVE', category: 'UPPER' });
+  }, [handleSelectImage]);
+
+  const closeProductEditor = useCallback(() => {
+    handleSelectImage(null);
+    setEditingProduct(null);
+  }, [handleSelectImage]);
+
+  // ─── Colors / Sizes editors ────────────────────────────────────────────────
+  const addColor = useCallback(() => {
+    setEditingProduct(prev => ({ ...prev, colors: [...(prev?.colors || []), { name: '', hex: '#5D1C34' }] }));
+  }, []);
+
+  const updateColor = useCallback((index: number, patch: Partial<{ name: string; hex: string }>) => {
+    setEditingProduct(prev => {
+      const next = [...(prev?.colors || [])];
+      next[index] = { ...next[index], ...patch };
+      return { ...prev, colors: next };
+    });
+  }, []);
+
+  const removeColor = useCallback((index: number) => {
+    setEditingProduct(prev => ({ ...prev, colors: (prev?.colors || []).filter((_, i) => i !== index) }));
+  }, []);
+
+  const toggleSize = useCallback((size: string) => {
+    setEditingProduct(prev => {
+      const current = prev?.sizes || [];
+      return {
+        ...prev,
+        sizes: current.includes(size) ? current.filter(s => s !== size) : [...current, size],
+      };
+    });
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     try {
       const res = await api.get('/products', { params: { limit: 100 } });
-      const list = (res.data?.data || []) as any[];
-      if (list.length > 0) {
-        setProducts(list.map((p) => ({
-          id: p.id,
-          name: p.name,
-          category: p.category as GarmentCategory,
-          price: Number(p.price),
-          status: p.status as ProductStatus,
-          image: p.garmentUrl || '/images/731163514_999523332788054_1114320478812927640_n.png',
-          garmentUrl: p.garmentUrl,
-          description: p.description,
-          color: p.color,
-          size: p.size,
-        })));
-      }
+      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as any[];
+      setProducts(list.map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category as GarmentCategory,
+        price: Number(p.price),
+        stock: p.stock ?? 0,
+        status: p.status as ProductStatus,
+        image: p.garmentUrl || '/images/731163514_999523332788054_1114320478812927640_n.png',
+        garmentUrl: p.garmentUrl,
+        description: p.description,
+        color: p.color,
+        size: p.size,
+        colors: Array.isArray(p.colors) ? p.colors : undefined,
+        sizes: Array.isArray(p.sizes) ? p.sizes : undefined,
+      })));
     } catch (e) {
-      console.warn('Backend API products fetch failed, using fallback mock data.', e);
+      console.error('Backend API products fetch failed:', e);
+      toast.error('Không thể tải danh sách sản phẩm');
     }
   }, []);
 
   const fetchOrders = useCallback(async () => {
     try {
       const res = await api.get('/orders/all', { params: { limit: 100 } });
-      const list = (res.data?.data || []) as any[];
-      if (list.length > 0) {
-        setOrders(list.map((o) => {
-          const ship = o.shippingInfo;
-          return {
-            id: o.id,
-            code: `#${o.orderCode}`,
-            customer: ship?.name || o.user?.name || 'Khách hàng',
-            email: o.user?.email || ship?.phone || '',
-            items: o.items?.length || 1,
-            total: Number(o.amount),
-            status: o.status as BackendOrderStatus,
-            date: o.createdAt?.substring(0, 10),
-            payment: o.payments?.[0]?.provider || 'COD',
-            address: ship?.address,
-            phone: ship?.phone,
-          };
-        }));
-      }
+      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as any[];
+      setOrders(list.map((o) => {
+        const ship = o.shippingInfo;
+        return {
+          id: o.id,
+          code: `#${o.orderCode}`,
+          customer: ship?.name || o.user?.name || 'Khách hàng',
+          email: o.user?.email || ship?.phone || '',
+          items: o.items?.length || 1,
+          total: Number(o.amount),
+          status: o.status as BackendOrderStatus,
+          date: o.createdAt?.substring(0, 10),
+          payment: o.payments?.[0]?.provider || 'COD',
+          address: ship?.address,
+          phone: ship?.phone,
+        };
+      }));
     } catch (e) {
-      console.warn('Backend API orders fetch failed, using fallback mock data.', e);
+      console.error('Backend API orders fetch failed:', e);
+      toast.error('Không thể tải danh sách đơn hàng');
     }
   }, []);
 
   const fetchUsers = useCallback(async () => {
     try {
       const res = await api.get('/users', { params: { limit: 100 } });
-      const list = (res.data?.data || []) as any[];
-      if (list.length > 0) {
-        setUsers(list.map((u) => ({
-          id: u.id,
-          name: u.name || 'Người dùng',
-          email: u.email,
-          tier: (u.tier || 'FREE') as UserTier,
-          role: (u.role || 'USER') as UserRole,
-          isVerified: Boolean(u.isVerified),
-          joinDate: u.createdAt?.substring(0, 10),
-          tryOns: u.tryOns || 0,
-          orders: u.orders || 0,
-          spent: Number(u.spent || 0),
-        })));
-      }
+      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as any[];
+      setUsers(list.map((u) => ({
+        id: u.id,
+        name: u.name || 'Người dùng',
+        email: u.email,
+        tier: (u.tier || 'FREE') as UserTier,
+        role: (u.role || 'USER') as UserRole,
+        isVerified: Boolean(u.isVerified),
+        joinDate: u.createdAt?.substring(0, 10),
+        tryOns: u.tryOns || 0,
+        orders: u.orders || 0,
+        spent: Number(u.spent || 0),
+      })));
     } catch (e) {
-      console.warn('Backend API users fetch failed.', e);
+      console.error('Backend API users fetch failed:', e);
+      toast.error('Không thể tải danh sách người dùng');
     }
   }, []);
 
   const fetchStats = useCallback(async () => {
     try {
       const res = await api.get('/admin/stats');
-      setStats(res.data?.data as AdminStats);
+      setStats(res.data as AdminStats);
     } catch (e) {
       console.warn('Backend API stats fetch failed.', e);
     }
@@ -223,7 +268,7 @@ export default function AdminDashboard() {
   }, [fetchProducts, fetchOrders, fetchUsers, fetchStats]);
 
   const handleSaveProduct = async () => {
-    if (!editingProduct?.name || !editingProduct?.price || !editingProduct?.garmentUrl) {
+    if (!editingProduct?.name || !editingProduct?.price) {
       toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
       return;
     }
@@ -231,25 +276,66 @@ export default function AdminDashboard() {
       toast.error('Vui lòng chọn danh mục.');
       return;
     }
+    // Sản phẩm mới bắt buộc phải có ảnh; khi sửa thì để trống nghĩa là giữ ảnh cũ.
+    if (!editingProduct.id && !productImageFile) {
+      toast.error('Vui lòng chọn ảnh sản phẩm.');
+      return;
+    }
 
-    const payload = {
-      name: editingProduct.name,
-      price: editingProduct.price,
-      category: editingProduct.category,
-      garmentUrl: editingProduct.garmentUrl,
-      description: editingProduct.description || undefined,
-      status: editingProduct.status || 'ACTIVE',
-    };
+    // Bỏ các màu chưa đặt tên; đồng bộ color/size (đơn) = phần tử đầu để tương thích ngược.
+    const colors = (editingProduct.colors || []).filter(c => c.name.trim());
+    const sizes = editingProduct.sizes || [];
+    const primaryColor = colors[0]?.name;
+    const primarySize = sizes[0];
+    const stock = editingProduct.stock ?? 0;
 
     try {
       if (editingProduct.id) {
-        await api.put(`/products/${editingProduct.id}`, payload);
+        // PUT /products/:id chỉ nhận JSON (không upload file) → cập nhật thông tin trước.
+        await api.put(`/products/${editingProduct.id}`, {
+          name: editingProduct.name,
+          price: editingProduct.price,
+          category: editingProduct.category,
+          color: primaryColor || undefined,
+          size: primarySize || undefined,
+          colors,
+          sizes,
+          stock,
+          description: editingProduct.description || undefined,
+          status: editingProduct.status || 'ACTIVE',
+        });
+
+        // Nếu admin chọn ảnh mới → upload qua endpoint ảnh và đặt làm ảnh chính.
+        if (productImageFile) {
+          const imageForm = new FormData();
+          imageForm.append('image', productImageFile);
+          imageForm.append('isMain', 'true');
+          await api.post(`/products/${editingProduct.id}/images`, imageForm, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        }
         toast.success('Cập nhật sản phẩm thành công');
       } else {
-        await api.post('/products', payload);
+        // POST /products nhận multipart: có field `image` thì backend tự upload và set garmentUrl.
+        const form = new FormData();
+        form.append('name', editingProduct.name);
+        form.append('price', String(editingProduct.price));
+        form.append('stock', String(stock));
+        form.append('category', editingProduct.category);
+        form.append('status', editingProduct.status || 'ACTIVE');
+        if (editingProduct.description) form.append('description', editingProduct.description);
+        if (primaryColor) form.append('color', primaryColor);
+        if (primarySize) form.append('size', primarySize);
+        // Mảng phải stringify để đi qua multipart; backend @Transform sẽ JSON.parse lại.
+        if (colors.length > 0) form.append('colors', JSON.stringify(colors));
+        if (sizes.length > 0) form.append('sizes', JSON.stringify(sizes));
+        if (productImageFile) form.append('image', productImageFile);
+        await api.post('/products', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
         toast.success('Tạo sản phẩm mới thành công');
       }
-      setEditingProduct(null);
+      closeProductEditor();
       await fetchProducts();
     } catch (e) {
       const msg = (e as any)?.response?.data?.message || 'Có lỗi xảy ra khi lưu sản phẩm.';
@@ -361,7 +447,7 @@ export default function AdminDashboard() {
 
         <div className="px-3 pb-6 flex flex-col gap-2 border-t border-white/10 pt-4">
           <button
-            onClick={() => { logout(); router.push('/'); }}
+            onClick={() => logout()}
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-body-sm font-medium text-white/60 hover:text-white hover:bg-white/8 transition-colors w-full border-0 bg-transparent cursor-pointer"
           >
             <LogOut className="w-4 h-4" /> Đăng xuất
@@ -471,7 +557,7 @@ export default function AdminDashboard() {
                 <p className="text-body-sm text-neutral-500 mt-1">Cấu hình phôi ảnh cho tính năng Try-On</p>
               </div>
               <button
-                onClick={() => setEditingProduct({ category: 'UPPER', status: 'ACTIVE' })}
+                onClick={() => openProductEditor(null)}
                 className="px-4 py-2.5 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-sm font-bold border-0 cursor-pointer flex items-center gap-2"
               >
                 + Thêm sản phẩm
@@ -498,6 +584,7 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3">Sản phẩm</th>
                       <th className="px-4 py-3">Danh mục</th>
                       <th className="px-4 py-3 text-right">Giá bán</th>
+                      <th className="px-4 py-3 text-right">Tồn kho</th>
                       <th className="px-4 py-3">Trạng thái</th>
                       <th className="px-6 py-3">Thao tác</th>
                     </tr>
@@ -513,6 +600,11 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-4 py-3.5 text-neutral-500">{CATEGORY_LABEL[p.category] || p.category}</td>
                         <td className="px-4 py-3.5 text-right font-semibold text-brand-navy">{fmt(p.price)}</td>
+                        <td className="px-4 py-3.5 text-right font-medium text-neutral-700">
+                          {p.stock ?? 0}
+                          {p.stock === 0 && <span className="ml-1 text-red-500">(Hết hàng)</span>}
+                          {p.stock !== undefined && p.stock > 0 && p.stock < 10 && <span className="ml-1 text-amber-500">(Sắp hết)</span>}
+                        </td>
                         <td className="px-4 py-3.5">
                           <span className={`px-2 py-0.5 rounded-full text-label-sm font-semibold ${PRODUCT_STATUS_CFG[p.status]?.cls || ''}`}>
                             {PRODUCT_STATUS_CFG[p.status]?.label || p.status}
@@ -520,7 +612,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-3.5 flex gap-2">
                           <button
-                            onClick={() => setEditingProduct(p)}
+                            onClick={() => openProductEditor(p)}
                             className="w-8 h-8 rounded-lg hover:bg-neutral-100 border-0 bg-transparent flex items-center justify-center text-neutral-500 hover:text-brand-navy cursor-pointer"
                           >
                             <Pencil className="w-4 h-4" />
@@ -536,7 +628,7 @@ export default function AdminDashboard() {
                     ))}
                     {products.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-6 py-10 text-center text-neutral-400">Chưa có sản phẩm nào</td>
+                        <td colSpan={6} className="px-6 py-10 text-center text-neutral-400">Chưa có sản phẩm nào</td>
                       </tr>
                     )}
                   </tbody>
@@ -860,10 +952,10 @@ export default function AdminDashboard() {
             <motion.div
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setEditingProduct(null)}
+              onClick={closeProductEditor}
             />
             <motion.div
-              className="bg-white rounded-2xl shadow-xl max-w-[500px] w-full p-6 relative z-10 animate-in zoom-in-95 duration-200"
+              className="bg-white rounded-2xl shadow-xl max-w-[500px] w-full max-h-[90vh] overflow-y-auto p-6 relative z-10 animate-in zoom-in-95 duration-200"
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
             >
               <h2 className="text-body-lg font-bold text-neutral-900 mb-4">
@@ -894,6 +986,19 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div>
+                    <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Tồn kho *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editingProduct.stock ?? 0}
+                      onChange={e => setEditingProduct(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
+                      placeholder="100"
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-300"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
                     <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Danh mục *</label>
                     <select
                       value={editingProduct.category || 'UPPER'}
@@ -905,9 +1010,6 @@ export default function AdminDashboard() {
                       <option value="FULL_BODY">Toàn thân (FULL_BODY)</option>
                     </select>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Trạng thái</label>
                     <select
@@ -920,27 +1022,115 @@ export default function AdminDashboard() {
                       <option value="ARCHIVED">Ngừng bán</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Màu sắc</label>
-                    <input
-                      type="text"
-                      value={editingProduct.color || ''}
-                      onChange={e => setEditingProduct(prev => ({ ...prev, color: e.target.value }))}
-                      placeholder="Trắng"
-                      className="w-full h-10 px-3 rounded-lg border border-neutral-300"
-                    />
+                </div>
+
+                <div>
+                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Trạng thái</label>
+                  <select
+                    value={editingProduct.status || 'ACTIVE'}
+                    onChange={e => setEditingProduct(prev => ({ ...prev, status: e.target.value as ProductStatus }))}
+                    className="w-full h-10 px-3 rounded-lg border border-neutral-300"
+                  >
+                    <option value="ACTIVE">Đang bán</option>
+                    <option value="DRAFT">Bản nháp</option>
+                    <option value="ARCHIVED">Ngừng bán</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-body-sm font-medium text-neutral-700">Màu sắc</label>
+                    <button
+                      type="button"
+                      onClick={addColor}
+                      className="text-label-sm font-semibold text-brand-navy hover:underline bg-transparent border-0 cursor-pointer"
+                    >
+                      + Thêm màu
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {(editingProduct.colors || []).map((c, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={c.hex || '#000000'}
+                          onChange={e => updateColor(i, { hex: e.target.value })}
+                          className="w-10 h-10 rounded-lg border border-neutral-300 p-0.5 cursor-pointer shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={c.name}
+                          onChange={e => updateColor(i, { name: e.target.value })}
+                          placeholder="Tên màu (vd: Burgundy)"
+                          className="flex-1 h-10 px-3 rounded-lg border border-neutral-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeColor(i)}
+                          className="w-9 h-9 rounded-lg hover:bg-red-50 border-0 bg-transparent flex items-center justify-center text-neutral-400 hover:text-red-600 cursor-pointer shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {(editingProduct.colors || []).length === 0 && (
+                      <p className="text-label-sm text-neutral-400">Chưa có màu nào. Nhấn "Thêm màu" để bổ sung.</p>
+                    )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">URL ảnh phôi Try-On *</label>
-                  <input
-                    type="text"
-                    value={editingProduct.garmentUrl || ''}
-                    onChange={e => setEditingProduct(prev => ({ ...prev, garmentUrl: e.target.value }))}
-                    placeholder="https://..."
-                    className="w-full h-10 px-3 rounded-lg border border-neutral-300"
-                  />
+                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Kích cỡ</label>
+                  <div className="flex flex-wrap gap-2">
+                    {SIZE_OPTIONS.map(s => {
+                      const active = (editingProduct.sizes || []).includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => toggleSize(s)}
+                          className={`px-3.5 py-1.5 rounded-lg text-label-sm font-semibold border cursor-pointer transition-colors ${
+                            active
+                              ? 'bg-brand-navy text-white border-brand-navy'
+                              : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-navy/40'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">
+                    Ảnh sản phẩm {editingProduct.id ? '' : '*'}
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 rounded-lg border border-neutral-200 bg-neutral-50 overflow-hidden shrink-0 flex items-center justify-center">
+                      {productImagePreview || editingProduct.image || editingProduct.garmentUrl ? (
+                        <img
+                          src={productImagePreview || editingProduct.image || editingProduct.garmentUrl}
+                          alt="Ảnh sản phẩm"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Package className="w-6 h-6 text-neutral-300" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={e => handleSelectImage(e.target.files?.[0] || null)}
+                        className="block w-full text-body-sm text-neutral-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-navy file:text-white file:text-label-sm file:font-bold file:cursor-pointer hover:file:bg-brand-navy/90 cursor-pointer"
+                      />
+                      <p className="text-label-sm text-neutral-400 mt-1.5">JPG, PNG hoặc WEBP · tối đa 10MB.</p>
+                      {editingProduct.id && (
+                        <p className="text-label-sm text-neutral-400 mt-0.5">Để trống nếu giữ nguyên ảnh hiện tại.</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -956,7 +1146,7 @@ export default function AdminDashboard() {
 
                 <div className="flex gap-3 justify-end mt-4">
                   <button
-                    onClick={() => setEditingProduct(null)}
+                    onClick={closeProductEditor}
                     className="px-4 py-2 border border-neutral-200 text-neutral-600 rounded-xl font-medium hover:bg-neutral-50 transition-colors cursor-pointer bg-white"
                   >
                     Hủy

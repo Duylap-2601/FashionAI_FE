@@ -8,12 +8,18 @@ interface BackendProduct {
   id: string;
   name: string;
   description?: string | null;
-  category: 'UPPER' | 'LOWER' | 'FULL_BODY';
+  category: string;
+  brand?: string | null;
   color?: string | null;
+  colors?: ({ name: string; hex?: string } | string)[] | null;
   size?: string | null;
+  sizes?: string[] | null;
   price: string | number;
-  garmentUrl: string;
-  images?: { imageUrl: string; isMain: boolean }[];
+  originalPrice?: string | number | null;
+  stock?: number | null;
+  soldCount?: number | null;
+  garmentUrl?: string | null;
+  images?: ({ imageUrl?: string; url?: string; isMain?: boolean } | string)[] | null;
 }
 
 export function useProducts() {
@@ -21,7 +27,8 @@ export function useProducts() {
     queryKey: ['products'],
     queryFn: async () => {
       const res = await api.get('/products', { params: { limit: 100 } });
-      return ((res.data || []) as BackendProduct[]).map(mapProduct);
+      const rawList = Array.isArray(res.data) ? res.data : res.data?.items || [];
+      return (rawList as BackendProduct[]).map(mapProduct);
     },
   });
 
@@ -51,40 +58,96 @@ export function useProduct(id?: string) {
   };
 }
 
+function parseImages(product: BackendProduct): string[] {
+  const list: string[] = [];
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    product.images.forEach((item) => {
+      if (typeof item === 'string') {
+        list.push(item);
+      } else if (item && typeof item === 'object') {
+        const url = item.imageUrl || item.url;
+        if (url) list.push(url);
+      }
+    });
+  }
+  if (list.length === 0 && product.garmentUrl) {
+    list.push(product.garmentUrl);
+  }
+  if (list.length === 0) {
+    list.push('/images/731163514_999523332788054_1114320478812927640_n.png');
+  }
+  return list;
+}
+
+function parseColors(product: BackendProduct): { name: string; hex: string }[] {
+  if (Array.isArray(product.colors) && product.colors.length > 0) {
+    return product.colors.map((c) => {
+      if (typeof c === 'string') {
+        return { name: c, hex: guessColorHex(c) };
+      }
+      return { name: c.name || 'Mặc định', hex: c.hex || guessColorHex(c.name || '') };
+    });
+  }
+  if (product.color) {
+    return [{ name: product.color, hex: guessColorHex(product.color) }];
+  }
+  return [
+    { name: 'Đen', hex: '#111111' },
+    { name: 'Trắng', hex: '#FFFFFF' },
+  ];
+}
+
+function parseSizes(product: BackendProduct): string[] {
+  if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+    return product.sizes;
+  }
+  if (product.size) {
+    return [product.size];
+  }
+  return ['S', 'M', 'L', 'XL'];
+}
+
 function mapProduct(product: BackendProduct): Product {
-  const image =
-    product.images?.find((item) => item.isMain)?.imageUrl ||
-    product.images?.[0]?.imageUrl ||
-    product.garmentUrl;
+  const gallery = parseImages(product);
+  const mainImage = gallery[0];
   const priceNumber = Number(product.price);
-  const colorName = product.color || 'Mac dinh';
-  const size = product.size || 'M';
+  const origPriceNumber = product.originalPrice ? Number(product.originalPrice) : undefined;
+  const colors = parseColors(product);
+  const sizes = parseSizes(product);
 
   return {
     id: product.id,
     name: product.name,
-    brand: 'FashionAI',
-    price: Number.isFinite(priceNumber) ? `${priceNumber.toLocaleString('vi-VN')} đ` : `${product.price}`,
+    brand: product.brand || 'StAle. SIGNATURE',
+    price: Number.isFinite(priceNumber) ? `${priceNumber.toLocaleString('vi-VN')} ₫` : `${product.price}`,
     numericPrice: Number.isFinite(priceNumber) ? priceNumber : 0,
+    originalPrice: origPriceNumber,
+    originalPriceFormatted: origPriceNumber ? `${origPriceNumber.toLocaleString('vi-VN')} ₫` : undefined,
     category: mapCategory(product.category),
-    image,
-    gallery: product.images?.map((item) => item.imageUrl) || [image],
-    colors: [{ name: colorName, hex: guessColorHex(colorName) }],
-    sizes: [size],
+    image: mainImage,
+    gallery,
+    colors,
+    sizes,
     isGuest: false,
+    description: product.description || undefined,
+    stock: typeof product.stock === 'number' ? product.stock : 99,
+    soldCount: typeof product.soldCount === 'number' ? product.soldCount : undefined,
   };
 }
 
-function mapCategory(category: BackendProduct['category']) {
-  switch (category) {
-    case 'LOWER':
-      return 'Quan/Vay';
-    case 'FULL_BODY':
-      return 'Toan than';
-    case 'UPPER':
-    default:
-      return 'Ao';
+function mapCategory(category?: string | null): string {
+  if (!category) return 'Áo';
+  const c = category.toUpperCase();
+  if (c.includes('FULL_BODY') || c.includes('ONE-PIECE') || c.includes('SUIT') || c.includes('TOAN THAN')) {
+    return 'Suit đầy đủ';
   }
+  if (c.includes('LOWER') || c.includes('BOTTOM') || c.includes('QUAN') || c.includes('VAY')) {
+    return 'Quần & Váy';
+  }
+  if (c.includes('UPPER') || c.includes('TOP') || c.includes('AO') || c.includes('BLAZER') || c.includes('SHIRT')) {
+    return 'Áo';
+  }
+  return category;
 }
 
 function guessColorHex(color: string) {
@@ -92,6 +155,8 @@ function guessColorHex(color: string) {
   if (normalized.includes('navy') || normalized.includes('xanh')) return '#1f2a44';
   if (normalized.includes('trang') || normalized.includes('white')) return '#ffffff';
   if (normalized.includes('den') || normalized.includes('black')) return '#111111';
-  if (normalized.includes('khaki') || normalized.includes('be')) return '#c8ad7f';
+  if (normalized.includes('khaki') || normalized.includes('be') || normalized.includes('kem')) return '#c8ad7f';
+  if (normalized.includes('xam') || normalized.includes('gray') || normalized.includes('grey')) return '#5E6469';
+  if (normalized.includes('burgundy') || normalized.includes('do') || normalized.includes('red')) return '#5D1C34';
   return '#8b8f98';
 }

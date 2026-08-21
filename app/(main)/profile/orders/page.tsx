@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { motion, AnimatePresence } from 'motion/react';
 import { useOrders, useCancelOrder, Order, OrderItem } from '@/hooks/useOrders';
+import { useCart } from '@/store/cartStore';
 
 type OrderStatus = 'PENDING' | 'PAID' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' | 'RETURNED' | 'EXPIRED' | 'FAILED';
 
@@ -105,6 +106,7 @@ function getProductImage(item: OrderItem) {
 function OrderCard({ order }: { order: Order }) {
   const [expanded, setExpanded] = useState(false);
   const { cancelOrder, isCancelling } = useCancelOrder();
+  const { addToCart, setIsCartOpen } = useCart();
   const [copied, setCopied] = useState(false);
 
   const status = order.status || 'PENDING';
@@ -119,9 +121,26 @@ function OrderCard({ order }: { order: Order }) {
   };
 
   const handleCancel = () => {
-    if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+    if (confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${orderCode}?`)) {
       cancelOrder(order.id);
     }
+  };
+
+  const handleReorder = () => {
+    if (!order.items || order.items.length === 0) return;
+    order.items.forEach(item => {
+      addToCart({
+        productId: item.productId,
+        name: item.product?.name || 'Sản phẩm công sở',
+        price: item.price,
+        quantity: item.quantity,
+        size: item.size || 'M',
+        color: item.color || 'Mặc định',
+        image: getProductImage(item),
+        variant: `Màu: ${item.color || 'Mặc định'} | Size: ${item.size || 'M'}`
+      });
+    });
+    setIsCartOpen(true);
   };
 
   return (
@@ -130,7 +149,9 @@ function OrderCard({ order }: { order: Order }) {
       <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-100">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5">
-            <span className="text-body-sm font-semibold text-neutral-900">#{orderCode}</span>
+            <Link href={`/orders/${order.id}`} className="text-body-sm font-semibold text-neutral-900 hover:text-brand-navy hover:underline">
+              #{orderCode}
+            </Link>
             <button onClick={copyCode} title="Sao chép mã" className="text-neutral-400 hover:text-brand-navy transition-colors">
               {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-semantic-success" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
@@ -180,6 +201,12 @@ function OrderCard({ order }: { order: Order }) {
 
         {/* CTA actions */}
         <div className="ml-auto flex items-center gap-2 shrink-0">
+          <Link
+            href={`/orders/${order.id}`}
+            className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 border border-neutral-200 text-neutral-600 rounded-lg text-label-sm font-medium hover:bg-neutral-50 transition-colors"
+          >
+            Xem trang đơn <ExternalLink className="w-3 h-3" />
+          </Link>
           {status === 'DELIVERED' && (
             <Link
               href="/try-on"
@@ -197,11 +224,13 @@ function OrderCard({ order }: { order: Order }) {
               Hủy đơn
             </button>
           )}
-          {status === 'DELIVERED' && (
-            <Link href="/products" className="px-3 py-1.5 border border-neutral-200 text-neutral-600 rounded-lg text-label-sm font-medium hover:bg-neutral-50 transition-colors">
-              Mua lại
-            </Link>
-          )}
+          <button
+            type="button"
+            onClick={handleReorder}
+            className="px-3 py-1.5 bg-brand-navy text-white rounded-lg text-label-sm font-semibold hover:bg-brand-navy/90 transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            <ShoppingBag className="w-3 h-3" /> Mua lại
+          </button>
         </div>
       </div>
 
