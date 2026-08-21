@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, ChevronLeft, RotateCcw, Info } from 'lucide-react';
+import { AlertCircle, ChevronLeft, RotateCcw, Info, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
-export default function PaymentErrorPage() {
+function PaymentErrorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const errorCode = searchParams.get('error') || searchParams.get('code');
@@ -72,5 +72,19 @@ export default function PaymentErrorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentErrorPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="bg-white min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <PaymentErrorContent />
+    </React.Suspense>
   );
 }
