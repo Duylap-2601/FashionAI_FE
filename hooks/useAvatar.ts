@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 import { GenerateAvatarDto, AvatarResult } from '@/types/avatar';
 
@@ -46,6 +47,7 @@ export function useGenerateAvatar() {
 }
 
 export function useMyAvatar() {
+  const { status } = useSession();
   const query = useQuery<AvatarResult | null>({
     queryKey: ['my-avatar'],
     queryFn: async () => {
@@ -59,13 +61,14 @@ export function useMyAvatar() {
         throw err;
       }
     },
+    enabled: status === 'authenticated',
     retry: 1,
     staleTime: 5 * 60 * 1000,
   });
 
   return {
     avatar: query.data,
-    isLoading: query.isLoading,
+    isLoading: status === 'loading' || query.isLoading,
     isError: query.isError,
     refetch: query.refetch,
   };

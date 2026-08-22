@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 
 export interface StylistAnalysisRequest {
@@ -126,6 +127,7 @@ export function useAnalyzeStylist() {
 }
 
 export function useStylistHistory(page = 1, pageSize = 20) {
+  const { status } = useSession();
   const query = useQuery<{ items: StylistResult[]; meta: StylistHistoryMeta }>({
     queryKey: ['stylist-history', page, pageSize],
     queryFn: async () => {
@@ -141,12 +143,13 @@ export function useStylistHistory(page = 1, pageSize = 20) {
       };
       return { items, meta };
     },
+    enabled: status === 'authenticated',
   });
 
   return {
     history: query.data?.items || [],
     meta: query.data?.meta,
-    isLoading: query.isLoading,
+    isLoading: status === 'loading' || query.isLoading,
     isError: query.isError,
     refetch: query.refetch,
   };

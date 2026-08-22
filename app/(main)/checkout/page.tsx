@@ -135,9 +135,9 @@ export default function CheckoutPage() {
         
         if (checkoutResult.checkoutUrl) {
           clearCart();
-          // SePay returns form fields for POST redirect, PayOS returns direct URL
+          
+          // Case 1: Backend explicitly returned formAction and formFields for POST (SePay)
           if (checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
-            // SePay: submit form via POST
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = checkoutResult.extra.formAction;
@@ -150,10 +150,36 @@ export default function CheckoutPage() {
             });
             document.body.appendChild(form);
             form.submit();
-          } else {
-            // PayOS: direct GET redirect
-            window.location.href = checkoutResult.checkoutUrl;
+            return;
           }
+
+          // Case 2: Backend returned a SePay checkout/init URL with query params (SePay gateway REQUIRES POST)
+          try {
+            const parsedUrl = new URL(checkoutResult.checkoutUrl, window.location.origin);
+            if (
+              (parsedUrl.hostname.includes('sepay.vn') || parsedUrl.pathname.includes('/checkout/init')) &&
+              parsedUrl.searchParams.size > 0
+            ) {
+              const form = document.createElement('form');
+              form.method = 'POST';
+              form.action = `${parsedUrl.origin}${parsedUrl.pathname}`;
+              parsedUrl.searchParams.forEach((value, key) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+              });
+              document.body.appendChild(form);
+              form.submit();
+              return;
+            }
+          } catch (urlErr) {
+            console.warn('Could not parse checkoutUrl as URL object:', urlErr);
+          }
+
+          // Case 3: Standard direct GET redirect (PayOS, VNPAY, Momo, etc.)
+          window.location.href = checkoutResult.checkoutUrl;
         } else {
           throw new Error('Không nhận được link thanh toán');
         }

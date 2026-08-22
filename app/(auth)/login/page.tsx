@@ -5,12 +5,10 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { AuthSplitLayout, GoogleButton } from '@/components/auth/AuthLayout';
-import { OnboardingModal } from '@/components/auth/OnboardingModal';
 import { useAuth } from '@/hooks/useAuth';
 
 function LoginFormContent() {
   const [showPassword, setShowPassword] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -40,18 +38,13 @@ function LoginFormContent() {
         } else if (role === 'ADMIN') {
           router.push('/admin/dashboard');
         } else {
-          setShowOnboarding(true);
+          router.push('/products');
         }
       }
     } catch {
       setIsLoading(false);
       setError('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
     }
-  };
-
-  const handleOnboardingClose = () => {
-    setShowOnboarding(false);
-    router.push(callbackUrl || '/products');
   };
 
   return (
@@ -143,8 +136,6 @@ function LoginFormContent() {
           {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
         </button>
       </form>
-
-      <OnboardingModal isOpen={showOnboarding} onClose={handleOnboardingClose} />
     </AuthSplitLayout>
   );
 }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, Star, Minus, Plus, ShoppingBag, Sparkles, AlertCircle, X, Ruler } from 'lucide-react';
+import { ChevronRight, Star, Minus, Plus, ShoppingBag, Sparkles, AlertCircle, X, Ruler, MessageSquare } from 'lucide-react';
 import { useApp } from '@/components/navigation/Layout';
 import { useCart } from '@/store/cartStore';
 import { toast } from 'sonner';
@@ -416,16 +416,24 @@ export default function ProductDetail() {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col gap-3 mb-6">
             <button 
               onClick={handleAddToCart}
               className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl hover:bg-brand-navy/90 transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <ShoppingBag className="w-5 h-5" /> Thêm vào giỏ hàng
             </button>
-            <Link href={`/try-on?productId=${product.id}`} className="w-full h-[52px] bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-md font-bold rounded-xl hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2">
-              <Sparkles className="w-5 h-5" /> Thử đồ ảo ngay
-            </Link>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Link href={`/try-on?productId=${product.id}`} className="h-[48px] bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4" /> Thử đồ ảo ngay
+              </Link>
+              <Link
+                href={`/chat?productId=${product.id}&message=${encodeURIComponent('Tư vấn giúp tôi về kích thước và cách phối đồ với sản phẩm ' + product.name)}`}
+                className="h-[48px] bg-white border border-brand-navy/30 text-brand-navy hover:bg-brand-navy/5 text-body-sm font-bold rounded-xl transition-colors shadow-xs flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4 text-brand-gold fill-brand-gold" /> Tư vấn với AI
+              </Link>
+            </div>
           </div>
 
           {/* Measurements reminder */}

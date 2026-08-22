@@ -9,7 +9,8 @@ import {
   Save, ExternalLink, Bell, Search, Filter,
   Eye, Pencil, Trash2, ChevronUp, ChevronDown, X,
   CheckCircle2, XCircle, Clock, Truck, RotateCcw, Copy,
-  Ban, ShieldCheck, Mail, Phone, Calendar, MapPin, RefreshCw
+  Ban, ShieldCheck, Mail, Phone, Calendar, MapPin, RefreshCw,
+  AlertTriangle, ChevronRight
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -122,6 +123,18 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Dynamic Chart States
+  const [chartDays, setChartDays] = useState<7 | 14 | 30>(7);
+  const [hoveredPoint, setHoveredPoint] = useState<{
+    x: number;
+    y: number;
+    label: string;
+    dateKey: string;
+    fullDate: string;
+    revenue: number;
+    ordersCount: number;
+  } | null>(null);
 
   // Modal / Editor States
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
@@ -382,30 +395,213 @@ export default function AdminDashboard() {
     }
   };
 
-  // SVGs responsive custom path calculations
-  const renderSVGLineChart = () => {
-    const base = stats?.tryOnToday ?? 50;
-    const points = [
-      { x: 30, y: 150 }, { x: 80, y: 130 }, { x: 130, y: 160 },
-      { x: 180, y: 90 }, { x: 230, y: 110 }, { x: 280, y: 70 },
-      { x: 330, y: 60 }, { x: 380, y: 80 }, { x: 430, y: 40 },
-      { x: 480, y: 50 }, { x: 530, y: 20 }, { x: 580, y: 30 }
-    ];
+  // ─── Dynamic Revenue Chart Calculations ──────────────────────────────────
+  const chartData = React.useMemo(() => {
+    const list: {
+      dateKey: string;
+      label: string;
+      fullDate: string;
+      revenue: number;
+      ordersCount: number;
+    }[] = [];
 
-    const pathD = `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')}`;
+    const now = new Date();
+    for (let i = chartDays - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dateKey = d.toISOString().substring(0, 10);
+      const label = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+      const fullDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+
+      const dayOrders = orders.filter(o => o.date === dateKey);
+      const dayPaidOrders = dayOrders.filter(
+        o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED'
+      );
+      const revenue = dayPaidOrders.reduce((sum, o) => sum + o.total, 0);
+
+      list.push({
+        dateKey,
+        label,
+        fullDate,
+        revenue,
+        ordersCount: dayOrders.length,
+      });
+    }
+
+    return list;
+  }, [orders, chartDays]);
+
+  const maxRevenue = React.useMemo(() => {
+    const max = Math.max(...chartData.map(d => d.revenue), 0);
+    return max > 0 ? max : 500000;
+  }, [chartData]);
+
+  const chartPoints = React.useMemo(() => {
+    const len = chartData.length;
+    const paddingX = 40;
+    const width = 600 - paddingX * 2;
+    const topY = 35;
+    const bottomY = 175;
+    const height = bottomY - topY;
+
+    return chartData.map((d, idx) => {
+      const x = len <= 1 ? 300 : paddingX + (idx / (len - 1)) * width;
+      const y = maxRevenue > 0 ? bottomY - (d.revenue / maxRevenue) * height : bottomY;
+      return {
+        ...d,
+        x,
+        y,
+      };
+    });
+  }, [chartData, maxRevenue]);
+
+  // SVGs responsive custom path calculations for dynamic revenue trend
+  const renderRevenueChart = () => {
+    if (chartPoints.length === 0) return null;
+
+    const pathD = `M ${chartPoints.map(p => `${p.x} ${p.y}`).join(' L ')}`;
+    const startX = chartPoints[0].x;
+    const endX = chartPoints[chartPoints.length - 1].x;
+    const areaD = `M ${startX} 180 L ${chartPoints.map(p => `${p.x} ${p.y}`).join(' L ')} L ${endX} 180 Z`;
+
+    const totalPeriodRevenue = chartData.reduce((sum, d) => sum + d.revenue, 0);
+    const totalPeriodOrders = chartData.reduce((sum, d) => sum + d.ordersCount, 0);
 
     return (
-      <svg className="w-full h-[220px]" viewBox="0 0 600 200" fill="none">
-        <line x1="20" y1="40" x2="580" y2="40" stroke="#F3F4F6" strokeWidth="1" />
-        <line x1="20" y1="90" x2="580" y2="90" stroke="#F3F4F6" strokeWidth="1" />
-        <line x1="20" y1="140" x2="580" y2="140" stroke="#F3F4F6" strokeWidth="1" />
-        <path d={pathD} stroke="#5D1C34" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        {points.map((p, idx) => (
-          <circle key={idx} cx={p.x} cy={p.y} r="4" fill="#5D1C34" stroke="#FFFFFF" strokeWidth="2" className="cursor-pointer hover:r-6 transition-all" />
-        ))}
-      </svg>
+      <div className="w-full flex flex-col gap-4">
+        {/* Quick summary numbers for this period */}
+        <div className="flex flex-wrap items-center gap-4 py-2.5 px-4 bg-neutral-50 rounded-xl border border-neutral-200/70 text-body-sm">
+          <div>
+            <span className="text-neutral-500 text-label-sm">Doanh thu {chartDays} ngày: </span>
+            <strong className="text-brand-navy font-bold">{fmt(totalPeriodRevenue)}</strong>
+          </div>
+          <div className="w-px h-4 bg-neutral-200 hidden sm:block" />
+          <div>
+            <span className="text-neutral-500 text-label-sm">Tổng đơn: </span>
+            <strong className="text-neutral-800 font-bold">{totalPeriodOrders} đơn</strong>
+          </div>
+          <div className="w-px h-4 bg-neutral-200 hidden sm:block" />
+          <div>
+            <span className="text-neutral-500 text-label-sm">Trung bình ngày: </span>
+            <strong className="text-neutral-800 font-bold">{fmt(Math.round(totalPeriodRevenue / chartDays))}</strong>
+          </div>
+        </div>
+
+        {/* SVG Chart */}
+        <div className="relative w-full">
+          <svg
+            className="w-full h-[240px]"
+            viewBox="0 0 600 210"
+            fill="none"
+            onMouseLeave={() => setHoveredPoint(null)}
+          >
+            <defs>
+              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#5D1C34" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#5D1C34" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            {/* Grid lines & Y-axis labels */}
+            <line x1="25" y1="35" x2="575" y2="35" stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
+            <text x="25" y="30" className="text-[9px] fill-neutral-400 font-sans">{fmt(maxRevenue)}</text>
+
+            <line x1="25" y1="105" x2="575" y2="105" stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
+            <text x="25" y="100" className="text-[9px] fill-neutral-400 font-sans">{fmt(Math.round(maxRevenue / 2))}</text>
+
+            <line x1="25" y1="180" x2="575" y2="180" stroke="#E5E7EB" strokeWidth="1" />
+            <text x="25" y="175" className="text-[9px] fill-neutral-400 font-sans">0đ</text>
+
+            {/* Area & Line */}
+            <path d={areaD} fill="url(#revenueGradient)" />
+            <path d={pathD} stroke="#5D1C34" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+            {/* Points & Labels */}
+            {chartPoints.map((p, idx) => {
+              const isHovered = hoveredPoint?.dateKey === p.dateKey;
+              return (
+                <g key={idx} className="cursor-pointer" onMouseEnter={() => setHoveredPoint(p)}>
+                  {/* Invisible hit box for easy hovering */}
+                  <rect
+                    x={p.x - (600 / chartDays) / 2}
+                    y={10}
+                    width={600 / chartDays}
+                    height={190}
+                    fill="transparent"
+                  />
+                  {/* Vertical guide line on hover */}
+                  {isHovered && (
+                    <line
+                      x1={p.x}
+                      y1={35}
+                      x2={p.x}
+                      y2={180}
+                      stroke="#5D1C34"
+                      strokeWidth="1.5"
+                      strokeDasharray="3 3"
+                    />
+                  )}
+                  {/* Point circle */}
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={isHovered ? 6 : 4}
+                    fill={isHovered ? '#FFFFFF' : '#5D1C34'}
+                    stroke="#5D1C34"
+                    strokeWidth={isHovered ? 3 : 2}
+                    className="transition-all"
+                  />
+                  {/* X-axis date label */}
+                  <text
+                    x={p.x}
+                    y={198}
+                    textAnchor="middle"
+                    className={`text-[10px] font-sans ${isHovered ? 'fill-neutral-900 font-bold' : 'fill-neutral-400'}`}
+                  >
+                    {p.label}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Interactive Tooltip Card */}
+          {hoveredPoint && (
+            <div
+              className="absolute top-2 pointer-events-none transition-all duration-150 bg-brand-navy text-white text-body-sm px-3.5 py-2.5 rounded-xl shadow-xl z-20"
+              style={{
+                left: `${Math.min(Math.max((hoveredPoint.x / 600) * 100, 15), 85)}%`,
+                transform: 'translateX(-50%)',
+              }}
+            >
+              <p className="text-[11px] text-white/70 font-semibold">{hoveredPoint.fullDate}</p>
+              <p className="text-[14px] font-bold text-brand-gold mt-0.5">{fmt(hoveredPoint.revenue)}</p>
+              <p className="text-[11px] text-white/90 mt-0.5">{hoveredPoint.ordersCount} đơn hàng</p>
+            </div>
+          )}
+        </div>
+      </div>
     );
   };
+
+  // ─── Dashboard Derived Business Metrics ───────────────────────────────────
+  const totalRevenue = stats?.totalRevenue ?? orders.filter(o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED').reduce((acc, o) => acc + o.total, 0);
+  const paidOrdersCount = orders.filter(o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED').length;
+  const avgOrderValue = paidOrdersCount > 0 ? Math.round(totalRevenue / paidOrdersCount) : 0;
+
+  const totalOrders = stats?.orderCount ?? orders.length;
+  const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
+  const shippingOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'CONFIRMED').length;
+  const deliveredOrders = orders.filter(o => o.status === 'DELIVERED' || o.status === 'PAID').length;
+  const cancelledOrders = orders.filter(o => o.status === 'CANCELLED' || o.status === 'FAILED' || o.status === 'RETURNED' || o.status === 'EXPIRED').length;
+
+  const totalProducts = stats?.productCount ?? products.length;
+  const activeProducts = products.filter(p => p.status === 'ACTIVE').length;
+  const outOfStockCount = products.filter(p => (p.stock ?? 0) === 0).length;
+
+  const totalUsers = stats?.userCount ?? users.length;
+  const memberUsers = users.filter(u => u.tier === 'MEMBER').length;
+  const vipUsers = users.filter(u => u.tier === 'VIP').length;
 
   return (
     <AdminGuard>
@@ -463,8 +659,8 @@ export default function AdminDashboard() {
           <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-heading-h2 font-bold text-neutral-900">Tổng quan hệ thống</h1>
-                <p className="text-body-sm text-neutral-500 mt-1">Cập nhật thống kê sử dụng tài nguyên AI</p>
+                <h1 className="text-heading-h2 font-bold text-neutral-900">Tổng quan kinh doanh</h1>
+                <p className="text-body-sm text-neutral-500 mt-1">Theo dõi doanh thu, trạng thái đơn hàng, kho sản phẩm và thành viên</p>
               </div>
               <button
                 onClick={() => { setIsLoading(true); Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats()]).finally(() => setIsLoading(false)); }}
@@ -475,73 +671,294 @@ export default function AdminDashboard() {
             </div>
 
             {/* Metrics cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col gap-1">
-                <span className="text-label-sm text-neutral-500">Người dùng đăng ký</span>
-                <span className="text-[28px] font-bold text-neutral-900">{(stats?.userCount ?? 0).toLocaleString('vi-VN')}</span>
-                <span className="text-[11px] text-green-600 font-semibold mt-1 flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" /> Tổng tài khoản</span>
-              </div>
-              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col gap-1">
-                <span className="text-label-sm text-neutral-500">Lượt thử đồ hôm nay</span>
-                <span className="text-[28px] font-bold text-neutral-900">{(stats?.tryOnToday ?? 0).toLocaleString('vi-VN')}</span>
-                <span className="text-[11px] text-neutral-500 mt-1">Tổng: {((stats?.tryOnCount ?? 0)).toLocaleString('vi-VN')} lượt</span>
-              </div>
-              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col gap-1">
-                <span className="text-label-sm text-neutral-500">Đơn hàng</span>
-                <span className="text-[28px] font-bold text-neutral-900">{(stats?.orderCount ?? 0).toLocaleString('vi-VN')}</span>
-                <span className="text-[11px] text-neutral-500 mt-1">{((stats?.productCount ?? 0)).toLocaleString('vi-VN')} sản phẩm đang bán</span>
-              </div>
-              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col gap-1">
-                <span className="text-label-sm text-neutral-500">Doanh thu đã thanh toán</span>
-                <span className="text-[28px] font-bold text-neutral-900">{fmt(stats?.totalRevenue ?? 0)}</span>
-                <span className="text-[11px] text-neutral-500 mt-1">{((stats?.stylistCount ?? 0)).toLocaleString('vi-VN')} lượt AI Stylist</span>
-              </div>
-            </div>
-
-            {/* Chart */}
-            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h3 className="text-body-lg font-semibold text-neutral-900">Lượt AI Try-On hàng ngày</h3>
-                  <p className="text-body-sm text-neutral-500 mt-0.5">Biên độ dao động trong 12 ngày gần nhất</p>
-                </div>
-              </div>
-              {renderSVGLineChart()}
-            </div>
-
-            {/* Real-time activity */}
-            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
-                <div>
-                  <h3 className="text-body-lg font-semibold text-neutral-900">Hoạt động thời gian thực</h3>
-                  <p className="text-body-sm text-neutral-500 mt-0.5">Tác vụ AI đang chạy trên Server</p>
-                </div>
-                <div className="flex items-center gap-1.5 text-label-sm text-green-600 font-semibold">
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-ping" />
-                  <span>Live</span>
-                </div>
-              </div>
-
-              <div className="divide-y divide-neutral-100">
-                {users.slice(0, 3).map((u, i) => (
-                  <div key={i} className="p-4 flex items-center justify-between hover:bg-neutral-50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-brand-navy/10 text-brand-navy flex items-center justify-center font-bold">
-                        {u.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-body-sm font-semibold text-neutral-800">{u.name}</p>
-                        <p className="text-label-sm text-neutral-500">{u.email}</p>
-                      </div>
-                    </div>
-                    <span className="text-body-sm text-neutral-700 flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-brand-gold animate-spin" /> {u.tryOns} lượt Try-On
-                    </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Doanh thu */}
+              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col justify-between gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-label-sm text-neutral-500 font-medium">Doanh thu đã thanh toán</span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <CreditCard className="w-4 h-4" />
                   </div>
-                ))}
-                {users.length === 0 && (
-                  <div className="p-6 text-center text-body-sm text-neutral-400">Chưa có dữ liệu hoạt động</div>
-                )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[26px] font-bold text-neutral-900">{fmt(totalRevenue)}</span>
+                  <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
+                    <span>Giá trị TB: <strong className="text-neutral-700">{avgOrderValue > 0 ? fmt(avgOrderValue) : '0đ'}</strong>/đơn</span>
+                    <span className="text-emerald-600 font-semibold flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" /> Đã thu</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Đơn hàng */}
+              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col justify-between gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-label-sm text-neutral-500 font-medium">Tổng đơn hàng</span>
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <ShoppingBag className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[26px] font-bold text-neutral-900">{totalOrders.toLocaleString('vi-VN')}</span>
+                  <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
+                    <span>{pendingOrders > 0 ? <strong className="text-amber-600 font-bold">{pendingOrders} đơn chờ duyệt</strong> : '0 đơn chờ duyệt'}</span>
+                    <span className="text-neutral-600 font-medium">{deliveredOrders} đã giao</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Sản phẩm trong kho */}
+              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col justify-between gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-label-sm text-neutral-500 font-medium">Sản phẩm trong kho</span>
+                  <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <Package className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[26px] font-bold text-neutral-900">{totalProducts.toLocaleString('vi-VN')}</span>
+                  <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
+                    <span className="text-green-600 font-medium">{activeProducts} đang bán</span>
+                    {outOfStockCount > 0 ? (
+                      <span className="text-red-500 font-semibold">{outOfStockCount} hết hàng</span>
+                    ) : (
+                      <span className="text-neutral-400">Đủ tồn kho</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Người dùng đăng ký */}
+              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col justify-between gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-label-sm text-neutral-500 font-medium">Người dùng đăng ký</span>
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <Users className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[26px] font-bold text-neutral-900">{totalUsers.toLocaleString('vi-VN')}</span>
+                  <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
+                    <span className="text-brand-gold font-semibold">{memberUsers + vipUsers} hội viên VIP/Member</span>
+                    <span className="text-neutral-400">{users.filter(u => u.isVerified).length} đã xác thực</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Order Status Flow */}
+            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-label-sm font-bold text-neutral-800 uppercase tracking-wide">Tiến độ xử lý đơn hàng</h4>
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className="text-label-sm font-semibold text-brand-navy hover:underline flex items-center gap-1 bg-transparent border-0 cursor-pointer"
+                >
+                  Quản lý đơn hàng <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div
+                  onClick={() => setActiveTab('orders')}
+                  className="p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl cursor-pointer hover:bg-amber-50 transition-colors"
+                >
+                  <div className="flex items-center justify-between text-amber-700 text-label-sm font-semibold mb-1">
+                    <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Chờ xác nhận</span>
+                    <span className="text-body-md font-bold">{pendingOrders}</span>
+                  </div>
+                  <span className="text-[11px] text-amber-600/80">Cần duyệt & đóng gói</span>
+                </div>
+
+                <div
+                  onClick={() => setActiveTab('orders')}
+                  className="p-3 bg-blue-50/70 border border-blue-200/60 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors"
+                >
+                  <div className="flex items-center justify-between text-blue-700 text-label-sm font-semibold mb-1">
+                    <span className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> Đang giao hàng</span>
+                    <span className="text-body-md font-bold">{shippingOrders}</span>
+                  </div>
+                  <span className="text-[11px] text-blue-600/80">Đang vận chuyển</span>
+                </div>
+
+                <div
+                  onClick={() => setActiveTab('orders')}
+                  className="p-3 bg-green-50/70 border border-green-200/60 rounded-xl cursor-pointer hover:bg-green-50 transition-colors"
+                >
+                  <div className="flex items-center justify-between text-green-700 text-label-sm font-semibold mb-1">
+                    <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Đã giao hàng</span>
+                    <span className="text-body-md font-bold">{deliveredOrders}</span>
+                  </div>
+                  <span className="text-[11px] text-green-600/80">Giao thành công</span>
+                </div>
+
+                <div
+                  onClick={() => setActiveTab('orders')}
+                  className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl cursor-pointer hover:bg-neutral-100 transition-colors"
+                >
+                  <div className="flex items-center justify-between text-neutral-700 text-label-sm font-semibold mb-1">
+                    <span className="flex items-center gap-1.5"><XCircle className="w-3.5 h-3.5" /> Đã hủy / Hoàn</span>
+                    <span className="text-body-md font-bold">{cancelledOrders}</span>
+                  </div>
+                  <span className="text-[11px] text-neutral-500">Đơn huỷ hoặc trả hàng</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Chart: Revenue Trend */}
+            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <div>
+                  <h3 className="text-body-lg font-bold text-neutral-900">Biến động doanh thu theo thời gian</h3>
+                  <p className="text-body-sm text-neutral-500 mt-0.5">Dữ liệu doanh số thực tế tổng hợp theo ngày</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center bg-neutral-100 p-1 rounded-xl">
+                    {([7, 14, 30] as const).map(days => (
+                      <button
+                        key={days}
+                        onClick={() => {
+                          setChartDays(days);
+                          setHoveredPoint(null);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-label-sm font-semibold transition-all border-0 cursor-pointer ${
+                          chartDays === days
+                            ? 'bg-white text-brand-navy shadow-sm'
+                            : 'text-neutral-500 hover:text-neutral-800 bg-transparent'
+                        }`}
+                      >
+                        {days} ngày
+                      </button>
+                    ))}
+                  </div>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#5D1C34] bg-[#5D1C34]/10 px-2.5 py-1.5 rounded-lg">
+                    <span className="w-2 h-2 rounded-full bg-[#5D1C34]" /> Doanh thu (VNĐ)
+                  </span>
+                </div>
+              </div>
+              {renderRevenueChart()}
+            </div>
+
+            {/* Two Columns: Recent Orders & Inventory Status */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: Recent Orders (7 cols) */}
+              <div className="lg:col-span-7 bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-body-lg font-bold text-neutral-900">Đơn hàng mới nhất</h3>
+                    <p className="text-body-sm text-neutral-500 mt-0.5">5 giao dịch phát sinh gần đây</p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('orders')}
+                    className="text-label-sm font-semibold text-brand-navy hover:underline flex items-center gap-1 bg-transparent border-0 cursor-pointer"
+                  >
+                    Xem tất cả ({orders.length}) <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto flex-1">
+                  <table className="w-full text-left text-body-sm">
+                    <thead className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
+                      <tr>
+                        <th className="px-5 py-3">Mã đơn</th>
+                        <th className="px-4 py-3">Khách hàng</th>
+                        <th className="px-4 py-3 text-right">Tổng tiền</th>
+                        <th className="px-4 py-3">Trạng thái</th>
+                        <th className="px-4 py-3 text-right">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100">
+                      {orders.slice(0, 5).map(o => {
+                        const cfg = ORDER_STATUS_CFG[o.status] || ORDER_STATUS_CFG.PENDING;
+                        const Icon = cfg.icon;
+                        return (
+                          <tr key={o.id} className="hover:bg-neutral-50/80 transition-colors">
+                            <td className="px-5 py-3.5 font-semibold text-neutral-800 font-mono text-[13px]">{o.code}</td>
+                            <td className="px-4 py-3.5">
+                              <p className="font-medium text-neutral-900 line-clamp-1">{o.customer}</p>
+                              <p className="text-[11px] text-neutral-400">{o.date}</p>
+                            </td>
+                            <td className="px-4 py-3.5 text-right font-bold text-brand-navy">{fmt(o.total)}</td>
+                            <td className="px-4 py-3.5">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${cfg.cls}`}>
+                                <Icon className="w-3 h-3" />
+                                {cfg.label}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 text-right">
+                              <button
+                                onClick={() => setSelectedOrder(o)}
+                                className="text-label-sm font-semibold text-brand-navy hover:underline bg-transparent border-0 cursor-pointer"
+                              >
+                                Chi tiết
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {orders.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-8 text-center text-neutral-400">Chưa có đơn hàng nào</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Right Column: Inventory & Products Status (5 cols) */}
+              <div className="lg:col-span-5 bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-body-lg font-bold text-neutral-900">Tình trạng kho hàng</h3>
+                    <p className="text-body-sm text-neutral-500 mt-0.5">Theo dõi số lượng tồn kho sản phẩm</p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('products')}
+                    className="text-label-sm font-semibold text-brand-navy hover:underline flex items-center gap-1 bg-transparent border-0 cursor-pointer"
+                  >
+                    Quản lý ({products.length}) <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="p-4 flex flex-col gap-3 flex-1 overflow-y-auto max-h-[380px]">
+                  {products.slice(0, 5).map(p => {
+                    const stock = p.stock ?? 0;
+                    const isOutOfStock = stock === 0;
+                    const isLowStock = stock > 0 && stock < 10;
+                    return (
+                      <div
+                        key={p.id}
+                        className="p-3 bg-neutral-50 hover:bg-neutral-100/80 rounded-xl flex items-center justify-between transition-colors cursor-pointer"
+                        onClick={() => openProductEditor(p)}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={p.image}
+                            alt={p.name}
+                            className="w-10 h-10 rounded-lg object-cover bg-neutral-200 shrink-0 border border-neutral-200"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-body-sm font-semibold text-neutral-900 truncate">{p.name}</p>
+                            <p className="text-label-sm text-neutral-500">{CATEGORY_LABEL[p.category] || p.category} • {fmt(p.price)}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                            isOutOfStock
+                              ? 'bg-red-100 text-red-700'
+                              : isLowStock
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {isOutOfStock ? 'Hết hàng' : isLowStock ? `Còn ${stock}` : `Kho: ${stock}`}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {products.length === 0 && (
+                    <div className="p-8 text-center text-neutral-400 text-body-sm">Chưa có sản phẩm trong kho</div>
+                  )}
+                </div>
               </div>
             </div>
 

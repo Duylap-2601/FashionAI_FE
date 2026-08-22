@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { toast } from 'sonner';
 import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useQuota } from '@/hooks/useQuota';
 import { useMyAvatar, useGenerateAvatar, resolveGlbUrl } from '@/hooks/useAvatar';
@@ -528,9 +529,10 @@ function MeasurementsTab() {
     if (prefillDone.current) return;
     if (measurements && Object.keys(measurements).length > 0) {
       prefillDone.current = true;
+      const validFieldIds = new Set(allMeasurementFields.map(f => f.id));
       const formatted: Record<string, string> = {};
       Object.entries(measurements).forEach(([k, v]) => {
-        if (v !== undefined && v !== null) {
+        if (validFieldIds.has(k) && v !== undefined && v !== null) {
           formatted[k] = String(v);
         }
       });
@@ -539,20 +541,37 @@ function MeasurementsTab() {
     }
   }, [measurements]);
 
-  const isDirty = Object.keys(values).some(k => values[k] !== (initialValues[k] || ''));
-  const allValid = Object.keys(values).every(k =>
-    !values[k] || validate(k, values[k], allMeasurementFields) !== false
-  );
+  const isDirty = allMeasurementFields.some(f => (values[f.id] || '') !== (initialValues[f.id] || ''));
+  const allValid = allMeasurementFields.every(f => {
+    const val = values[f.id];
+    if (!val || String(val).trim() === '') return true;
+    return validate(f.id, String(val), allMeasurementFields) === true;
+  });
 
   const set = (id: string, v: string) => setValues(p => ({ ...p, [id]: v }));
 
   const handleSave = () => {
-    if (!allValid) return;
+    if (!allValid) {
+      toast.error('Vui lòng kiểm tra lại các số đo chưa hợp lệ');
+      return;
+    }
+    const validFieldIds = new Set(allMeasurementFields.map(f => f.id));
     const body: Record<string, number> = {};
     Object.entries(values).forEach(([k, v]) => {
-      if (v) body[k] = parseFloat(v);
+      if (validFieldIds.has(k) && v !== undefined && v !== '' && !isNaN(parseFloat(v))) {
+        body[k] = parseFloat(v);
+      }
     });
-    updateMeasurements(body);
+    updateMeasurements(body, {
+      onSuccess: () => {
+        toast.success('Đã lưu số đo cơ thể thành công!');
+        setInitialValues({ ...values });
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.message || err?.message || 'Không thể lưu số đo.';
+        toast.error(`Lỗi: ${Array.isArray(msg) ? msg[0] : msg}`);
+      }
+    });
   };
 
   const handleGenerateBlenderAvatar = async () => {

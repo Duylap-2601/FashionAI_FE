@@ -68,6 +68,7 @@ export function Navigation() {
   }, [pathname]);
 
   const tryOnHref = currentUser.role === 'guest' ? '/login' : '/try-on';
+  const chatHref = currentUser.role === 'guest' ? '/login?callbackUrl=/chat' : '/chat';
   const navLinks = currentUser.role === 'admin'
     ? [
         { label: 'Dashboard', href: '/admin/dashboard' },
@@ -76,6 +77,7 @@ export function Navigation() {
         { label: 'Sản phẩm', href: '/products' },
         { label: '✦ Try-On', href: tryOnHref },
         { label: '✦ Stylist', href: currentUser.role === 'guest' ? '/login' : '/ai-stylist' },
+        { label: '✦ Trợ lý AI', href: chatHref },
         ...(currentUser.role !== 'guest' ? [{ label: 'Lịch sử', href: '/profile/history' }] : []),
       ];
 
@@ -386,15 +388,16 @@ export function Footer() {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === '/';
+  const isChat = pathname === '/chat';
 
   return (
     <div className="flex flex-col min-h-screen bg-[#EFE9E1] font-sans text-neutral-900">
       <Navigation />
-      <div className="flex-1 w-full pb-[64px] md:pb-0">
+      <div className={`flex-1 w-full ${isChat ? 'pb-0' : 'pb-[64px] md:pb-0'}`}>
         {children}
       </div>
-      {!isHome && <Footer />}
-      <FloatingChat />
+      {!isHome && !isChat && <Footer />}
+      {!isChat && <FloatingChat />}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 
 export interface UserMeasurements {
@@ -36,6 +37,7 @@ export interface UserProfile {
 }
 
 export function useMeasurements() {
+  const { status } = useSession();
   const queryClient = useQueryClient();
 
   const measurementsQuery = useQuery<UserMeasurements>({
@@ -44,6 +46,7 @@ export function useMeasurements() {
       const res = await api.get('/users/me/measurements');
       return res.data || {};
     },
+    enabled: status === 'authenticated',
   });
 
   const updateMeasurementsMutation = useMutation({
@@ -58,7 +61,7 @@ export function useMeasurements() {
 
   return {
     measurements: measurementsQuery.data,
-    isLoading: measurementsQuery.isLoading,
+    isLoading: status === 'loading' || measurementsQuery.isLoading,
     isError: measurementsQuery.isError,
     updateMeasurements: updateMeasurementsMutation.mutate,
     isUpdating: updateMeasurementsMutation.isPending,
@@ -66,6 +69,7 @@ export function useMeasurements() {
 }
 
 export function useUserProfile() {
+  const { status } = useSession();
   const queryClient = useQueryClient();
 
   const profileQuery = useQuery<UserProfile>({
@@ -74,6 +78,7 @@ export function useUserProfile() {
       const res = await api.get('/users/me');
       return res.data || {};
     },
+    enabled: status === 'authenticated',
   });
 
   const updateProfileMutation = useMutation({
@@ -88,7 +93,7 @@ export function useUserProfile() {
 
   return {
     profile: profileQuery.data,
-    isLoading: profileQuery.isLoading,
+    isLoading: status === 'loading' || profileQuery.isLoading,
     isError: profileQuery.isError,
     updateProfile: updateProfileMutation.mutate,
     isUpdating: updateProfileMutation.isPending,

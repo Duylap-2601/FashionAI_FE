@@ -11,7 +11,7 @@ export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const hasSession = SESSION_COOKIE_NAMES.some((name) => Boolean(req.cookies.get(name)?.value));
 
-  const protectedRoutes = ['/try-on', '/profile', '/ai-stylist', '/checkout', '/admin'];
+  const protectedRoutes = ['/try-on', '/profile', '/ai-stylist', '/chat', '/checkout', '/admin'];
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
   if (isProtected && !hasSession) {

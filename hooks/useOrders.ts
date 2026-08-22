@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 
 export interface OrderItemInput {
@@ -163,17 +164,19 @@ export function useCreateOrder() {
 }
 
 export function useOrders() {
+  const { status } = useSession();
   const query = useQuery<Order[]>({
     queryKey: ['orders'],
     queryFn: async () => {
       const res = await api.get('/orders');
       return ((res.data || []) as BackendOrder[]).map(mapOrder);
     },
+    enabled: status === 'authenticated',
   });
 
   return {
     orders: query.data || [],
-    isLoading: query.isLoading,
+    isLoading: status === 'loading' || query.isLoading,
     isError: query.isError,
     refetch: query.refetch,
   };

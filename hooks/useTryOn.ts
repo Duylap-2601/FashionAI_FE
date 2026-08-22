@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 
 export interface TryOnResult {
@@ -59,6 +60,7 @@ export function useTryOn() {
 }
 
 export function useTryOnHistory(page = 1, limit = 50) {
+  const { status } = useSession();
   const query = useQuery<TryOnResult[]>({
     queryKey: ['try-on-history', page, limit],
     queryFn: async () => {
@@ -66,11 +68,12 @@ export function useTryOnHistory(page = 1, limit = 50) {
       const res = await api.get('/try-on/history', { params: { page, limit } });
       return (res.data || []) as TryOnResult[];
     },
+    enabled: status === 'authenticated',
   });
 
   return {
     history: query.data || [],
-    isLoading: query.isLoading,
+    isLoading: status === 'loading' || query.isLoading,
     isError: query.isError,
     refetch: query.refetch,
   };
