@@ -67,8 +67,7 @@ export function AuthCenteredLayout({ children }: { children: React.ReactNode }) 
 
 export function GoogleButton() {
   const handleGoogleLogin = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-    window.location.href = `${apiUrl.replace(/\/$/, '')}/auth/google`;
+    window.location.href = '/api/auth/google';
   };
 
   return (
