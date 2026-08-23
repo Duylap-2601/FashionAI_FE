@@ -51,8 +51,10 @@ export default (isDev ? nextConfig : withPWA({
         // Rule "apis" mặc định của next-pwa NetworkFirst mọi GET same-origin dưới
         // /api/. Sau khi proxy, response có token/dữ liệu riêng của user sẽ bị
         // service worker cache 24h và trả lại cho lần mở sau (kể cả khi đã 401).
+        // Chuỗi phải viết literal: workbox serialize hàm này bằng toString() rồi
+        // nhét vào sw.js, biến ngoài closure (BACKEND_PROXY_PREFIX) sẽ undefined.
         urlPattern: ({ sameOrigin, url }) =>
-          sameOrigin && url.pathname.startsWith(`${BACKEND_PROXY_PREFIX}/`),
+          sameOrigin && url.pathname.startsWith('/api/backend/'),
         handler: 'NetworkOnly',
       },
     ],
