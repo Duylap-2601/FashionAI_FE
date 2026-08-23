@@ -10,14 +10,12 @@ export function resolveGlbUrl(glbUrl?: string | null): string | undefined {
   if (glbUrl.startsWith('http://') || glbUrl.startsWith('https://') || glbUrl.startsWith('blob:')) {
     return glbUrl;
   }
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
-  const cleanBase = apiBase.replace(/\/api\/?$/, '').replace(/\/$/, '');
-  const cleanPath = glbUrl.startsWith('/') ? glbUrl : `/${glbUrl}`;
-  
-  if (cleanPath.startsWith('/api/')) {
-    return `${cleanBase}${cleanPath}`;
-  }
-  return `${cleanBase}/api${cleanPath}`;
+  // NEXT_PUBLIC_API_URL đã trỏ sẵn tới gốc API (vd /api/backend), nên chỉ cắt tiền
+  // tố /api mà backend trả kèm rồi nối vào. Cắt /api khỏi base như trước sẽ sai
+  // ngay khi base là đường dẫn tương đối đi qua proxy.
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || '/api/backend').replace(/\/+$/, '');
+  const path = glbUrl.startsWith('/') ? glbUrl : `/${glbUrl}`;
+  return `${apiBase}${path.replace(/^\/api(?=\/|$)/, '')}`;
 }
 
 export function useGenerateAvatar() {

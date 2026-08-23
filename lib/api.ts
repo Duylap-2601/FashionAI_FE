@@ -13,10 +13,20 @@ export const api = axios.create({
 
 // ─── Session token cache ────────────────────────────────────────────────────
 let cachedToken: string | null = null;
+let cachedExpiresAt: number | null = null;
 let cachedSessionAt = 0;
 const SESSION_TTL = 30 * 1000; // 30s
+// Refresh sớm hơn thời điểm token chết, để request đang bay không rơi vào 401
+// rồi mới phải retry. Cũng bù cho lệch giờ giữa máy client và server.
+const EXPIRY_SKEW = 60 * 1000; // 60s
 
-async function getAccessToken(): Promise<string | null> {
+function parseExpiry(value: unknown): number | null {
+  if (typeof value !== 'string' || !value) return null;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+async function readSessionToken(): Promise<string | null> {
   const now = Date.now();
   if (cachedToken && now - cachedSessionAt < SESSION_TTL) {
     return cachedToken;
@@ -24,32 +34,49 @@ async function getAccessToken(): Promise<string | null> {
 
   try {
     const session = await getSession();
-    const token = (session?.user as any)?.accessToken || null;
-    if (token) {
-      cachedToken = token;
-      cachedSessionAt = now;
-      return token;
-    } else {
-      cachedToken = null;
-      cachedSessionAt = 0;
+    const user = session?.user as any;
+    const token = user?.accessToken || null;
+    if (!token) {
+      invalidateSessionCache();
       return null;
     }
+    cachedToken = token;
+    cachedExpiresAt = parseExpiry(user?.accessTokenExpiresAt);
+    cachedSessionAt = now;
+    return token;
   } catch {
-    cachedToken = null;
-    cachedSessionAt = 0;
+    invalidateSessionCache();
     return null;
   }
 }
 
+/**
+ * Access token đã đảm bảo còn hiệu lực. Dùng cho cả axios và những chỗ gọi
+ * fetch thẳng (SSE, streaming) — vì các chỗ đó không đi qua interceptor.
+ */
+export async function getValidAccessToken(): Promise<string | null> {
+  const token = await readSessionToken();
+  if (!token) return null;
+
+  // expiry null = session được tạo trước khi FE lưu accessTokenExpiresAt. Cứ
+  // dùng token đang có và để nhánh xử lý 401 lo phần refresh.
+  if (cachedExpiresAt === null || cachedExpiresAt - Date.now() > EXPIRY_SKEW) {
+    return token;
+  }
+
+  return (await doRefreshToken()) ?? token;
+}
+
 export function invalidateSessionCache() {
   cachedToken = null;
+  cachedExpiresAt = null;
   cachedSessionAt = 0;
 }
 
 // ─── Request Interceptor ───────────────────────────────────────────────────
 api.interceptors.request.use(
   async (config) => {
-    const accessToken = await getAccessToken();
+    const accessToken = await getValidAccessToken();
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -100,6 +127,7 @@ async function doRefreshToken(): Promise<string | null> {
       });
 
       cachedToken = payload.accessToken;
+      cachedExpiresAt = parseExpiry(payload.accessTokenExpiresAt);
       cachedSessionAt = Date.now();
       return payload.accessToken;
     } catch {

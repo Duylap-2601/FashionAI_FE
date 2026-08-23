@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useQuota } from '@/hooks/useQuota';
 import { useProducts } from '@/hooks/useProducts';
+import { getValidAccessToken } from '@/lib/api';
 import { PRODUCTS } from '@/lib/data';
 import {
   ChatMessage,
@@ -33,7 +34,10 @@ export interface UseChatOptions {
 export function useChat(options: UseChatOptions = {}) {
   const { initialSessionId, initialProductId, onSessionCreated } = options;
   const { data: sessionData, status: authStatus } = useSession();
-  const accessToken = (sessionData?.user as any)?.accessToken;
+  // Chỉ dùng để biết "đã đăng nhập" và làm dependency cho effect. Token thật phải
+  // lấy qua getValidAccessToken() ngay trước từng request: access token sống 15
+  // phút còn session cookie sống 30 ngày, nên token trong session hay bị hết hạn.
+  const hasSession = Boolean((sessionData?.user as any)?.accessToken);
   const userTier = sessionData?.user?.tier || 'FREE';
 
   const { measurements } = useMeasurements();
@@ -97,11 +101,12 @@ export function useChat(options: UseChatOptions = {}) {
       setIsLoadingSessions(true);
       try {
         // First try loading from backend if authenticated
-        if (accessToken) {
+        const token = hasSession ? await getValidAccessToken() : null;
+        if (token) {
           try {
             const res = await fetch(`${API_URL}/chat/sessions`, {
               headers: {
-                Authorization: `Bearer ${accessToken}`,
+                Authorization: `Bearer ${token}`,
               },
             });
             if (res.ok) {
@@ -150,7 +155,7 @@ export function useChat(options: UseChatOptions = {}) {
     return () => {
       isMounted = false;
     };
-  }, [authStatus, accessToken]);
+  }, [authStatus, hasSession]);
 
   // Load messages when currentSessionId changes (waits for hydration)
   useEffect(() => {
@@ -184,11 +189,13 @@ export function useChat(options: UseChatOptions = {}) {
       }
 
       // If online, has token, and is valid UUID, sync from server
-      if (accessToken && isUuid(currentSessionId)) {
+      const token =
+        hasSession && isUuid(currentSessionId) ? await getValidAccessToken() : null;
+      if (token) {
         try {
           const res = await fetch(`${API_URL}/chat/sessions/${currentSessionId}`, {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
+              Authorization: `Bearer ${token}`,
             },
           });
 
@@ -218,7 +225,7 @@ export function useChat(options: UseChatOptions = {}) {
     return () => {
       isMounted = false;
     };
-  }, [currentSessionId, accessToken]);
+  }, [currentSessionId, hasSession]);
 
   // Helper to save messages to local storage
   const saveMessagesLocally = useCallback((sessionId: string, msgs: ChatMessage[]) => {
@@ -288,12 +295,13 @@ export function useChat(options: UseChatOptions = {}) {
       }
 
       // Sync with server if token available and is valid UUID
-      if (accessToken && isUuid(sessionId)) {
+      const token = hasSession && isUuid(sessionId) ? await getValidAccessToken() : null;
+      if (token) {
         try {
           await fetch(`${API_URL}/chat/sessions/${sessionId}`, {
             method: 'DELETE',
             headers: {
-              Authorization: `Bearer ${accessToken}`,
+              Authorization: `Bearer ${token}`,
             },
           });
         } catch (e) {
@@ -303,7 +311,7 @@ export function useChat(options: UseChatOptions = {}) {
 
       toast.success('Đã xóa đoạn chat');
     },
-    [currentSessionId, accessToken, saveSessionsLocally]
+    [currentSessionId, hasSession, saveSessionsLocally]
   );
 
   // Rename a session
@@ -315,13 +323,14 @@ export function useChat(options: UseChatOptions = {}) {
         return next;
       });
 
-      if (accessToken && isUuid(sessionId)) {
+      const token = hasSession && isUuid(sessionId) ? await getValidAccessToken() : null;
+      if (token) {
         try {
           await fetch(`${API_URL}/chat/sessions/${sessionId}`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ title: newTitle }),
           });
@@ -330,7 +339,7 @@ export function useChat(options: UseChatOptions = {}) {
         }
       }
     },
-    [accessToken, saveSessionsLocally]
+    [hasSession, saveSessionsLocally]
   );
 
   // Stop current streaming
@@ -426,8 +435,9 @@ export function useChat(options: UseChatOptions = {}) {
           'Content-Type': 'application/json',
           Accept: 'text/event-stream, application/json',
         };
-        if (accessToken) {
-          headers.Authorization = `Bearer ${accessToken}`;
+        const token = await getValidAccessToken();
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
         }
 
         const response = await fetch(`${API_URL}/chat`, {
@@ -624,7 +634,6 @@ export function useChat(options: UseChatOptions = {}) {
       measurements,
       userTier,
       profile?.gender,
-      accessToken,
       saveSessionsLocally,
       refetchQuota,
       saveMessagesLocally,
