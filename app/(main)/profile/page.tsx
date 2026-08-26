@@ -246,10 +246,20 @@ export default function ProfilePage() {
                 <h1 className="text-heading-h2 font-semibold text-neutral-900 truncate">{user?.name || 'Người dùng'}</h1>
                 <TierBadge tier={tier} />
               </div>
-              <p className="text-body-sm text-neutral-500 truncate mb-3">{user?.email}</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="text-body-sm text-neutral-500 truncate mb-1">{user?.email}</p>
+              
+              {user?.tierExpiresAt && tier !== 'FREE' && (
+                <p className="text-[12px] text-neutral-500 mb-3 flex items-center gap-1.5 font-medium">
+                  <Clock className="w-3.5 h-3.5 text-[#5D1C34]" /> Hạn dùng đến: <strong className="text-brand-navy">{new Date(user.tierExpiresAt).toLocaleDateString('vi-VN')}</strong>
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-2 mt-2">
                 <Link href="/profile/measurements" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-navy text-white rounded-lg text-label-sm font-medium hover:bg-brand-navy/90 transition-colors">
                   <Edit3 className="w-3.5 h-3.5" /> Chỉnh sửa hồ sơ
+                </Link>
+                <Link href="/subscription" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#5D1C34]/10 text-[#5D1C34] rounded-lg text-label-sm font-bold hover:bg-[#5D1C34]/20 transition-colors">
+                  <Crown className="w-3.5 h-3.5" /> Quản lý gói cước
                 </Link>
                 {!isOAuth && (
                   <button onClick={() => setShowChangePw(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-300 text-neutral-700 rounded-lg text-label-sm font-medium hover:border-brand-navy/30 hover:bg-neutral-50 transition-colors">
@@ -264,7 +274,7 @@ export default function ProfilePage() {
           <div className={`mt-5 flex items-center gap-2 p-3 rounded-xl text-body-sm ${hasMeasurements ? 'bg-semantic-success/8 text-semantic-success' : 'bg-semantic-warning/8 text-semantic-warning'}`} style={{ backgroundColor: hasMeasurements ? 'rgba(45,122,79,0.07)' : 'rgba(180,83,9,0.07)' }}>
             {hasMeasurements
               ? <><CheckCircle2 className="w-4 h-4 shrink-0" /> <span>Số đo đã được cập nhật — kết quả thử đồ chính xác hơn</span></>
-              : <><AlertCircle className="w-4 h-4 shrink-0" /> <span>Chưa có số đo — <Link href="/profile/measurements" className="font-semibold underline underline-offset-2">Thêm ngay</Link> để cải thiện độ chính xác Try-On</span></>
+              : <><AlertCircle className="w-4 h-4 shrink-0" /> <span>Chưa có số đo — <Link href="/profile/measurements" className="font-semibold underline underline-offset-2">Thêm ngay</Link> để sẵn sàng may đo</span></>
             }
           </div>
         </div>
@@ -272,9 +282,14 @@ export default function ProfilePage() {
         {/* ── Quota Overview ── */}
         {tryOnQuota && (
           <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Zap className="w-4 h-4 text-brand-gold" />
-              <h2 className="text-body-md font-semibold text-neutral-900">Lượt dùng hôm nay</h2>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-brand-gold" />
+                <h2 className="text-body-md font-semibold text-neutral-900">Lượt dùng hôm nay</h2>
+              </div>
+              <Link href="/subscription" className="text-[12px] font-bold text-[#5D1C34] hover:underline flex items-center gap-1">
+                Nâng cấp thêm lượt <ChevronRight className="w-3 h-3" />
+              </Link>
             </div>
             <QuotaBar
               used={tryOnQuota.used}
@@ -292,8 +307,11 @@ export default function ProfilePage() {
             )}
             {tier === 'FREE' && (
               <div className="pt-2 border-t border-neutral-100">
-                <p className="text-label-sm text-neutral-500">
-                  Hoàn thành 1 đơn hàng để nâng lên <span className="font-semibold text-brand-sage">Member</span> — 10 lượt/ngày
+                <p className="text-label-sm text-neutral-500 flex items-center justify-between">
+                  <span>Gói Free không có lượt Thử đồ AI.</span>
+                  <Link href="/subscription" className="text-[#5D1C34] font-bold hover:underline">
+                    Nâng cấp Member (99k) &rarr;
+                  </Link>
                 </p>
               </div>
             )}
@@ -303,6 +321,7 @@ export default function ProfilePage() {
         {/* ── Quick Links ── */}
         <div className="space-y-2">
           <h2 className="text-label-sm font-semibold text-neutral-400 uppercase tracking-wider px-1 mb-3">Tài khoản</h2>
+          <NavCard href="/subscription" icon={Crown} label="Gói cước & Nâng cấp" desc="Xem bảng giá và gia hạn gói Member / VIP" badge={tier !== 'FREE' ? tier : undefined} />
           <NavCard href="/profile/measurements" icon={Ruler} label="Số đo & Hồ sơ" desc="Cập nhật số đo, thông tin cá nhân" badge={!hasMeasurements ? 'Mới' : undefined} />
           <NavCard href="/profile/history" icon={History} label="Lịch sử Try-On" desc="Xem lại và tải ảnh thử đồ AI của bạn" />
           <NavCard href="/profile/stylist-history" icon={Sparkles} label="Lịch sử AI Stylist" desc="Các lần tư vấn phong cách đã thực hiện" />

@@ -7,8 +7,7 @@ import { api } from '@/lib/api';
 export interface OrderItemInput {
   productId: string;
   quantity: number;
-  size: string;
-  color: string;
+  color?: string;
   price: number;
 }
 
@@ -46,9 +45,9 @@ export interface OrderItem {
   id: string;
   productId: string;
   quantity: number;
-  size: string;
-  color: string;
+  color?: string;
   price: number;
+  measurementSnapshot?: Record<string, any>;
   product?: {
     name: string;
     images?: string[];
@@ -70,9 +69,9 @@ interface BackendOrderItem {
   id: string;
   productId: string;
   quantity: number;
-  size?: string | null;
   color?: string | null;
   price: number | string;
+  measurementSnapshot?: Record<string, any> | null;
   product?: {
     name: string;
     images?: { imageUrl: string; isMain: boolean }[];
@@ -109,9 +108,9 @@ function mapOrder(order: BackendOrder): Order {
       id: item.id,
       productId: item.productId,
       quantity: item.quantity,
-      size: item.size || 'M',
       color: item.color || '',
       price: Number(item.price),
+      measurementSnapshot: item.measurementSnapshot || undefined,
       product: item.product
         ? {
             name: item.product.name,
@@ -131,7 +130,6 @@ export function useCreateOrder() {
         items: payload.items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
-          size: item.size,
           color: item.color,
           price: item.price,
         })),

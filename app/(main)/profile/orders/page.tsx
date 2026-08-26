@@ -134,10 +134,9 @@ function OrderCard({ order }: { order: Order }) {
         name: item.product?.name || 'Sản phẩm công sở',
         price: item.price,
         quantity: item.quantity,
-        size: item.size || 'M',
         color: item.color || 'Mặc định',
         image: getProductImage(item),
-        variant: `Màu: ${item.color || 'Mặc định'} | Size: ${item.size || 'M'}`
+        variant: `Màu: ${item.color || 'Mặc định'} · May đo`
       });
     });
     setIsCartOpen(true);
@@ -263,7 +262,7 @@ function OrderCard({ order }: { order: Order }) {
                       <img src={getProductImage(item)} alt={item.product?.name || 'Sản phẩm'} className="w-14 h-18 rounded-lg object-cover border border-neutral-100 shrink-0" style={{ height: 72 }} />
                       <div className="flex-1 min-w-0">
                         <p className="text-body-sm font-semibold text-neutral-900 truncate">{item.product?.name || 'Sản phẩm công sở'}</p>
-                        <p className="text-label-sm text-neutral-500 mt-0.5">Size {item.size} · {item.color}</p>
+                        <p className="text-label-sm text-neutral-500 mt-0.5">Màu: {item.color || 'Mặc định'} · May đo</p>
                         <p className="text-label-sm text-neutral-500 mt-0.5">x{item.quantity}</p>
                       </div>
                       <span className="text-body-sm font-bold text-brand-navy shrink-0">{fmt(item.price * item.quantity)}</span>

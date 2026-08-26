@@ -40,6 +40,7 @@ export interface StylistAnalysisResult {
   skinTone: string;
   personalColor: string;
   fitRecommendation: string;
+  fitAdvice?: string | null;
   recommendedSize?: string | null;
   productCompatibilityScore?: number | null;
   colorSuggestions: string[] | { name: string; hex: string }[];
@@ -58,6 +59,7 @@ export interface StylistResult extends Partial<StylistAnalysisResult> {
   stylePreference?: string;
   budget?: string;
   genderPreference?: string;
+  fitAdvice?: string | null;
   recommendedSize?: string | null;
   productCompatibilityScore?: number | null;
   product?: StylistProduct | null;

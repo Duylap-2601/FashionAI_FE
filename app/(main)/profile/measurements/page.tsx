@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useQuota } from '@/hooks/useQuota';
@@ -29,32 +30,33 @@ interface MeasurementField {
   min: number;
   max: number;
   desc: string;
+  requiredFor?: string;
   svgY?: string | null;
 }
 
 // ─── Field Definitions ────────────────────────────────────────────────────────
 const UPPER_FIELDS: MeasurementField[] = [
-  { id: 'shoulder', label: 'Rộng vai', unit: 'cm', min: 30, max: 70, desc: 'Từ đầu vai trái đến vai phải', svgY: '22%' },
+  { id: 'shoulder', label: 'Rộng vai', unit: 'cm', min: 30, max: 70, desc: 'Từ đầu vai trái đến vai phải', requiredFor: 'Áo & Đồ liền', svgY: '22%' },
+  { id: 'chest', label: 'Vòng ngực', unit: 'cm', min: 60, max: 140, desc: 'Vòng lớn nhất của ngực', requiredFor: 'Áo & Đồ liền', svgY: '31%' },
+  { id: 'shirtLength', label: 'Dài thân áo', unit: 'cm', min: 50, max: 85, desc: 'Từ điểm vai đến lai áo', requiredFor: 'Áo & Đồ liền', svgY: null },
+  { id: 'sleeveLength', label: 'Dài tay áo', unit: 'cm', min: 45, max: 80, desc: 'Từ vai đến cổ tay', requiredFor: 'Áo', svgY: null },
   { id: 'neck', label: 'Vòng cổ', unit: 'cm', min: 28, max: 55, desc: 'Vòng quanh cổ, cách cổ áo 2cm', svgY: '14%' },
-  { id: 'chest', label: 'Vòng ngực', unit: 'cm', min: 60, max: 140, desc: 'Vòng lớn nhất của ngực', svgY: '31%' },
   { id: 'underbust', label: 'Vòng ngực dưới', unit: 'cm', min: 55, max: 130, desc: 'Ngay dưới ngực (dành cho nữ)', svgY: null },
-  { id: 'bodyLength', label: 'Dài thân áo', unit: 'cm', min: 50, max: 85, desc: 'Từ điểm vai đến eo', svgY: null },
-  { id: 'sleeveLength', label: 'Dài tay áo', unit: 'cm', min: 45, max: 80, desc: 'Từ vai đến cổ tay', svgY: null },
   { id: 'wrist', label: 'Vòng cổ tay', unit: 'cm', min: 12, max: 25, desc: 'Vòng quanh cổ tay', svgY: null },
 ];
 
 const LOWER_FIELDS: MeasurementField[] = [
-  { id: 'waist', label: 'Vòng eo', unit: 'cm', min: 50, max: 130, desc: 'Phần thắt nhỏ nhất của eo', svgY: '45%' },
-  { id: 'hip', label: 'Vòng hông', unit: 'cm', min: 60, max: 145, desc: 'Vòng lớn nhất của mông', svgY: '55%' },
-  { id: 'thigh', label: 'Vòng đùi', unit: 'cm', min: 35, max: 90, desc: 'Vòng lớn nhất của đùi', svgY: '63%' },
+  { id: 'waist', label: 'Vòng eo', unit: 'cm', min: 50, max: 130, desc: 'Phần thắt nhỏ nhất của eo', requiredFor: 'Quần & Váy', svgY: '45%' },
+  { id: 'hip', label: 'Vòng hông', unit: 'cm', min: 60, max: 145, desc: 'Vòng lớn nhất của mông', requiredFor: 'Quần & Váy', svgY: '55%' },
+  { id: 'outseam', label: 'Dài quần', unit: 'cm', min: 80, max: 120, desc: 'Từ cạp xuống gấu quần', requiredFor: 'Quần & Váy', svgY: null },
+  { id: 'thigh', label: 'Vòng đùi', unit: 'cm', min: 35, max: 90, desc: 'Vòng lớn nhất của đùi', requiredFor: 'Quần & Váy', svgY: '63%' },
   { id: 'inseam', label: 'Dài đũng quần', unit: 'cm', min: 55, max: 95, desc: 'Từ đũng quần đến mắt cá chân', svgY: null },
   { id: 'knee', label: 'Vòng đầu gối', unit: 'cm', min: 25, max: 55, desc: 'Vòng quanh đầu gối', svgY: null },
   { id: 'calf', label: 'Vòng bắp chân', unit: 'cm', min: 25, max: 55, desc: 'Vòng lớn nhất của bắp chân', svgY: null },
-  { id: 'trouserLength', label: 'Dài quần', unit: 'cm', min: 80, max: 120, desc: 'Từ cạp xuống gấu quần', svgY: null },
 ];
 
 const OVERVIEW_FIELDS: MeasurementField[] = [
-  { id: 'height', label: 'Chiều cao', unit: 'cm', min: 130, max: 220, desc: 'Từ gót chân đến đỉnh đầu' },
+  { id: 'height', label: 'Chiều cao', unit: 'cm', min: 130, max: 220, desc: 'Từ gót chân đến đỉnh đầu', requiredFor: 'Bắt buộc tất cả' },
   { id: 'weight', label: 'Cân nặng', unit: 'kg', min: 35, max: 150, desc: 'Cân nặng cơ thể' },
 ];
 
@@ -85,12 +87,17 @@ function MeasurementInput({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <label className="text-label-md font-medium text-neutral-800 flex items-center gap-1.5">
-          {field.label}
+      <div className="flex items-center justify-between mb-1.5 gap-2">
+        <label className="text-label-md font-medium text-neutral-800 flex items-center gap-1.5 flex-wrap">
+          <span>{field.label}</span>
+          {field.requiredFor && (
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-brand-navy/10 text-brand-navy">
+              {field.requiredFor}
+            </span>
+          )}
           {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse" />}
         </label>
-        <span className="text-label-sm text-neutral-400">{field.desc}</span>
+        <span className="text-label-sm text-neutral-400 text-right truncate">{field.desc}</span>
       </div>
       <div className="relative">
         <input
@@ -509,6 +516,7 @@ function MeasurementsTab() {
   const { measurements, isLoading, updateMeasurements, isUpdating } = useMeasurements();
   const { avatar: myAvatar } = useMyAvatar();
   const { generateAvatarAsync, isGenerating: isGeneratingAvatar } = useGenerateAvatar();
+  const queryClient = useQueryClient();
 
   const [initialValues, setInitialValues] = useState<Record<string, string>>({});
   const [values, setValues] = useState<Record<string, string>>({});
@@ -536,6 +544,14 @@ function MeasurementsTab() {
           formatted[k] = String(v);
         }
       });
+      // Handle alias mapping
+      if (!formatted.shirtLength && (measurements as any).bodyLength) {
+        formatted.shirtLength = String((measurements as any).bodyLength);
+      }
+      if (!formatted.outseam && (measurements as any).trouserLength) {
+        formatted.outseam = String((measurements as any).trouserLength);
+      }
+
       setInitialValues(formatted);
       setValues(formatted);
     }
@@ -562,10 +578,16 @@ function MeasurementsTab() {
         body[k] = parseFloat(v);
       }
     });
+
+    // Provide aliases for backwards compatibility
+    if (body.shirtLength !== undefined) body.bodyLength = body.shirtLength;
+    if (body.outseam !== undefined) body.trouserLength = body.outseam;
+
     updateMeasurements(body, {
       onSuccess: () => {
         toast.success('Đã lưu số đo cơ thể thành công!');
         setInitialValues({ ...values });
+        queryClient.invalidateQueries({ queryKey: ['measurements-completeness'] });
       },
       onError: (err: any) => {
         const msg = err?.response?.data?.message || err?.message || 'Không thể lưu số đo.';

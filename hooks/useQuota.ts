@@ -10,14 +10,14 @@ export interface UserQuota {
   action?: AiActionName;
   used: number;
   limit: number | null;
-  unlimited?: boolean;
   remaining?: number | null;
+  requested?: number;
   tier: 'FREE' | 'MEMBER' | 'VIP' | 'free' | 'member' | 'vip' | 'admin';
   resetAt?: string;
   resetsAt?: string;
   limits?: Record<
     AiActionName,
-    { label: string; limit: number | null; unlimited: boolean }
+    { label: string; limit: number | null; unlimited?: boolean }
   >;
 }
 

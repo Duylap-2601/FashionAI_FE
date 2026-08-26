@@ -14,7 +14,6 @@ export interface Product {
   image: string;
   gallery: string[];
   colors: { name: string; hex: string }[];
-  sizes: string[];
   isGuest: boolean;
   description?: string;
   stock?: number;
@@ -39,7 +38,6 @@ export const PRODUCTS: Product[] = [
       { name: 'Kem', hex: '#EFE9E1' },
       { name: 'Burgundy', hex: '#38140C' },
     ],
-    sizes: ['S', 'M', 'L', 'XL'],
     isGuest: true,
   },
   {
@@ -55,7 +53,6 @@ export const PRODUCTS: Product[] = [
       { name: 'Kem', hex: '#EFE9E1' },
       { name: 'Xám Tro', hex: '#5E6469' },
     ],
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     isGuest: false,
   },
   {
@@ -71,7 +68,6 @@ export const PRODUCTS: Product[] = [
       { name: 'Trắng', hex: '#FFFFFF' },
       { name: 'Xanh nhạt', hex: '#DBEAFE' },
     ],
-    sizes: ['S', 'M', 'L', 'XL'],
     isGuest: true,
   },
   {
@@ -87,7 +83,6 @@ export const PRODUCTS: Product[] = [
       { name: 'Xám', hex: '#808080' },
       { name: 'Navy', hex: '#38140C' },
     ],
-    sizes: ['S', 'M', 'L', 'XL'],
     isGuest: true,
   },
   {
@@ -103,7 +98,6 @@ export const PRODUCTS: Product[] = [
       { name: 'Kem', hex: '#EFE9E1' },
       { name: 'Đen', hex: '#111111' },
     ],
-    sizes: ['S', 'M', 'L'],
     isGuest: true,
   },
   {
@@ -119,7 +113,6 @@ export const PRODUCTS: Product[] = [
       { name: 'Trắng', hex: '#FFFFFF' },
       { name: 'Đen', hex: '#111111' },
     ],
-    sizes: ['XS', 'S', 'M', 'L'],
     isGuest: true,
   },
 ];

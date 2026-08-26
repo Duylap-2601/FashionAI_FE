@@ -11,9 +11,10 @@ export interface UserMeasurements {
   waist?: number;
   hip?: number;
   shoulder?: number;
-  // Advanced fields (from UI prototype)
+  // Advanced fields
   neck?: number;
   underbust?: number;
+  shirtLength?: number;
   bodyLength?: number;
   sleeveLength?: number;
   wrist?: number;
@@ -21,6 +22,7 @@ export interface UserMeasurements {
   inseam?: number;
   knee?: number;
   calf?: number;
+  outseam?: number;
   trouserLength?: number;
 }
 

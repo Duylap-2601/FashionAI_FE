@@ -1,4 +1,4 @@
-﻿import NextAuth from 'next-auth';
+import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { formatUserName } from './utils';
 
@@ -32,6 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             accessToken,
             accessTokenExpiresAt: accessTokenExpiresAt || user.accessTokenExpiresAt,
             tier: user.tier || 'FREE',
+            tierExpiresAt: user.tierExpiresAt || null,
             role: user.role || 'USER',
           };
         } catch (error) {
@@ -48,6 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         anyToken.accessToken = user.accessToken;
         anyToken.accessTokenExpiresAt = user.accessTokenExpiresAt;
         anyToken.tier = user.tier;
+        anyToken.tierExpiresAt = (user as any).tierExpiresAt || null;
         anyToken.role = user.role;
         anyToken.id = user.id;
         if (user.name) {
@@ -63,6 +65,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.accessToken = anyToken.accessToken || '';
         session.user.accessTokenExpiresAt = anyToken.accessTokenExpiresAt || '';
         session.user.tier = (anyToken.tier || 'FREE') as 'FREE' | 'MEMBER' | 'VIP';
+        session.user.tierExpiresAt = anyToken.tierExpiresAt || null;
         session.user.role = anyToken.role || 'USER';
         session.user.id = anyToken.id || '';
         if (session.user.name) {

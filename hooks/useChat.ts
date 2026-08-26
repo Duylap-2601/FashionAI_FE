@@ -7,6 +7,7 @@ import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useQuota } from '@/hooks/useQuota';
 import { useProducts } from '@/hooks/useProducts';
 import { getValidAccessToken } from '@/lib/api';
+import { initChatSocket } from '@/lib/realtimeSocket';
 import { PRODUCTS } from '@/lib/data';
 import {
   ChatMessage,
@@ -58,6 +59,7 @@ export function useChat(options: UseChatOptions = {}) {
   const [activeProduct, setActiveProduct] = useState<ChatProductContext | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const chatSocketRef = useRef<any>(null);
   const currentSessionIdRef = useRef<string | null>(currentSessionId);
   currentSessionIdRef.current = currentSessionId;
 
@@ -344,6 +346,12 @@ export function useChat(options: UseChatOptions = {}) {
 
   // Stop current streaming
   const stopStreaming = useCallback(() => {
+    if (chatSocketRef.current) {
+      chatSocketRef.current.off('chat:token');
+      chatSocketRef.current.off('chat:done');
+      chatSocketRef.current.off('chat:error');
+      chatSocketRef.current = null;
+    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -424,32 +432,127 @@ export function useChat(options: UseChatOptions = {}) {
       let resolvedBackendUuid: string | null = backendSessionIdToSend;
 
       try {
-        const requestPayload = {
-          message: trimmed,
-          sessionId: backendSessionIdToSend, // null on first message, UUID after
-          productId: attachedProd?.id,
-          context: contextPayload,
-        };
-
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream, application/json',
-        };
         const token = await getValidAccessToken();
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
+        let usedWs = false;
 
-        const response = await fetch(`${API_URL}/chat`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal,
-        });
+        try {
+          const socket = initChatSocket(token || '');
+          chatSocketRef.current = socket;
 
-        if (!response.ok) {
-          // If server error or endpoint not yet deployed, fallback to smart local assistant stream
-          if (response.status === 404 || response.status === 502 || response.status === 503) {
+          await new Promise<void>((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+              cleanup();
+              reject(new Error('WS_TIMEOUT'));
+            }, 12000);
+
+            const onToken = ({ data }: { data: string }) => {
+              clearTimeout(timeoutId);
+              usedWs = true;
+              if (typeof data === 'string') {
+                accumulatedContent += data;
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, content: accumulatedContent, streaming: true }
+                      : msg
+                  )
+                );
+              }
+            };
+
+            const onDone = ({ sessionId }: { sessionId?: string }) => {
+              clearTimeout(timeoutId);
+              cleanup();
+              usedWs = true;
+
+              const returnedUuid = sessionId && isUuid(sessionId) ? sessionId : null;
+              if (returnedUuid) {
+                resolvedBackendUuid = returnedUuid;
+                setCurrentSessionId(returnedUuid);
+
+                const sessionTitle = trimmed.length > 30 ? `${trimmed.substring(0, 30)}...` : trimmed;
+                const newSessionObj: ChatSession = {
+                  id: returnedUuid,
+                  title: sessionTitle,
+                  updatedAt: new Date().toISOString(),
+                  createdAt: new Date().toISOString(),
+                  lastMessage: trimmed,
+                  lastRole: 'user',
+                };
+
+                setSessions((prev) => {
+                  const existingIdx = prev.findIndex((s) => s.id === returnedUuid);
+                  let next: ChatSession[];
+                  if (existingIdx >= 0) {
+                    next = [...prev];
+                    next[existingIdx] = {
+                      ...next[existingIdx],
+                      lastMessage: trimmed,
+                      updatedAt: new Date().toISOString(),
+                    };
+                  } else {
+                    next = [newSessionObj, ...prev];
+                  }
+                  saveSessionsLocally(next);
+                  return next;
+                });
+
+                if (onSessionCreated) {
+                  onSessionCreated(newSessionObj);
+                }
+              }
+              resolve();
+            };
+
+            const onError = ({ code, message }: { code: string; message: string }) => {
+              clearTimeout(timeoutId);
+              cleanup();
+              usedWs = true;
+              if (code === 'QUOTA_EXCEEDED') {
+                toast.error('Bạn đã dùng hết lượt Chatbot hôm nay', {
+                  description: message || 'Vui lòng quay lại vào ngày mai hoặc nâng cấp tài khoản.',
+                });
+              } else if (code === 'BUSY') {
+                toast.warning('Tin nhắn trước vẫn đang được xử lý...');
+              }
+              reject(new Error(message || `Lỗi phản hồi chatbot [${code}]`));
+            };
+
+            const onConnectError = (err: any) => {
+              clearTimeout(timeoutId);
+              cleanup();
+              if (err?.message === 'UNAUTHORIZED') {
+                toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                reject(new Error('UNAUTHORIZED'));
+              } else {
+                reject(new Error('WS_CONNECT_FAILED'));
+              }
+            };
+
+            function cleanup() {
+              socket.off('chat:token', onToken);
+              socket.off('chat:done', onDone);
+              socket.off('chat:error', onError);
+              socket.off('connect_error', onConnectError);
+            }
+
+            socket.on('chat:token', onToken);
+            socket.on('chat:done', onDone);
+            socket.on('chat:error', onError);
+            socket.once('connect_error', onConnectError);
+
+            // Gửi tin nhắn qua Socket.IO (/chat namespace)
+            socket.emit('chat:send', {
+              message: trimmed,
+              sessionId: backendSessionIdToSend || undefined,
+              productId: attachedProd?.id,
+              context: contextPayload,
+            });
+          });
+        } catch (wsErr: any) {
+          // Fallback simulation nếu socket chưa sẵn sàng hoặc kết nối lỗi trước khi nhận token
+          if (!usedWs && (wsErr?.message === 'WS_TIMEOUT' || wsErr?.message === 'WS_CONNECT_FAILED')) {
+            console.warn('[Chat] WebSocket fallback triggered:', wsErr?.message);
             await simulateAssistantStream(
               trimmed,
               attachedProd,
@@ -467,104 +570,7 @@ export function useChat(options: UseChatOptions = {}) {
               }
             );
           } else {
-            const errData = await response.json().catch(() => null);
-            throw new Error(errData?.message || `Lỗi kết nối máy chủ (${response.status})`);
-          }
-        } else {
-          // Process SSE stream
-          if (response.body) {
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder('utf-8');
-            let buffer = '';
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
-
-              for (const line of lines) {
-                const trimmedLine = line.trim();
-                if (!trimmedLine) continue;
-
-                if (trimmedLine.startsWith('data:')) {
-                  const rawData = trimmedLine.slice(5).trim();
-                  if (rawData === '[DONE]') {
-                    break;
-                  }
-
-                  try {
-                    const parsed = JSON.parse(rawData);
-                    if (parsed.type === 'token' && typeof parsed.data === 'string') {
-                      accumulatedContent += parsed.data;
-                    } else if (parsed.type === 'done') {
-                      // Extract backend UUID from done event
-                      const returnedUuid =
-                        parsed.data?.sessionId ||
-                        parsed.sessionId ||
-                        (typeof parsed.data === 'string' && isUuid(parsed.data) ? parsed.data : null);
-
-                      if (returnedUuid && isUuid(returnedUuid)) {
-                        resolvedBackendUuid = returnedUuid;
-                        setCurrentSessionId(returnedUuid);
-
-                        // Save session to list
-                        const sessionTitle = trimmed.length > 30 ? `${trimmed.substring(0, 30)}...` : trimmed;
-                        const newSessionObj: ChatSession = {
-                          id: returnedUuid,
-                          title: sessionTitle,
-                          updatedAt: new Date().toISOString(),
-                          createdAt: new Date().toISOString(),
-                          lastMessage: trimmed,
-                          lastRole: 'user',
-                        };
-
-                        setSessions((prev) => {
-                          const existingIdx = prev.findIndex((s) => s.id === returnedUuid);
-                          let next: ChatSession[];
-                          if (existingIdx >= 0) {
-                            next = [...prev];
-                            next[existingIdx] = {
-                              ...next[existingIdx],
-                              lastMessage: trimmed,
-                              updatedAt: new Date().toISOString(),
-                            };
-                          } else {
-                            next = [newSessionObj, ...prev];
-                          }
-                          saveSessionsLocally(next);
-                          return next;
-                        });
-
-                        if (onSessionCreated) {
-                          onSessionCreated(newSessionObj);
-                        }
-                      }
-                    } else if (parsed.type === 'error') {
-                      throw new Error(parsed.data?.message || parsed.data || 'Lỗi xử lý phản hồi');
-                    } else if (parsed.content) {
-                      accumulatedContent += parsed.content;
-                    } else if (typeof parsed.data === 'string') {
-                      accumulatedContent += parsed.data;
-                    }
-                  } catch {
-                    // Raw string data
-                    accumulatedContent += rawData;
-                  }
-
-                  // Update UI message
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === assistantMessageId
-                        ? { ...msg, content: accumulatedContent, streaming: true }
-                        : msg
-                    )
-                  );
-                }
-              }
-            }
+            throw wsErr;
           }
         }
 

@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 
+import { RealtimeProvider } from '@/components/realtime/RealtimeProvider';
+
 export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
@@ -44,9 +46,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider refetchOnWindowFocus={false} refetchWhenOffline={false} refetchInterval={0}>
       <QueryClientProvider client={queryClient}>
-        {children}
-        <Toaster closeButton position="top-right" richColors />
-        <InstallPrompt />
+        <RealtimeProvider>
+          {children}
+          <Toaster closeButton position="top-right" richColors />
+          <InstallPrompt />
+        </RealtimeProvider>
       </QueryClientProvider>
     </SessionProvider>
   );

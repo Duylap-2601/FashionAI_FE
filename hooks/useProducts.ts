@@ -12,8 +12,6 @@ interface BackendProduct {
   brand?: string | null;
   color?: string | null;
   colors?: ({ name: string; hex?: string } | string)[] | null;
-  size?: string | null;
-  sizes?: string[] | null;
   price: string | number;
   originalPrice?: string | number | null;
   stock?: number | null;
@@ -97,23 +95,12 @@ function parseColors(product: BackendProduct): { name: string; hex: string }[] {
   ];
 }
 
-function parseSizes(product: BackendProduct): string[] {
-  if (Array.isArray(product.sizes) && product.sizes.length > 0) {
-    return product.sizes;
-  }
-  if (product.size) {
-    return [product.size];
-  }
-  return ['S', 'M', 'L', 'XL'];
-}
-
 function mapProduct(product: BackendProduct): Product {
   const gallery = parseImages(product);
   const mainImage = gallery[0];
   const priceNumber = Number(product.price);
   const origPriceNumber = product.originalPrice ? Number(product.originalPrice) : undefined;
   const colors = parseColors(product);
-  const sizes = parseSizes(product);
 
   return {
     id: product.id,
@@ -127,7 +114,6 @@ function mapProduct(product: BackendProduct): Product {
     image: mainImage,
     gallery,
     colors,
-    sizes,
     isGuest: false,
     description: product.description || undefined,
     stock: typeof product.stock === 'number' ? product.stock : 99,

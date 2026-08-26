@@ -4,17 +4,21 @@ import React, { useState, useRef, useCallback, useEffect, Suspense } from 'react
 import {
   Upload, CloudUpload, Info, Sparkles, Download, Bookmark,
   Share2, ArrowRight, X, CheckCircle2, ChevronRight,
-  RefreshCw, Image as ImageIcon, Camera as CameraIcon
+  RefreshCw, Image as ImageIcon, Camera as CameraIcon,
+  Crown, Lock, Layers
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { PageHeader, PageContent } from '@/components/navigation/Layout';
 import { PRODUCTS, Product } from '@/lib/data';
-import { useTryOn } from '@/hooks/useTryOn';
+import { useTryOn, GarmentSlotInput } from '@/hooks/useTryOn';
 import { useQuota } from '@/hooks/useQuota';
 import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useProducts } from '@/hooks/useProducts';
 import { useMyAvatar, resolveGlbUrl } from '@/hooks/useAvatar';
+import { SubscriptionRequiredModal } from '@/components/subscription/SubscriptionRequiredModal';
+import { QuotaExhaustedModal } from '@/components/stylist/QuotaExhaustedModal';
 import SizePresetSelector from '@/components/mannequin/SizePresetSelector';
 import { SIZE_PRESETS, AvatarMeasurements, MeasureField } from '@/types/avatar';
 import dynamic from 'next/dynamic';
@@ -216,17 +220,39 @@ interface CatalogModalProps {
   onSelectProduct: (product: Product) => void;
   products: Product[];
   currentProductId?: string;
+  initialCategory?: 'ALL' | 'UPPER' | 'LOWER' | 'FULL_BODY';
 }
 
-function CatalogModal({ isOpen, onClose, onSelectProduct, products, currentProductId }: CatalogModalProps) {
+function CatalogModal({
+  isOpen,
+  onClose,
+  onSelectProduct,
+  products,
+  currentProductId,
+  initialCategory = 'ALL',
+}: CatalogModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCat, setSelectedCat] = useState<'ALL' | 'UPPER' | 'LOWER' | 'FULL_BODY'>(initialCategory);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedCat(initialCategory);
+    }
+  }, [isOpen, initialCategory]);
   
   if (!isOpen) return null;
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      p.category.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    if (selectedCat === 'ALL') return true;
+    if (selectedCat === 'UPPER') return p.category === 'upper' || p.category === 'ao' || p.category === 'blazer';
+    if (selectedCat === 'LOWER') return p.category === 'lower' || p.category === 'quan' || p.category === 'vay';
+    if (selectedCat === 'FULL_BODY') return p.category === 'full_body' || p.category === 'suit' || p.category === 'dam';
+    return true;
+  });
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -245,7 +271,7 @@ function CatalogModal({ isOpen, onClose, onSelectProduct, products, currentProdu
           </button>
         </div>
 
-        <div className="p-4 border-b border-neutral-100 bg-neutral-50">
+        <div className="p-4 border-b border-neutral-100 bg-neutral-50 flex flex-col gap-3">
           <input
             type="text"
             placeholder="Tìm kiếm sản phẩm, danh mục..."
@@ -253,6 +279,28 @@ function CatalogModal({ isOpen, onClose, onSelectProduct, products, currentProdu
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-white text-body-sm focus:outline-none focus:border-brand-navy transition-all"
           />
+
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'ALL', label: 'Tất cả' },
+              { id: 'UPPER', label: 'Áo / Blazer' },
+              { id: 'LOWER', label: 'Quần / Váy' },
+              { id: 'FULL_BODY', label: 'Bộ liền' },
+            ].map(cat => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCat(cat.id as any)}
+                className={`px-3 py-1 rounded-lg text-[12px] font-semibold transition-all whitespace-nowrap ${
+                  selectedCat === cat.id
+                    ? 'bg-brand-navy text-white shadow-2xs'
+                    : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 no-scrollbar">
@@ -337,51 +385,6 @@ function LoadingOverlay({ progress }: { progress: number }) {
   );
 }
 
-// ─── Quota Exhausted Modal ────────────────────────────────────────────────────
-function QuotaExhaustedModal({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-[400px] w-full p-8 flex flex-col items-center gap-6 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 transition-colors"
-        >
-          <X className="w-4 h-4 text-neutral-400" />
-        </button>
-
-        <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center">
-          <Sparkles className="w-7 h-7 text-amber-500" />
-        </div>
-
-        <div className="text-center flex flex-col gap-2">
-          <h2 className="text-heading-h3 font-bold text-neutral-900">Hết lượt hôm nay</h2>
-          <p className="text-body-sm text-neutral-500 leading-relaxed">
-            Nâng cấp lên <strong className="text-brand-navy">Member</strong> (sau khi đặt hàng thành công) để nhận{' '}
-            <strong className="text-brand-navy">10 lượt/ngày</strong> cùng nhiều tính năng độc quyền khác.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-3 w-full">
-          <Link href="/products" className="w-full h-12 bg-brand-navy text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-brand-navy/90 transition-colors">
-            <Sparkles className="w-4 h-4 text-brand-gold animate-bounce" />
-            Mua sắm ngay
-          </Link>
-          <button
-            onClick={onClose}
-            className="w-full h-12 border border-neutral-200 text-neutral-600 rounded-xl font-medium hover:bg-neutral-50 transition-colors"
-          >
-            Đóng
-          </button>
-        </div>
-
-        <p className="text-label-sm text-neutral-400 text-center">
-          Lượt dùng được reset lúc 00:00 mỗi ngày
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function dataUrlToFile(dataUrl: string, filename: string) {
   const [meta, content] = dataUrl.split(',');
   const mime = meta.match(/data:(.*?);base64/)?.[1] || 'image/png';
@@ -397,6 +400,7 @@ function VirtualTryOnContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const productId = searchParams.get('productId');
+  const { data: session } = useSession();
 
   const { tryOnAsync, isSubmitting } = useTryOn();
   const { quota, refetch: refetchQuota } = useQuota();
@@ -407,6 +411,7 @@ function VirtualTryOnContent() {
 
   const [pageState, setPageState] = useState<PageState>('idle');
   const [activeTab, setActiveTab] = useState<UploadTab>('upload');
+  const [garmentMode, setGarmentMode] = useState<'single' | 'combo'>('single');
   
   // Photo states
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
@@ -467,19 +472,48 @@ function VirtualTryOnContent() {
     }
   }, [measurements, profile]);
 
-  // Load product from searchParams or fallback to first product
+  // Load products
   const initialProduct = catalogProducts.find(p => p.id === productId) || catalogProducts[0];
   const [selectedProduct, setSelectedProduct] = useState(initialProduct);
+  const [upperProduct, setUpperProduct] = useState<Product | null>(
+    catalogProducts.find(p => p.category === 'upper' || p.category === 'ao' || p.category === 'blazer') || catalogProducts[0] || null
+  );
+  const [lowerProduct, setLowerProduct] = useState<Product | null>(
+    catalogProducts.find(p => p.category === 'lower' || p.category === 'quan' || p.category === 'vay') || catalogProducts[1] || null
+  );
   const [hasProduct, setHasProduct] = useState(true);
   
+  // Modals & slots
   const [showCatalogModal, setShowCatalogModal] = useState(false);
+  const [catalogSlot, setCatalogSlot] = useState<'single' | 'upper' | 'lower'>('single');
   const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [quotaModalData, setQuotaModalData] = useState<{ resetAt?: string; requested?: number; remaining?: number }>({});
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [subscriptionReason, setSubscriptionReason] = useState<string>('free_not_allowed');
   const [progress, setProgress] = useState(0);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // User tier & expiration status
+  const rawTier = (profile as any)?.tier || session?.user?.tier || 'FREE';
+  const userTier = rawTier.toUpperCase();
+  const rawExpiresAt = (profile as any)?.tierExpiresAt || (session?.user as any)?.tierExpiresAt;
+  const isSubscriptionExpired = React.useMemo(() => {
+    if (!rawExpiresAt || userTier === 'FREE') return false;
+    try {
+      return new Date(rawExpiresAt).getTime() < Date.now();
+    } catch {
+      return false;
+    }
+  }, [rawExpiresAt, userTier]);
+  const isBlocked = userTier === 'FREE' || isSubscriptionExpired;
+
+  // Quota counts
+  const quotaCost = garmentMode === 'combo' ? 2 : 1;
+  const remainingQuota = quota ? (quota.limit === null ? Infinity : Math.max(0, quota.limit - quota.used)) : (isBlocked ? 0 : 5);
+  const limitQuota = quota?.limit ?? (userTier === 'VIP' ? 10 : userTier === 'MEMBER' ? 5 : 0);
+
   // Sync selected product when query parameter changes
-  // Không đưa selectedProduct vào deps để tránh infinite loop
   useEffect(() => {
     if (productId) {
       const match = catalogProducts.find(p => p.id === productId);
@@ -531,9 +565,38 @@ function VirtualTryOnContent() {
     setUserPhotoFile(null);
   };
 
+  const handleOpenCatalog = (slot: 'single' | 'upper' | 'lower') => {
+    setCatalogSlot(slot);
+    setShowCatalogModal(true);
+  };
+
+  const handleSelectProductFromCatalog = (product: Product) => {
+    if (catalogSlot === 'single') {
+      setSelectedProduct(product);
+      setHasProduct(true);
+      router.replace(`/try-on?productId=${product.id}`);
+    } else if (catalogSlot === 'upper') {
+      setUpperProduct(product);
+    } else if (catalogSlot === 'lower') {
+      setLowerProduct(product);
+    }
+  };
+
   const handleGenerate = async () => {
+    // Check subscription status
+    if (isBlocked) {
+      setSubscriptionReason(isSubscriptionExpired ? 'subscription_expired' : 'free_not_allowed');
+      setShowSubscriptionModal(true);
+      return;
+    }
+
     // Check local quota before executing
-    if (quota && quota.limit !== null && (quota.limit - quota.used) <= 0) {
+    if (quota && quota.limit !== null && (quota.limit - quota.used) < quotaCost) {
+      setQuotaModalData({
+        resetAt: quota.resetAt,
+        requested: quotaCost,
+        remaining: Math.max(0, quota.limit - quota.used),
+      });
       setShowQuotaModal(true);
       return;
     }
@@ -549,7 +612,7 @@ function VirtualTryOnContent() {
       currentHumanImage = dataUrlToFile(snapshot, 'mannequin-snapshot.png');
     }
 
-    if (!currentHumanImage || !selectedProduct.id) return;
+    if (!currentHumanImage) return;
 
     setPageState('loading');
     setProgress(0);
@@ -566,10 +629,34 @@ function VirtualTryOnContent() {
     }, 150);
 
     try {
-      const payload = {
-        productId: selectedProduct.id,
-        humanImage: currentHumanImage,
-      };
+      let payload: any;
+      if (garmentMode === 'combo') {
+        const garments: GarmentSlotInput[] = [];
+        if (upperProduct) garments.push({ productId: upperProduct.id, garmentCategory: 'UPPER' });
+        if (lowerProduct) garments.push({ productId: lowerProduct.id, garmentCategory: 'LOWER' });
+        
+        payload = {
+          humanImage: currentHumanImage,
+          garments,
+          productId: upperProduct?.id || lowerProduct?.id,
+        };
+      } else {
+        if (!selectedProduct?.id) return;
+        const cat = (
+          selectedProduct.category === 'lower' || selectedProduct.category === 'quan' || selectedProduct.category === 'vay'
+            ? 'LOWER'
+            : selectedProduct.category === 'upper' || selectedProduct.category === 'ao' || selectedProduct.category === 'blazer'
+            ? 'UPPER'
+            : 'FULL_BODY'
+        ) as 'UPPER' | 'LOWER' | 'FULL_BODY';
+
+        payload = {
+          humanImage: currentHumanImage,
+          productId: selectedProduct.id,
+          garmentCategory: cat,
+          garments: [{ productId: selectedProduct.id, garmentCategory: cat }],
+        };
+      }
 
       const result = await tryOnAsync(payload);
       
@@ -582,11 +669,32 @@ function VirtualTryOnContent() {
         refetchQuota();
       }, 300);
 
-    } catch (error) {
+    } catch (error: any) {
       clearInterval(progressTimer);
       setPageState('idle');
       console.error('Try-On error:', error);
-      alert('Đã xảy ra lỗi khi tạo kết quả thử đồ. Vui lòng kiểm tra lại ảnh chụp người thật đứng thẳng.');
+
+      const status = error?.response?.status;
+      const data = error?.response?.data;
+
+      if (status === 402 || data?.code === 'SUBSCRIPTION_REQUIRED') {
+        setSubscriptionReason(data?.details?.reason || 'free_not_allowed');
+        setShowSubscriptionModal(true);
+        return;
+      }
+
+      if (status === 429 || data?.code === 'QUOTA_EXCEEDED') {
+        setQuotaModalData({
+          resetAt: data?.resetAt,
+          requested: data?.requested || quotaCost,
+          remaining: data?.remaining ?? 0,
+        });
+        setShowQuotaModal(true);
+        return;
+      }
+
+      const msg = data?.message || error?.message || 'Đã xảy ra lỗi khi tạo kết quả thử đồ. Vui lòng kiểm tra lại ảnh chụp người thật đứng thẳng.';
+      alert(Array.isArray(msg) ? msg[0] : msg);
     }
   };
 
@@ -598,7 +706,8 @@ function VirtualTryOnContent() {
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `${selectedProduct.name.replace(/\s+/g, '-')}-tryon.png`;
+      const prodName = garmentMode === 'combo' ? 'combo-outfit' : (selectedProduct?.name || 'fashionai');
+      link.download = `${prodName.replace(/\s+/g, '-')}-tryon.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -608,9 +717,8 @@ function VirtualTryOnContent() {
     }
   };
 
-  const canGenerate = (activeTab === 'upload' ? (userPhotoBase64 !== null) : (captureFn !== null)) && hasProduct && !isSubmitting;
-  const remainingQuota = quota ? (quota.limit === null ? Infinity : quota.limit - quota.used) : 3;
-  const limitQuota = quota?.limit ?? Infinity;
+  const hasSelectedGarments = garmentMode === 'combo' ? Boolean(upperProduct || lowerProduct) : Boolean(selectedProduct?.id);
+  const canGenerate = (activeTab === 'upload' ? (userPhotoBase64 !== null) : (captureFn !== null)) && hasSelectedGarments && !isSubmitting;
 
   return (
     <>
@@ -620,15 +728,41 @@ function VirtualTryOnContent() {
         isOpen={showCatalogModal}
         onClose={() => setShowCatalogModal(false)}
         products={catalogProducts}
-        onSelectProduct={(p) => {
-          setSelectedProduct(p);
-          setHasProduct(true);
-          router.replace(`/try-on?productId=${p.id}`);
-        }}
-        currentProductId={selectedProduct.id}
+        onSelectProduct={handleSelectProductFromCatalog}
+        currentProductId={
+          catalogSlot === 'single'
+            ? selectedProduct?.id
+            : catalogSlot === 'upper'
+            ? upperProduct?.id
+            : lowerProduct?.id
+        }
+        initialCategory={
+          catalogSlot === 'upper'
+            ? 'UPPER'
+            : catalogSlot === 'lower'
+            ? 'LOWER'
+            : 'ALL'
+        }
       />
 
-      {showQuotaModal && <QuotaExhaustedModal onClose={() => setShowQuotaModal(false)} />}
+      {showQuotaModal && (
+        <QuotaExhaustedModal
+          onClose={() => setShowQuotaModal(false)}
+          actionName="Thử đồ AI (Try-On)"
+          resetAt={quotaModalData.resetAt}
+          requested={quotaModalData.requested}
+          remaining={quotaModalData.remaining}
+        />
+      )}
+
+      {showSubscriptionModal && (
+        <SubscriptionRequiredModal
+          isOpen={showSubscriptionModal}
+          onClose={() => setShowSubscriptionModal(false)}
+          reason={subscriptionReason}
+          actionName="Thử đồ AI (Virtual Try-On)"
+        />
+      )}
 
       {/* Hidden camera input for mobile */}
       <input
@@ -647,19 +781,57 @@ function VirtualTryOnContent() {
               <h1 className="text-heading-h1 font-bold text-brand-navy">Virtual Try-On</h1>
               <p className="text-body-sm text-neutral-500 mt-1">Thử trang phục công sở ảo bằng công nghệ AI</p>
             </div>
-            <QuotaBadge count={remainingQuota} limit={limitQuota} />
+            <div className="flex items-center gap-3">
+              <QuotaBadge count={remainingQuota} limit={limitQuota} />
+              {isBlocked && (
+                <Link
+                  href="/subscription"
+                  className="px-3.5 py-1.5 bg-[#5D1C34] text-white rounded-full text-label-sm font-bold hover:bg-[#5D1C34]/90 transition-colors shadow-2xs flex items-center gap-1.5"
+                >
+                  <Crown className="w-3.5 h-3.5" /> Nâng cấp
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-10">
+
+        {/* Persistent Subscription Notice if Free / Expired */}
+        {isBlocked && (
+          <div className="p-4 md:p-5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 shadow-xs">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 bg-amber-100 rounded-xl text-amber-800 shrink-0 mt-0.5">
+                <Crown className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-body-md font-bold text-amber-950">
+                  {isSubscriptionExpired ? 'Gói cước của bạn đã hết hạn' : 'Tính năng Thử đồ AI yêu cầu gói trả tiền (MEMBER hoặc VIP)'}
+                </h3>
+                <p className="text-body-sm text-amber-800 mt-0.5 leading-relaxed">
+                  {isSubscriptionExpired
+                    ? 'Vui lòng gia hạn gói để tiếp tục trải nghiệm tính năng thử đồ 3D / AI cá nhân hóa.'
+                    : 'Tài khoản FREE hiện không hỗ trợ tính năng Try-On. Hãy nâng cấp ngay để nhận 5 – 10 lượt thử trang phục mỗi ngày!'}
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/subscription"
+              className="px-5 py-2.5 bg-[#5D1C34] text-white rounded-xl text-body-sm font-bold shrink-0 hover:bg-[#5D1C34]/90 transition-colors shadow-sm"
+            >
+              {isSubscriptionExpired ? 'Gia hạn gói' : 'Xem các gói Member'} &rarr;
+            </Link>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
 
           {/* LEFT: User Photo */}
           <div className="flex flex-col gap-4">
             <div>
               <h2 className="text-heading-h3 font-semibold text-neutral-900">Ảnh của bạn</h2>
-              <p className="text-body-sm text-neutral-500 mt-0.5">Upload ảnh toàn thân rõ mặt</p>
+              <p className="text-body-sm text-neutral-500 mt-0.5">Upload ảnh toàn thân rõ mặt hoặc tạo mannequin 3D</p>
             </div>
 
             <div className="flex p-1 bg-neutral-100 rounded-xl w-fit">
@@ -744,22 +916,42 @@ function VirtualTryOnContent() {
             </div>
           </div>
 
-          {/* RIGHT: Product Garment */}
+          {/* RIGHT: Product Garment Selection */}
           <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-heading-h3 font-semibold text-neutral-900">Trang phục</h2>
-              <p className="text-body-sm text-neutral-500 mt-0.5">Chọn sản phẩm từ bộ sưu tập công sở</p>
+              <h2 className="text-heading-h3 font-semibold text-neutral-900">Trang phục thử đồ</h2>
+              <p className="text-body-sm text-neutral-500 mt-0.5">Chọn 1 món đơn hoặc phối combo 2 món (Áo + Quần/Váy)</p>
             </div>
 
-            <div className="h-[42px] flex items-center">
-              {hasProduct && (
-                <span className="text-label-sm text-neutral-400 font-medium">Sản phẩm đã chọn</span>
-              )}
+            {/* Mode Switcher: Single vs Combo */}
+            <div className="flex p-1 bg-neutral-100 rounded-xl w-fit">
+              <button
+                type="button"
+                onClick={() => setGarmentMode('single')}
+                className={`px-4 py-2 rounded-lg text-label-sm font-medium transition-all border-0 ${
+                  garmentMode === 'single'
+                    ? 'bg-white text-brand-navy shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
+                }`}
+              >
+                1 Món đơn (1 quota)
+              </button>
+              <button
+                type="button"
+                onClick={() => setGarmentMode('combo')}
+                className={`px-4 py-2 rounded-lg text-label-sm font-medium transition-all border-0 flex items-center gap-1.5 ${
+                  garmentMode === 'combo'
+                    ? 'bg-white text-brand-navy shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" /> Combo 2 món (2 quota)
+              </button>
             </div>
 
-            {hasProduct ? (
+            {garmentMode === 'single' ? (
               <div className="flex flex-col gap-4">
-                <ProductCard product={selectedProduct} onReplace={() => setShowCatalogModal(true)} />
+                <ProductCard product={selectedProduct} onReplace={() => handleOpenCatalog('single')} />
 
                 <div className="rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50 flex items-center justify-center relative" style={{ height: 312 }}>
                   <img
@@ -770,28 +962,64 @@ function VirtualTryOnContent() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                <div
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 cursor-pointer hover:border-brand-navy/50 hover:bg-brand-navy/[0.02] transition-all"
-                  style={{ height: 400 }}
-                  onClick={() => setShowCatalogModal(true)}
-                >
-                  <div className="flex flex-col items-center gap-3 text-center px-6">
-                    <div className="w-[60px] h-[60px] rounded-2xl bg-neutral-200 flex items-center justify-center">
-                      <Upload className="w-[28px] h-[28px] text-neutral-400" />
-                    </div>
-                    <div>
-                      <p className="text-body-md font-medium text-neutral-600">Chọn trang phục</p>
-                      <p className="text-body-sm text-neutral-400 mt-1">Chọn từ catalog cửa hàng</p>
-                    </div>
-                    <button 
+              <div className="flex flex-col gap-4">
+                {/* Upper Garment Slot */}
+                <div className="p-4 bg-white rounded-2xl border border-neutral-200 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[12px] font-bold text-brand-navy uppercase tracking-wider">
+                      Món 1: Áo / Blazer (Upper)
+                    </span>
+                    <button
                       type="button"
-                      onClick={() => setShowCatalogModal(true)}
-                      className="px-5 py-2.5 bg-brand-navy text-white rounded-xl text-label-sm font-semibold hover:bg-brand-navy/90 transition-colors border-0"
+                      onClick={() => handleOpenCatalog('upper')}
+                      className="text-[12px] font-bold text-[#5D1C34] hover:underline"
                     >
-                      Xem catalog
+                      {upperProduct ? 'Đổi áo khác' : '+ Chọn áo'}
                     </button>
                   </div>
+                  {upperProduct ? (
+                    <div className="flex items-center gap-3">
+                      <img src={upperProduct.image} alt={upperProduct.name} className="w-14 h-18 object-cover rounded-lg bg-neutral-100 border border-neutral-100" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-body-sm font-bold text-brand-navy truncate">{upperProduct.name}</h4>
+                        <p className="text-[12px] text-neutral-500">{upperProduct.price}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-body-sm text-neutral-400 italic py-2">Chưa chọn áo</p>
+                  )}
+                </div>
+
+                {/* Lower Garment Slot */}
+                <div className="p-4 bg-white rounded-2xl border border-neutral-200 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[12px] font-bold text-brand-navy uppercase tracking-wider">
+                      Món 2: Quần / Chân váy (Lower)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCatalog('lower')}
+                      className="text-[12px] font-bold text-[#5D1C34] hover:underline"
+                    >
+                      {lowerProduct ? 'Đổi quần/váy' : '+ Chọn quần/váy'}
+                    </button>
+                  </div>
+                  {lowerProduct ? (
+                    <div className="flex items-center gap-3">
+                      <img src={lowerProduct.image} alt={lowerProduct.name} className="w-14 h-18 object-cover rounded-lg bg-neutral-100 border border-neutral-100" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-body-sm font-bold text-brand-navy truncate">{lowerProduct.name}</h4>
+                        <p className="text-[12px] text-neutral-500">{lowerProduct.price}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-body-sm text-neutral-400 italic py-2">Chưa chọn quần hoặc váy</p>
+                  )}
+                </div>
+
+                <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-[12px] text-neutral-600 flex items-center justify-between">
+                  <span>⚡ Thử Combo 2 món sẽ trừ:</span>
+                  <span className="font-bold text-brand-navy">2 lượt quota</span>
                 </div>
               </div>
             )}
@@ -811,7 +1039,11 @@ function VirtualTryOnContent() {
             }`}
           >
             <Sparkles className={`w-5 h-5 ${canGenerate ? 'text-brand-gold' : 'text-neutral-400'}`} />
-            {isSubmitting ? 'Đang tạo thử đồ...' : 'Tạo kết quả Try-On'}
+            {isSubmitting
+              ? 'Đang tạo thử đồ...'
+              : isBlocked
+              ? 'Nâng cấp gói để Thử đồ AI'
+              : `Tạo kết quả Try-On (${quotaCost} lượt quota)`}
           </button>
           <p className="text-body-sm text-neutral-500 text-center">
             ~20 giây xử lý · Lưu kết quả tự động vào lịch sử

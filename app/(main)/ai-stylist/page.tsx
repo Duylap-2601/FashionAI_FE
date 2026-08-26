@@ -576,21 +576,22 @@ export default function AIStylistPage() {
               </div>
             </div>
 
-            {/* Section 2: Size & Compatibility */}
-            {(displayResult.recommendedSize || score !== null) && (
+            {/* Section 2: Fit Advice & Compatibility */}
+            {(displayResult.fitAdvice || displayResult.fitRecommendation || displayResult.recommendedSize || score !== null) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {displayResult.recommendedSize && (
+                {(displayResult.fitAdvice || displayResult.fitRecommendation || displayResult.recommendedSize) && (
                   <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
                     <div className="flex items-center gap-2 text-label-sm font-bold text-brand-navy mb-3">
-                      <Ruler className="w-4 h-4" /> Cỡ phù hợp
+                      <Ruler className="w-4 h-4 text-[#5D1C34]" /> Tư vấn may đo & form dáng
                     </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-heading-h2 font-bold text-neutral-900">{displayResult.recommendedSize}</span>
-                      <span className="text-body-sm text-neutral-500">(tham khảo)</span>
-                    </div>
-                    <p className="text-body-sm text-neutral-600 mt-2 leading-relaxed">
-                      {displayResult.fitRecommendation}
+                    <p className="text-body-md text-neutral-800 leading-relaxed font-medium">
+                      {displayResult.fitAdvice || displayResult.fitRecommendation || `Khuyên dùng form: ${displayResult.recommendedSize}`}
                     </p>
+                    {displayResult.fitRecommendation && displayResult.fitAdvice && (
+                      <p className="text-body-sm text-neutral-500 mt-2 leading-relaxed">
+                        {displayResult.fitRecommendation}
+                      </p>
+                    )}
                   </div>
                 )}
 

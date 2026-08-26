@@ -10,8 +10,7 @@ export interface CartItem {
   quantity: number;
   image: string;
   hasTryOn?: boolean;
-  size: string;
-  color: string;
+  color?: string;
   type?: string;
 }
 
@@ -38,7 +37,6 @@ export const useCartStore = create<CartStore>()(
         const existingIndex = prev.findIndex(item => 
           item.productId === newItem.productId &&
           item.color === newItem.color &&
-          item.size === newItem.size &&
           item.type === newItem.type
         );
 
@@ -47,7 +45,7 @@ export const useCartStore = create<CartStore>()(
           updated[existingIndex].quantity += newItem.quantity;
           set({ cartItems: updated });
         } else {
-          const id = `${newItem.productId}-${newItem.color}-${newItem.size}-${newItem.type || ''}-${Date.now()}`;
+          const id = `${newItem.productId}-${newItem.color || 'default'}-${newItem.type || ''}-${Date.now()}`;
           set({ cartItems: [...prev, { ...newItem, id }] });
         }
       },

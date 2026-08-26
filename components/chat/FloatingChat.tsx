@@ -144,7 +144,7 @@ export function FloatingChat() {
                         )}
                       </div>
                       <span className="text-[10px] text-neutral-400 ml-1 mr-1">
-                        {new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
                       </span>
                     </div>
                     {msg.role === 'user' && (

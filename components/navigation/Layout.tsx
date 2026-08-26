@@ -7,10 +7,11 @@ import { FloatingChat } from '../chat/FloatingChat';
 import { Logo } from '../ui/Logo';
 import {
   Menu, X, ShoppingBag, User as UserIcon, Sparkles,
-  History, LogOut, Package, Ruler, Home
+  History, LogOut, Package, Ruler, Home, Bell
 } from 'lucide-react';
 import { Drawer } from 'vaul';
 import { CartSlideOver } from '../cart/CartSlideOver';
+import { NotificationBell } from '../notifications/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useMeasurements';
 import { useCart } from '@/store/cartStore';
@@ -167,6 +168,9 @@ export function Navigation() {
                         <Link href="/profile/orders" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
                           <Package className="w-4 h-4" /> Đơn hàng
                         </Link>
+                        <Link href="/notifications" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
+                          <Bell className="w-4 h-4" /> Thông báo
+                        </Link>
                       </div>
                     )}
                   </nav>
@@ -231,6 +235,10 @@ export function Navigation() {
               <Sparkles className="w-3.5 h-3.5 text-[#5D1C34]" />
               <span className="text-label-sm font-medium text-neutral-700">{currentUser.quota} <span className="text-neutral-500 font-normal">lượt</span></span>
             </div>
+          )}
+
+          {currentUser.role !== 'guest' && (
+            <NotificationBell />
           )}
 
           {currentUser.role !== 'admin' && (
@@ -299,6 +307,9 @@ export function Navigation() {
                       </Link>
                       <Link href="/profile/orders" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                         <Package className="w-4 h-4" /> Đơn hàng
+                      </Link>
+                      <Link href="/notifications" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                        <Bell className="w-4 h-4" /> Thông báo
                       </Link>
                     </div>
                   ) : (

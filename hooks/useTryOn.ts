@@ -19,10 +19,19 @@ export interface TryOnResult {
   };
 }
 
-export interface TryOnRequest {
+export interface GarmentSlotInput {
+  garmentCategory: 'UPPER' | 'LOWER' | 'FULL_BODY';
   productId?: string;
   garmentImage?: File;
+  imageUrl?: string;
+}
+
+export interface TryOnRequest {
   humanImage: File;
+  garments?: GarmentSlotInput[];
+  // Backward compatibility for single garment
+  productId?: string;
+  garmentImage?: File;
   garmentCategory?: 'UPPER' | 'LOWER' | 'FULL_BODY';
 }
 
@@ -33,9 +42,22 @@ export function useTryOn() {
     mutationFn: async (payload: TryOnRequest) => {
       const formData = new FormData();
       formData.append('humanImage', payload.humanImage);
-      if (payload.garmentImage) formData.append('garmentImage', payload.garmentImage);
-      if (payload.productId) formData.append('productId', payload.productId);
-      if (payload.garmentCategory) formData.append('garmentCategory', payload.garmentCategory);
+
+      if (payload.garments && payload.garments.length > 0) {
+        payload.garments.forEach((g, idx) => {
+          formData.append(`garments[${idx}][garmentCategory]`, g.garmentCategory);
+          if (g.productId) formData.append(`garments[${idx}][productId]`, g.productId);
+          if (g.garmentImage) formData.append(`garments[${idx}][garmentImage]`, g.garmentImage);
+        });
+        // Also provide primary fields for backward compatibility
+        if (payload.garments[0]?.productId) formData.append('productId', payload.garments[0].productId);
+        if (payload.garments[0]?.garmentCategory) formData.append('garmentCategory', payload.garments[0].garmentCategory);
+        if (payload.garments[0]?.garmentImage) formData.append('garmentImage', payload.garments[0].garmentImage);
+      } else {
+        if (payload.garmentImage) formData.append('garmentImage', payload.garmentImage);
+        if (payload.productId) formData.append('productId', payload.productId);
+        if (payload.garmentCategory) formData.append('garmentCategory', payload.garmentCategory);
+      }
 
       const res = await api.post('/try-on', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },

@@ -1,4 +1,4 @@
-﻿import NextAuth, { DefaultSession } from 'next-auth';
+import NextAuth, { DefaultSession } from 'next-auth';
 
 declare module 'next-auth' {
   interface Session {
@@ -7,6 +7,7 @@ declare module 'next-auth' {
       accessToken: string;
       accessTokenExpiresAt: string;
       tier: 'FREE' | 'MEMBER' | 'VIP';
+      tierExpiresAt: string | null;
       role: 'USER' | 'ADMIN';
     } & DefaultSession['user']
   }
@@ -16,6 +17,7 @@ declare module 'next-auth' {
     accessToken: string;
     accessTokenExpiresAt?: string;
     tier: 'FREE' | 'MEMBER' | 'VIP';
+    tierExpiresAt?: string | null;
     role: 'USER' | 'ADMIN';
   }
 }
@@ -26,6 +28,7 @@ declare module 'next-auth/jwt' {
     accessTokenExpiresAt?: string;
     error?: string;
     tier?: 'FREE' | 'MEMBER' | 'VIP';
+    tierExpiresAt?: string | null;
     role?: 'USER' | 'ADMIN';
     id?: string;
   }

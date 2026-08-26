@@ -36,11 +36,10 @@ interface AdminProduct {
   status: ProductStatus;
   image: string;
   garmentUrl?: string;
+  images?: string[];
   description?: string;
   color?: string;
-  size?: string;
   colors?: { name: string; hex: string }[];
-  sizes?: string[];
   stock?: number;
 }
 
@@ -136,30 +135,81 @@ export default function AdminDashboard() {
     ordersCount: number;
   } | null>(null);
 
+interface ProductImageItem {
+  id: string;
+  url: string;
+  file?: File;
+  isExisting?: boolean;
+}
+
   // Modal / Editor States
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<AdminProduct> | null>(null);
-  const [productImageFile, setProductImageFile] = useState<File | null>(null);
-  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  const [productImages, setProductImages] = useState<ProductImageItem[]>([]);
 
-  const handleSelectImage = useCallback((file: File | null) => {
-    setProductImageFile(file);
-    setProductImagePreview(prev => {
-      if (prev) URL.revokeObjectURL(prev);
-      return file ? URL.createObjectURL(file) : null;
+  const handleSelectImages = useCallback((files: FileList | File[]) => {
+    const newItems: ProductImageItem[] = Array.from(files).map(file => ({
+      id: `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      url: URL.createObjectURL(file),
+      file,
+      isExisting: false,
+    }));
+    setProductImages(prev => [...prev, ...newItems]);
+  }, []);
+
+  const handleRemoveImage = useCallback((id: string) => {
+    setProductImages(prev => {
+      const target = prev.find(item => item.id === id);
+      if (target?.file) {
+        URL.revokeObjectURL(target.url);
+      }
+      return prev.filter(item => item.id !== id);
+    });
+  }, []);
+
+  const handleSetPrimaryImage = useCallback((index: number) => {
+    setProductImages(prev => {
+      if (index <= 0 || index >= prev.length) return prev;
+      const item = prev[index];
+      const rest = prev.filter((_, i) => i !== index);
+      return [item, ...rest];
     });
   }, []);
 
   const openProductEditor = useCallback((product: Partial<AdminProduct> | null) => {
-    handleSelectImage(null);
+    setProductImages(prev => {
+      prev.forEach(img => {
+        if (img.file) URL.revokeObjectURL(img.url);
+      });
+      if (product) {
+        const rawImages: string[] = Array.isArray(product.images) && product.images.length > 0
+          ? product.images
+          : product.image
+          ? [product.image]
+          : product.garmentUrl
+          ? [product.garmentUrl]
+          : [];
+        return rawImages.map((url, i) => ({
+          id: `existing-${i}-${url}`,
+          url,
+          isExisting: true,
+        }));
+      }
+      return [];
+    });
     setEditingProduct(product ? product : { stock: 0, status: 'ACTIVE', category: 'UPPER' });
-  }, [handleSelectImage]);
+  }, []);
 
   const closeProductEditor = useCallback(() => {
-    handleSelectImage(null);
+    setProductImages(prev => {
+      prev.forEach(img => {
+        if (img.file) URL.revokeObjectURL(img.url);
+      });
+      return [];
+    });
     setEditingProduct(null);
-  }, [handleSelectImage]);
+  }, []);
 
   // ─── Colors / Sizes editors ────────────────────────────────────────────────
   const addColor = useCallback(() => {
@@ -178,35 +228,30 @@ export default function AdminDashboard() {
     setEditingProduct(prev => ({ ...prev, colors: (prev?.colors || []).filter((_, i) => i !== index) }));
   }, []);
 
-  const toggleSize = useCallback((size: string) => {
-    setEditingProduct(prev => {
-      const current = prev?.sizes || [];
-      return {
-        ...prev,
-        sizes: current.includes(size) ? current.filter(s => s !== size) : [...current, size],
-      };
-    });
-  }, []);
-
   const fetchProducts = useCallback(async () => {
     try {
       const res = await api.get('/products', { params: { limit: 100 } });
       const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as any[];
-      setProducts(list.map((p) => ({
-        id: p.id,
-        name: p.name,
-        category: p.category as GarmentCategory,
-        price: Number(p.price),
-        stock: p.stock ?? 0,
-        status: p.status as ProductStatus,
-        image: p.garmentUrl || '/images/731163514_999523332788054_1114320478812927640_n.png',
-        garmentUrl: p.garmentUrl,
-        description: p.description,
-        color: p.color,
-        size: p.size,
-        colors: Array.isArray(p.colors) ? p.colors : undefined,
-        sizes: Array.isArray(p.sizes) ? p.sizes : undefined,
-      })));
+      setProducts(list.map((p) => {
+        const rawImages = Array.isArray(p.images)
+          ? p.images.map((img: any) => typeof img === 'string' ? img : (img.imageUrl || img.url)).filter(Boolean)
+          : [];
+        const primaryImg = rawImages[0] || p.garmentUrl || '/images/731163514_999523332788054_1114320478812927640_n.png';
+        return {
+          id: p.id,
+          name: p.name,
+          category: p.category as GarmentCategory,
+          price: Number(p.price),
+          stock: p.stock ?? 0,
+          status: p.status as ProductStatus,
+          image: primaryImg,
+          images: rawImages.length > 0 ? rawImages : [primaryImg],
+          garmentUrl: p.garmentUrl,
+          description: p.description,
+          color: p.color,
+          colors: Array.isArray(p.colors) ? p.colors : undefined,
+        };
+      }));
     } catch (e) {
       console.error('Backend API products fetch failed:', e);
       toast.error('Không thể tải danh sách sản phẩm');
@@ -289,17 +334,17 @@ export default function AdminDashboard() {
       toast.error('Vui lòng chọn danh mục.');
       return;
     }
-    // Sản phẩm mới bắt buộc phải có ảnh; khi sửa thì để trống nghĩa là giữ ảnh cũ.
-    if (!editingProduct.id && !productImageFile) {
-      toast.error('Vui lòng chọn ảnh sản phẩm.');
+    const newFiles = productImages.filter(item => item.file).map(item => item.file!);
+
+    // Sản phẩm mới bắt buộc phải có ít nhất 1 ảnh; khi sửa thì có thể giữ nguyên ảnh cũ.
+    if (!editingProduct.id && productImages.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một ảnh sản phẩm.');
       return;
     }
 
-    // Bỏ các màu chưa đặt tên; đồng bộ color/size (đơn) = phần tử đầu để tương thích ngược.
+    // Bỏ các màu chưa đặt tên; đồng bộ color = phần tử đầu để tương thích ngược.
     const colors = (editingProduct.colors || []).filter(c => c.name.trim());
-    const sizes = editingProduct.sizes || [];
     const primaryColor = colors[0]?.name;
-    const primarySize = sizes[0];
     const stock = editingProduct.stock ?? 0;
 
     try {
@@ -310,26 +355,38 @@ export default function AdminDashboard() {
           price: editingProduct.price,
           category: editingProduct.category,
           color: primaryColor || undefined,
-          size: primarySize || undefined,
           colors,
-          sizes,
           stock,
           description: editingProduct.description || undefined,
           status: editingProduct.status || 'ACTIVE',
         });
 
-        // Nếu admin chọn ảnh mới → upload qua endpoint ảnh và đặt làm ảnh chính.
-        if (productImageFile) {
+        // Nếu admin chọn thêm ảnh mới → upload qua endpoint ảnh.
+        if (newFiles.length > 0) {
           const imageForm = new FormData();
-          imageForm.append('image', productImageFile);
-          imageForm.append('isMain', 'true');
-          await api.post(`/products/${editingProduct.id}/images`, imageForm, {
-            headers: { 'Content-Type': 'multipart/form-data' },
+          newFiles.forEach((file, index) => {
+            imageForm.append('images', file);
+            if (index === 0) imageForm.append('image', file);
           });
+          imageForm.append('isMain', 'true');
+          try {
+            await api.post(`/products/${editingProduct.id}/images`, imageForm, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+          } catch {
+            // Fallback: upload từng ảnh nếu backend nhận single file
+            for (const file of newFiles) {
+              const singleForm = new FormData();
+              singleForm.append('image', file);
+              await api.post(`/products/${editingProduct.id}/images`, singleForm, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+              });
+            }
+          }
         }
         toast.success('Cập nhật sản phẩm thành công');
       } else {
-        // POST /products nhận multipart: có field `image` thì backend tự upload và set garmentUrl.
+        // POST /products nhận multipart: upload nhiều ảnh
         const form = new FormData();
         form.append('name', editingProduct.name);
         form.append('price', String(editingProduct.price));
@@ -338,11 +395,16 @@ export default function AdminDashboard() {
         form.append('status', editingProduct.status || 'ACTIVE');
         if (editingProduct.description) form.append('description', editingProduct.description);
         if (primaryColor) form.append('color', primaryColor);
-        if (primarySize) form.append('size', primarySize);
-        // Mảng phải stringify để đi qua multipart; backend @Transform sẽ JSON.parse lại.
         if (colors.length > 0) form.append('colors', JSON.stringify(colors));
-        if (sizes.length > 0) form.append('sizes', JSON.stringify(sizes));
-        if (productImageFile) form.append('image', productImageFile);
+
+        if (newFiles.length > 0) {
+          newFiles.forEach((file) => {
+            form.append('images', file);
+          });
+          // Gửi thêm field 'image' của ảnh đầu tiên để tương thích
+          form.append('image', newFiles[0]);
+        }
+
         await api.post('/products', form, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -1011,7 +1073,14 @@ export default function AdminDashboard() {
                       <tr key={p.id} className="hover:bg-neutral-50">
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
-                            <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover bg-neutral-100 shrink-0 border border-neutral-100" />
+                            <div className="relative shrink-0">
+                              <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover bg-neutral-100 border border-neutral-100" />
+                              {p.images && p.images.length > 1 && (
+                                <span className="absolute -bottom-1 -right-1 bg-brand-navy text-white text-[9px] font-bold px-1 rounded-full border border-white shadow-2xs">
+                                  +{p.images.length}
+                                </span>
+                              )}
+                            </div>
                             <span className="font-semibold text-neutral-900 line-clamp-1">{p.name}</span>
                           </div>
                         </td>
@@ -1497,57 +1566,97 @@ export default function AdminDashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Kích cỡ</label>
-                  <div className="flex flex-wrap gap-2">
-                    {SIZE_OPTIONS.map(s => {
-                      const active = (editingProduct.sizes || []).includes(s);
-                      return (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => toggleSize(s)}
-                          className={`px-3.5 py-1.5 rounded-lg text-label-sm font-semibold border cursor-pointer transition-colors ${
-                            active
-                              ? 'bg-brand-navy text-white border-brand-navy'
-                              : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-navy/40'
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      );
-                    })}
+                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Hình thức sản xuất</label>
+                  <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-[13px] text-neutral-700 font-medium flex items-center gap-2">
+                    <span className="text-semantic-success font-bold">✓ May đo theo số đo (Made-to-Measure)</span>
+                    <span className="text-neutral-400 text-[12px]">(Khách hàng cung cấp số đo tại Profile)</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">
-                    Ảnh sản phẩm {editingProduct.id ? '' : '*'}
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-lg border border-neutral-200 bg-neutral-50 overflow-hidden shrink-0 flex items-center justify-center">
-                      {productImagePreview || editingProduct.image || editingProduct.garmentUrl ? (
-                        <img
-                          src={productImagePreview || editingProduct.image || editingProduct.garmentUrl}
-                          alt="Ảnh sản phẩm"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Package className="w-6 h-6 text-neutral-300" />
-                      )}
-                    </div>
-                    <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-body-sm font-medium text-neutral-700">
+                      Ảnh sản phẩm {editingProduct.id ? '' : '*'} ({productImages.length} ảnh)
+                    </label>
+                    <label className="text-label-sm font-semibold text-brand-navy hover:underline cursor-pointer flex items-center gap-1">
+                      <span>+ Thêm ảnh</span>
                       <input
                         type="file"
+                        multiple
                         accept="image/jpeg,image/png,image/webp"
-                        onChange={e => handleSelectImage(e.target.files?.[0] || null)}
-                        className="block w-full text-body-sm text-neutral-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-navy file:text-white file:text-label-sm file:font-bold file:cursor-pointer hover:file:bg-brand-navy/90 cursor-pointer"
+                        onChange={e => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            handleSelectImages(e.target.files);
+                          }
+                          e.target.value = '';
+                        }}
+                        className="hidden"
                       />
-                      <p className="text-label-sm text-neutral-400 mt-1.5">JPG, PNG hoặc WEBP · tối đa 10MB.</p>
-                      {editingProduct.id && (
-                        <p className="text-label-sm text-neutral-400 mt-0.5">Để trống nếu giữ nguyên ảnh hiện tại.</p>
-                      )}
-                    </div>
+                    </label>
                   </div>
+
+                  <div className="grid grid-cols-4 gap-2.5 mb-2">
+                    {productImages.map((img, idx) => (
+                      <div
+                        key={img.id}
+                        className="relative group rounded-xl border border-neutral-200 bg-neutral-50 overflow-hidden aspect-square flex items-center justify-center shadow-2xs"
+                      >
+                        <img
+                          src={img.url}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+
+                        {/* Primary Badge or Set Primary */}
+                        {idx === 0 ? (
+                          <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-brand-navy/90 text-white text-[9px] font-bold rounded shadow-xs">
+                            Ảnh chính
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSetPrimaryImage(idx)}
+                            className="absolute top-1 left-1 px-1.5 py-0.5 bg-white/90 hover:bg-white text-neutral-800 text-[9px] font-semibold rounded shadow-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-0"
+                            title="Đặt làm ảnh chính"
+                          >
+                            Đặt chính
+                          </button>
+                        )}
+
+                        {/* Remove Image Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(img.id)}
+                          className="absolute top-1 right-1 w-5 h-5 bg-red-600/90 hover:bg-red-600 text-white rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-0"
+                          title="Xóa ảnh"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add More Dropzone / Card */}
+                    <label className="border-2 border-dashed border-neutral-300 hover:border-brand-navy/60 hover:bg-neutral-100/50 rounded-xl aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer transition-all text-neutral-400 hover:text-brand-navy">
+                      <Package className="w-5 h-5" />
+                      <span className="text-[11px] font-semibold">+ Thêm</span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={e => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            handleSelectImages(e.target.files);
+                          }
+                          e.target.value = '';
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <p className="text-label-sm text-neutral-400">
+                    JPG, PNG hoặc WEBP · Tải lên nhiều ảnh cùng lúc · Ảnh đầu tiên là ảnh đại diện (nhấn "Đặt chính" để đổi).
+                  </p>
                 </div>
 
                 <div>

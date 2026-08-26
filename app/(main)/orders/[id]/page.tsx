@@ -55,10 +55,9 @@ export default function OrderDetailPage() {
         name: item.product?.name || 'Trang phục FashionAI',
         price: item.price,
         quantity: item.quantity,
-        size: item.size || 'M',
         color: item.color || 'Mặc định',
         image: item.product?.images?.[0] || '/images/726470431_1311184104081177_6052756217829444481_n.png',
-        variant: `Màu: ${item.color || 'Mặc định'} | Size: ${item.size || 'M'}`
+        variant: `Màu: ${item.color || 'Mặc định'} · May đo`
       });
     });
     toast.success('Đã thêm các sản phẩm vào giỏ hàng!');
@@ -210,8 +209,18 @@ export default function OrderDetailPage() {
                       <div className="flex items-center gap-2 mt-1 text-[13px] text-neutral-500">
                         <span>Màu: <strong className="text-neutral-700">{item.color || 'Mặc định'}</strong></span>
                         <span>•</span>
-                        <span>Size: <strong className="text-neutral-700">{item.size || 'M'}</strong></span>
+                        <span>Hình thức: <strong className="text-neutral-700">May đo theo số đo</strong></span>
                       </div>
+                      {item.measurementSnapshot && Object.keys(item.measurementSnapshot).length > 0 && (
+                        <div className="mt-2 p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 text-[11px] text-neutral-600 flex flex-wrap gap-x-3 gap-y-1">
+                          <span className="font-semibold text-brand-navy">Số đo đã chốt:</span>
+                          {item.measurementSnapshot.chest && <span>Ngực: {item.measurementSnapshot.chest}cm</span>}
+                          {item.measurementSnapshot.waist && <span>Eo: {item.measurementSnapshot.waist}cm</span>}
+                          {item.measurementSnapshot.hip && <span>Hông: {item.measurementSnapshot.hip}cm</span>}
+                          {item.measurementSnapshot.shoulder && <span>Vai: {item.measurementSnapshot.shoulder}cm</span>}
+                          {item.measurementSnapshot.height && <span>Cao: {item.measurementSnapshot.height}cm</span>}
+                        </div>
+                      )}
                       <div className="text-[13px] text-neutral-500 mt-0.5">
                         Số lượng: <strong className="text-brand-navy">{item.quantity}</strong>
                       </div>

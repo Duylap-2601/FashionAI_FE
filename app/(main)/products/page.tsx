@@ -57,8 +57,6 @@ const AVAILABLE_COLORS = [
   { name: 'Be', color: '#E8E2D2' },
 ];
 
-const AVAILABLE_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-
 export default function ProductListing() {
   const { setIsCartOpen } = useApp();
   const { addToCart } = useCart();
@@ -72,7 +70,6 @@ export default function ProductListing() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>([]);
 
@@ -153,13 +150,6 @@ export default function ProductListing() {
       });
     }
 
-    // Size filter
-    if (selectedSizes.length > 0) {
-      result = result.filter(p =>
-        p.sizes && p.sizes.some(size => selectedSizes.includes(size))
-      );
-    }
-
     // Color filter
     if (selectedColors.length > 0) {
       result = result.filter(p =>
@@ -182,7 +172,7 @@ export default function ProductListing() {
     }
 
     return result;
-  }, [allProducts, searchQuery, activeTab, selectedSubCategories, selectedSizes, selectedColors, selectedMaxPrice, sortBy]);
+  }, [allProducts, searchQuery, activeTab, selectedSubCategories, selectedColors, selectedMaxPrice, sortBy]);
 
   // Pagination
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
@@ -193,13 +183,6 @@ export default function ProductListing() {
   }, [filteredProducts, validCurrentPage, itemsPerPage]);
 
   // Handlers for Toggling Filters
-  const toggleSize = (size: string) => {
-    setSelectedSizes(prev =>
-      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
-    );
-    setCurrentPage(1);
-  };
-
   const toggleColor = (colorName: string) => {
     setSelectedColors(prev =>
       prev.includes(colorName) ? prev.filter(c => c !== colorName) : [...prev, colorName]
@@ -217,7 +200,6 @@ export default function ProductListing() {
   const handleClearAllFilters = () => {
     setSearchQuery('');
     setActiveTab('Tất cả');
-    setSelectedSizes([]);
     setSelectedColors([]);
     setSelectedSubCategories([]);
     setSelectedMaxPrice(null);
@@ -242,9 +224,6 @@ export default function ProductListing() {
         onRemove: () => setSelectedMaxPrice(null)
       });
     }
-    selectedSizes.forEach(size => {
-      chips.push({ id: `size-${size}`, label: `Size ${size}`, onRemove: () => toggleSize(size) });
-    });
     selectedColors.forEach(color => {
       chips.push({ id: `color-${color}`, label: `Màu ${color}`, onRemove: () => toggleColor(color) });
     });
@@ -253,7 +232,7 @@ export default function ProductListing() {
     });
 
     return chips;
-  }, [activeTab, searchQuery, selectedMaxPrice, maxPriceLimit, selectedSizes, selectedColors, selectedSubCategories]);
+  }, [activeTab, searchQuery, selectedMaxPrice, maxPriceLimit, selectedColors, selectedSubCategories]);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -363,27 +342,6 @@ export default function ProductListing() {
                 />
                 <div className="text-[13px] font-medium text-neutral-600 text-center mt-2">
                   Dưới {currentPriceRange.toLocaleString('vi-VN')}đ
-                </div>
-              </div>
-
-              {/* Size */}
-              <div>
-                <h3 className="text-label-sm font-semibold mb-4">Size</h3>
-                <div className="flex flex-wrap gap-2">
-                  {AVAILABLE_SIZES.map(size => (
-                    <button
-                      key={size}
-                      onClick={() => toggleSize(size)}
-                      type="button"
-                      className={`w-10 h-10 rounded-full border flex items-center justify-center text-label-sm font-medium transition-colors ${
-                        selectedSizes.includes(size)
-                          ? 'border-brand-navy bg-brand-navy text-white'
-                          : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
                 </div>
               </div>
 
@@ -556,16 +514,14 @@ export default function ProductListing() {
                             onClick={(e) => {
                               e.preventDefault();
                               const color = product.colors?.[0]?.name || 'Mặc định';
-                              const size = product.sizes?.[0] || 'M';
                               addToCart({
                                 productId: product.id,
                                 name: product.name,
                                 price: product.numericPrice,
                                 quantity: 1,
                                 image: product.image,
-                                size,
                                 color,
-                                variant: `Màu: ${color} | Size: ${size}`
+                                variant: `Màu: ${color} · May đo`
                               });
                               toast.custom((t) => (
                                 <div className="bg-[#FDFBF7] border-l-4 border-[#5D1C34] border-y border-r border-[#E5DFD5] p-4 rounded-xl shadow-lg flex items-start gap-3.5 max-w-[380px] w-full relative">
@@ -575,7 +531,7 @@ export default function ProductListing() {
                                   <div className="flex-1 min-w-0 pr-4">
                                     <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã thêm vào giỏ hàng!</h4>
                                     <p className="text-[12px] text-neutral-700 font-semibold mt-1 truncate">{product.name}</p>
-                                    <p className="text-[11px] text-neutral-500 mt-0.5">Màu: {color} | Size: {size} | SL: 1</p>
+                                    <p className="text-[11px] text-neutral-500 mt-0.5">Màu: {color} · May đo theo số đo | SL: 1</p>
                                   </div>
                                   <div className="flex flex-col items-end justify-between self-stretch shrink-0 min-h-[56px]">
                                     <button 

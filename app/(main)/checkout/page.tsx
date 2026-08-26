@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronRight, CreditCard, Building2, Sparkles, ShoppingBag, CheckCircle2 } from 'lucide-react';
 import { useCart } from '@/store/cartStore';
 import { useUserProfile } from '@/hooks/useMeasurements';
+import { useMeasurementsCompleteness } from '@/hooks/useMeasurementsCompleteness';
 import { useCreateOrder } from '@/hooks/useOrders';
 import { useCheckout } from '@/hooks/usePayments';
 import { VIETNAM_PROVINCES } from '@/lib/vietnam-provinces';
@@ -15,6 +16,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems: items, totalPrice, clearCart } = useCart();
   const { profile } = useUserProfile();
+  const { canOrder, completeness, isLoading: isCompletenessLoading } = useMeasurementsCompleteness();
   const { createOrderAsync, isSubmitting } = useCreateOrder();
   const { checkout, isLoading: isCheckoutLoading } = useCheckout();
 
@@ -87,6 +89,26 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (items.length === 0 || isSubmitting || isCheckoutLoading) return;
 
+    if (!canOrder && completeness) {
+      const missingLabels: string[] = [];
+      completeness.byCategory.forEach(cat => {
+        if (!cat.complete && cat.missing) {
+          cat.missing.forEach(m => {
+            if (!missingLabels.includes(m.label)) missingLabels.push(m.label);
+          });
+        }
+      });
+
+      toast.error('Chưa đủ số đo cơ thể để may trang phục!', {
+        description: `Còn thiếu: ${missingLabels.join(', ') || 'số đo bắt buộc'}. Vui lòng bổ sung trước khi đặt hàng.`,
+        action: {
+          label: 'Nhập số đo',
+          onClick: () => router.push('/profile/measurements'),
+        },
+      });
+      return;
+    }
+
     const formattedProvince = currentProvince.name;
     const currentDistrict = availableDistricts.find(d => d.id === districtId);
     const formattedDistrict = currentDistrict ? currentDistrict.name : '';
@@ -96,7 +118,6 @@ export default function CheckoutPage() {
       items: items.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
-        size: item.size,
         color: item.color,
         price: item.price,
       })),
@@ -189,10 +210,24 @@ export default function CheckoutPage() {
         toast.error('Tạo đơn hàng thành công nhưng không thể chuyển tới cổng thanh toán. Vui lòng thanh toán lại từ trang đơn hàng.');
         router.push(`/orders/${orderId}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create order:', error);
-      toast.error('Đã xảy ra lỗi khi tạo đơn hàng. Vui lòng thử lại.');
-      // Don't clear cart, don't redirect to fake order
+      const data = error?.response?.data;
+      if (data?.code === 'MEASUREMENTS_INCOMPLETE') {
+        const missing = Array.isArray(data.missing)
+          ? data.missing.map((m: any) => m.label).join(', ')
+          : 'vui lòng kiểm tra lại số đo';
+        toast.error('Thiếu số đo bắt buộc để đặt may!', {
+          description: `Còn thiếu: ${missing}. Vui lòng bổ sung số đo trước khi đặt hàng.`,
+          action: {
+            label: 'Nhập số đo',
+            onClick: () => router.push('/profile/measurements'),
+          },
+        });
+      } else {
+        const msg = data?.message || error?.message || 'Đã xảy ra lỗi khi tạo đơn hàng.';
+        toast.error(`Lỗi tạo đơn: ${Array.isArray(msg) ? msg[0] : msg}`);
+      }
     }
   };
 
@@ -228,6 +263,38 @@ export default function CheckoutPage() {
 
           {/* LEFT - Form */}
           <div className="flex flex-col gap-10">
+
+            {/* Incomplete Measurements Notice */}
+            {!canOrder && completeness && (
+              <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl animate-in fade-in duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-100 rounded-xl text-amber-700 shrink-0 mt-0.5">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-body-md font-bold text-amber-900 mb-1">
+                      Cần bổ sung số đo cơ thể để hoàn tất đơn may đo
+                    </h3>
+                    <p className="text-[13px] text-amber-700 mb-3 leading-relaxed">
+                      Sản phẩm bạn chọn là hình thức may đo riêng (Made-to-Measure). Tài khoản của bạn hiện còn thiếu một số thông số bắt buộc:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {completeness.byCategory.flatMap(c => c.missing || []).map((m, idx) => (
+                        <span key={idx} className="px-2.5 py-1 bg-amber-100/80 text-amber-800 rounded-lg text-[12px] font-semibold border border-amber-200">
+                          {m.label}
+                        </span>
+                      ))}
+                    </div>
+                    <Link
+                      href="/profile/measurements"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#5D1C34] text-white rounded-xl text-[13px] font-bold hover:bg-[#5D1C34]/90 transition-colors shadow-2xs"
+                    >
+                      Bổ sung số đo tại Profile &rarr;
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Section 1 */}
             <section>
@@ -387,7 +454,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-body-sm font-medium text-brand-navy line-clamp-1">{item.name}</h3>
-                      <p className="text-[12px] text-neutral-500">Màu: {item.color} | Size: {item.size}</p>
+                      <p className="text-[12px] text-neutral-500">Màu: {item.color || 'Mặc định'} · May đo</p>
                     </div>
                     <div className="text-body-sm font-medium text-brand-navy">
                       {(item.price * item.quantity).toLocaleString('vi-VN')}đ

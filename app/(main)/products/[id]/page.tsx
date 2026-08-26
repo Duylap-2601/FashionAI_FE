@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { PRODUCTS } from '@/lib/data';
 import { useProduct, useProducts } from '@/hooks/useProducts';
 import { useMeasurements } from '@/hooks/useMeasurements';
+import { useMeasurementsCompleteness } from '@/hooks/useMeasurementsCompleteness';
 
 const imgSuit = '/images/726470431_1311184104081177_6052756217829444481_n.png';
 const imgBlazer = '/images/731163514_999523332788054_1114320478812927640_n.png';
@@ -24,6 +25,7 @@ export default function ProductDetail() {
   const { product: apiProduct } = useProduct(id);
   const { products: allApiProducts } = useProducts();
   const { measurements } = useMeasurements();
+  const { getCategoryCompleteness } = useMeasurementsCompleteness();
 
   // Find product by id (from route). Fallback to p2 (Combo Suit) if not found
   const product = apiProduct ||
@@ -38,28 +40,22 @@ export default function ProductDetail() {
   const isComboSuit = product.id === 'p2' || product.id === 'p4' || product.name.toLowerCase().includes('combo suit') || product.name.toLowerCase().includes('suit');
   const [selectedType, setSelectedType] = useState<'combo' | 'blazer' | 'retail'>('combo');
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.name || 'Trắng');
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'M');
   const [activeThumb, setActiveThumb] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('Mô tả sản phẩm');
-  const [isCustomSize, setIsCustomSize] = useState(false);
+
+  const catCompleteness = getCategoryCompleteness(product.category);
+  const isMeasurementComplete = catCompleteness ? catCompleteness.complete : true;
 
   // Reset values when switching products
   useEffect(() => {
     setSelectedColor(product.colors?.[0]?.name || 'Trắng');
-    setSelectedSize(product.sizes?.[0] || 'M');
     setActiveThumb(0);
     setSelectedType('combo');
     setQuantity(1);
-    setIsCustomSize(false);
-  }, [product.id, product.colors, product.sizes]);
+  }, [product.id, product.colors]);
 
   const thumbs = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
-
-  const sizes = (product.sizes && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL', 'XXL']).map(sizeLabel => ({
-    label: sizeLabel,
-    inStock: (product.stock ?? 1) > 0
-  }));
 
   const handleSelectThumb = (idx: number) => {
     setActiveThumb(idx);
@@ -88,23 +84,6 @@ export default function ProductDetail() {
     { value: 'retail', label: 'Sơ mi / Váy / Quần tây', price: 550000 },
   ];
 
-  const handleCustomSizeToggle = () => {
-    const hasVals = Boolean(measurements && (measurements.height || measurements.weight));
-
-    if (!hasVals) {
-      toast.error("Chưa có số đo cơ thể!", {
-        description: "Vui lòng nhập số đo trong profile của bạn trước khi chọn may đo.",
-        action: {
-          label: "Nhập số đo",
-          onClick: () => router.push("/profile/measurements")
-        }
-      });
-      return;
-    }
-
-    setIsCustomSize(!isCustomSize);
-  };
-
   const handleAddToCart = () => {
     let price = product.numericPrice;
     let name = product.name;
@@ -123,11 +102,8 @@ export default function ProductDetail() {
       price,
       quantity,
       image: thumbs[activeThumb] || product.image,
-      size: isCustomSize ? 'May đo (Profile)' : selectedSize,
       color: selectedColor,
-      variant: isCustomSize 
-        ? `Màu: ${selectedColor} | Size: May đo (Profile)` 
-        : `Màu: ${selectedColor} | Size: ${selectedSize}`,
+      variant: `Màu: ${selectedColor} · Đặt may theo số đo`,
       type: isComboSuit ? selectedType : undefined
     });
 
@@ -140,7 +116,7 @@ export default function ProductDetail() {
           <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã thêm vào giỏ hàng!</h4>
           <p className="text-[12px] text-neutral-700 font-semibold mt-1 truncate">{name}</p>
           <p className="text-[11px] text-neutral-500 mt-0.5">
-            Màu: {selectedColor} | Size: {isCustomSize ? 'May đo (Profile)' : selectedSize} | SL: {quantity}
+            Màu: {selectedColor} · Đặt may theo số đo | SL: {quantity}
           </p>
         </div>
         <div className="flex flex-col items-end justify-between self-stretch shrink-0 min-h-[56px]">
@@ -326,63 +302,55 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* Size Selector */}
+          {/* Made-to-Measure (May đo theo số đo cá nhân) */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-body-sm font-medium text-brand-navy">
-                Kích thước: <span className="font-normal text-neutral-600">{isCustomSize ? 'May đo (Profile)' : selectedSize}</span>
+              <div className="text-body-sm font-bold text-brand-navy flex items-center gap-1.5">
+                <Ruler className="w-4 h-4 text-[#5D1C34]" /> Hình thức: <span className="text-[#5D1C34]">May đo theo số đo cơ thể (Made-to-measure)</span>
               </div>
-              
-              <button
-                type="button"
-                onClick={handleCustomSizeToggle}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold transition-all border cursor-pointer ${
-                  isCustomSize
-                    ? 'bg-[#5D1C34] text-white border-[#5D1C34] shadow-sm'
-                    : 'bg-white text-[#5D1C34] border-[#5D1C34]/20 hover:border-[#5D1C34]'
-                }`}
+              <Link
+                href="/profile/measurements"
+                className="text-[12px] font-bold text-[#5D1C34] hover:underline flex items-center gap-1"
               >
-                <Ruler className="w-3.5 h-3.5" /> May theo số đo Profile
-              </button>
+                Cập nhật số đo <ChevronRight className="w-3 h-3" />
+              </Link>
             </div>
 
-            <div className="flex gap-2">
-              {sizes.map((sizeObj) => (
-                <button
-                  key={sizeObj.label}
-                  type="button"
-                  disabled={isCustomSize || !sizeObj.inStock}
-                  onClick={() => setSelectedSize(sizeObj.label)}
-                  className={`w-[44px] h-[44px] rounded-xl border text-body-sm font-medium transition-all cursor-pointer ${
-                    isCustomSize
-                      ? 'opacity-30 cursor-not-allowed border-neutral-100 bg-neutral-50 text-neutral-400'
-                      : !sizeObj.inStock 
-                      ? 'opacity-40 cursor-not-allowed border-neutral-100 bg-neutral-50 text-neutral-400 line-through' 
-                      : selectedSize === sizeObj.label 
-                      ? 'border-brand-navy bg-brand-navy text-white shadow-sm' 
-                      : 'border-neutral-200 text-brand-navy hover:border-neutral-400 bg-white'
-                  }`}
-                >
-                  {sizeObj.label}
-                </button>
-              ))}
-            </div>
-
-            {isCustomSize && (
-              <div className="mt-3 p-3.5 bg-[#FDFBF7] border border-[#E5DFD5] rounded-xl text-neutral-600 animate-in slide-in-from-top-1 duration-200">
-                <div className="text-[12px] font-bold text-[#5D1C34] mb-1 flex items-center gap-1">
-                  <span>✨</span> Sử dụng số đo từ Profile của bạn:
+            {isMeasurementComplete ? (
+              <div className="p-4 bg-[#FDFBF7] border border-[#E5DFD5] rounded-xl animate-in fade-in duration-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[13px] font-bold text-green-700 flex items-center gap-1.5">
+                    <span>✓</span> Số đo của bạn đã sẵn sàng cho may đo
+                  </div>
+                  <span className="text-[11px] text-neutral-400 font-medium">Tự động áp dụng khi đặt hàng</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-[11px] font-semibold text-neutral-500">
-                  <div>Vai: <strong className="text-brand-navy">{measurements?.shoulder || '—'} cm</strong></div>
-                  <div>Ngực: <strong className="text-brand-navy">{measurements?.chest || '—'} cm</strong></div>
-                  <div>Eo: <strong className="text-brand-navy">{measurements?.waist || '—'} cm</strong></div>
-                  <div>Hông: <strong className="text-brand-navy">{measurements?.hip || '—'} cm</strong></div>
-                  <div>Chiều cao: <strong className="text-brand-navy">{measurements?.height || '—'} cm</strong></div>
-                  <div>Cân nặng: <strong className="text-brand-navy">{measurements?.weight || '—'} kg</strong></div>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] font-medium text-neutral-600 bg-white p-2.5 rounded-lg border border-[#EFE9E1]">
+                  <div>Ngực: <strong className="text-brand-navy">{measurements?.chest || '—'}cm</strong></div>
+                  <div>Eo: <strong className="text-brand-navy">{measurements?.waist || '—'}cm</strong></div>
+                  <div>Hông: <strong className="text-brand-navy">{measurements?.hip || '—'}cm</strong></div>
+                  <div>Vai: <strong className="text-brand-navy">{measurements?.shoulder || '—'}cm</strong></div>
+                  <div>Cao: <strong className="text-brand-navy">{measurements?.height || '—'}cm</strong></div>
+                  <div>Nặng: <strong className="text-brand-navy">{measurements?.weight || '—'}kg</strong></div>
                 </div>
-                <div className="text-[10px] text-neutral-400 mt-2 italic">
-                  * Số đo được tự động áp dụng khi thực hiện may đo bộ trang phục này.
+              </div>
+            ) : (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in duration-200">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-bold text-amber-800">
+                      Cần bổ sung số đo trước khi đặt may
+                    </p>
+                    <p className="text-[12px] text-amber-700 mt-1">
+                      Còn thiếu: <strong className="font-semibold">{catCompleteness?.missing?.map(m => m.label).join(', ') || 'số đo bắt buộc'}</strong>.
+                    </p>
+                    <Link
+                      href="/profile/measurements"
+                      className="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1.5 bg-amber-700 text-white rounded-lg text-[12px] font-bold hover:bg-amber-800 transition-colors shadow-2xs"
+                    >
+                      <Ruler className="w-3.5 h-3.5" /> Bổ sung số đo ngay
+                    </Link>
+                  </div>
                 </div>
               </div>
             )}
@@ -391,7 +359,7 @@ export default function ProductDetail() {
           {/* Stock */}
           <div className="flex items-center gap-2 mb-6">
             <div className="w-2 h-2 rounded-full bg-semantic-success"></div>
-            <span className="text-body-sm text-semantic-success font-medium">✓ Còn hàng</span>
+            <span className="text-body-sm text-semantic-success font-medium">✓ Nhận may theo số đo riêng (3-5 ngày làm việc)</span>
           </div>
 
           {/* Quantity */}
@@ -439,7 +407,7 @@ export default function ProductDetail() {
           {/* Measurements reminder */}
           <Link href="/profile/measurements" className="flex items-center justify-between p-4 bg-[#EEF0FD] border border-[#AFA9EC] rounded-xl text-[#3C3489] hover:bg-[#E0E4FC] transition-colors group cursor-pointer">
             <div className="flex items-center gap-2 text-body-sm font-medium">
-              <span className="text-[16px]">💡</span> Thêm số đo để kết quả try-on chính xác hơn
+              <span className="text-[16px]">💡</span> Xem và chỉnh sửa số đo cá nhân trong Profile
             </div>
             <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
           </Link>
@@ -451,7 +419,7 @@ export default function ProductDetail() {
       <div className="border-t border-neutral-200">
         <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8">
           <div className="flex items-center gap-8 border-b border-neutral-200 overflow-x-auto no-scrollbar">
-            {['Mô tả sản phẩm', 'Hướng dẫn chọn size', 'Đánh giá (128)'].map(tab => (
+            {['Mô tả sản phẩm', 'Quy trình may đo', 'Đánh giá (128)'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -499,40 +467,30 @@ export default function ProductDetail() {
               </div>
             )}
             
-            {activeTab === 'Hướng dẫn chọn size' && (
+            {activeTab === 'Quy trình may đo' && (
               <div className="max-w-[800px] animate-in fade-in duration-300">
-                <div className="overflow-x-auto rounded-xl border border-neutral-200 mb-4">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-neutral-50 text-label-sm font-semibold text-brand-navy">
-                        <th className="p-4 border-b border-neutral-200">Size</th>
-                        <th className="p-4 border-b border-neutral-200">Ngực (cm)</th>
-                        <th className="p-4 border-b border-neutral-200">Eo (cm)</th>
-                        <th className="p-4 border-b border-neutral-200">Hông (cm)</th>
-                        <th className="p-4 border-b border-neutral-200">Dài áo (cm)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-body-sm text-neutral-700">
-                      {[
-                        {s: 'S', c: '86-90', w: '74-78', h: '88-92', l: '70'},
-                        {s: 'M', c: '90-94', w: '78-82', h: '92-96', l: '72'},
-                        {s: 'L', c: '94-98', w: '82-86', h: '96-100', l: '74'},
-                        {s: 'XL', c: '98-102', w: '86-90', h: '100-104', l: '76'},
-                        {s: 'XXL', c: '102-106', w: '90-94', h: '104-108', l: '78'}
-                      ].map(row => (
-                        <tr key={row.s} className="border-b border-neutral-100 hover:bg-neutral-50/50">
-                          <td className="p-4 font-semibold text-brand-navy">{row.s}</td>
-                          <td className="p-4">{row.c}</td>
-                          <td className="p-4">{row.w}</td>
-                          <td className="p-4">{row.h}</td>
-                          <td className="p-4">{row.l}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-200 mb-6 space-y-4">
+                  <h4 className="text-[16px] font-bold text-brand-navy">Quy trình đặt may đo theo số đo riêng (Made-to-Measure)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-body-sm text-neutral-600">
+                    <div className="p-4 bg-white rounded-xl border border-neutral-100 shadow-2xs">
+                      <div className="text-brand-gold font-bold text-[18px] mb-1">01</div>
+                      <div className="font-semibold text-brand-navy mb-1">Cung cấp số đo</div>
+                      <p className="text-[12px] text-neutral-500">Nhập số đo cơ thể trong trang Profile hoặc khi thực hiện đặt hàng.</p>
+                    </div>
+                    <div className="p-4 bg-white rounded-xl border border-neutral-100 shadow-2xs">
+                      <div className="text-brand-gold font-bold text-[18px] mb-1">02</div>
+                      <div className="font-semibold text-brand-navy mb-1">Thợ may cắt rập</div>
+                      <p className="text-[12px] text-neutral-500">Đội ngũ nghệ nhân may đo sẽ tinh chỉnh rập cá nhân hóa cho từng khách hàng.</p>
+                    </div>
+                    <div className="p-4 bg-white rounded-xl border border-neutral-100 shadow-2xs">
+                      <div className="text-brand-gold font-bold text-[18px] mb-1">03</div>
+                      <div className="font-semibold text-brand-navy mb-1">Giao hàng hoàn hảo</div>
+                      <p className="text-[12px] text-neutral-500">Trang phục vừa vặn chuẩn chỉnh được hoàn thiện và giao trong 3-5 ngày.</p>
+                    </div>
+                  </div>
                 </div>
                 <p className="text-body-sm text-neutral-500 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" /> Số đo tính bằng cm. Liên hệ nếu cần tư vấn kích thước phù hợp nhất với bạn.
+                  <AlertCircle className="w-4 h-4 text-brand-navy" /> FashionAI cam kết hỗ trợ chỉnh sửa miễn phí nếu số đo thành phẩm có sai lệch vượt quá dung sai chuẩn.
                 </p>
               </div>
             )}
@@ -625,9 +583,8 @@ export default function ProductDetail() {
                         price: rel.numericPrice,
                         quantity: 1,
                         image: rel.image,
-                        size: rel.sizes?.[0] || 'M',
                         color: rel.colors?.[0]?.name || 'Mặc định',
-                        variant: `Màu: ${rel.colors?.[0]?.name || 'Mặc định'} | Size: ${rel.sizes?.[0] || 'M'}`
+                        variant: `Màu: ${rel.colors?.[0]?.name || 'Mặc định'} · May đo`
                       });
                       toast.success(`Đã thêm ${rel.name} vào giỏ!`);
                     }}
