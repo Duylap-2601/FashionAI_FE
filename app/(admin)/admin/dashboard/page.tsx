@@ -1511,19 +1511,6 @@ interface ProductImageItem {
                 </div>
 
                 <div>
-                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Trạng thái</label>
-                  <select
-                    value={editingProduct.status || 'ACTIVE'}
-                    onChange={e => setEditingProduct(prev => ({ ...prev, status: e.target.value as ProductStatus }))}
-                    className="w-full h-10 px-3 rounded-lg border border-neutral-300"
-                  >
-                    <option value="ACTIVE">Đang bán</option>
-                    <option value="DRAFT">Bản nháp</option>
-                    <option value="ARCHIVED">Ngừng bán</option>
-                  </select>
-                </div>
-
-                <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-body-sm font-medium text-neutral-700">Màu sắc</label>
                     <button
