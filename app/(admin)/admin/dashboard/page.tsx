@@ -28,6 +28,12 @@ type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 type UserTier = 'FREE' | 'MEMBER' | 'VIP';
 type UserRole = 'USER' | 'ADMIN';
 
+interface AdminProductImage {
+  id: string;
+  imageUrl: string;
+  isMain?: boolean;
+}
+
 interface AdminProduct {
   id: string;
   name: string;
@@ -36,7 +42,7 @@ interface AdminProduct {
   status: ProductStatus;
   image: string;
   garmentUrl?: string;
-  images?: string[];
+  images?: (AdminProductImage | string)[];
   description?: string;
   color?: string;
   colors?: { name: string; hex: string }[];
@@ -137,7 +143,9 @@ export default function AdminDashboard() {
 
 interface ProductImageItem {
   id: string;
+  imageId?: string;
   url: string;
+  isMain?: boolean;
   file?: File;
   isExisting?: boolean;
 }
@@ -158,22 +166,101 @@ interface ProductImageItem {
     setProductImages(prev => [...prev, ...newItems]);
   }, []);
 
-  const handleRemoveImage = useCallback((id: string) => {
-    setProductImages(prev => {
-      const target = prev.find(item => item.id === id);
-      if (target?.file) {
-        URL.revokeObjectURL(target.url);
+  const handleRemoveImage = useCallback(async (itemToRemove: ProductImageItem) => {
+    // Nếu là file mới chọn cục bộ (chưa lưu vào DB) -> chỉ xóa local
+    if (!itemToRemove.isExisting || itemToRemove.file || !itemToRemove.imageId) {
+      setProductImages(prev => {
+        const target = prev.find(item => item.id === itemToRemove.id);
+        if (target?.file) {
+          URL.revokeObjectURL(target.url);
+        }
+        return prev.filter(item => item.id !== itemToRemove.id);
+      });
+      return;
+    }
+
+    // Nếu là ảnh đã tồn tại trên Backend:
+    // Kiểm tra ràng buộc: sản phẩm phải còn ít nhất 1 ảnh
+    if (productImages.length <= 1) {
+      toast.error('Sản phẩm phải có ít nhất 1 ảnh. Hãy upload ảnh khác trước khi xóa ảnh này.');
+      return;
+    }
+
+    if (!editingProduct?.id) return;
+
+    const deletingToast = toast.loading('Đang xóa ảnh sản phẩm...');
+    try {
+      const res = await api.delete(`/products/${editingProduct.id}/images/${itemToRemove.imageId}`);
+      toast.dismiss(deletingToast);
+      toast.success('Xóa ảnh sản phẩm thành công');
+
+      const updatedProd = res.data?.data || res.data;
+      if (updatedProd && Array.isArray(updatedProd.images)) {
+        // Cập nhật editingProduct
+        setEditingProduct(prev => prev ? ({
+          ...prev,
+          garmentUrl: updatedProd.garmentUrl || prev.garmentUrl,
+          images: updatedProd.images,
+        }) : prev);
+
+        // Chuyển đổi images mới từ backend
+        const mappedBackendImages: ProductImageItem[] = updatedProd.images.map((img: any, i: number) => {
+          if (typeof img === 'string') {
+            return { id: `existing-${i}-${img}`, imageId: undefined, url: img, isMain: i === 0, isExisting: true };
+          }
+          const url = img.imageUrl || img.url || '';
+          return {
+            id: `existing-${img.id || i}-${url}`,
+            imageId: img.id,
+            url,
+            isMain: Boolean(img.isMain),
+            isExisting: true,
+          };
+        });
+
+        // Giữ lại các ảnh mới chưa lưu nếu người dùng vừa chọn thêm
+        setProductImages(prev => {
+          const unsavedNewFiles = prev.filter(i => i.file);
+          return [...mappedBackendImages, ...unsavedNewFiles];
+        });
+
+        // Đồng bộ danh sách products ngoài bảng
+        setProducts(prev => prev.map(p => {
+          if (p.id === editingProduct.id) {
+            const mainImg = mappedBackendImages.find(m => m.isMain)?.url || mappedBackendImages[0]?.url || p.image;
+            return {
+              ...p,
+              image: updatedProd.garmentUrl || mainImg,
+              garmentUrl: updatedProd.garmentUrl || p.garmentUrl,
+              images: mappedBackendImages.map(m => ({ id: m.imageId || '', imageUrl: m.url, isMain: m.isMain })),
+            };
+          }
+          return p;
+        }));
+      } else {
+        // Fallback xóa local
+        setProductImages(prev => prev.filter(item => item.id !== itemToRemove.id));
       }
-      return prev.filter(item => item.id !== id);
-    });
-  }, []);
+    } catch (e: any) {
+      toast.dismiss(deletingToast);
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.message;
+      if (status === 400) {
+        toast.error(msg || 'Sản phẩm phải có ít nhất 1 ảnh. Hãy upload ảnh khác trước khi xóa ảnh này.');
+      } else if (status === 404) {
+        toast.error('Không tìm thấy ảnh, vui lòng tải lại trang');
+      } else {
+        toast.error(Array.isArray(msg) ? msg[0] : (msg || 'Xóa ảnh thất bại.'));
+      }
+    }
+  }, [editingProduct?.id, productImages.length]);
 
   const handleSetPrimaryImage = useCallback((index: number) => {
     setProductImages(prev => {
       if (index <= 0 || index >= prev.length) return prev;
       const item = prev[index];
       const rest = prev.filter((_, i) => i !== index);
-      return [item, ...rest];
+      return [{ ...item, isMain: true }, ...rest.map(r => ({ ...r, isMain: false }))];
     });
   }, []);
 
@@ -183,18 +270,32 @@ interface ProductImageItem {
         if (img.file) URL.revokeObjectURL(img.url);
       });
       if (product) {
-        const rawImages: string[] = Array.isArray(product.images) && product.images.length > 0
+        const rawImages: any[] = Array.isArray(product.images) && product.images.length > 0
           ? product.images
           : product.image
-          ? [product.image]
+          ? [{ id: '', imageUrl: product.image, isMain: true }]
           : product.garmentUrl
-          ? [product.garmentUrl]
+          ? [{ id: '', imageUrl: product.garmentUrl, isMain: true }]
           : [];
-        return rawImages.map((url, i) => ({
-          id: `existing-${i}-${url}`,
-          url,
-          isExisting: true,
-        }));
+        return rawImages.map((img: any, i: number) => {
+          if (typeof img === 'string') {
+            return {
+              id: `existing-${i}-${img}`,
+              imageId: undefined,
+              url: img,
+              isMain: i === 0,
+              isExisting: true,
+            };
+          }
+          const url = img.imageUrl || img.url || '';
+          return {
+            id: `existing-${img.id || i}-${url}`,
+            imageId: img.id,
+            url,
+            isMain: Boolean(img.isMain),
+            isExisting: true,
+          };
+        });
       }
       return [];
     });
@@ -233,10 +334,20 @@ interface ProductImageItem {
       const res = await api.get('/products', { params: { limit: 100 } });
       const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as any[];
       setProducts(list.map((p) => {
-        const rawImages = Array.isArray(p.images)
-          ? p.images.map((img: any) => typeof img === 'string' ? img : (img.imageUrl || img.url)).filter(Boolean)
-          : [];
-        const primaryImg = rawImages[0] || p.garmentUrl || '/images/731163514_999523332788054_1114320478812927640_n.png';
+        const rawImages: any[] = Array.isArray(p.images) ? p.images : [];
+        const normalizedImages: AdminProductImage[] = rawImages.map((img: any, idx: number) => {
+          if (typeof img === 'string') {
+            return { id: '', imageUrl: img, isMain: idx === 0 };
+          }
+          return {
+            id: img.id || '',
+            imageUrl: img.imageUrl || img.url || '',
+            isMain: Boolean(img.isMain),
+          };
+        }).filter((item: AdminProductImage) => Boolean(item.imageUrl));
+
+        const mainImage = normalizedImages.find(img => img.isMain)?.imageUrl || normalizedImages[0]?.imageUrl;
+        const primaryImg = p.garmentUrl || mainImage || '/images/731163514_999523332788054_1114320478812927640_n.png';
         return {
           id: p.id,
           name: p.name,
@@ -245,7 +356,7 @@ interface ProductImageItem {
           stock: p.stock ?? 0,
           status: p.status as ProductStatus,
           image: primaryImg,
-          images: rawImages.length > 0 ? rawImages : [primaryImg],
+          images: normalizedImages,
           garmentUrl: p.garmentUrl,
           description: p.description,
           color: p.color,
@@ -1483,6 +1594,7 @@ interface ProductImageItem {
                     />
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Danh mục *</label>
@@ -1583,44 +1695,56 @@ interface ProductImageItem {
                   </div>
 
                   <div className="grid grid-cols-4 gap-2.5 mb-2">
-                    {productImages.map((img, idx) => (
-                      <div
-                        key={img.id}
-                        className="relative group rounded-xl border border-neutral-200 bg-neutral-50 overflow-hidden aspect-square flex items-center justify-center shadow-2xs"
-                      >
-                        <img
-                          src={img.url}
-                          alt={`Ảnh ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                    {productImages.map((img, idx) => {
+                      const isPrimary = Boolean(img.isMain) || (productImages.every(p => !p.isMain) && idx === 0);
+                      const isOnlyImage = productImages.length === 1;
 
-                        {/* Primary Badge or Set Primary */}
-                        {idx === 0 ? (
-                          <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-brand-navy/90 text-white text-[9px] font-bold rounded shadow-xs">
-                            Ảnh chính
-                          </span>
-                        ) : (
+                      return (
+                        <div
+                          key={img.id}
+                          className={`relative group rounded-xl border bg-neutral-50 overflow-hidden aspect-square flex items-center justify-center shadow-2xs transition-all ${
+                            isPrimary ? 'border-brand-navy ring-2 ring-brand-navy/30' : 'border-neutral-200'
+                          }`}
+                        >
+                          <img
+                            src={img.url}
+                            alt={`Ảnh ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+
+                          {/* Primary Badge or Set Primary Button */}
+                          {isPrimary ? (
+                            <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-brand-navy/95 text-white text-[9px] font-bold rounded shadow-xs">
+                              Ảnh chính
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimaryImage(idx)}
+                              className="absolute top-1 left-1 px-1.5 py-0.5 bg-white/90 hover:bg-white text-neutral-800 text-[9px] font-semibold rounded shadow-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-0"
+                              title="Đặt làm ảnh chính"
+                            >
+                              Đặt chính
+                            </button>
+                          )}
+
+                          {/* Remove Image Button */}
                           <button
                             type="button"
-                            onClick={() => handleSetPrimaryImage(idx)}
-                            className="absolute top-1 left-1 px-1.5 py-0.5 bg-white/90 hover:bg-white text-neutral-800 text-[9px] font-semibold rounded shadow-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-0"
-                            title="Đặt làm ảnh chính"
+                            disabled={isOnlyImage}
+                            onClick={() => handleRemoveImage(img)}
+                            className={`absolute top-1 right-1 w-6 h-6 rounded flex items-center justify-center transition-opacity border-0 cursor-pointer ${
+                              isOnlyImage
+                                ? 'bg-neutral-400/80 text-white cursor-not-allowed opacity-0 group-hover:opacity-60'
+                                : 'bg-red-600/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100'
+                            }`}
+                            title={isOnlyImage ? 'Sản phẩm phải có ít nhất 1 ảnh' : 'Xóa ảnh này'}
                           >
-                            Đặt chính
+                            <X className="w-3.5 h-3.5" />
                           </button>
-                        )}
-
-                        {/* Remove Image Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(img.id)}
-                          className="absolute top-1 right-1 w-5 h-5 bg-red-600/90 hover:bg-red-600 text-white rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-0"
-                          title="Xóa ảnh"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
 
                     {/* Add More Dropzone / Card */}
                     <label className="border-2 border-dashed border-neutral-300 hover:border-brand-navy/60 hover:bg-neutral-100/50 rounded-xl aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer transition-all text-neutral-400 hover:text-brand-navy">
