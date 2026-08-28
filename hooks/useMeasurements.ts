@@ -36,6 +36,8 @@ export interface UserProfile {
   city?: string;
   job?: string;
   company?: string;
+  tier?: 'FREE' | 'MEMBER' | 'VIP';
+  tierExpiresAt?: string | null;
 }
 
 export function useMeasurements() {

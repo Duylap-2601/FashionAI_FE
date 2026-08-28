@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import {
   User, Ruler, History, ShoppingBag, Sparkles, LogOut,
   ChevronRight, Lock, Edit3, CheckCircle2, AlertCircle,
-  Crown, Zap, Star, Camera, Eye, EyeOff, Loader2
+  Crown, Zap, Star, Camera, Eye, EyeOff, Loader2, Clock
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useMeasurements, useChangePassword } from '@/hooks/useMeasurements';

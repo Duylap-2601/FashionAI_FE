@@ -21,6 +21,7 @@ import { SubscriptionRequiredModal } from '@/components/subscription/Subscriptio
 import { QuotaExhaustedModal } from '@/components/stylist/QuotaExhaustedModal';
 import SizePresetSelector from '@/components/mannequin/SizePresetSelector';
 import { SIZE_PRESETS, AvatarMeasurements, MeasureField } from '@/types/avatar';
+import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
 const MannequinViewer = dynamic(() => import('@/components/mannequin/MannequinViewer'), { ssr: false });
@@ -358,10 +359,16 @@ function QuotaBadge({ count, limit }: { count: number; limit: number }) {
 }
 
 // ─── Loading Overlay ──────────────────────────────────────────────────────────
-function LoadingOverlay({ progress }: { progress: number }) {
+function LoadingOverlay({ progress, isCombo }: { progress: number; isCombo?: boolean }) {
+  const stepText = isCombo
+    ? progress <= 50
+      ? 'Bước 1/2: Đang ghép áo...'
+      : 'Bước 2/2: Đang ghép quần/váy hoàn thiện...'
+    : 'AI đang ghép trang phục vào ảnh của bạn';
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-brand-navy/75 backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-6 p-10 bg-white rounded-2xl shadow-xl max-w-[340px] w-full mx-4">
+      <div className="flex flex-col items-center gap-6 p-10 bg-white rounded-2xl shadow-xl max-w-[360px] w-full mx-4">
         <div className="relative w-16 h-16">
           <div className="absolute inset-0 rounded-full border-4 border-neutral-100" />
           <div className="absolute inset-0 rounded-full border-4 border-brand-navy border-r-transparent animate-spin" />
@@ -378,7 +385,7 @@ function LoadingOverlay({ progress }: { progress: number }) {
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-body-sm text-neutral-500">AI đang ghép trang phục vào ảnh của bạn</p>
+          <p className="text-body-sm text-neutral-500 font-medium">{stepText}</p>
         </div>
       </div>
     </div>
@@ -677,24 +684,49 @@ function VirtualTryOnContent() {
       const status = error?.response?.status;
       const data = error?.response?.data;
 
+      // 1. SUBSCRIPTION_REQUIRED (402)
       if (status === 402 || data?.code === 'SUBSCRIPTION_REQUIRED') {
         setSubscriptionReason(data?.details?.reason || 'free_not_allowed');
         setShowSubscriptionModal(true);
         return;
       }
 
+      // 2. DUPLICATE_REQUEST (429) -> Do NOT show quota modal
+      if (data?.code === 'DUPLICATE_REQUEST') {
+        toast.info('Yêu cầu thử đồ đang được xử lý, vui lòng chờ trong giây lát.');
+        return;
+      }
+
+      // 3. QUOTA_EXCEEDED (429)
       if (status === 429 || data?.code === 'QUOTA_EXCEEDED') {
+        const details = data?.details || {};
         setQuotaModalData({
-          resetAt: data?.resetAt,
-          requested: data?.requested || quotaCost,
-          remaining: data?.remaining ?? 0,
+          resetAt: details?.resetAt || data?.resetAt,
+          requested: details?.requested || data?.requested || quotaCost,
+          remaining: details?.remaining ?? data?.remaining ?? 0,
         });
         setShowQuotaModal(true);
         return;
       }
 
-      const msg = data?.message || error?.message || 'Đã xảy ra lỗi khi tạo kết quả thử đồ. Vui lòng kiểm tra lại ảnh chụp người thật đứng thẳng.';
-      alert(Array.isArray(msg) ? msg[0] : msg);
+      // 4. IMAGE_QUALITY_REJECTED (422)
+      if (status === 422 || data?.code === 'IMAGE_QUALITY_REJECTED') {
+        toast.error(
+          data?.message || 'Ảnh chụp không đạt tiêu chuẩn (mờ, tối hoặc không thấy toàn thân). Vui lòng chọn ảnh chụp rõ nét hơn.'
+        );
+        return;
+      }
+
+      // 5. MEASUREMENTS_INCOMPLETE (400)
+      if (data?.code === 'MEASUREMENTS_INCOMPLETE') {
+        const missingLabels = data?.missing?.map((m: any) => m.label).join(', ') || 'số đo bắt buộc';
+        toast.error(`Cần bổ sung số đo trước khi thử đồ: ${missingLabels}`);
+        return;
+      }
+
+      // 6. Generic validation message or server error
+      const msg = data?.message || error?.message || 'Đã xảy ra lỗi khi tạo kết quả thử đồ. Vui lòng thử lại.';
+      toast.error(Array.isArray(msg) ? msg[0] : msg);
     }
   };
 
@@ -722,7 +754,7 @@ function VirtualTryOnContent() {
 
   return (
     <>
-      {pageState === 'loading' && <LoadingOverlay progress={progress} />}
+      {pageState === 'loading' && <LoadingOverlay progress={progress} isCombo={garmentMode === 'combo'} />}
 
       <CatalogModal
         isOpen={showCatalogModal}

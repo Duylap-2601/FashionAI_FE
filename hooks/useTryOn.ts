@@ -4,11 +4,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 
+export interface TryOnGarment {
+  category: 'UPPER' | 'LOWER' | 'FULL_BODY' | string;
+  productId?: string | null;
+  image?: string | null;
+}
+
 export interface TryOnResult {
   id: string;
   productId?: string;
   category: string;
   resultUrl: string;
+  garments?: TryOnGarment[];
   mode?: string;
   createdAt: string;
   isCached?: boolean;
@@ -45,9 +52,12 @@ export function useTryOn() {
 
       if (payload.garments && payload.garments.length > 0) {
         payload.garments.forEach((g, idx) => {
-          formData.append(`garments[${idx}][garmentCategory]`, g.garmentCategory);
-          if (g.productId) formData.append(`garments[${idx}][productId]`, g.productId);
-          if (g.garmentImage) formData.append(`garments[${idx}][garmentImage]`, g.garmentImage);
+          formData.append(`garments[${idx}][category]`, g.garmentCategory);
+          if (g.productId) {
+            formData.append(`garments[${idx}][productId]`, g.productId);
+          } else if (g.garmentImage) {
+            formData.append(`garments[${idx}][image]`, g.garmentImage);
+          }
         });
         // Also provide primary fields for backward compatibility
         if (payload.garments[0]?.productId) formData.append('productId', payload.garments[0].productId);
@@ -60,7 +70,6 @@ export function useTryOn() {
       }
 
       const res = await api.post('/try-on', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 180000,
       });
       return res.data as TryOnResult;

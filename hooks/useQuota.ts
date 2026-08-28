@@ -12,6 +12,7 @@ export interface UserQuota {
   limit: number | null;
   remaining?: number | null;
   requested?: number;
+  unlimited?: boolean;
   tier: 'FREE' | 'MEMBER' | 'VIP' | 'free' | 'member' | 'vip' | 'admin';
   resetAt?: string;
   resetsAt?: string;

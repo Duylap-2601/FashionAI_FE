@@ -700,7 +700,6 @@ export default function AIStylistPage() {
                         </div>
                         <div className="text-body-sm text-neutral-500">
                           {fmtDate(item.createdAt)}
-                          {item.recommendedSize ? ` • Size ${item.recommendedSize}` : ''}
                           {item.productCompatibilityScore !== null && item.productCompatibilityScore !== undefined
                             ? ` • ${item.productCompatibilityScore}%`
                             : ''}

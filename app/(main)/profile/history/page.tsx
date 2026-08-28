@@ -102,6 +102,24 @@ export default function TryOnHistoryPage() {
     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
+  const getGarmentsLabel = (item: any) => {
+    if (item.garments && Array.isArray(item.garments) && item.garments.length > 0) {
+      const labels = item.garments.map((g: any) => {
+        const c = (g.category || '').toUpperCase();
+        if (c.includes('UPPER') || c.includes('AO') || c.includes('TOP')) return 'Áo';
+        if (c.includes('LOWER') || c.includes('QUAN') || c.includes('VAY') || c.includes('BOTTOM')) return 'Quần/Váy';
+        if (c.includes('FULL_BODY') || c.includes('SUIT')) return 'Bộ liền thân';
+        return g.category || 'Trang phục';
+      });
+      return labels.join(' + ');
+    }
+    const c = (item.category || '').toUpperCase();
+    if (c.includes('UPPER') || c.includes('AO') || c.includes('TOP')) return 'Áo';
+    if (c.includes('LOWER') || c.includes('QUAN') || c.includes('VAY') || c.includes('BOTTOM')) return 'Quần/Váy';
+    if (c.includes('FULL_BODY') || c.includes('SUIT')) return 'Bộ liền thân';
+    return item.category || 'Trang phục';
+  };
+
   return (
     <div className="min-h-screen bg-brand-cream text-neutral-900 font-sans pb-24 relative">
       
@@ -312,7 +330,7 @@ export default function TryOnHistoryPage() {
                   {/* Bottom Info */}
                   <div className="p-4 border-t border-neutral-100">
                     <div className="text-[11px] font-bold tracking-wider uppercase text-neutral-400 mb-1 flex items-center justify-between">
-                      <span>{item.category}</span>
+                      <span className="text-[#5D1C34]">{getGarmentsLabel(item)}</span>
                       <span>{formatDate(item.createdAt)}</span>
                     </div>
                     <h4 className="text-body-sm font-semibold text-neutral-800 line-clamp-1">

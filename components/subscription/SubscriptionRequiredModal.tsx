@@ -78,7 +78,7 @@ export function SubscriptionRequiredModal({
                 <p className="text-[12px] text-neutral-500">5 lượt Try-on / ngày · 30 ngày</p>
               </div>
             </div>
-            <span className="text-body-sm font-bold text-[#5D1C34]">99.000đ</span>
+            <span className="text-body-sm font-bold text-[#5D1C34]">49.000đ</span>
           </div>
 
           <div className="p-3.5 bg-gradient-to-r from-[#5D1C34]/5 to-[#A67D44]/10 rounded-2xl border border-[#A67D44]/30 flex items-center justify-between">
@@ -88,10 +88,10 @@ export function SubscriptionRequiredModal({
               </div>
               <div>
                 <p className="text-body-sm font-bold text-brand-navy">Gói VIP</p>
-                <p className="text-[12px] text-neutral-500">10 lượt Try-on / ngày + Chatbot ∞</p>
+                <p className="text-[12px] text-neutral-500">10 lượt Try-on / ngày · Stylist & Chatbot ∞</p>
               </div>
             </div>
-            <span className="text-body-sm font-bold text-[#5D1C34]">299.000đ</span>
+            <span className="text-body-sm font-bold text-[#5D1C34]">99.000đ</span>
           </div>
         </div>
 
