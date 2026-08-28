@@ -38,18 +38,26 @@ export function StaggerContainer({
   className,
   staggerDelay = 0.07,
   delayChildren = 0,
+  animateOnMount = false,
 }: {
   children: React.ReactNode;
   className?: string;
   staggerDelay?: number;
   delayChildren?: number;
+  animateOnMount?: boolean;
 }) {
+  // whileInView + once:true tháo intersection observer sau lần fire đầu, nên children
+  // mount sau đó (đổi trang, đổi filter) không được đẩy sang "visible" và kẹt ở
+  // opacity 0. Với list luôn nằm trong khung nhìn, dùng animate để tránh hẳn.
+  const trigger = animateOnMount
+    ? { animate: 'visible' as const }
+    : { whileInView: 'visible' as const, viewport: { once: true, margin: '-60px' } };
+
   return (
     <motion.div
       className={className}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: '-60px' }}
+      {...trigger}
       variants={{
         hidden: {},
         visible: { transition: { staggerChildren: staggerDelay, delayChildren } },

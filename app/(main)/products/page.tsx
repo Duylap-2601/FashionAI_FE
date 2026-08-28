@@ -198,6 +198,13 @@ export default function ProductListing() {
   }, [filteredProducts, validCurrentPage, itemsPerPage]);
 
   // Handlers for Toggling Filters
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    // Đưa grid về đầu khung nhìn: StaggerContainer dùng whileInView nên nếu grid
+    // mới nằm ngoài viewport thì các card sẽ đứng ở opacity 0 (trang trắng).
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const toggleColor = (colorName: string) => {
     setSelectedColors(prev =>
       prev.includes(colorName) ? prev.filter(c => c !== colorName) : [...prev, colorName]
@@ -474,7 +481,7 @@ export default function ProductListing() {
           )}
 
           {isLoading && apiProducts.length === 0 ? (
-            <div className={`grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-${isSidebarOpen ? '5' : '6'} gap-2 md:gap-3 mb-12`}>
+            <div className={`grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-2 md:gap-3 mb-12`}>
               {Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} className="bg-white border border-neutral-100 rounded-lg overflow-hidden animate-pulse">
                   <div className="aspect-[3/4] bg-neutral-200" />
@@ -505,7 +512,10 @@ export default function ProductListing() {
           ) : (
             <>
               {/* Product Grid */}
-              <StaggerContainer className={`grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-${isSidebarOpen ? '5' : '6'} gap-2 md:gap-3 mb-12 transition-all duration-300`}>
+              <StaggerContainer
+                animateOnMount
+                className={`grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-2 md:gap-3 mb-12 transition-all duration-300`}
+              >
                 {paginatedProducts.map(product => {
                   const hasDiscount = product.originalPrice && product.originalPrice > product.numericPrice;
                   const discountPercent = hasDiscount && product.originalPrice
@@ -614,7 +624,7 @@ export default function ProductListing() {
                 <div className="flex items-center justify-center gap-2 mt-auto">
                   <button
                     disabled={validCurrentPage === 1}
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    onClick={() => goToPage(Math.max(1, validCurrentPage - 1))}
                     className="w-10 h-10 flex items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -623,7 +633,7 @@ export default function ProductListing() {
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                     <button
                       key={page}
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => goToPage(page)}
                       className={`w-10 h-10 flex items-center justify-center rounded-xl border font-medium transition-colors ${
                         page === validCurrentPage
                           ? 'border-brand-navy bg-brand-navy text-white'
@@ -636,7 +646,7 @@ export default function ProductListing() {
 
                   <button
                     disabled={validCurrentPage === totalPages}
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    onClick={() => goToPage(Math.min(totalPages, validCurrentPage + 1))}
                     className="w-10 h-10 flex items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />

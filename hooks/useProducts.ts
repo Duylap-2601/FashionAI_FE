@@ -59,7 +59,14 @@ export function useProduct(id?: string) {
 function parseImages(product: BackendProduct): string[] {
   const list: string[] = [];
   if (Array.isArray(product.images) && product.images.length > 0) {
-    product.images.forEach((item) => {
+    // isMain lên đầu để ảnh đại diện (gallery[0]) luôn đúng, tránh rơi vào ảnh
+    // placeholder cũ (raw.githubusercontent) nằm trước ảnh isMain trong mảng gốc.
+    const sorted = [...product.images].sort((a, b) => {
+      const aMain = typeof a === 'object' && a?.isMain ? 1 : 0;
+      const bMain = typeof b === 'object' && b?.isMain ? 1 : 0;
+      return bMain - aMain;
+    });
+    sorted.forEach((item) => {
       if (typeof item === 'string') {
         list.push(item);
       } else if (item && typeof item === 'object') {
