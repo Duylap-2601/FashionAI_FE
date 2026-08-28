@@ -111,6 +111,7 @@ function mapProduct(product: BackendProduct): Product {
     originalPrice: origPriceNumber,
     originalPriceFormatted: origPriceNumber ? `${origPriceNumber.toLocaleString('vi-VN')} ₫` : undefined,
     category: mapCategory(product.category),
+    garmentCategory: toBackendCategory(product.category),
     image: mainImage,
     gallery,
     colors,
@@ -119,6 +120,32 @@ function mapProduct(product: BackendProduct): Product {
     stock: typeof product.stock === 'number' ? product.stock : 99,
     soldCount: typeof product.soldCount === 'number' ? product.soldCount : undefined,
   };
+}
+
+export function toBackendCategory(cat?: string | null): 'UPPER' | 'LOWER' | 'FULL_BODY' {
+  if (!cat) return 'UPPER';
+  const c = cat.trim();
+  const cUpper = c.toUpperCase();
+  if (
+    c === 'Suit đầy đủ' ||
+    cUpper.includes('FULL_BODY') ||
+    cUpper.includes('SUIT') ||
+    cUpper.includes('ONE-PIECE') ||
+    cUpper.includes('TOAN THAN') ||
+    cUpper.includes('COMBO')
+  ) {
+    return 'FULL_BODY';
+  }
+  if (
+    c === 'Quần & Váy' ||
+    cUpper.includes('LOWER') ||
+    cUpper.includes('BOTTOM') ||
+    cUpper.includes('QUAN') ||
+    cUpper.includes('VAY')
+  ) {
+    return 'LOWER';
+  }
+  return 'UPPER';
 }
 
 function mapCategory(category?: string | null): string {

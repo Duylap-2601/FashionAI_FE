@@ -11,6 +11,7 @@ export interface Product {
   originalPrice?: number;
   originalPriceFormatted?: string;
   category: string;
+  garmentCategory?: 'UPPER' | 'LOWER' | 'FULL_BODY';
   image: string;
   gallery: string[];
   colors: { name: string; hex: string }[];

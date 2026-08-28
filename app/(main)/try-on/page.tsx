@@ -15,7 +15,7 @@ import { PRODUCTS, Product } from '@/lib/data';
 import { useTryOn, GarmentSlotInput } from '@/hooks/useTryOn';
 import { useQuota } from '@/hooks/useQuota';
 import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts, toBackendCategory } from '@/hooks/useProducts';
 import { useMyAvatar, resolveGlbUrl } from '@/hooks/useAvatar';
 import { SubscriptionRequiredModal } from '@/components/subscription/SubscriptionRequiredModal';
 import { QuotaExhaustedModal } from '@/components/stylist/QuotaExhaustedModal';
@@ -249,10 +249,8 @@ function CatalogModal({
     
     if (!matchesSearch) return false;
     if (selectedCat === 'ALL') return true;
-    if (selectedCat === 'UPPER') return p.category === 'upper' || p.category === 'ao' || p.category === 'blazer';
-    if (selectedCat === 'LOWER') return p.category === 'lower' || p.category === 'quan' || p.category === 'vay';
-    if (selectedCat === 'FULL_BODY') return p.category === 'full_body' || p.category === 'suit' || p.category === 'dam';
-    return true;
+    const cat = p.garmentCategory || toBackendCategory(p.category);
+    return cat === selectedCat;
   });
 
   return (
@@ -483,10 +481,10 @@ function VirtualTryOnContent() {
   const initialProduct = catalogProducts.find(p => p.id === productId) || catalogProducts[0];
   const [selectedProduct, setSelectedProduct] = useState(initialProduct);
   const [upperProduct, setUpperProduct] = useState<Product | null>(
-    catalogProducts.find(p => p.category === 'upper' || p.category === 'ao' || p.category === 'blazer') || catalogProducts[0] || null
+    catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || catalogProducts[0] || null
   );
   const [lowerProduct, setLowerProduct] = useState<Product | null>(
-    catalogProducts.find(p => p.category === 'lower' || p.category === 'quan' || p.category === 'vay') || catalogProducts[1] || null
+    catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || catalogProducts[1] || null
   );
   const [hasProduct, setHasProduct] = useState(true);
   
@@ -649,13 +647,7 @@ function VirtualTryOnContent() {
         };
       } else {
         if (!selectedProduct?.id) return;
-        const cat = (
-          selectedProduct.category === 'lower' || selectedProduct.category === 'quan' || selectedProduct.category === 'vay'
-            ? 'LOWER'
-            : selectedProduct.category === 'upper' || selectedProduct.category === 'ao' || selectedProduct.category === 'blazer'
-            ? 'UPPER'
-            : 'FULL_BODY'
-        ) as 'UPPER' | 'LOWER' | 'FULL_BODY';
+        const cat = selectedProduct.garmentCategory || toBackendCategory(selectedProduct.category);
 
         payload = {
           humanImage: currentHumanImage,
