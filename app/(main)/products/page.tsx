@@ -11,14 +11,22 @@ import { PRODUCTS, Product } from '@/lib/data';
 import { useProducts } from '@/hooks/useProducts';
 
 function getCategoryGroup(product: Product): 'Áo' | 'Quần & Váy' | 'Suit đầy đủ' {
-  const cat = (product.category || '').toLowerCase();
+  const cat = (product.category || '').trim();
+  const catLower = cat.toLowerCase();
   const name = (product.name || '').toLowerCase();
 
+  // Short-circuit: if mapCategory() already returned a normalised Vietnamese label,
+  // use it directly so we never fail on diacritic mismatches.
+  if (cat === 'Suit đầy đủ') return 'Suit đầy đủ';
+  if (cat === 'Quần & Váy')  return 'Quần & Váy';
+  if (cat === 'Áo')          return 'Áo';
+
+  // Fallback: detect from raw backend enum values (UPPER / LOWER / FULL_BODY …)
   if (
-    cat.includes('suit') ||
-    cat.includes('toan than') ||
-    cat.includes('full_body') ||
-    cat.includes('one-piece') ||
+    catLower.includes('suit') ||
+    catLower.includes('full_body') ||
+    catLower.includes('toan than') ||
+    catLower.includes('one-piece') ||
     name.includes('suit') ||
     name.includes('nguyên bộ') ||
     name.includes('combo')
@@ -26,10 +34,10 @@ function getCategoryGroup(product: Product): 'Áo' | 'Quần & Váy' | 'Suit đ�
     return 'Suit đầy đủ';
   }
   if (
-    cat.includes('quan') ||
-    cat.includes('vay') ||
-    cat.includes('lower') ||
-    cat.includes('bottom') ||
+    catLower.includes('lower') ||
+    catLower.includes('bottom') ||
+    catLower.includes('quan') ||
+    catLower.includes('vay') ||
     name.includes('quần') ||
     name.includes('váy') ||
     name.includes('chân váy')
