@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Search, SlidersHorizontal, LayoutGrid, List, X, ShoppingBag, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Search, SlidersHorizontal, LayoutGrid, List, X, ShoppingBag, ChevronLeft, ChevronRight, Check, AlertTriangle } from 'lucide-react';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { useApp } from '@/components/navigation/Layout';
 import { useCart } from '@/store/cartStore';
@@ -70,9 +70,16 @@ export default function ProductListing() {
   const { addToCart } = useCart();
   const { products: apiProducts, isLoading, isError, refetch } = useProducts();
 
+  // Only fall back to static PRODUCTS when the API has truly failed AND we have
+  // no cached data at all. While loading (apiProducts still empty) we show
+  // skeletons, NOT stale static data whose category values would mismatch the
+  // real DB enums and break the filter.
   const allProducts = useMemo(() => {
-    return apiProducts.length > 0 ? apiProducts : PRODUCTS;
-  }, [apiProducts]);
+    if (apiProducts.length > 0) return apiProducts;    // real data from API ✓
+    if (isLoading) return [];                          // still fetching — render skeletons
+    if (isError) return PRODUCTS;                      // offline / server error — fallback gracefully
+    return [];                                         // idle (shouldn't happen)
+  }, [apiProducts, isLoading, isError]);
 
   // Filter States
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -213,6 +220,8 @@ export default function ProductListing() {
     setSelectedMaxPrice(null);
     setSortBy('Mới nhất');
     setCurrentPage(1);
+    // If the previous API call errored, retry now so the user gets fresh data
+    if (isError) refetch();
   };
 
   // Active Chips List
@@ -449,6 +458,20 @@ export default function ProductListing() {
               </>
             )}
           </div>
+
+          {/* Error banner — shown when API failed but we still render static fallback */}
+          {isError && apiProducts.length === 0 && (
+            <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-body-sm text-amber-800">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
+              <span>Không thể tải sản phẩm mới nhất — đang hiển thị dữ liệu dự phòng.</span>
+              <button
+                onClick={() => refetch()}
+                className="ml-auto shrink-0 text-amber-700 font-semibold underline hover:no-underline"
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
 
           {isLoading && apiProducts.length === 0 ? (
             <div className={`grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-${isSidebarOpen ? '5' : '6'} gap-2 md:gap-3 mb-12`}>
