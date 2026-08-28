@@ -19,6 +19,8 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { AdminGuard } from '@/components/auth/AdminGuard';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useNotificationStore } from '@/store/notificationStore';
 import type { BackendOrderStatus } from '@/hooks/useOrders';
 
 type AdminPage = 'dashboard' | 'products' | 'users' | 'orders' | 'quota';
@@ -436,6 +438,35 @@ interface ProductImageItem {
     return () => { mounted = false; };
   }, [fetchProducts, fetchOrders, fetchUsers, fetchStats]);
 
+  // Auto-refresh orders and stats when new notification arrives in realtime
+  const recentNotifications = useNotificationStore((s) => s.recentNotifications);
+  const latestNotifId = recentNotifications[0]?.id;
+
+  useEffect(() => {
+    if (latestNotifId) {
+      fetchOrders();
+      fetchStats();
+    }
+  }, [latestNotifId, fetchOrders, fetchStats]);
+
+  // Handle smart navigation from notification clicks
+  useEffect(() => {
+    const handleAdminNavigate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.tab) {
+        setActiveTab(customEvent.detail.tab);
+        if (customEvent.detail.orderCode) {
+          setSearchQuery(String(customEvent.detail.orderCode));
+        }
+      }
+    };
+
+    window.addEventListener('admin:navigate', handleAdminNavigate);
+    return () => {
+      window.removeEventListener('admin:navigate', handleAdminNavigate);
+    };
+  }, []);
+
   const handleSaveProduct = async () => {
     if (!editingProduct?.name || !editingProduct?.price) {
       toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
@@ -824,8 +855,65 @@ interface ProductImageItem {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      {/* MAIN CONTENT WRAPPER */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-hidden">
+        {/* ADMIN TOPBAR */}
+        <header className="h-16 px-6 md:px-8 bg-white border-b border-neutral-200 flex items-center justify-between shrink-0 z-30 sticky top-0 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="text-body-sm font-semibold text-neutral-500">Quản trị</span>
+            <span className="text-neutral-300">/</span>
+            <span className="text-body-sm font-bold text-brand-navy">
+              {activeTab === 'dashboard' ? 'Tổng quan kinh doanh' :
+               activeTab === 'products' ? 'Quản lý sản phẩm' :
+               activeTab === 'users' ? 'Quản lý người dùng' :
+               activeTab === 'orders' ? 'Quản lý đơn hàng' : 'Cài đặt Quota'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 md:gap-4">
+            <Link
+              href="/"
+              target="_blank"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[13px] font-medium text-neutral-600 hover:text-brand-navy hover:bg-neutral-100 transition-colors border border-neutral-200/80"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Xem cửa hàng</span>
+            </Link>
+
+            <button
+              onClick={() => {
+                setIsLoading(true);
+                Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats()]).finally(() => setIsLoading(false));
+              }}
+              disabled={isLoading}
+              title="Làm mới dữ liệu"
+              className="p-2 rounded-full hover:bg-neutral-100 text-neutral-600 transition-colors cursor-pointer border-0 bg-transparent"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+
+            {/* Chuông thông báo Realtime Notification Bell */}
+            <div className="relative flex items-center justify-center">
+              <NotificationBell />
+            </div>
+
+            <div className="h-5 w-px bg-neutral-200" />
+
+            {/* Admin User Info */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                A
+              </div>
+              <div className="hidden md:flex flex-col text-left">
+                <span className="text-[13px] font-bold text-neutral-800 leading-tight">Admin FashionAI</span>
+                <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider">Quản trị viên</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* MAIN CONTENT AREA */}
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
 
         {/* ─── TAB: DASHBOARD ─────────────────────────────────────────────────── */}
         {activeTab === 'dashboard' && (
@@ -1801,6 +1889,7 @@ interface ProductImageItem {
         )}
       </AnimatePresence>
 
+      </div>
     </div>
     </AdminGuard>
   );

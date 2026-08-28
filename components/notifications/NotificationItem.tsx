@@ -83,7 +83,25 @@ export function NotificationItem({ notification, onItemClick }: NotificationItem
       onItemClick();
     }
 
-    // Smart routing based on type & payload
+    // Smart routing for Admin Dashboard
+    const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+    if (isAdmin) {
+      if (
+        notification.type === 'ORDER_STATUS' ||
+        notification.type === 'PAYMENT' ||
+        notification.data?.orderCode ||
+        notification.data?.orderId
+      ) {
+        window.dispatchEvent(
+          new CustomEvent('admin:navigate', {
+            detail: { tab: 'orders', orderCode: notification.data?.orderCode, orderId: notification.data?.orderId },
+          })
+        );
+        return;
+      }
+    }
+
+    // Smart routing for Customer
     if (notification.type === 'ORDER_STATUS') {
       router.push('/profile/orders');
     } else if (notification.type === 'PAYMENT') {
