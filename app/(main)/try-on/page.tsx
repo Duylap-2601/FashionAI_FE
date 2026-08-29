@@ -16,18 +16,11 @@ import { useTryOn, GarmentSlotInput } from '@/hooks/useTryOn';
 import { useQuota } from '@/hooks/useQuota';
 import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useProducts, toBackendCategory } from '@/hooks/useProducts';
-import { useMyAvatar, resolveGlbUrl } from '@/hooks/useAvatar';
 import { SubscriptionRequiredModal } from '@/components/subscription/SubscriptionRequiredModal';
 import { QuotaExhaustedModal } from '@/components/stylist/QuotaExhaustedModal';
-import SizePresetSelector from '@/components/mannequin/SizePresetSelector';
-import { SIZE_PRESETS, AvatarMeasurements, MeasureField } from '@/types/avatar';
 import { toast } from 'sonner';
-import dynamic from 'next/dynamic';
-
-const MannequinViewer = dynamic(() => import('@/components/mannequin/MannequinViewer'), { ssr: false });
 
 type PageState = 'idle' | 'loading' | 'result' | 'quota-exhausted';
-type UploadTab = 'upload' | 'mannequin';
 
 const MOCK_USER_PHOTO = 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=320&h=400&fit=crop&auto=format';
 
@@ -390,17 +383,6 @@ function LoadingOverlay({ progress, isCombo }: { progress: number; isCombo?: boo
   );
 }
 
-function dataUrlToFile(dataUrl: string, filename: string) {
-  const [meta, content] = dataUrl.split(',');
-  const mime = meta.match(/data:(.*?);base64/)?.[1] || 'image/png';
-  const binary = atob(content);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return new File([bytes], filename, { type: mime });
-}
-
 function VirtualTryOnContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -415,67 +397,13 @@ function VirtualTryOnContent() {
   const catalogProducts = backendProducts.length > 0 ? backendProducts : PRODUCTS;
 
   const [pageState, setPageState] = useState<PageState>('idle');
-  const [activeTab, setActiveTab] = useState<UploadTab>('upload');
   const [garmentMode, setGarmentMode] = useState<'single' | 'combo'>('single');
-  
+
   // Photo states
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
   const [userPhotoBase64, setUserPhotoBase64] = useState<string | null>(null);
   const [userPhotoFile, setUserPhotoFile] = useState<File | null>(null);
   const [resultPhotoUrl, setResultPhotoUrl] = useState<string | null>(null);
-
-  // Mannequin & Avatar states
-  const { avatar: myAvatar, isLoading: isAvatarLoading } = useMyAvatar();
-  const [currentGlbUrl, setCurrentGlbUrl] = useState<string | null>(null);
-  const [presetMorphData, setPresetMorphData] = useState<{
-    morphDeltasCm: Record<MeasureField, number>;
-    morphFactors: Record<MeasureField, number>;
-    isPresetGlb: boolean;
-  } | null>(null);
-  const [captureFn, setCaptureFn] = useState<(() => string) | null>(null);
-  const [generatedMannequinSnapshot, setGeneratedMannequinSnapshot] = useState<string | null>(null);
-  const [mannequinParams, setMannequinParams] = useState<AvatarMeasurements & { gender: 'male' | 'female' }>({
-    height: 162,
-    weight: 56,
-    shoulder: 39,
-    chest: 88,
-    waist: 70,
-    hip: 94,
-    gender: 'female',
-  });
-
-  // Sync user's latest Blender GLB avatar if exists
-  useEffect(() => {
-    if (myAvatar?.glbUrl) {
-      setCurrentGlbUrl(resolveGlbUrl(myAvatar.glbUrl) || null);
-    }
-  }, [myAvatar]);
-
-  // Prefill measurements — chỉ chạy một lần khi data load xong lần đầu
-  const prefillDone = React.useRef(false);
-  useEffect(() => {
-    if (prefillDone.current) return;
-    const hasData =
-      measurements?.height ||
-      measurements?.weight ||
-      measurements?.shoulder ||
-      measurements?.chest ||
-      measurements?.waist ||
-      measurements?.hip ||
-      profile?.gender;
-    if (hasData) {
-      prefillDone.current = true;
-      setMannequinParams(prev => ({
-        height: measurements?.height || prev.height,
-        weight: measurements?.weight || prev.weight,
-        shoulder: measurements?.shoulder || prev.shoulder,
-        chest: measurements?.chest || prev.chest,
-        waist: measurements?.waist || prev.waist,
-        hip: measurements?.hip || prev.hip,
-        gender: (profile?.gender === 'male' || profile?.gender === 'female') ? profile.gender : prev.gender,
-      }));
-    }
-  }, [measurements, profile]);
 
   // Load products
   const initialProduct = catalogProducts.find(p => p.id === productId) || catalogProducts[0];
@@ -606,16 +534,8 @@ function VirtualTryOnContent() {
       return;
     }
     
-    let currentHumanImage: File | null = null;
-    if (activeTab === 'upload') {
-      if (!userPhotoFile) return;
-      currentHumanImage = userPhotoFile;
-    } else {
-      if (!captureFn) return;
-      const snapshot = captureFn();
-      setGeneratedMannequinSnapshot(snapshot);
-      currentHumanImage = dataUrlToFile(snapshot, 'mannequin-snapshot.png');
-    }
+    if (!userPhotoFile) return;
+    const currentHumanImage: File = userPhotoFile;
 
     if (!currentHumanImage) return;
 
@@ -742,7 +662,7 @@ function VirtualTryOnContent() {
   };
 
   const hasSelectedGarments = garmentMode === 'combo' ? Boolean(upperProduct || lowerProduct) : Boolean(selectedProduct?.id);
-  const canGenerate = (activeTab === 'upload' ? (userPhotoBase64 !== null) : (captureFn !== null)) && hasSelectedGarments && !isSubmitting;
+  const canGenerate = (userPhotoBase64 !== null) && hasSelectedGarments && !isSubmitting;
 
   return (
     <>
@@ -855,74 +775,16 @@ function VirtualTryOnContent() {
           <div className="flex flex-col gap-4">
             <div>
               <h2 className="text-heading-h3 font-semibold text-neutral-900">Ảnh của bạn</h2>
-              <p className="text-body-sm text-neutral-500 mt-0.5">Upload ảnh toàn thân rõ mặt hoặc tạo mannequin 3D</p>
+              <p className="text-body-sm text-neutral-500 mt-0.5">Upload ảnh toàn thân rõ mặt</p>
             </div>
 
-            <div className="flex p-1 bg-neutral-100 rounded-xl w-fit">
-              <button
-                type="button"
-                onClick={() => setActiveTab('upload')}
-                className={`px-4 py-2 rounded-lg text-label-sm font-medium transition-all border-0 ${
-                  activeTab === 'upload'
-                    ? 'bg-white text-brand-navy shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
-                }`}
-              >
-                Upload ảnh
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('mannequin')}
-                className={`px-4 py-2 rounded-lg text-label-sm font-medium transition-all border-0 ${
-                  activeTab === 'mannequin'
-                    ? 'bg-white text-brand-navy shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
-                }`}
-              >
-                Dùng mannequin 3D
-              </button>
-            </div>
+            <UploadZone
+              onFileSelect={handleFileSelect}
+              uploadedImage={userPhotoUrl}
+              onCameraSelect={handleCameraTrigger}
+            />
 
-            {activeTab === 'upload' ? (
-              <UploadZone 
-                onFileSelect={handleFileSelect} 
-                uploadedImage={userPhotoUrl} 
-                onCameraSelect={handleCameraTrigger}
-              />
-            ) : (
-              <div className="flex flex-col gap-4">
-                {/* Canvas Container */}
-                <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-900 shadow-md" style={{ height: 420 }}>
-                  <MannequinViewer
-                    height={mannequinParams.height}
-                    weight={mannequinParams.weight}
-                    shoulder={mannequinParams.shoulder}
-                    chest={mannequinParams.chest}
-                    waist={mannequinParams.waist}
-                    hip={mannequinParams.hip}
-                    gender={mannequinParams.gender}
-                    glbUrl={currentGlbUrl}
-                    morphDeltasCm={presetMorphData?.morphDeltasCm}
-                    morphFactors={presetMorphData?.morphFactors}
-                    isPresetGlb={presetMorphData?.isPresetGlb}
-                    onCaptureReady={setCaptureFn}
-                  />
-                </div>
-
-                {/* Size Presets, Personal Measurements & Blender Generator */}
-                <SizePresetSelector
-                  gender={mannequinParams.gender}
-                  onGenderChange={(g) => setMannequinParams((prev) => ({ ...prev, gender: g }))}
-                  measurements={mannequinParams}
-                  onMeasurementsChange={(m) => setMannequinParams((prev) => ({ ...prev, ...m }))}
-                  currentGlbUrl={currentGlbUrl}
-                  onGlbUrlChange={setCurrentGlbUrl}
-                  onPresetDataChange={setPresetMorphData}
-                />
-              </div>
-            )}
-
-            {activeTab === 'upload' && !userPhotoUrl && (
+            {!userPhotoUrl && (
               <button
                 onClick={handleUseMockPhoto}
                 type="button"
@@ -1085,7 +947,7 @@ function VirtualTryOnContent() {
 
             <div className="max-w-[640px] w-full mx-auto flex flex-col gap-4">
               <ComparisonSlider 
-                before={activeTab === 'upload' ? (userPhotoUrl || MOCK_USER_PHOTO) : (generatedMannequinSnapshot || MOCK_USER_PHOTO)} 
+                before={userPhotoUrl || MOCK_USER_PHOTO}
                 after={resultPhotoUrl} 
               />
 
@@ -1131,8 +993,7 @@ function VirtualTryOnContent() {
                     setUserPhotoUrl(null); 
                     setUserPhotoBase64(null); 
                     setUserPhotoFile(null);
-                    setGeneratedMannequinSnapshot(null);
-                    setHasProduct(true); 
+                    setHasProduct(true);
                   }}
                   type="button"
                   className="flex items-center gap-1.5 text-label-sm font-semibold text-brand-navy hover:text-brand-navy/70 transition-colors border-0 bg-transparent cursor-pointer"

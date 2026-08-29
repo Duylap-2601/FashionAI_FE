@@ -8,15 +8,10 @@ import {
   Shirt, ArrowUpDown, Weight
 } from 'lucide-react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useQuota } from '@/hooks/useQuota';
-import { useMyAvatar, useGenerateAvatar, resolveGlbUrl } from '@/hooks/useAvatar';
-
-const MannequinViewer = dynamic(() => import('@/components/mannequin/MannequinViewer'), { ssr: false });
-const MiniMannequinPreview = dynamic(() => import('@/components/mannequin/MiniMannequinPreview'), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type BodyType = 'slim' | 'regular' | 'athletic' | 'plus';
@@ -514,23 +509,12 @@ function ProfileTab() {
 // ─── Tab: Số đo cơ thể ────────────────────────────────────────────────────────
 function MeasurementsTab() {
   const { measurements, isLoading, updateMeasurements, isUpdating } = useMeasurements();
-  const { avatar: myAvatar } = useMyAvatar();
-  const { generateAvatarAsync, isGenerating: isGeneratingAvatar } = useGenerateAvatar();
   const queryClient = useQueryClient();
 
   const [initialValues, setInitialValues] = useState<Record<string, string>>({});
   const [values, setValues] = useState<Record<string, string>>({});
   const [bodyType, setBodyType] = useState<BodyType>('regular');
   const [gender, setGender] = useState<Gender>('female');
-  const [visualMode, setVisualMode] = useState<'3d' | '2d'>('3d');
-  const [glbUrl, setGlbUrl] = useState<string | null>(null);
-  const [avatarNotice, setAvatarNotice] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (myAvatar?.glbUrl) {
-      setGlbUrl(resolveGlbUrl(myAvatar.glbUrl) || null);
-    }
-  }, [myAvatar]);
 
   const prefillDone = React.useRef(false);
   useEffect(() => {
@@ -596,37 +580,6 @@ function MeasurementsTab() {
     });
   };
 
-  const handleGenerateBlenderAvatar = async () => {
-    const height = parseFloat(values.height) || 162;
-    const weight = parseFloat(values.weight) || 56;
-    const chest = parseFloat(values.chest) || 88;
-    const waist = parseFloat(values.waist) || 70;
-    const hip = parseFloat(values.hip) || 94;
-    const shoulder = parseFloat(values.shoulder) || 39;
-
-    try {
-      setAvatarNotice('Đang kết nối Blender pipeline...');
-      const res = await generateAvatarAsync({
-        gender: gender === 'male' ? 'male' : 'female',
-        height,
-        weight,
-        chest,
-        waist,
-        hip,
-        shoulder,
-        draco: true,
-        morph: true,
-      });
-      const resolved = resolveGlbUrl(res.glbUrl);
-      if (resolved) setGlbUrl(resolved);
-      setAvatarNotice(res.isCached ? 'Lấy avatar 3D từ bộ nhớ đệm (Cache Hit)!' : 'Đã tạo Avatar 3D thành công từ Blender!');
-      setTimeout(() => setAvatarNotice(null), 4000);
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'Không thể tạo Avatar 3D.';
-      setAvatarNotice(`Lỗi: ${Array.isArray(msg) ? msg[0] : msg}`);
-    }
-  };
-
   const bodyTypes: { id: BodyType; label: string; desc: string }[] = [
     { id: 'slim', label: 'Mảnh mai', desc: 'Vai hẹp, eo thon' },
     { id: 'regular', label: 'Cân đối', desc: 'Tỷ lệ hài hòa' },
@@ -641,13 +594,6 @@ function MeasurementsTab() {
       </div>
     );
   }
-
-  const currentHeight = parseFloat(values.height) || (gender === 'female' ? 162 : 173);
-  const currentWeight = parseFloat(values.weight) || (gender === 'female' ? 56 : 68);
-  const currentShoulder = parseFloat(values.shoulder) || (gender === 'female' ? 39 : 44.5);
-  const currentChest = parseFloat(values.chest) || (gender === 'female' ? 88 : 95);
-  const currentWaist = parseFloat(values.waist) || (gender === 'female' ? 70 : 80);
-  const currentHip = parseFloat(values.hip) || (gender === 'female' ? 94 : 96);
 
   return (
     <div className="flex flex-col gap-5">
@@ -674,48 +620,14 @@ function MeasurementsTab() {
             <h2 className="text-heading-h3 font-semibold text-neutral-900">Số đo cơ thể</h2>
             <p className="text-body-sm text-neutral-500 mt-0.5">Giúp AI thử đồ chính xác và gợi ý size phù hợp</p>
           </div>
-          <div className="flex bg-neutral-100 rounded-lg p-0.5">
-            <button
-              type="button"
-              onClick={() => setVisualMode('3d')}
-              className={`px-3 py-1.5 rounded-md text-label-xs font-semibold transition-all border-0 ${
-                visualMode === '3d' ? 'bg-white text-brand-navy shadow-sm' : 'text-neutral-500 hover:text-neutral-800 bg-transparent'
-              }`}
-            >
-              🧍 Mannequin 3D
-            </button>
-            <button
-              type="button"
-              onClick={() => setVisualMode('2d')}
-              className={`px-3 py-1.5 rounded-md text-label-xs font-semibold transition-all border-0 ${
-                visualMode === '2d' ? 'bg-white text-brand-navy shadow-sm' : 'text-neutral-500 hover:text-neutral-800 bg-transparent'
-              }`}
-            >
-              📐 Sơ đồ 2D
-            </button>
-          </div>
         </div>
 
         <div className="p-6 md:p-8 flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
           {/* Sticky Visual Side */}
           <div className="w-full lg:w-[320px] shrink-0 lg:sticky lg:top-[88px]">
-            {visualMode === '3d' ? (
-              <MiniMannequinPreview
-                gender={gender === 'male' ? 'male' : 'female'}
-                measurements={{
-                  height: currentHeight,
-                  weight: currentWeight,
-                  shoulder: currentShoulder,
-                  chest: currentChest,
-                  waist: currentWaist,
-                  hip: currentHip,
-                }}
-              />
-            ) : (
-              <div className="bg-neutral-50 rounded-xl border border-neutral-100 p-5 flex flex-col items-center">
-                <BodyDiagram values={values} gender={gender} />
-              </div>
-            )}
+            <div className="bg-neutral-50 rounded-xl border border-neutral-100 p-5 flex flex-col items-center">
+              <BodyDiagram values={values} gender={gender} />
+            </div>
           </div>
 
           <div className="flex-1 flex flex-col gap-8">
