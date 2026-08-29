@@ -387,6 +387,7 @@ function VirtualTryOnContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const productId = searchParams.get('productId');
+  const rackIds = searchParams.get('rackIds');
   const { data: session } = useSession();
 
   const { tryOnAsync, isSubmitting } = useTryOn();
@@ -446,9 +447,49 @@ function VirtualTryOnContent() {
   const remainingQuota = quota ? (quota.limit === null ? Infinity : Math.max(0, quota.limit - quota.used)) : (isBlocked ? 0 : 5);
   const limitQuota = quota?.limit ?? (userTier === 'VIP' ? 10 : userTier === 'MEMBER' ? 5 : 0);
 
-  // Sync selected product when query parameter changes
+  // Sync selected products when rackIds or productId query parameter changes
   useEffect(() => {
-    if (productId) {
+    if (rackIds && catalogProducts.length > 0) {
+      const ids = rackIds.split(',').filter(Boolean).slice(0, 2);
+      if (ids.length === 1) {
+        const match = catalogProducts.find(p => p.id === ids[0]);
+        if (match) {
+          const cat = match.garmentCategory || toBackendCategory(match.category);
+          if (cat === 'UPPER') setUpperProduct(match);
+          if (cat === 'LOWER') setLowerProduct(match);
+          setSelectedProduct(match);
+          setGarmentMode('single');
+          setHasProduct(true);
+        }
+      } else if (ids.length >= 2) {
+        const p0 = catalogProducts.find(p => p.id === ids[0]);
+        const p1 = catalogProducts.find(p => p.id === ids[1]);
+        if (p0 && p1) {
+          const cat0 = p0.garmentCategory || toBackendCategory(p0.category);
+          const cat1 = p1.garmentCategory || toBackendCategory(p1.category);
+          
+          if (cat0 === 'UPPER' && cat1 === 'LOWER') {
+            setUpperProduct(p0);
+            setLowerProduct(p1);
+          } else if (cat0 === 'LOWER' && cat1 === 'UPPER') {
+            setUpperProduct(p1);
+            setLowerProduct(p0);
+          } else {
+            setUpperProduct(p0);
+            setLowerProduct(p1);
+          }
+          setGarmentMode('combo');
+          setHasProduct(true);
+        } else if (p0 || p1) {
+          const single = p0 || p1;
+          if (single) {
+            setSelectedProduct(single);
+            setGarmentMode('single');
+            setHasProduct(true);
+          }
+        }
+      }
+    } else if (productId) {
       const match = catalogProducts.find(p => p.id === productId);
       if (match) {
         setSelectedProduct(match);
@@ -458,7 +499,7 @@ function VirtualTryOnContent() {
       setSelectedProduct(prev => prev ?? catalogProducts[0]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId, catalogProducts]);
+  }, [rackIds, productId, catalogProducts]);
 
   const convertFileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {

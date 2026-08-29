@@ -2,13 +2,16 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Search, SlidersHorizontal, LayoutGrid, List, X, ShoppingBag, ChevronLeft, ChevronRight, Check, AlertTriangle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { Search, SlidersHorizontal, LayoutGrid, List, X, ShoppingBag, ChevronLeft, ChevronRight, Check, AlertTriangle, Layers } from 'lucide-react';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { useApp } from '@/components/navigation/Layout';
 import { useCart } from '@/store/cartStore';
 import { toast } from 'sonner';
 import { PRODUCTS, Product } from '@/lib/data';
 import { useProducts } from '@/hooks/useProducts';
+import { useRackItems, usePinToRack, useUnpinFromRack } from '@/hooks/useRack';
 
 function getCategoryGroup(product: Product): 'Áo' | 'Quần & Váy' | 'Suit đầy đủ' {
   const cat = (product.category || '').trim();
@@ -66,9 +69,14 @@ const AVAILABLE_COLORS = [
 ];
 
 export default function ProductListing() {
+  const router = useRouter();
+  const { data: session } = useSession();
   const { setIsCartOpen } = useApp();
   const { addToCart } = useCart();
   const { products: apiProducts, isLoading, isError, refetch } = useProducts();
+  const { isPinned, getItemByProductId } = useRackItems();
+  const { pinProduct, isPinning } = usePinToRack();
+  const { unpinProduct, isUnpinning } = useUnpinFromRack();
 
   // Only fall back to static PRODUCTS when the API has truly failed AND we have
   // no cached data at all. While loading (apiProducts still empty) we show
@@ -523,6 +531,9 @@ export default function ProductListing() {
                     : null;
                   const isCombo = product.name.toLowerCase().includes('combo') || product.category.toLowerCase().includes('suit');
 
+                  const pinned = isPinned(product.id);
+                  const rackItem = getItemByProductId(product.id);
+
                   return (
                     <StaggerItem key={product.id} className="group">
                       <Link href={`/products/${product.id}`} className="group flex flex-col bg-white border border-neutral-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow h-full relative">
@@ -550,6 +561,78 @@ export default function ProductListing() {
                             )}
                           </div>
 
+                          {/* Pin to Rack Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (!session?.user) {
+                                toast.error('Vui lòng đăng nhập để lưu sản phẩm vào Giá treo đồ');
+                                router.push('/login?callbackUrl=/products');
+                                return;
+                              }
+
+                              if (pinned && rackItem) {
+                                unpinProduct(rackItem.id, {
+                                  onSuccess: () => {
+                                    toast.info(`Đã bỏ ${product.name} khỏi Giá treo đồ`);
+                                  },
+                                  onError: () => {
+                                    toast.error('Không thể xóa khỏi Giá treo đồ');
+                                  },
+                                });
+                              } else {
+                                pinProduct(product.id, {
+                                  onSuccess: () => {
+                                    toast.custom((t) => (
+                                      <div className="bg-[#FDFBF7] border-l-4 border-[#5D1C34] border-y border-r border-[#E5DFD5] p-4 rounded-xl shadow-lg flex items-start gap-3.5 max-w-[380px] w-full relative">
+                                        <div className="p-2 bg-[#5D1C34]/10 text-[#5D1C34] rounded-lg shrink-0 mt-0.5">
+                                          <Layers className="w-4 h-4" />
+                                        </div>
+                                        <div className="flex-1 min-w-0 pr-4">
+                                          <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã ghim vào Giá treo đồ!</h4>
+                                          <p className="text-[12px] text-neutral-700 font-semibold mt-1 truncate">{product.name}</p>
+                                          <p className="text-[11px] text-neutral-500 mt-0.5">Sẵn sàng để phối đồ và thử đồ ảo</p>
+                                        </div>
+                                        <div className="flex flex-col items-end justify-between self-stretch shrink-0 min-h-[56px]">
+                                          <button 
+                                            type="button"
+                                            onClick={() => toast.dismiss(t)} 
+                                            className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-neutral-600 transition-colors"
+                                          >
+                                            <X className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button 
+                                            type="button"
+                                            onClick={() => { router.push('/rack'); toast.dismiss(t); }} 
+                                            className="text-[12px] font-bold text-[#5D1C34] hover:underline underline-offset-2 transition-all mt-auto"
+                                          >
+                                            Xem giá treo
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ), {
+                                      duration: 4000
+                                    });
+                                  },
+                                  onError: () => {
+                                    toast.error('Không thể ghim vào Giá treo đồ');
+                                  },
+                                });
+                              }
+                            }}
+                            className={`absolute bottom-1.5 right-9.5 w-7 h-7 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm transition-all ${
+                              pinned
+                                ? 'bg-[#5D1C34] text-white opacity-100'
+                                : 'bg-white/90 text-brand-navy opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 hover:bg-[#5D1C34] hover:text-white'
+                            }`}
+                            title={pinned ? 'Bỏ ghim khỏi Giá treo đồ' : 'Ghim vào Giá treo đồ'}
+                          >
+                            <Layers className="w-3 h-3" />
+                          </button>
+
+                          {/* Add to Cart Button */}
                           <button
                             type="button"
                             onClick={(e) => {

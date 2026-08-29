@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, Star, Minus, Plus, ShoppingBag, Sparkles, AlertCircle, X, Ruler, MessageSquare } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { ChevronRight, Star, Minus, Plus, ShoppingBag, Sparkles, AlertCircle, X, Ruler, MessageSquare, Layers } from 'lucide-react';
 import { useApp } from '@/components/navigation/Layout';
 import { useCart } from '@/store/cartStore';
 import { toast } from 'sonner';
@@ -11,6 +12,7 @@ import { PRODUCTS } from '@/lib/data';
 import { useProduct, useProducts } from '@/hooks/useProducts';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import { useMeasurementsCompleteness } from '@/hooks/useMeasurementsCompleteness';
+import { useRackItems, usePinToRack, useUnpinFromRack } from '@/hooks/useRack';
 
 const imgSuit = '/images/726470431_1311184104081177_6052756217829444481_n.png';
 const imgBlazer = '/images/731163514_999523332788054_1114320478812927640_n.png';
@@ -19,6 +21,7 @@ const imgShirt = '/images/731199294_3955961871204172_1445370375731306017_n.png';
 export default function ProductDetail() {
   const { setIsCartOpen } = useApp();
   const { addToCart } = useCart();
+  const { data: session } = useSession();
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
@@ -26,6 +29,9 @@ export default function ProductDetail() {
   const { products: allApiProducts } = useProducts();
   const { measurements } = useMeasurements();
   const { getCategoryCompleteness } = useMeasurementsCompleteness();
+  const { isPinned, getItemByProductId } = useRackItems();
+  const { pinProduct, isPinning } = usePinToRack();
+  const { unpinProduct, isUnpinning } = useUnpinFromRack();
 
   // Find product by id (from route). Fallback to p2 (Combo Suit) if not found
   const product = apiProduct ||
@@ -402,6 +408,85 @@ export default function ProductDetail() {
                 <MessageSquare className="w-4 h-4 text-brand-gold fill-brand-gold" /> Tư vấn với AI
               </Link>
             </div>
+
+            {/* Pin to Virtual Clothes Rack */}
+            {(() => {
+              const pinned = isPinned(product.id);
+              const rackItem = getItemByProductId(product.id);
+
+              const handleTogglePin = () => {
+                if (!session?.user) {
+                  toast.error('Vui lòng đăng nhập để lưu sản phẩm vào Giá treo đồ');
+                  router.push(`/login?callbackUrl=/products/${product.id}`);
+                  return;
+                }
+
+                if (pinned && rackItem) {
+                  unpinProduct(rackItem.id, {
+                    onSuccess: () => {
+                      toast.info(`Đã bỏ ${product.name} khỏi Giá treo đồ`);
+                    },
+                    onError: () => {
+                      toast.error('Không thể xóa khỏi Giá treo đồ');
+                    },
+                  });
+                } else {
+                  pinProduct(product.id, {
+                    onSuccess: () => {
+                      toast.custom((t) => (
+                        <div className="bg-[#FDFBF7] border-l-4 border-[#5D1C34] border-y border-r border-[#E5DFD5] p-4 rounded-xl shadow-lg flex items-start gap-3.5 max-w-[380px] w-full relative">
+                          <div className="p-2 bg-[#5D1C34]/10 text-[#5D1C34] rounded-lg shrink-0 mt-0.5">
+                            <Layers className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0 pr-4">
+                            <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã ghim vào Giá treo đồ!</h4>
+                            <p className="text-[12px] text-neutral-700 font-semibold mt-1 truncate">{product.name}</p>
+                            <p className="text-[11px] text-neutral-500 mt-0.5">Sẵn sàng để phối đồ và thử đồ ảo</p>
+                          </div>
+                          <div className="flex flex-col items-end justify-between self-stretch shrink-0 min-h-[56px]">
+                            <button 
+                              type="button"
+                              onClick={() => toast.dismiss(t)} 
+                              className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-neutral-600 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => { router.push('/rack'); toast.dismiss(t); }} 
+                              className="text-[12px] font-bold text-[#5D1C34] hover:underline underline-offset-2 transition-all mt-auto"
+                            >
+                              Xem giá treo
+                            </button>
+                          </div>
+                        </div>
+                      ), {
+                        duration: 4000
+                      });
+                    },
+                    onError: () => {
+                      toast.error('Không thể ghim vào Giá treo đồ');
+                    },
+                  });
+                }
+              };
+
+              return (
+                <button
+                  type="button"
+                  onClick={handleTogglePin}
+                  disabled={isPinning || isUnpinning}
+                  className={`w-full h-[48px] border rounded-xl font-semibold text-body-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    pinned
+                      ? 'border-[#5D1C34] bg-[#5D1C34]/10 text-[#5D1C34] hover:bg-[#5D1C34]/15'
+                      : 'border-dashed border-[#5D1C34]/40 text-[#5D1C34] hover:bg-[#5D1C34]/5'
+                  }`}
+                >
+                  <Layers className="w-4 h-4" />
+                  {pinned ? '✓ Đã ghim trên Giá treo — Bấm để bỏ ghim' : 'Ghim vào Giá treo đồ (Phối đồ)'}
+                </button>
+              );
+            })()}
           </div>
 
           {/* Measurements reminder */}

@@ -7,7 +7,7 @@ import { FloatingChat } from '../chat/FloatingChat';
 import { Logo } from '../ui/Logo';
 import {
   Menu, X, ShoppingBag, User as UserIcon, Sparkles,
-  History, LogOut, Package, Ruler, Home, Bell
+  History, LogOut, Package, Ruler, Home, Bell, Layers
 } from 'lucide-react';
 import { Drawer } from 'vaul';
 import { CartSlideOver } from '../cart/CartSlideOver';
@@ -79,6 +79,7 @@ export function Navigation() {
         { label: '✦ Try-On', href: tryOnHref },
         { label: '✦ Stylist', href: currentUser.role === 'guest' ? '/login' : '/ai-stylist' },
         { label: '✦ Trợ lý AI', href: chatHref },
+        { label: '🧥 Giá treo', href: currentUser.role === 'guest' ? '/login?callbackUrl=/rack' : '/rack' },
         ...(currentUser.role !== 'guest' ? [{ label: 'Lịch sử', href: '/profile/history' }] : []),
       ];
 
@@ -158,6 +159,9 @@ export function Navigation() {
                       <div className="mt-4 pt-4 border-t border-neutral-100 flex flex-col gap-2">
                         <Link href="/profile" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
                           <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
+                        </Link>
+                        <Link href="/rack" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
+                          <Layers className="w-4 h-4 text-[#5D1C34]" /> Giá treo đồ
                         </Link>
                         <Link href="/profile/measurements" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
                           <Ruler className="w-4 h-4" /> Số đo & chi tiết
@@ -295,6 +299,9 @@ export function Navigation() {
                     <div className="py-1 border-b border-neutral-100">
                       <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                         <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
+                      </Link>
+                      <Link href="/rack" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                        <Layers className="w-4 h-4 text-[#5D1C34]" /> Giá treo đồ
                       </Link>
                       <Link href="/profile/measurements" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                         <Ruler className="w-4 h-4" /> Số đo & chi tiết
