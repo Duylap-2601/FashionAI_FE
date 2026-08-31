@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, X, Shirt, Scissors, RotateCcw, ArrowRight } from 'lucide-react';
+import { Sparkles, X, RotateCcw, ArrowRight, Plus, Eye } from 'lucide-react';
 import { RackItem, BackendRackProduct } from '@/hooks/useRack';
 
 interface MannequinDressFormProps {
@@ -53,7 +53,7 @@ export function MannequinDressForm({
 }: MannequinDressFormProps) {
   const isFullBody = !!fullBodyItem;
   const hasAnyItem = !!(upperItem || lowerItem || fullBodyItem);
-  const itemCount = isFullBody ? 1 : (upperItem ? 1 : 0) + (lowerItem ? 1 : 0);
+  const isComboComplete = isFullBody || (!!upperItem && !!lowerItem);
 
   // Calculate total price
   const totalPrice = React.useMemo(() => {
@@ -68,27 +68,34 @@ export function MannequinDressForm({
   }, [upperItem, lowerItem, fullBodyItem]);
 
   return (
-    <div className="relative bg-gradient-to-b from-neutral-900 via-[#18151B] to-[#120F14] rounded-3xl p-5 md:p-6 text-white border border-neutral-800 shadow-2xl overflow-hidden flex flex-col justify-between">
-      {/* Background Ambient Glow */}
-      <div className="absolute -top-24 -left-24 w-72 h-72 bg-[#5D1C34]/30 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-[#A67D44]/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-96 bg-radial from-white/5 to-transparent rounded-full blur-2xl pointer-events-none" />
+    <div className="relative bg-gradient-to-b from-[#FAF7F2] via-[#F5EFEB] to-[#EFE7E0] rounded-3xl p-5 md:p-6 text-neutral-900 border border-[#E3D9CE] shadow-xl overflow-hidden flex flex-col justify-between">
+      {/* Studio Lighting Background Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-radial from-white via-amber-100/30 to-transparent rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-[#5D1C34]/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
-      <div className="relative z-10 flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+      <div className="relative z-10 flex items-center justify-between border-b border-[#E2D8CC] pb-3 mb-2">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#5D1C34] to-[#A67D44] flex items-center justify-center shadow-inner">
-            <Sparkles className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-xl bg-[#5D1C34] text-white flex items-center justify-center shadow-sm">
+            <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-body-md font-bold text-neutral-100 flex items-center gap-2">
-              Studio Ma-nơ-canh
-              <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold rounded-full bg-white/10 text-amber-200 border border-white/10">
-                Mix & Match
-              </span>
+            <h3 className="text-body-md font-bold text-[#1F242D] flex items-center gap-2">
+              Ma-nơ-canh Phối Đồ
+              {isComboComplete && (
+                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 animate-in fade-in">
+                  Đủ Bộ ✨
+                </span>
+              )}
             </h3>
-            <p className="text-[11px] text-neutral-400">
-              {hasAnyItem ? `Đã phối ${itemCount}/2 món đồ` : 'Chưa mặc trang phục nào'}
+            <p className="text-[11px] text-neutral-500">
+              {!hasAnyItem
+                ? 'Chọn quần áo bên trái để ướm thử'
+                : isComboComplete
+                ? 'Bộ trang phục đã sẵn sàng để thử đồ AI!'
+                : upperItem
+                ? 'Đã có áo — hãy chọn thêm quần/váy'
+                : 'Đã có quần — hãy chọn thêm áo'}
             </p>
           </div>
         </div>
@@ -97,162 +104,134 @@ export function MannequinDressForm({
           <button
             type="button"
             onClick={onReset}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white text-xs font-medium transition-colors border border-white/5"
-            title="Tháo toàn bộ trang phục"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 text-xs font-semibold transition-all border border-neutral-200 shadow-2xs"
+            title="Tháo toàn bộ đồ trên ma-nơ-canh"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Làm mới</span>
+            <span>Tháo đồ</span>
           </button>
         )}
       </div>
 
-      {/* Main Mannequin Stage Area */}
-      <div className="relative z-10 flex-1 min-h-[460px] md:min-h-[500px] flex flex-col items-center justify-center py-4">
-        {/* Spotlight Effect */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-12 bg-white/10 blur-xl rounded-full pointer-events-none" />
+      {/* Virtual Mannequin Dressing Stage */}
+      <div className="relative z-10 flex-1 min-h-[490px] flex flex-col items-center justify-center py-2">
+        {/* Spotlight Circle Floor */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-64 h-12 bg-neutral-300/40 rounded-full blur-md pointer-events-none" />
 
-        {/* Mannequin Structure Container */}
-        <div className="relative w-full max-w-[300px] h-[440px] flex flex-col items-center select-none">
-          {/* Mannequin Top Finial (Chốt gỗ đầu) */}
-          <div className="w-6 h-5 rounded-t-full bg-gradient-to-b from-neutral-300 via-neutral-600 to-neutral-800 border-t border-white/30 shadow-md z-10" />
-          <div className="w-8 h-4 rounded-sm bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 border border-white/10 z-10" />
+        {/* Mannequin & Clothes Composite Stage */}
+        <div className="relative w-full max-w-[320px] h-[480px] flex flex-col items-center select-none">
+          {/* 1. Mannequin Finial Top (Đầu chốt gỗ) */}
+          <div className="w-5 h-5 rounded-t-full bg-gradient-to-b from-[#2B292D] via-[#1B191E] to-[#110F13] shadow-md z-10 border-t border-white/20" />
+          <div className="w-7 h-3 rounded-xs bg-[#1F1D22] z-10 border-x border-white/10" />
 
-          {/* Mannequin Neck (Cổ) */}
-          <div className="w-12 h-6 bg-gradient-to-r from-neutral-800 via-neutral-900 to-neutral-800 border-x border-neutral-700 z-10" />
+          {/* 2. Mannequin Neck (Cổ) */}
+          <div className="w-10 h-5 bg-gradient-to-r from-[#2A282D] via-[#1E1C21] to-[#2A282D] z-10 shadow-xs" />
 
-          {/* Mannequin Torso Body (Thân áo & Quần) */}
-          <div className="relative w-56 h-[270px] flex flex-col items-center">
-            {/* Base Mannequin Silhouette Shape */}
-            <svg
-              className="absolute inset-0 w-full h-full text-neutral-800/80 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]"
-              viewBox="0 0 200 240"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Shoulders & Bust & Waist & Hips Haute Couture Curvature */}
-              <path
-                d="M 60 0 C 45 0, 15 15, 10 35 C 5 55, 30 75, 45 95 C 55 110, 50 130, 42 155 C 35 180, 25 210, 40 230 C 50 240, 150 240, 160 230 C 175 210, 165 180, 158 155 C 150 130, 145 110, 155 95 C 170 75, 195 55, 190 35 C 185 15, 155 0, 140 0 Z"
-                fill="url(#mannequinVelvet)"
-                stroke="#3A3840"
-                strokeWidth="1.5"
-              />
-              <defs>
-                <linearGradient id="mannequinVelvet" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#2D2930" />
-                  <stop offset="50%" stopColor="#1E1C22" />
-                  <stop offset="100%" stopColor="#131116" />
-                </linearGradient>
-              </defs>
-            </svg>
+          {/* 3. Mannequin Torso & Clothing Layer Area (Thân & Trang Phục) */}
+          <div className="relative w-64 h-[350px] flex flex-col items-center">
+            {/* Background Mannequin Silhouette (Hiển thị khi chưa có đồ hoặc làm nền) */}
+            <div className="absolute inset-0 flex flex-col items-center pointer-events-none opacity-90">
+              <svg
+                className="w-56 h-[330px] drop-shadow-[0_8px_16px_rgba(0,0,0,0.15)]"
+                viewBox="0 0 200 300"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Velvet Dress Form Torso */}
+                <path
+                  d="M 65 0 C 50 0, 20 15, 15 38 C 10 60, 32 85, 48 110 C 58 125, 52 145, 44 175 C 34 210, 22 250, 42 275 C 55 290, 145 290, 158 275 C 178 250, 166 210, 156 175 C 148 145, 142 125, 152 110 C 168 85, 190 60, 185 38 C 180 15, 150 0, 135 0 Z"
+                  fill="url(#velvetBodyGrad)"
+                  stroke="#1A181D"
+                  strokeWidth="1.5"
+                />
+                {/* Haute Couture Stitch Lines */}
+                <path d="M 100 0 L 100 285" stroke="#3D3942" strokeWidth="1" strokeDasharray="3 3" />
+                <path d="M 52 125 C 75 135, 125 135, 148 125" stroke="#3D3942" strokeWidth="1" strokeDasharray="2 2" />
+                <defs>
+                  <linearGradient id="velvetBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#302C34" />
+                    <stop offset="50%" stopColor="#1E1C22" />
+                    <stop offset="100%" stopColor="#131116" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
 
-            {/* FULL BODY SLOT */}
-            {isFullBody && fullBodyItem ? (
-              <div className="relative z-20 w-52 h-[260px] rounded-2xl overflow-hidden group border-2 border-amber-400/80 bg-neutral-900/90 shadow-2xl animate-in zoom-in-95 duration-300">
+            {/* A. FULL BODY GARMENT (Khi chọn Bộ liền / Suit) */}
+            {isFullBody && fullBodyItem && (
+              <div className="relative z-20 w-60 h-[340px] flex items-center justify-center animate-in zoom-in-95 fade-in duration-300 group">
                 <img
                   src={getProductImage(fullBodyItem.product)}
                   alt={fullBodyItem.product.name}
-                  className="w-full h-full object-cover object-top filter drop-shadow-md"
+                  className="w-full h-full object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.25)] hover:scale-[1.02] transition-transform"
                 />
-                {/* Floating Tag */}
-                <div className="absolute inset-x-2 bottom-2 p-2 rounded-xl bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[10px] text-amber-300 font-bold uppercase truncate">Bộ Liền / Suit</p>
-                    <p className="text-xs font-semibold text-white truncate">{fullBodyItem.product.name}</p>
-                    <p className="text-[11px] font-bold text-amber-400">{formatPrice(fullBodyItem.product.price)}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onRemoveFullBody}
-                    className="w-6 h-6 rounded-full bg-white/20 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shrink-0"
-                    title="Gỡ bộ liền"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                {/* Quick Remove Button */}
+                <button
+                  type="button"
+                  onClick={onRemoveFullBody}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md"
+                  title="Tháo bộ liền"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            ) : (
-              /* UPPER & LOWER SLOTS */
-              <div className="relative z-20 w-full h-full flex flex-col justify-between p-1.5 gap-2">
-                {/* 1. UPPER SLOT (Áo / Blazer) */}
-                <div className="relative w-full h-[125px] rounded-xl overflow-hidden transition-all duration-300">
+            )}
+
+            {/* B. UPPER & LOWER COMBO (Áo + Quần ghép nối liền mạch) */}
+            {!isFullBody && (
+              <div className="relative z-20 w-full h-full flex flex-col items-center">
+                {/* 1. UPPER GARMENT (Áo / Blazer) - Khớp với ngực & vai */}
+                <div className="relative w-56 h-[175px] flex items-center justify-center">
                   {upperItem ? (
-                    <div className="relative w-full h-full rounded-xl overflow-hidden border-2 border-sky-400/80 bg-neutral-900/90 shadow-xl group animate-in zoom-in-95 duration-300">
+                    <div className="relative w-full h-full flex items-center justify-center animate-in zoom-in-95 fade-in duration-300 group">
                       <img
                         src={getProductImage(upperItem.product)}
                         alt={upperItem.product.name}
-                        className="w-full h-full object-cover object-top"
+                        className="w-full h-full object-contain object-top filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] transition-transform"
                       />
-                      {/* Overlay Tag */}
-                      <div className="absolute inset-x-1.5 bottom-1.5 p-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-between gap-1.5">
-                        <div className="min-w-0">
-                          <p className="text-[9px] text-sky-300 font-bold uppercase truncate">Áo / Thân trên</p>
-                          <p className="text-[11px] font-semibold text-white truncate leading-tight">
-                            {upperItem.product.name}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={onRemoveUpper}
-                          className="w-5 h-5 rounded-full bg-white/20 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shrink-0"
-                          title="Gỡ áo"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
+                      {/* Remove Upper Button */}
+                      <button
+                        type="button"
+                        onClick={onRemoveUpper}
+                        className="absolute top-1 right-2 w-6 h-6 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md"
+                        title="Tháo áo"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   ) : (
-                    <div className="w-full h-full rounded-xl border-2 border-dashed border-white/25 hover:border-sky-400/60 bg-white/5 hover:bg-white/10 transition-all flex flex-col items-center justify-center p-2 text-center group cursor-pointer">
-                      <div className="w-8 h-8 rounded-full bg-white/10 group-hover:bg-sky-500/20 text-neutral-300 group-hover:text-sky-300 flex items-center justify-center mb-1 transition-colors">
-                        <Shirt className="w-4 h-4" />
-                      </div>
-                      <span className="text-[11px] font-bold text-neutral-200 group-hover:text-white transition-colors">
-                        Vị trí Áo
-                      </span>
-                      <span className="text-[9px] text-neutral-400 animate-pulse">
-                        Chạm vào áo bên trái để ướm
-                      </span>
+                    /* Upper Placeholder Guide */
+                    <div className="w-48 h-32 rounded-2xl border-2 border-dashed border-[#A67D44]/40 bg-[#FAF7F2]/40 backdrop-blur-2xs flex flex-col items-center justify-center p-2 text-center transition-all hover:border-[#5D1C34]/60">
+                      <span className="text-[11px] font-bold text-[#5D1C34]">Vùng Áo / Thân trên</span>
+                      <span className="text-[10px] text-neutral-500 mt-0.5">Chạm áo bên trái để mặc lên</span>
                     </div>
                   )}
                 </div>
 
-                {/* 2. LOWER SLOT (Quần / Váy) */}
-                <div className="relative w-full h-[125px] rounded-xl overflow-hidden transition-all duration-300">
+                {/* 2. LOWER GARMENT (Quần / Váy) - Nối tiếp liền mạch từ eo xuống */}
+                <div className="relative w-56 h-[175px] -mt-3 flex items-center justify-center">
                   {lowerItem ? (
-                    <div className="relative w-full h-full rounded-xl overflow-hidden border-2 border-emerald-400/80 bg-neutral-900/90 shadow-xl group animate-in zoom-in-95 duration-300">
+                    <div className="relative w-full h-full flex items-center justify-center animate-in zoom-in-95 fade-in duration-300 group">
                       <img
                         src={getProductImage(lowerItem.product)}
                         alt={lowerItem.product.name}
-                        className="w-full h-full object-cover object-top"
+                        className="w-full h-full object-contain object-top filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] transition-transform"
                       />
-                      {/* Overlay Tag */}
-                      <div className="absolute inset-x-1.5 bottom-1.5 p-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-between gap-1.5">
-                        <div className="min-w-0">
-                          <p className="text-[9px] text-emerald-300 font-bold uppercase truncate">Quần & Váy</p>
-                          <p className="text-[11px] font-semibold text-white truncate leading-tight">
-                            {lowerItem.product.name}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={onRemoveLower}
-                          className="w-5 h-5 rounded-full bg-white/20 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shrink-0"
-                          title="Gỡ quần/váy"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
+                      {/* Remove Lower Button */}
+                      <button
+                        type="button"
+                        onClick={onRemoveLower}
+                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md"
+                        title="Tháo quần/váy"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   ) : (
-                    <div className="w-full h-full rounded-xl border-2 border-dashed border-white/25 hover:border-emerald-400/60 bg-white/5 hover:bg-white/10 transition-all flex flex-col items-center justify-center p-2 text-center group cursor-pointer">
-                      <div className="w-8 h-8 rounded-full bg-white/10 group-hover:bg-emerald-500/20 text-neutral-300 group-hover:text-emerald-300 flex items-center justify-center mb-1 transition-colors">
-                        <Scissors className="w-4 h-4 rotate-90" />
-                      </div>
-                      <span className="text-[11px] font-bold text-neutral-200 group-hover:text-white transition-colors">
-                        Vị trí Quần / Váy
-                      </span>
-                      <span className="text-[9px] text-neutral-400 animate-pulse">
-                        Chạm vào quần/váy để phối
-                      </span>
+                    /* Lower Placeholder Guide */
+                    <div className="w-48 h-32 rounded-2xl border-2 border-dashed border-[#A67D44]/40 bg-[#FAF7F2]/40 backdrop-blur-2xs flex flex-col items-center justify-center p-2 text-center transition-all hover:border-[#5D1C34]/60">
+                      <span className="text-[11px] font-bold text-[#5D1C34]">Vùng Quần / Váy</span>
+                      <span className="text-[10px] text-neutral-500 mt-0.5">Chạm quần/váy bên trái để mặc lên</span>
                     </div>
                   )}
                 </div>
@@ -260,50 +239,76 @@ export function MannequinDressForm({
             )}
           </div>
 
-          {/* Mannequin Stand Pole (Cột đỡ kim loại sơn đen) */}
-          <div className="w-3.5 h-20 bg-gradient-to-r from-neutral-700 via-neutral-400 to-neutral-800 shadow-inner z-0" />
-          <div className="w-6 h-3 rounded-full bg-gradient-to-r from-neutral-800 via-neutral-600 to-neutral-800 border border-white/20 z-0" />
+          {/* 4. Mannequin Stand Pole & Base (Cọc kim loại & Chân đế tripod) */}
+          <div className="w-3 h-16 bg-gradient-to-r from-neutral-700 via-neutral-400 to-neutral-800 shadow-inner z-0" />
+          <div className="w-5 h-2.5 rounded-full bg-neutral-800 border border-neutral-600 z-0" />
 
-          {/* Mannequin Base Tripod Legs (Chân đế 3 chạc cổ điển uốn lượn) */}
-          <div className="relative w-44 h-12 flex justify-center items-end z-0">
-            {/* Center leg */}
-            <div className="w-3.5 h-10 bg-gradient-to-b from-neutral-700 to-neutral-900 rounded-b-md shadow-md" />
-            {/* Left curved leg */}
-            <div className="absolute left-4 bottom-0 w-16 h-8 border-b-4 border-l-4 border-neutral-700 rounded-bl-3xl transform -rotate-12 shadow-lg" />
-            {/* Right curved leg */}
-            <div className="absolute right-4 bottom-0 w-16 h-8 border-b-4 border-r-4 border-neutral-700 rounded-br-3xl transform rotate-12 shadow-lg" />
+          {/* Tripod Base */}
+          <div className="relative w-40 h-10 flex justify-center items-end z-0">
+            <div className="w-3 h-8 bg-neutral-800 rounded-b-sm" />
+            <div className="absolute left-3 bottom-0 w-14 h-6 border-b-[3px] border-l-[3px] border-neutral-800 rounded-bl-2xl transform -rotate-12" />
+            <div className="absolute right-3 bottom-0 w-14 h-6 border-b-[3px] border-r-[3px] border-neutral-800 rounded-br-2xl transform rotate-12" />
           </div>
-
-          {/* Shadow beneath base */}
-          <div className="w-48 h-3 bg-black/60 blur-md rounded-full mt-1" />
         </div>
       </div>
 
-      {/* Outfit Action Footer */}
-      <div className="relative z-10 pt-4 border-t border-white/10">
+      {/* Outfit Information & Action Footer */}
+      <div className="relative z-10 pt-3 border-t border-[#E2D8CC]">
         {hasAnyItem ? (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between px-1 text-xs">
-              <span className="text-neutral-400 font-medium">Tổng giá combo:</span>
-              <span className="text-body-md font-bold text-amber-400">
-                {totalPrice > 0 ? `${totalPrice.toLocaleString('vi-VN')} ₫` : 'Miễn phí'}
+          <div className="flex flex-col gap-2.5">
+            {/* Selected Items Mini Chips */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {upperItem && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-neutral-200 text-xs font-semibold text-neutral-800 shadow-2xs shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-sky-500" />
+                  <span className="max-w-[130px] truncate">{upperItem.product.name}</span>
+                  <button type="button" onClick={onRemoveUpper} className="text-neutral-400 hover:text-rose-600">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              {lowerItem && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-neutral-200 text-xs font-semibold text-neutral-800 shadow-2xs shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="max-w-[130px] truncate">{lowerItem.product.name}</span>
+                  <button type="button" onClick={onRemoveLower} className="text-neutral-400 hover:text-rose-600">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              {fullBodyItem && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-neutral-200 text-xs font-semibold text-neutral-800 shadow-2xs shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-purple-500" />
+                  <span className="max-w-[150px] truncate">{fullBodyItem.product.name}</span>
+                  <button type="button" onClick={onRemoveFullBody} className="text-neutral-400 hover:text-rose-600">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Total Price & CTA Button */}
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs text-neutral-600 font-medium">Tổng giá outfit:</span>
+              <span className="text-body-md font-bold text-[#5D1C34]">
+                {totalPrice > 0 ? `${totalPrice.toLocaleString('vi-VN')} ₫` : '0 ₫'}
               </span>
             </div>
 
             <button
               type="button"
               onClick={onGoToTryOn}
-              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#802246] via-[#5D1C34] to-[#A67D44] text-white font-bold text-body-sm hover:opacity-95 active:scale-[0.99] transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white font-bold text-body-sm hover:opacity-95 active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              Thử đồ ảo với outfit này
+              <Sparkles className="w-4 h-4 text-amber-200" />
+              Thử đồ ảo AI với bộ này
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         ) : (
           <div className="py-2 text-center">
-            <p className="text-xs text-neutral-400">
-              Hãy chọn các món đồ bên <span className="text-amber-300 font-semibold">Tủ Đồ</span> để phối trang phục
+            <p className="text-xs text-neutral-500">
+              Hãy bấm vào bất kỳ món đồ nào bên <span className="text-[#5D1C34] font-bold">Tủ Đồ</span> để mặc lên ma-nơ-canh
             </p>
           </div>
         )}
