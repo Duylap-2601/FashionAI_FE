@@ -5,14 +5,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
-  Layers, Sparkles, Trash2, X, Check, ArrowRight,
-  ShoppingBag, Plus, Info, AlertTriangle, ChevronRight,
-  Shirt, RefreshCw
+  Trash2, X, Check,
+  ShoppingBag, Plus, ChevronRight,
+  Shirt, RefreshCw, Layers, Search
 } from 'lucide-react';
 import { PageHeader, PageContent } from '@/components/navigation/Layout';
 import { useRackItems, useUnpinFromRack, useClearRack, RackItem, BackendRackProduct } from '@/hooks/useRack';
 import { toBackendCategory } from '@/hooks/useProducts';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
+import { MannequinDressForm } from '@/components/rack/MannequinDressForm';
 import { toast } from 'sonner';
 
 function getProductImage(product: BackendRackProduct): string {
@@ -53,6 +54,8 @@ function getCategoryBadge(catStr?: string) {
   }
 }
 
+type TabType = 'ALL' | 'UPPER' | 'LOWER' | 'FULL_BODY';
+
 export default function RackPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -60,62 +63,95 @@ export default function RackPage() {
   const { unpinProduct, isUnpinning } = useUnpinFromRack();
   const { clearRack, isClearing } = useClearRack();
 
-  // Selected rack items for Try-on combination
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // Mannequin Outfit Slot States
+  const [upperItem, setUpperItem] = useState<RackItem | null>(null);
+  const [lowerItem, setLowerItem] = useState<RackItem | null>(null);
+  const [fullBodyItem, setFullBodyItem] = useState<RackItem | null>(null);
+
+  // Tab & Search filter for wardrobe
+  const [currentTab, setCurrentTab] = useState<TabType>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  const selectedItems = useMemo(() => {
-    return items.filter(item => selectedIds.includes(item.productId));
-  }, [items, selectedIds]);
-
-  const handleToggleSelect = (item: RackItem) => {
-    const isSelected = selectedIds.includes(item.productId);
-
-    if (isSelected) {
-      setSelectedIds(prev => prev.filter(id => id !== item.productId));
-      return;
-    }
-
-    const newCat = toBackendCategory(item.product.category);
-
-    if (selectedItems.length >= 2) {
-      toast.error('Chỉ được chọn tối đa 2 món trang phục (1 trên + 1 dưới)');
-      return;
-    }
-
-    if (newCat === 'FULL_BODY') {
-      if (selectedItems.length > 0) {
-        toast.warning('Bộ liền / Suit đầy đủ không thể kết hợp thêm với món khác');
-        return;
+  // Filtered wardrobe items
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const cat = toBackendCategory(item.product.category);
+      if (currentTab !== 'ALL' && cat !== currentTab) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const nameMatch = item.product.name?.toLowerCase().includes(q);
+        const brandMatch = item.product.brand?.toLowerCase().includes(q);
+        return nameMatch || brandMatch;
       }
-      setSelectedIds([item.productId]);
-      toast.success(`Đã chọn "${item.product.name}"`);
-      return;
-    }
+      return true;
+    });
+  }, [items, currentTab, searchQuery]);
 
-    const hasFullBody = selectedItems.some(i => toBackendCategory(i.product.category) === 'FULL_BODY');
-    if (hasFullBody) {
-      toast.warning('Không thể kết hợp thêm món đồ khi đã chọn Bộ liền');
-      return;
-    }
-
-    const hasSameCategory = selectedItems.some(i => toBackendCategory(i.product.category) === newCat);
-    if (hasSameCategory) {
-      const catLabel = newCat === 'UPPER' ? 'áo/blazer' : 'quần/váy';
-      toast.warning(`Bạn đã chọn 1 ${catLabel} rồi. Vui lòng chọn món khác loại để phối đồ.`);
-      return;
-    }
-
-    setSelectedIds(prev => [...prev, item.productId]);
-    toast.success(`Đã chọn "${item.product.name}"`);
+  // Check if an item is currently placed on mannequin
+  const isItemWorn = (productId: string) => {
+    return (
+      upperItem?.productId === productId ||
+      lowerItem?.productId === productId ||
+      fullBodyItem?.productId === productId
+    );
   };
 
+  // Handle clicking an item from wardrobe to wear/remove on mannequin
+  const handleItemClick = (item: RackItem) => {
+    const cat = toBackendCategory(item.product.category);
+    const worn = isItemWorn(item.productId);
+
+    if (worn) {
+      // Remove item
+      if (upperItem?.productId === item.productId) setUpperItem(null);
+      if (lowerItem?.productId === item.productId) setLowerItem(null);
+      if (fullBodyItem?.productId === item.productId) setFullBodyItem(null);
+      toast.info(`Đã gỡ "${item.product.name}" khỏi ma-nơ-canh`);
+      return;
+    }
+
+    // Wear item based on category
+    if (cat === 'FULL_BODY') {
+      setFullBodyItem(item);
+      setUpperItem(null);
+      setLowerItem(null);
+      toast.success(`Đã mặc "${item.product.name}" lên ma-nơ-canh`);
+      return;
+    }
+
+    if (cat === 'UPPER') {
+      setFullBodyItem(null);
+      setUpperItem(item);
+      toast.success(`Đã gắn áo "${item.product.name}" vào ma-nơ-canh`);
+      return;
+    }
+
+    if (cat === 'LOWER') {
+      setFullBodyItem(null);
+      setLowerItem(item);
+      toast.success(`Đã gắn quần/váy "${item.product.name}" vào ma-nơ-canh`);
+      return;
+    }
+  };
+
+  // Reset entire mannequin outfit
+  const handleResetMannequin = () => {
+    setUpperItem(null);
+    setLowerItem(null);
+    setFullBodyItem(null);
+    toast.info('Đã làm mới ma-nơ-canh');
+  };
+
+  // Remove a product from rack storage
   const handleUnpin = (e: React.MouseEvent, item: RackItem) => {
     e.stopPropagation();
     unpinProduct(item.id, {
       onSuccess: () => {
-        setSelectedIds(prev => prev.filter(id => id !== item.productId));
-        toast.info(`Đã xóa "${item.product.name}" khỏi Giá treo đồ`);
+        if (upperItem?.productId === item.productId) setUpperItem(null);
+        if (lowerItem?.productId === item.productId) setLowerItem(null);
+        if (fullBodyItem?.productId === item.productId) setFullBodyItem(null);
+        toast.info(`Đã xóa "${item.product.name}" khỏi Tủ đồ`);
       },
       onError: () => {
         toast.error('Không thể xóa món đồ này');
@@ -123,27 +159,50 @@ export default function RackPage() {
     });
   };
 
+  // Clear all items from rack
   const handleClearAll = () => {
     clearRack(undefined, {
       onSuccess: () => {
-        setSelectedIds([]);
+        handleResetMannequin();
         setShowClearConfirm(false);
-        toast.info('Đã dọn sạch Giá treo đồ');
+        toast.info('Đã dọn sạch Tủ đồ cá nhân');
       },
       onError: () => {
-        toast.error('Không thể dọn sạch Giá treo');
+        toast.error('Không thể dọn sạch tủ đồ');
       },
     });
   };
 
+  // Navigate to try-on studio with selected combination
   const handleGoToTryOn = () => {
-    if (selectedItems.length === 0) {
-      toast.error('Vui lòng chọn ít nhất 1 món đồ để thử');
+    const selectedList: RackItem[] = [];
+    if (fullBodyItem) {
+      selectedList.push(fullBodyItem);
+    } else {
+      if (upperItem) selectedList.push(upperItem);
+      if (lowerItem) selectedList.push(lowerItem);
+    }
+
+    if (selectedList.length === 0) {
+      toast.error('Vui lòng gắn ít nhất 1 món đồ lên ma-nơ-canh để thử');
       return;
     }
-    const ids = selectedItems.map(i => i.productId).join(',');
+
+    const ids = selectedList.map(i => i.productId).join(',');
     router.push(`/try-on?rackIds=${ids}`);
   };
+
+  // Count items by category for tab badges
+  const categoryCounts = useMemo(() => {
+    const counts = { ALL: items.length, UPPER: 0, LOWER: 0, FULL_BODY: 0 };
+    items.forEach(item => {
+      const cat = toBackendCategory(item.product.category);
+      if (counts[cat] !== undefined) {
+        counts[cat]++;
+      }
+    });
+    return counts;
+  }, [items]);
 
   // Not authenticated
   if (status === 'unauthenticated') {
@@ -155,7 +214,7 @@ export default function RackPage() {
           </div>
           <h2 className="text-heading-h3 font-bold text-brand-navy mb-2">Giá treo đồ ảo</h2>
           <p className="text-body-sm text-neutral-600 mb-6">
-            Đăng nhập để lưu trữ các món đồ yêu thích, tự do phối đồ (Mix & Match) và thử đồ ảo không giới hạn.
+            Đăng nhập để lưu trữ các món đồ yêu thích, tự do phối đồ trên Ma-nơ-canh và thử đồ ảo AI.
           </p>
           <Link
             href="/login?callbackUrl=/rack"
@@ -171,13 +230,13 @@ export default function RackPage() {
   return (
     <div className="min-h-screen pb-24">
       <PageHeader
-        title="Giá treo đồ của tôi"
-        subtitle="Lưu trữ các trang phục bạn thích để tự do phối đồ và gửi thẳng vào phòng Thử đồ ảo"
+        title="Studio Phối Đồ & Giá Treo"
+        subtitle="Gắn trang phục lên ma-nơ-canh để mix & match combo ưng ý, sau đó đưa vào phòng Thử đồ AI"
         breadcrumbs={
           <div className="flex items-center gap-2 text-label-sm text-neutral-500">
             <Link href="/" className="hover:text-brand-navy">Trang chủ</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-brand-navy font-semibold">Giá treo đồ</span>
+            <span className="text-brand-navy font-semibold">Giá treo & Phối đồ</span>
           </div>
         }
         cta={
@@ -186,7 +245,7 @@ export default function RackPage() {
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(true)}
-                className="px-4 py-2 border border-neutral-200 text-neutral-600 hover:text-semantic-error hover:border-semantic-error/40 rounded-xl text-label-sm font-medium transition-colors flex items-center gap-1.5"
+                className="px-3.5 py-2 border border-neutral-200 text-neutral-600 hover:text-semantic-error hover:border-semantic-error/40 rounded-xl text-label-sm font-medium transition-colors flex items-center gap-1.5"
               >
                 <Trash2 className="w-4 h-4" /> Dọn sạch giá treo
               </button>
@@ -196,185 +255,211 @@ export default function RackPage() {
       />
 
       <PageContent>
-        {/* Instruction Banner */}
-        <div className="bg-[#FDFBF7] border border-[#E5DFD5] rounded-2xl p-4 md:p-5 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-          <div className="flex items-start sm:items-center gap-3">
-            <div className="p-2.5 bg-[#5D1C34]/10 text-[#5D1C34] rounded-xl shrink-0">
-              <Layers className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-body-md font-bold text-brand-navy">Quy tắc phối đồ Try-On</h3>
-              <p className="text-body-sm text-neutral-600 mt-0.5">
-                Chọn <span className="font-semibold text-[#5D1C34]">1 Áo + 1 Quần/Váy</span> để thử combo, hoặc chọn <span className="font-semibold text-[#5D1C34]">1 Bộ liền / Suit</span> riêng lẻ.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/products"
-            className="inline-flex items-center gap-1.5 text-label-sm font-bold text-[#5D1C34] hover:underline shrink-0"
-          >
-            <Plus className="w-4 h-4" /> Ghim thêm sản phẩm
-          </Link>
-        </div>
-
         {/* Loading State */}
         {isLoading && (
-          <div className="py-20 flex flex-col items-center justify-center gap-3 text-neutral-400">
+          <div className="py-24 flex flex-col items-center justify-center gap-3 text-neutral-400">
             <RefreshCw className="w-8 h-8 animate-spin text-[#5D1C34]" />
-            <p className="text-body-sm font-medium">Đang tải Giá treo đồ...</p>
+            <p className="text-body-sm font-medium">Đang tải tủ đồ của bạn...</p>
           </div>
         )}
 
         {/* Empty State */}
         {!isLoading && items.length === 0 && (
-          <div className="bg-white border border-neutral-200 rounded-2xl p-12 text-center max-w-lg mx-auto my-8 shadow-xs">
-            <div className="w-18 h-18 bg-neutral-100 text-neutral-400 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shirt className="w-9 h-9" />
+          <div className="bg-white border border-neutral-200 rounded-3xl p-12 text-center max-w-lg mx-auto my-8 shadow-xs">
+            <div className="w-20 h-20 bg-neutral-100 text-neutral-400 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shirt className="w-10 h-10" />
             </div>
             <h3 className="text-heading-h3 font-bold text-brand-navy mb-2">Giá treo đồ đang trống</h3>
             <p className="text-body-sm text-neutral-500 mb-6 max-w-sm mx-auto">
-              Bạn chưa ghim sản phẩm nào. Hãy khám phá catalog và bấm biểu tượng Giá treo trên mỗi món đồ để bắt đầu phối đồ!
+              Bạn chưa lưu trang phục nào. Hãy khám phá catalog và bấm nút ghim trên mỗi món đồ để mang vào studio phối đồ!
             </p>
             <Link
               href="/products"
               className="inline-flex items-center gap-2 px-6 py-3 bg-brand-navy text-white text-label-md font-bold rounded-xl hover:bg-brand-navy/90 transition-colors shadow-sm"
             >
-              <ShoppingBag className="w-4 h-4" /> Khám phá sản phẩm
+              <ShoppingBag className="w-4 h-4" /> Khám phá bộ sưu tập
             </Link>
           </div>
         )}
 
-        {/* Grid of Pinned Items */}
+        {/* 2-Column Mix & Match Layout */}
         {!isLoading && items.length > 0 && (
-          <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-            {items.map((item) => {
-              const isSelected = selectedIds.includes(item.productId);
-              const badge = getCategoryBadge(item.product.category);
-              const imageUrl = getProductImage(item.product);
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            {/* Left Column: Wardrobe Inventory (7 cols on lg) */}
+            <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-4">
+              {/* Filter Tabs & Search */}
+              <div className="bg-white border border-neutral-200/80 rounded-2xl p-4 shadow-xs flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-body-md font-bold text-brand-navy flex items-center gap-2">
+                      Tủ Đồ Đã Lưu
+                      <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-neutral-100 text-neutral-600">
+                        {items.length} món
+                      </span>
+                    </h3>
+                    <p className="text-xs text-neutral-500">Chạm vào sản phẩm để tự động ướm lên ma-nơ-canh</p>
+                  </div>
 
-              return (
-                <StaggerItem key={item.id}>
-                  <div
-                    onClick={() => handleToggleSelect(item)}
-                    className={`group relative flex flex-col bg-white rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-200 shadow-xs hover:shadow-md ${
-                      isSelected
-                        ? 'border-[#5D1C34] ring-2 ring-[#5D1C34]/20 shadow-md bg-[#5D1C34]/2'
-                        : 'border-neutral-200 hover:border-neutral-300'
-                    }`}
+                  <Link
+                    href="/products"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#5D1C34] hover:underline shrink-0"
                   >
-                    {/* Image Box */}
-                    <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
-                      <img
-                        src={imageUrl}
-                        alt={item.product.name}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
-                        }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
+                    <Plus className="w-3.5 h-3.5" /> Thêm đồ mới
+                  </Link>
+                </div>
 
-                      {/* Selection Checkbox Overlay */}
-                      <div
-                        className={`absolute top-2 left-2 w-6 h-6 rounded-lg flex items-center justify-center transition-all ${
-                          isSelected
-                            ? 'bg-[#5D1C34] text-white shadow-md'
-                            : 'bg-white/80 backdrop-blur-sm border border-neutral-300 text-transparent hover:border-brand-navy'
+                {/* Category Tabs */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                  {[
+                    { key: 'ALL' as TabType, label: 'Tất cả', count: categoryCounts.ALL },
+                    { key: 'UPPER' as TabType, label: 'Áo / Top', count: categoryCounts.UPPER },
+                    { key: 'LOWER' as TabType, label: 'Quần & Váy', count: categoryCounts.LOWER },
+                    { key: 'FULL_BODY' as TabType, label: 'Bộ liền / Suit', count: categoryCounts.FULL_BODY },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setCurrentTab(tab.key)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                        currentTab === tab.key
+                          ? 'bg-[#5D1C34] text-white shadow-xs'
+                          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200/70'
+                      }`}
+                    >
+                      {tab.label}
+                      <span
+                        className={`px-1.5 py-0.2 rounded-md text-[10px] ${
+                          currentTab === tab.key ? 'bg-white/20 text-white' : 'bg-neutral-200 text-neutral-600'
                         }`}
                       >
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      </div>
-
-                      {/* Unpin Button */}
-                      <button
-                        type="button"
-                        onClick={(e) => handleUnpin(e, item)}
-                        disabled={isUnpinning}
-                        className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-sm hover:bg-semantic-error hover:text-white rounded-full flex items-center justify-center text-neutral-500 transition-all opacity-80 hover:opacity-100 shadow-sm"
-                        title="Bỏ ghim khỏi giá treo"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Category Badge */}
-                      <div className="absolute bottom-2 left-2 pointer-events-none">
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border shadow-2xs ${badge.bg}`}>
-                          {badge.label}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="p-3 flex flex-col gap-1">
-                      <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
-                        {item.product.brand || 'StAle. SIGNATURE'}
+                        {tab.count}
                       </span>
-                      <h4 className="text-body-sm font-semibold text-brand-navy line-clamp-1 leading-snug">
-                        {item.product.name}
-                      </h4>
-                      <div className="mt-1 flex items-center justify-between">
-                        <span className="text-body-sm font-bold text-[#5D1C34]">
-                          {formatPrice(item.product.price)}
-                        </span>
-                        <span className="text-[11px] text-neutral-400">
-                          {isSelected ? '✓ Đã chọn' : 'Bấm để phối'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </StaggerItem>
-              );
-            })}
-          </StaggerContainer>
-        )}
-
-        {/* Sticky Bottom Action Bar when items are selected */}
-        {selectedItems.length > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200 p-4 shadow-xl animate-in slide-in-from-bottom duration-300">
-            <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <div className="flex -space-x-3 overflow-hidden shrink-0">
-                  {selectedItems.map((item) => (
-                    <img
-                      key={item.id}
-                      src={getProductImage(item.product)}
-                      alt={item.product.name}
-                      className="inline-block h-12 w-12 rounded-xl object-cover ring-2 ring-white bg-neutral-100 shadow-sm"
-                    />
+                    </button>
                   ))}
                 </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-body-sm font-bold text-brand-navy">
-                      Đã chọn {selectedItems.length}/2 món
-                    </span>
-                    <span className="text-xs text-neutral-500 font-medium hidden sm:inline">
-                      ({selectedItems.map(i => i.product.name).join(' + ')})
-                    </span>
+
+                {/* Search query if items are many */}
+                {items.length > 6 && (
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm theo tên sản phẩm, thương hiệu..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-hidden focus:border-[#5D1C34] transition-colors"
+                    />
                   </div>
-                  <p className="text-[11px] text-neutral-500">
-                    {selectedItems.length === 1 && toBackendCategory(selectedItems[0].product.category) !== 'FULL_BODY'
-                      ? 'Gợi ý: Bạn có thể chọn thêm 1 món nữa để hoàn thiện combo'
-                      : 'Sẵn sàng đưa vào phòng thử đồ ảo!'}
-                  </p>
-                </div>
+                )}
               </div>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                <button
-                  type="button"
-                  onClick={() => setSelectedIds([])}
-                  className="px-4 py-2.5 text-body-sm font-semibold text-neutral-600 hover:text-neutral-900 rounded-xl hover:bg-neutral-100 transition-colors"
-                >
-                  Bỏ chọn tất cả
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGoToTryOn}
-                  className="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Sparkles className="w-4 h-4" /> Thử đồ với lựa chọn này <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
+              {/* Wardrobe Items Grid */}
+              {filteredItems.length === 0 ? (
+                <div className="bg-white border border-dashed border-neutral-300 rounded-2xl p-8 text-center">
+                  <p className="text-body-sm text-neutral-500">Không tìm thấy món đồ phù hợp trong mục này.</p>
+                </div>
+              ) : (
+                <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+                  {filteredItems.map((item) => {
+                    const worn = isItemWorn(item.productId);
+                    const badge = getCategoryBadge(item.product.category);
+                    const imageUrl = getProductImage(item.product);
+
+                    return (
+                      <StaggerItem key={item.id}>
+                        <div
+                          onClick={() => handleItemClick(item)}
+                          className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-200 shadow-2xs hover:shadow-md ${
+                            worn
+                              ? 'border-[#5D1C34] ring-3 ring-[#5D1C34]/20 shadow-md bg-[#5D1C34]/[0.02]'
+                              : 'border-neutral-200 hover:border-neutral-300'
+                          }`}
+                        >
+                          {/* Image Box */}
+                          <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
+                            <img
+                              src={imageUrl}
+                              alt={item.product.name}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src =
+                                  '/images/731163514_999523332788054_1114320478812927640_n.png';
+                              }}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+
+                            {/* Worn Indicator Overlay */}
+                            <div
+                              className={`absolute top-2 left-2 px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all ${
+                                worn
+                                  ? 'bg-[#5D1C34] text-white shadow-md'
+                                  : 'bg-white/80 backdrop-blur-sm text-neutral-600 border border-neutral-300'
+                              }`}
+                            >
+                              {worn ? (
+                                <>
+                                  <Check className="w-3 h-3 stroke-[3]" /> Đang mặc
+                                </>
+                              ) : (
+                                'Chạm để thử'
+                              )}
+                            </div>
+
+                            {/* Unpin Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => handleUnpin(e, item)}
+                              disabled={isUnpinning}
+                              className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-sm hover:bg-semantic-error hover:text-white rounded-full flex items-center justify-center text-neutral-500 transition-all opacity-80 hover:opacity-100 shadow-sm"
+                              title="Bỏ khỏi giá treo"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Category Badge */}
+                            <div className="absolute bottom-2 left-2 pointer-events-none">
+                              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border shadow-2xs ${badge?.bg}`}>
+                                {badge?.label}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Info Card */}
+                          <div className="p-3 flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
+                              {item.product.brand || 'StAle. SIGNATURE'}
+                            </span>
+                            <h4 className="text-body-sm font-semibold text-brand-navy line-clamp-1 leading-snug">
+                              {item.product.name}
+                            </h4>
+                            <div className="mt-1 flex items-center justify-between">
+                              <span className="text-body-sm font-bold text-[#5D1C34]">
+                                {formatPrice(item.product.price)}
+                              </span>
+                              <span className="text-[10px] font-semibold text-neutral-400 group-hover:text-[#5D1C34] transition-colors">
+                                {worn ? 'Gỡ ra ✕' : 'Mặc vào +'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </StaggerItem>
+                    );
+                  })}
+                </StaggerContainer>
+              )}
+            </div>
+
+            {/* Right Column: Virtual Mannequin Studio (5 cols on lg, sticky) */}
+            <div className="lg:col-span-5 xl:col-span-5 sticky top-24">
+              <MannequinDressForm
+                upperItem={upperItem}
+                lowerItem={lowerItem}
+                fullBodyItem={fullBodyItem}
+                onRemoveUpper={() => setUpperItem(null)}
+                onRemoveLower={() => setLowerItem(null)}
+                onRemoveFullBody={() => setFullBodyItem(null)}
+                onReset={handleResetMannequin}
+                onGoToTryOn={handleGoToTryOn}
+              />
             </div>
           </div>
         )}
@@ -382,7 +467,7 @@ export default function RackPage() {
         {/* Clear All Confirmation Modal */}
         {showClearConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-neutral-200 animate-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-neutral-200 animate-in zoom-in-95 duration-200">
               <div className="w-12 h-12 rounded-full bg-semantic-error/10 text-semantic-error flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="w-6 h-6" />
               </div>
