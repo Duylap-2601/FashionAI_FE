@@ -17,6 +17,7 @@ export interface Product {
   colors: { name: string; hex: string }[];
   isGuest: boolean;
   description?: string;
+  material?: string;
   stock?: number;
   soldCount?: number;
   isNew?: boolean;
@@ -39,6 +40,7 @@ export const PRODUCTS: Product[] = [
       { name: 'Kem', hex: '#EFE9E1' },
       { name: 'Burgundy', hex: '#38140C' },
     ],
+    material: 'Tuyết mưa cao cấp & Wool pha, đứng form chống nhăn',
     isGuest: true,
   },
   {
@@ -54,6 +56,7 @@ export const PRODUCTS: Product[] = [
       { name: 'Kem', hex: '#EFE9E1' },
       { name: 'Xám Tro', hex: '#5E6469' },
     ],
+    material: 'Premium Wool pha cao cấp, đứng form và thoáng khí',
     isGuest: false,
   },
   {
@@ -69,6 +72,7 @@ export const PRODUCTS: Product[] = [
       { name: 'Trắng', hex: '#FFFFFF' },
       { name: 'Xanh nhạt', hex: '#DBEAFE' },
     ],
+    material: '100% Cotton Oxford dệt đôi cao cấp, mềm mại và êm ái',
     isGuest: true,
   },
   {
@@ -84,6 +88,7 @@ export const PRODUCTS: Product[] = [
       { name: 'Xám', hex: '#808080' },
       { name: 'Navy', hex: '#38140C' },
     ],
+    material: 'Wool pha sợi co giãn nhẹ, chống nhăn tự nhiên',
     isGuest: true,
   },
   {
@@ -99,6 +104,7 @@ export const PRODUCTS: Product[] = [
       { name: 'Kem', hex: '#EFE9E1' },
       { name: 'Đen', hex: '#111111' },
     ],
+    material: 'Kaki tuyết mưa cao cấp, giữ phom li quần hoàn hảo',
     isGuest: true,
   },
   {
@@ -114,6 +120,7 @@ export const PRODUCTS: Product[] = [
       { name: 'Trắng', hex: '#FFFFFF' },
       { name: 'Đen', hex: '#111111' },
     ],
+    material: 'Vải tuyết mưa dệt công nghệ cao, giữ nếp ly sắc nét',
     isGuest: true,
   },
 ];

@@ -13,6 +13,7 @@ import { useProduct, useProducts } from '@/hooks/useProducts';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import { useMeasurementsCompleteness } from '@/hooks/useMeasurementsCompleteness';
 import { useRackItems, usePinToRack, useUnpinFromRack } from '@/hooks/useRack';
+import ProductImageViewer from '@/components/products/ProductImageViewer';
 
 const imgSuit = '/images/726470431_1311184104081177_6052756217829444481_n.png';
 const imgBlazer = '/images/731163514_999523332788054_1114320478812927640_n.png';
@@ -165,40 +166,14 @@ export default function ProductDetail() {
       {/* MAIN SECTION */}
       <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8 pb-16 grid grid-cols-1 md:grid-cols-[55%_1fr] gap-12">
         
-        {/* LEFT - Image Gallery */}
-        <div className="flex flex-col gap-4">
-          <div className="relative w-full aspect-[3/4] md:max-w-[560px] bg-neutral-100 rounded-2xl overflow-hidden group cursor-zoom-in">
-            <img 
-              src={thumbs[activeThumb]} 
-              alt="Product Main" 
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
-              }}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-            />
-            {/* Zoom hint */}
-            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-              <span className="px-4 py-2 bg-black/50 backdrop-blur-md text-white rounded-full text-label-sm font-medium">Hover để phóng to</span>
-            </div>
-            {/* Image counter */}
-            <div className="absolute bottom-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-brand-navy rounded-full text-label-sm font-bold shadow-sm">
-              {activeThumb + 1} / {thumbs.length}
-            </div>
-          </div>
-          
-          {/* Thumbnails */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar md:max-w-[560px]">
-            {thumbs.map((img, idx) => (
-              <button 
-                key={idx} 
-                onClick={() => handleSelectThumb(idx)}
-                className={`shrink-0 w-[80px] h-[107px] rounded-xl overflow-hidden transition-all cursor-pointer ${activeThumb === idx ? 'ring-2 ring-brand-navy ring-offset-2' : 'opacity-70 hover:opacity-100'}`}
-              >
-                <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* LEFT - Image Gallery with Interactive Zoom Lens & Modal */}
+        <ProductImageViewer
+          images={thumbs}
+          productName={product.name}
+          brand={product.brand}
+          activeThumb={activeThumb}
+          onSelectThumb={handleSelectThumb}
+        />
 
         {/* RIGHT - Product Details */}
         <div className="flex flex-col">
@@ -552,11 +527,13 @@ export default function ProductDetail() {
                         <span className="w-1.5 h-1.5 rounded-full bg-brand-navy shrink-0 mt-2"></span>
                         <span>
                           <strong className="text-neutral-800 font-semibold">Chất liệu:</strong>{' '}
-                          {isFull
-                            ? 'Premium Wool pha cao cấp, đứng form, chống nhăn tự nhiên'
-                            : isLower
-                            ? 'Kaki / Tuyết mưa cao cấp co giãn nhẹ, giữ phom dáng chuẩn'
-                            : '100% Cotton Oxford / Poplin cao cấp, thoáng khí và êm ái'}
+                          {product.material || (
+                            isFull
+                              ? 'Premium Wool pha cao cấp, đứng form, chống nhăn tự nhiên'
+                              : isLower
+                              ? 'Kaki / Tuyết mưa cao cấp co giãn nhẹ, giữ phom dáng chuẩn'
+                              : '100% Cotton Oxford / Poplin cao cấp, thoáng khí và êm ái'
+                          )}
                         </span>
                       </li>
                       <li className="flex gap-2.5">

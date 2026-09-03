@@ -46,6 +46,7 @@ interface AdminProduct {
   garmentUrl?: string;
   images?: (AdminProductImage | string)[];
   description?: string;
+  material?: string;
   color?: string;
   colors?: { name: string; hex: string }[];
   stock?: number;
@@ -499,6 +500,7 @@ interface ProductImageItem {
           color: primaryColor || undefined,
           colors,
           stock,
+          material: editingProduct.material || undefined,
           description: editingProduct.description || undefined,
           status: editingProduct.status || 'ACTIVE',
         });
@@ -535,6 +537,7 @@ interface ProductImageItem {
         form.append('stock', String(stock));
         form.append('category', editingProduct.category);
         form.append('status', editingProduct.status || 'ACTIVE');
+        if (editingProduct.material) form.append('material', editingProduct.material);
         if (editingProduct.description) form.append('description', editingProduct.description);
         if (primaryColor) form.append('color', primaryColor);
         if (colors.length > 0) form.append('colors', JSON.stringify(colors));
@@ -2022,6 +2025,17 @@ interface ProductImageItem {
                   <p className="text-label-sm text-neutral-400">
                     JPG, PNG hoặc WEBP · Tải lên nhiều ảnh cùng lúc · Ảnh đầu tiên là ảnh đại diện (nhấn "Đặt chính" để đổi).
                   </p>
+                </div>
+
+                <div>
+                  <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Chất liệu vải (Material)</label>
+                  <input
+                    type="text"
+                    value={editingProduct.material || ''}
+                    onChange={e => setEditingProduct(prev => ({ ...prev, material: e.target.value }))}
+                    placeholder="VD: 100% Cotton Oxford, Premium Wool pha cashmere..."
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/20 focus:border-[#5D1C34]"
+                  />
                 </div>
 
                 <div>

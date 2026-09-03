@@ -8,6 +8,7 @@ interface BackendProduct {
   id: string;
   name: string;
   description?: string | null;
+  material?: string | null;
   category: string;
   brand?: string | null;
   color?: string | null;
@@ -124,6 +125,7 @@ function mapProduct(product: BackendProduct): Product {
     colors,
     isGuest: false,
     description: product.description || undefined,
+    material: product.material || undefined,
     stock: typeof product.stock === 'number' ? product.stock : 99,
     soldCount: typeof product.soldCount === 'number' ? product.soldCount : undefined,
   };
