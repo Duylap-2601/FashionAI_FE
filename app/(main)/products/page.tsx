@@ -4,7 +4,8 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Search, SlidersHorizontal, LayoutGrid, List, X, ShoppingBag, ChevronLeft, ChevronRight, Check, AlertTriangle, Layers } from 'lucide-react';
+import { Search, SlidersHorizontal, LayoutGrid, List, X, ShoppingBag, ChevronLeft, ChevronRight, Check, AlertTriangle, Star } from 'lucide-react';
+import { HangerIcon } from '@/components/ui/HangerIcon';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { useApp } from '@/components/navigation/Layout';
 import { useCart } from '@/store/cartStore';
@@ -588,7 +589,7 @@ export default function ProductListing() {
                                     toast.custom((t) => (
                                       <div className="bg-[#FDFBF7] border-l-4 border-[#5D1C34] border-y border-r border-[#E5DFD5] p-4 rounded-xl shadow-lg flex items-start gap-3.5 max-w-[380px] w-full relative">
                                         <div className="p-2 bg-[#5D1C34]/10 text-[#5D1C34] rounded-lg shrink-0 mt-0.5">
-                                          <Layers className="w-4 h-4" />
+                                          <HangerIcon className="w-4 h-4" />
                                         </div>
                                         <div className="flex-1 min-w-0 pr-4">
                                           <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã ghim vào Giá treo đồ!</h4>
@@ -629,7 +630,7 @@ export default function ProductListing() {
                             }`}
                             title={pinned ? 'Bỏ ghim khỏi Giá treo đồ' : 'Ghim vào Giá treo đồ'}
                           >
-                            <Layers className="w-3 h-3" />
+                            <HangerIcon className="w-3 h-3" />
                           </button>
 
                           {/* Add to Cart Button */}
@@ -695,6 +696,13 @@ export default function ProductListing() {
                               </span>
                             )}
                           </div>
+                          {typeof product.rating === 'number' && product.rating > 0 && (
+                            <div className="flex items-center gap-1 mt-0.5 text-[10px] text-neutral-500">
+                              <Star className="w-2.5 h-2.5 fill-[#F59E0B] text-[#F59E0B]" />
+                              <span className="font-semibold text-neutral-800">{product.rating.toFixed(1)}</span>
+                              {product.reviewCount ? <span>({product.reviewCount})</span> : null}
+                            </div>
+                          )}
                         </div>
                       </Link>
                     </StaggerItem>

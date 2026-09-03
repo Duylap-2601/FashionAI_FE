@@ -7,8 +7,9 @@ import { useSession } from 'next-auth/react';
 import {
   Trash2, X, Check,
   ShoppingBag, Plus, ChevronRight,
-  Shirt, RefreshCw, Layers, Search
+  RefreshCw, Search
 } from 'lucide-react';
+import { HangerIcon } from '@/components/ui/HangerIcon';
 import { PageHeader, PageContent } from '@/components/navigation/Layout';
 import { useRackItems, useUnpinFromRack, useClearRack, RackItem, BackendRackProduct } from '@/hooks/useRack';
 import { toBackendCategory } from '@/hooks/useProducts';
@@ -210,7 +211,7 @@ export default function RackPage() {
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border border-neutral-100">
           <div className="w-16 h-16 bg-[#5D1C34]/10 text-[#5D1C34] rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Layers className="w-8 h-8" />
+            <HangerIcon className="w-8 h-8" />
           </div>
           <h2 className="text-heading-h3 font-bold text-brand-navy mb-2">Giá treo đồ ảo</h2>
           <p className="text-body-sm text-neutral-600 mb-6">
@@ -267,7 +268,7 @@ export default function RackPage() {
         {!isLoading && items.length === 0 && (
           <div className="bg-white border border-neutral-200 rounded-3xl p-12 text-center max-w-lg mx-auto my-8 shadow-xs">
             <div className="w-20 h-20 bg-neutral-100 text-neutral-400 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shirt className="w-10 h-10" />
+              <HangerIcon className="w-10 h-10" />
             </div>
             <h3 className="text-heading-h3 font-bold text-brand-navy mb-2">Giá treo đồ đang trống</h3>
             <p className="text-body-sm text-neutral-500 mb-6 max-w-sm mx-auto">

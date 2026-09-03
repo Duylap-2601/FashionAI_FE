@@ -7,8 +7,9 @@ import { FloatingChat } from '../chat/FloatingChat';
 import { Logo } from '../ui/Logo';
 import {
   Menu, X, ShoppingBag, User as UserIcon, Sparkles,
-  History, LogOut, Package, Ruler, Home, Bell, Layers
+  History, LogOut, Package, Ruler, Home, Bell, Star
 } from 'lucide-react';
+import { HangerIcon } from '../ui/HangerIcon';
 import { Drawer } from 'vaul';
 import { CartSlideOver } from '../cart/CartSlideOver';
 import { NotificationBell } from '../notifications/NotificationBell';
@@ -161,7 +162,7 @@ export function Navigation() {
                           <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
                         </Link>
                         <Link href="/rack" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
-                          <Layers className="w-4 h-4 text-[#5D1C34]" /> Giá treo đồ
+                          <HangerIcon className="w-4 h-4 text-[#5D1C34]" /> Giá treo đồ
                         </Link>
                         <Link href="/profile/measurements" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
                           <Ruler className="w-4 h-4" /> Số đo & chi tiết
@@ -171,6 +172,9 @@ export function Navigation() {
                         </Link>
                         <Link href="/profile/orders" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
                           <Package className="w-4 h-4" /> Đơn hàng
+                        </Link>
+                        <Link href="/profile/reviews" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
+                          <Star className="w-4 h-4" /> Đánh giá của tôi
                         </Link>
                         <Link href="/notifications" className="px-4 py-3 rounded-xl font-medium text-neutral-700 hover:bg-neutral-50 transition-colors text-body-sm flex items-center gap-3">
                           <Bell className="w-4 h-4" /> Thông báo
@@ -301,7 +305,7 @@ export function Navigation() {
                         <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
                       </Link>
                       <Link href="/rack" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <Layers className="w-4 h-4 text-[#5D1C34]" /> Giá treo đồ
+                        <HangerIcon className="w-4 h-4 text-[#5D1C34]" /> Giá treo đồ
                       </Link>
                       <Link href="/profile/measurements" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                         <Ruler className="w-4 h-4" /> Số đo & chi tiết
@@ -314,6 +318,9 @@ export function Navigation() {
                       </Link>
                       <Link href="/profile/orders" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                         <Package className="w-4 h-4" /> Đơn hàng
+                      </Link>
+                      <Link href="/profile/reviews" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                        <Star className="w-4 h-4" /> Đánh giá của tôi
                       </Link>
                       <Link href="/notifications" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                         <Bell className="w-4 h-4" /> Thông báo

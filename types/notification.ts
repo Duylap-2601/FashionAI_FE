@@ -1,4 +1,4 @@
-export type NotificationType = 'ORDER_STATUS' | 'PAYMENT' | 'PROMOTION' | 'SYSTEM';
+export type NotificationType = 'ORDER_STATUS' | 'PAYMENT' | 'PROMOTION' | 'SYSTEM' | 'REVIEW';
 
 export interface AppNotification {
   id: string;
@@ -10,6 +10,10 @@ export interface AppNotification {
     orderId?: string;
     orderCode?: string;
     status?: string;
+    reviewId?: string;
+    productId?: string;
+    replyId?: string;
+    type?: 'NEW_REVIEW' | 'REVIEW_REPLY' | string;
     [key: string]: unknown;
   };
   isRead: boolean;

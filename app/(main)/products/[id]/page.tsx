@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ChevronRight, Star, Minus, Plus, ShoppingBag, Sparkles, AlertCircle, X, Ruler, MessageSquare, Layers } from 'lucide-react';
+import { ChevronRight, Star, Minus, Plus, ShoppingBag, Sparkles, AlertCircle, X, Ruler, MessageSquare } from 'lucide-react';
 import { useApp } from '@/components/navigation/Layout';
 import { useCart } from '@/store/cartStore';
 import { toast } from 'sonner';
@@ -14,10 +14,10 @@ import { useMeasurements } from '@/hooks/useMeasurements';
 import { useMeasurementsCompleteness } from '@/hooks/useMeasurementsCompleteness';
 import { useRackItems, usePinToRack, useUnpinFromRack } from '@/hooks/useRack';
 import ProductImageViewer from '@/components/products/ProductImageViewer';
-
-const imgSuit = '/images/726470431_1311184104081177_6052756217829444481_n.png';
-const imgBlazer = '/images/731163514_999523332788054_1114320478812927640_n.png';
-const imgShirt = '/images/731199294_3955961871204172_1445370375731306017_n.png';
+import { HangerIcon } from '@/components/ui/HangerIcon';
+import { useReviewStats } from '@/hooks/useReviews';
+import { StarRating } from '@/components/reviews/StarRating';
+import { ReviewSection } from '@/components/reviews/ReviewSection';
 
 export default function ProductDetail() {
   const { setIsCartOpen } = useApp();
@@ -26,7 +26,7 @@ export default function ProductDetail() {
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
-  const { product: apiProduct } = useProduct(id);
+  const { product: apiProduct, isLoading: isProductLoading } = useProduct(id);
   const { products: allApiProducts } = useProducts();
   const { measurements } = useMeasurements();
   const { getCategoryCompleteness } = useMeasurementsCompleteness();
@@ -34,33 +34,83 @@ export default function ProductDetail() {
   const { pinProduct, isPinning } = usePinToRack();
   const { unpinProduct, isUnpinning } = useUnpinFromRack();
 
-  // Find product by id (from route). Fallback to p2 (Combo Suit) if not found
-  const product = apiProduct ||
-                  PRODUCTS.find(p => p.id === id) || 
-                  PRODUCTS.find(p => p.id === `p${id}`) || 
-                  PRODUCTS.find(p => p.id === 'p2') || 
-                  PRODUCTS[1];
+  // Find product by id (from route). Only match mock PRODUCTS if id actually matches!
+  const mockProduct = PRODUCTS.find(p => p.id === id || p.id === `p${id}`);
+  const product = apiProduct || mockProduct;
 
   const allAvailableProducts = allApiProducts.length > 0 ? allApiProducts : PRODUCTS;
-  const relatedProducts = allAvailableProducts.filter(p => p.id !== product.id).slice(0, 4);
+  const relatedProducts = allAvailableProducts.filter(p => p.id !== product?.id).slice(0, 4);
+  const { stats: reviewStats } = useReviewStats(product?.id);
 
-  const isComboSuit = product.id === 'p2' || product.id === 'p4' || product.name.toLowerCase().includes('combo suit') || product.name.toLowerCase().includes('suit');
+  const isComboSuit = Boolean(
+    product?.id === 'p2' || 
+    product?.id === 'p4' || 
+    product?.name?.toLowerCase().includes('combo suit') || 
+    product?.name?.toLowerCase().includes('suit')
+  );
   const [selectedType, setSelectedType] = useState<'combo' | 'blazer' | 'retail'>('combo');
-  const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.name || 'Trắng');
+  const [selectedColor, setSelectedColor] = useState(product?.colors?.[0]?.name || 'Trắng');
   const [activeThumb, setActiveThumb] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('Mô tả sản phẩm');
 
-  const catCompleteness = getCategoryCompleteness(product.category);
+  const catCompleteness = product ? getCategoryCompleteness(product.category) : null;
   const isMeasurementComplete = catCompleteness ? catCompleteness.complete : true;
 
   // Reset values when switching products
   useEffect(() => {
-    setSelectedColor(product.colors?.[0]?.name || 'Trắng');
-    setActiveThumb(0);
-    setSelectedType('combo');
-    setQuantity(1);
-  }, [product.id, product.colors]);
+    if (product) {
+      setSelectedColor(product.colors?.[0]?.name || 'Trắng');
+      setActiveThumb(0);
+      setSelectedType('combo');
+      setQuantity(1);
+    }
+  }, [product]);
+
+  if (isProductLoading && !product) {
+    return (
+      <div className="flex flex-col min-h-screen bg-white">
+        <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8 py-6">
+          <div className="h-4 w-48 bg-neutral-100 rounded animate-pulse" />
+        </div>
+        <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8 pb-16 grid grid-cols-1 md:grid-cols-[55%_1fr] gap-12">
+          <div className="flex flex-col gap-4 animate-pulse">
+            <div className="w-full aspect-[3/4] md:max-w-[560px] bg-neutral-100 rounded-2xl" />
+            <div className="flex gap-2.5">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="w-[82px] h-[110px] bg-neutral-100 rounded-xl" />
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col space-y-5 animate-pulse">
+            <div className="h-3 w-32 bg-neutral-100 rounded" />
+            <div className="h-9 w-3/4 bg-neutral-100 rounded-lg" />
+            <div className="h-7 w-36 bg-neutral-100 rounded-md" />
+            <div className="w-full h-px bg-neutral-100 my-4" />
+            <div className="h-14 w-full bg-neutral-100 rounded-xl" />
+            <div className="h-14 w-full bg-neutral-100 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4">
+        <h2 className="text-[22px] font-bold text-brand-navy mb-2">Không tìm thấy sản phẩm</h2>
+        <p className="text-neutral-500 mb-6 text-body-md max-w-[420px]">
+          Sản phẩm bạn đang tìm kiếm có thể đã ngừng kinh doanh hoặc đường dẫn không tồn tại.
+        </p>
+        <Link
+          href="/products"
+          className="px-6 py-3 bg-[#5D1C34] text-white font-semibold rounded-xl hover:bg-[#4A1629] transition-all shadow-md cursor-pointer"
+        >
+          Quay lại danh sách sản phẩm
+        </Link>
+      </div>
+    );
+  }
 
   const thumbs = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
 
@@ -189,14 +239,20 @@ export default function ProductDetail() {
             </h1>
             
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                {[1,2,3,4].map(i => <Star key={i} className="w-4 h-4 fill-[#F59E0B] text-[#F59E0B]" />)}
-                <Star className="w-4 h-4 fill-[#F59E0B]/30 text-[#F59E0B]" />
-                <span className="font-semibold text-brand-navy ml-1">4.3</span>
-              </div>
-              <a href="#reviews" className="text-body-sm text-neutral-500 hover:text-brand-navy underline decoration-neutral-300 underline-offset-4">
-                (128 đánh giá)
-              </a>
+              <button
+                type="button"
+                onClick={() => document.getElementById('product-reviews')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-2 cursor-pointer group text-left"
+                title="Cuộn xuống xem đánh giá chi tiết"
+              >
+                <StarRating value={reviewStats?.avgRating || 0} size="sm" readOnly />
+                <span className="font-semibold text-brand-navy text-body-sm group-hover:underline">
+                  {reviewStats?.avgRating ? Number(reviewStats.avgRating).toFixed(1) : '5.0'}
+                </span>
+                <span className="text-body-sm text-neutral-500 group-hover:text-brand-navy transition-colors underline decoration-neutral-300 underline-offset-4">
+                  ({reviewStats?.reviewCount || 0} đánh giá)
+                </span>
+              </button>
             </div>
           </div>
 
@@ -411,7 +467,7 @@ export default function ProductDetail() {
                       toast.custom((t) => (
                         <div className="bg-[#FDFBF7] border-l-4 border-[#5D1C34] border-y border-r border-[#E5DFD5] p-4 rounded-xl shadow-lg flex items-start gap-3.5 max-w-[380px] w-full relative">
                           <div className="p-2 bg-[#5D1C34]/10 text-[#5D1C34] rounded-lg shrink-0 mt-0.5">
-                            <Layers className="w-4 h-4" />
+                            <HangerIcon className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0 pr-4">
                             <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã ghim vào Giá treo đồ!</h4>
@@ -457,7 +513,7 @@ export default function ProductDetail() {
                       : 'border-dashed border-[#5D1C34]/40 text-[#5D1C34] hover:bg-[#5D1C34]/5'
                   }`}
                 >
-                  <Layers className="w-4 h-4" />
+                  <HangerIcon className="w-4 h-4" />
                   {pinned ? '✓ Đã ghim trên Giá treo — Bấm để bỏ ghim' : 'Ghim vào Giá treo đồ (Phối đồ)'}
                 </button>
               );
@@ -479,7 +535,7 @@ export default function ProductDetail() {
       <div className="border-t border-neutral-200">
         <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8">
           <div className="flex items-center gap-8 border-b border-neutral-200 overflow-x-auto no-scrollbar">
-            {['Mô tả sản phẩm', 'Quy trình may đo', 'Đánh giá (128)'].map(tab => (
+            {['Mô tả sản phẩm', 'Quy trình may đo'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -656,64 +712,16 @@ export default function ProductDetail() {
               </div>
             )}
             
-            {activeTab === 'Đánh giá (128)' && (
-              <div id="reviews" className="animate-in fade-in duration-300">
-                <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
-                  {/* Rating Overview */}
-                  <div className="flex flex-col items-center justify-center p-8 bg-neutral-50 rounded-2xl border border-neutral-100 min-w-[240px]">
-                    <div className="text-[48px] font-bold text-brand-navy leading-none mb-2">4.3</div>
-                    <div className="flex items-center gap-1 mb-2">
-                      {[1,2,3,4].map(i => <Star key={i} className="w-5 h-5 fill-[#F59E0B] text-[#F59E0B]" />)}
-                      <Star className="w-5 h-5 fill-[#F59E0B]/30 text-[#F59E0B]" />
-                    </div>
-                    <div className="text-body-sm text-neutral-500">Dựa trên 128 đánh giá</div>
-                  </div>
-                  {/* Breakdown bars */}
-                  <div className="flex-1 w-full max-w-[400px] flex flex-col gap-2">
-                    {[
-                      {s: 5, p: 65}, {s: 4, p: 20}, {s: 3, p: 10}, {s: 2, p: 3}, {s: 1, p: 2}
-                    ].map(row => (
-                      <div key={row.s} className="flex items-center gap-3 text-label-sm font-medium text-neutral-600">
-                        <div className="w-3">{row.s}</div>
-                        <Star className="w-3.5 h-3.5 fill-neutral-400 text-neutral-400" />
-                        <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-brand-gold rounded-full" style={{width: `${row.p}%`}}></div>
-                        </div>
-                        <div className="w-8 text-right text-neutral-400">{row.p}%</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Review Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="p-6 bg-white border border-neutral-200 rounded-2xl flex flex-col gap-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-body-sm">
-                            {String.fromCharCode(65 + i)}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-brand-navy text-body-sm">Người dùng {i}</div>
-                            <div className="text-[12px] text-neutral-400">12/05/2026</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-0.5">
-                          {[1,2,3,4,5].map(s => <Star key={s} className={`w-3.5 h-3.5 ${s <= 4 ? 'fill-[#F59E0B] text-[#F59E0B]' : 'fill-[#F59E0B]/30 text-[#F59E0B]'}`} />)}
-                        </div>
-                      </div>
-                      <p className="text-body-sm text-neutral-600 leading-relaxed">
-                        Chất liệu áo rất mát và giữ form tốt. Tôi đã thử bằng AI Try-On và kết quả ngoài đời thực y hệt như trên ảnh. Rất hài lòng với trải nghiệm mua sắm này!
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {/* REVIEW SECTION */}
+      <ReviewSection
+        productId={product.id}
+        productName={product.name}
+        productImage={thumbs[0]}
+      />
 
       {/* RELATED PRODUCTS */}
       <div className="bg-[#EFE9E1] py-[64px]">

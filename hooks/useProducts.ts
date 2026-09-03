@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { Product } from '@/lib/data';
 
@@ -19,6 +19,8 @@ interface BackendProduct {
   soldCount?: number | null;
   garmentUrl?: string | null;
   images?: ({ imageUrl?: string; url?: string; isMain?: boolean } | string)[] | null;
+  avgRating?: number | string | null;
+  reviewCount?: number | null;
 }
 
 export function useProducts() {
@@ -40,6 +42,8 @@ export function useProducts() {
 }
 
 export function useProduct(id?: string) {
+  const queryClient = useQueryClient();
+
   const query = useQuery<Product>({
     queryKey: ['product', id],
     queryFn: async () => {
@@ -47,11 +51,17 @@ export function useProduct(id?: string) {
       return mapProduct(res.data as BackendProduct);
     },
     enabled: !!id,
+    initialData: () => {
+      if (!id) return undefined;
+      const cached = queryClient.getQueryData<Product[]>(['products']);
+      return cached?.find(p => p.id === id);
+    },
+    initialDataUpdatedAt: () => queryClient.getQueryState(['products'])?.dataUpdatedAt,
   });
 
   return {
     product: query.data,
-    isLoading: query.isLoading,
+    isLoading: query.isLoading && !query.data,
     isError: query.isError,
     refetch: query.refetch,
   };
@@ -128,6 +138,8 @@ function mapProduct(product: BackendProduct): Product {
     material: product.material || undefined,
     stock: typeof product.stock === 'number' ? product.stock : 99,
     soldCount: typeof product.soldCount === 'number' ? product.soldCount : undefined,
+    rating: product.avgRating != null ? Number(product.avgRating) : undefined,
+    reviewCount: typeof product.reviewCount === 'number' ? product.reviewCount : undefined,
   };
 }
 

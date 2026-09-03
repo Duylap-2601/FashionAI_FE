@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Package, CreditCard, Tag, Info, Check, Sparkles } from 'lucide-react';
+import { Package, CreditCard, Tag, Info, MessageSquare } from 'lucide-react';
 import { AppNotification, NotificationType } from '@/types/notification';
 import { useMarkNotificationAsRead } from '@/hooks/useNotifications';
 
@@ -33,6 +33,13 @@ function getNotificationMeta(type: NotificationType) {
         color: 'text-[#5D1C34]',
         bgColor: 'bg-[#5D1C34]/10',
         borderColor: 'border-[#5D1C34]/20',
+      };
+    case 'REVIEW':
+      return {
+        icon: MessageSquare,
+        color: 'text-amber-600',
+        bgColor: 'bg-amber-50',
+        borderColor: 'border-amber-200',
       };
     case 'SYSTEM':
     default:
@@ -86,6 +93,18 @@ export function NotificationItem({ notification, onItemClick }: NotificationItem
     // Smart routing for Admin Dashboard
     const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
     if (isAdmin) {
+      if (notification.type === 'REVIEW') {
+        window.dispatchEvent(
+          new CustomEvent('admin:navigate', {
+            detail: {
+              tab: 'reviews',
+              reviewId: notification.data?.reviewId,
+              productId: notification.data?.productId,
+            },
+          })
+        );
+        return;
+      }
       if (
         notification.type === 'ORDER_STATUS' ||
         notification.type === 'PAYMENT' ||
@@ -108,6 +127,13 @@ export function NotificationItem({ notification, onItemClick }: NotificationItem
       router.push('/profile/orders');
     } else if (notification.type === 'PROMOTION') {
       router.push('/products');
+    } else if (notification.type === 'REVIEW') {
+      const prodId = notification.data?.productId as string | undefined;
+      if (prodId) {
+        router.push(`/products/${prodId}#product-reviews`);
+      } else {
+        router.push('/profile/reviews');
+      }
     }
   };
 

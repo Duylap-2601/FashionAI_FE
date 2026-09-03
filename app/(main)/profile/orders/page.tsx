@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   Package, Search, ChevronDown, ChevronRight, ChevronUp,
   Truck, CheckCircle2, Clock, XCircle, RotateCcw,
-  MapPin, Phone, Copy, ExternalLink, Sparkles, ShoppingBag,
+  MapPin, Phone, Copy, ExternalLink, Sparkles, ShoppingBag, Star,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -12,6 +12,7 @@ import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/ui/Animat
 import { motion, AnimatePresence } from 'motion/react';
 import { useOrders, useCancelOrder, Order, OrderItem } from '@/hooks/useOrders';
 import { useCart } from '@/store/cartStore';
+import { WriteReviewModal } from '@/components/reviews/WriteReviewModal';
 
 type OrderStatus = 'PENDING' | 'PAID' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' | 'RETURNED' | 'EXPIRED' | 'FAILED';
 
@@ -103,7 +104,13 @@ function getProductImage(item: OrderItem) {
   return 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=120&h=160&fit=crop&auto=format';
 }
 
-function OrderCard({ order }: { order: Order }) {
+function OrderCard({
+  order,
+  onReviewItem,
+}: {
+  order: Order;
+  onReviewItem?: (item: OrderItem, orderId: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const { cancelOrder, isCancelling } = useCancelOrder();
   const { addToCart, setIsCartOpen } = useCart();
@@ -265,7 +272,19 @@ function OrderCard({ order }: { order: Order }) {
                         <p className="text-label-sm text-neutral-500 mt-0.5">Màu: {item.color || 'Mặc định'} · May đo</p>
                         <p className="text-label-sm text-neutral-500 mt-0.5">x{item.quantity}</p>
                       </div>
-                      <span className="text-body-sm font-bold text-brand-navy shrink-0">{fmt(item.price * item.quantity)}</span>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-body-sm font-bold text-brand-navy">{fmt(item.price * item.quantity)}</span>
+                        {status === 'DELIVERED' && onReviewItem && (
+                          <button
+                            type="button"
+                            onClick={() => onReviewItem(item, order.id)}
+                            className="px-3 py-1.5 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-label-sm font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                            Đánh giá
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -331,6 +350,7 @@ export default function OrdersPage() {
   const { orders, isLoading } = useOrders();
   const [activeFilter, setActiveFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [reviewModalItem, setReviewModalItem] = useState<{ item: OrderItem; orderId: string } | null>(null);
 
   const filtered = orders.filter(o => {
     const status = o.status || 'pending';
@@ -412,12 +432,27 @@ export default function OrdersPage() {
           <StaggerContainer className="flex flex-col gap-4">
             {filtered.map(order => (
               <StaggerItem key={order.id}>
-                <OrderCard order={order} />
+                <OrderCard
+                  order={order}
+                  onReviewItem={(item, orderId) => setReviewModalItem({ item, orderId })}
+                />
               </StaggerItem>
             ))}
           </StaggerContainer>
         )}
       </div>
+
+      {/* Modal viết review khi click từ đơn hàng đã nhận */}
+      {reviewModalItem && (
+        <WriteReviewModal
+          isOpen={!!reviewModalItem}
+          onClose={() => setReviewModalItem(null)}
+          productId={reviewModalItem.item.productId}
+          productName={reviewModalItem.item.product?.name || 'Sản phẩm'}
+          productImage={getProductImage(reviewModalItem.item)}
+          orderId={reviewModalItem.orderId}
+        />
+      )}
     </div>
   );
 }

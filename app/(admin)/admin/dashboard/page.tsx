@@ -10,7 +10,7 @@ import {
   Eye, Pencil, Trash2, ChevronUp, ChevronDown, X,
   CheckCircle2, XCircle, Clock, Truck, RotateCcw, Copy,
   Ban, ShieldCheck, Mail, Phone, Calendar, MapPin, RefreshCw,
-  AlertTriangle, ChevronRight
+  AlertTriangle, ChevronRight, MessageSquare
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -22,8 +22,9 @@ import { AdminGuard } from '@/components/auth/AdminGuard';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useNotificationStore } from '@/store/notificationStore';
 import type { BackendOrderStatus } from '@/hooks/useOrders';
+import { AdminReviewTable } from '@/components/reviews/AdminReviewTable';
 
-type AdminPage = 'dashboard' | 'products' | 'users' | 'orders' | 'quota';
+type AdminPage = 'dashboard' | 'products' | 'users' | 'orders' | 'reviews' | 'quota';
 
 type GarmentCategory = 'UPPER' | 'LOWER' | 'FULL_BODY';
 type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
@@ -829,6 +830,7 @@ interface ProductImageItem {
             { id: 'products', label: 'Sản phẩm', icon: Package },
             { id: 'users', label: 'Người dùng', icon: Users },
             { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
+            { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
             { id: 'quota', label: 'Cài đặt Quota', icon: Settings },
           ] as { id: AdminPage; label: string; icon: LucideIcon }[]).map(item => {
             const IconComponent = item.icon;
@@ -869,7 +871,8 @@ interface ProductImageItem {
               {activeTab === 'dashboard' ? 'Tổng quan kinh doanh' :
                activeTab === 'products' ? 'Quản lý sản phẩm' :
                activeTab === 'users' ? 'Quản lý người dùng' :
-               activeTab === 'orders' ? 'Quản lý đơn hàng' : 'Cài đặt Quota'}
+               activeTab === 'orders' ? 'Quản lý đơn hàng' :
+               activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' : 'Cài đặt Quota'}
             </span>
           </div>
 
@@ -1645,6 +1648,9 @@ interface ProductImageItem {
             </div>
           );
         })()}
+
+        {/* ─── TAB: REVIEWS ──────────────────────────────────────────────────── */}
+        {activeTab === 'reviews' && <AdminReviewTable />}
 
       </main>
 
