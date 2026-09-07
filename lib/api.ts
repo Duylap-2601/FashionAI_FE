@@ -114,7 +114,40 @@ async function doRefreshToken(): Promise<string | null> {
       const body = await refreshRes.json().catch(() => null);
       const payload = body?.data ?? body;
 
-      if (!payload?.accessToken || !payload?.user) {
+      // Web refresh chỉ trả accessToken + accessTokenExpiresAt (không có user,
+      // vì user không đổi khi refresh) — chỉ mobile login/register trả user.
+      // Trước đây bắt buộc cả payload.user khiến refresh web luôn bị coi là
+      // fail dù backend trả 200 hợp lệ, session cũ không bao giờ được cập
+      // nhật lại -> user "vẫn thấy đã login" nhưng mọi API đều 401 vô thời hạn.
+      if (!payload?.accessToken) {
+        invalidateSessionCache();
+        return null;
+      }
+
+      // Giữ lại user hiện tại trong session nếu response refresh không trả
+      // user, để NextAuth JWT callback không bị mất role/tier đang lưu.
+      // authorize() trong lib/auth.ts bắt buộc phải có rawUser hợp lệ (id +
+      // email), nên phải build lại đúng shape từ session hiện tại thay vì bỏ
+      // trống — nếu không signIn() sẽ tự return null và session vẫn giữ token
+      // cũ đã hết hạn.
+      let userJson = payload.user ? JSON.stringify(payload.user) : undefined;
+      if (!userJson) {
+        const currentSession = await getSession();
+        const currentUser = currentSession?.user;
+        if (currentUser?.id && currentUser?.email) {
+          userJson = JSON.stringify({
+            id: currentUser.id,
+            email: currentUser.email,
+            name: currentUser.name,
+            avatarUrl: currentUser.image,
+            tier: currentUser.tier,
+            tierExpiresAt: currentUser.tierExpiresAt,
+            role: currentUser.role,
+          });
+        }
+      }
+
+      if (!userJson) {
         invalidateSessionCache();
         return null;
       }
@@ -122,7 +155,7 @@ async function doRefreshToken(): Promise<string | null> {
       await signIn('backend-session', {
         accessToken: payload.accessToken,
         accessTokenExpiresAt: payload.accessTokenExpiresAt,
-        user: JSON.stringify(payload.user),
+        user: userJson,
         redirect: false,
       });
 

@@ -23,8 +23,10 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useNotificationStore } from '@/store/notificationStore';
 import type { BackendOrderStatus } from '@/hooks/useOrders';
 import { AdminReviewTable } from '@/components/reviews/AdminReviewTable';
+import { AdminCollectionManager } from '@/components/admin/AdminCollectionManager';
+import { Layers } from 'lucide-react';
 
-type AdminPage = 'dashboard' | 'products' | 'users' | 'orders' | 'reviews' | 'quota';
+type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'reviews' | 'quota';
 
 type GarmentCategory = 'UPPER' | 'LOWER' | 'FULL_BODY';
 type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
@@ -828,6 +830,7 @@ interface ProductImageItem {
           {([
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
             { id: 'products', label: 'Sản phẩm', icon: Package },
+            { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
             { id: 'users', label: 'Người dùng', icon: Users },
             { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
             { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
@@ -1648,6 +1651,9 @@ interface ProductImageItem {
             </div>
           );
         })()}
+
+        {/* ─── TAB: COLLECTIONS ──────────────────────────────────────────────── */}
+        {activeTab === 'collections' && <AdminCollectionManager />}
 
         {/* ─── TAB: REVIEWS ──────────────────────────────────────────────────── */}
         {activeTab === 'reviews' && <AdminReviewTable />}

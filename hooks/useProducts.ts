@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { Product } from '@/lib/data';
 
-interface BackendProduct {
+export interface BackendProduct {
   id: string;
   name: string;
   description?: string | null;
@@ -113,7 +113,7 @@ function parseColors(product: BackendProduct): { name: string; hex: string }[] {
   ];
 }
 
-function mapProduct(product: BackendProduct): Product {
+export function mapProduct(product: BackendProduct): Product {
   const gallery = parseImages(product);
   const mainImage = gallery[0];
   const priceNumber = Number(product.price);

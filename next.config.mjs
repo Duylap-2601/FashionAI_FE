@@ -3,7 +3,7 @@ import withPWA from '@ducanh2912/next-pwa';
 // Backend được proxy qua chính origin của FE (xem rewrites bên dưới). Nhờ vậy cookie
 // refresh_token backend set trở thành first-party, browser mới chịu gửi lại nó trong
 // request fetch/XHR — cookie SameSite=Lax không bao giờ đi kèm request cross-site.
-const BACKEND_ORIGIN = (process.env.BACKEND_ORIGIN ?? 'http://localhost:3002').replace(/\/+$/, '');
+const BACKEND_ORIGIN = (process.env.BACKEND_ORIGIN ?? 'http://localhost:3002').replace(/\/+$/, '').replace(/\/api$/, '');
 
 // Không dùng thẳng /api/:path* : rewrite dạng array chạy ở giai đoạn afterFiles,
 // tức là TRƯỚC dynamic route, nên sẽ ăn luôn app/api/auth/[...nextauth]/route.ts
