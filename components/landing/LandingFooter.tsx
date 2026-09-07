@@ -16,7 +16,7 @@ export function LandingFooter() {
               <Logo size="md" variant="light" />
             </div>
             <p className="text-body-sm text-neutral-400 mb-6 leading-relaxed max-w-sm">
-              Nền tảng thời trang công sở cao cấp tiên phong ứng dụng công nghệ thử đồ ảo AI FASHN. Tinh tế trong từng đường kim mũi chỉ, chuẩn xác trong từng phom dáng.
+              Nền tảng thời trang công sở cao cấp tiên phong ứng dụng công nghệ thử đồ ảo AI. Chuẩn dáng từ đầu, đẹp từng đường may.
             </p>
 
             {/* Ministry of Industry and Trade certification mock badge */}

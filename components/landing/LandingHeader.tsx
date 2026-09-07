@@ -142,10 +142,13 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
           </nav>
         </div>
 
-        {/* Center: Brand Logo */}
+        {/* Center: Brand Logo & Slogan */}
         <div className="flex items-center justify-center">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex flex-col items-center group py-1">
             <Logo size="md" />
+            <span className="text-[9px] tracking-widest text-neutral-400 uppercase font-medium mt-0.5 group-hover:text-[#5D1C34] transition-colors hidden sm:block">
+              Chuẩn dáng từ đầu, đẹp từng đường may
+            </span>
           </Link>
         </div>
 

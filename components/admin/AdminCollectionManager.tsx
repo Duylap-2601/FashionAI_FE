@@ -471,7 +471,7 @@ export function AdminCollectionManager() {
                   type="text"
                   value={editingCollection.tagline || ''}
                   onChange={(e) => setEditingCollection({ ...editingCollection, tagline: e.target.value })}
-                  placeholder="Tinh tế từng đường may, bản lĩnh nơi công sở"
+                  placeholder="Chuẩn dáng từ đầu, đẹp từng đường may"
                   className="w-full h-10 px-3 text-body-sm bg-neutral-50 border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] focus:bg-white"
                 />
               </div>

@@ -873,6 +873,7 @@ interface ProductImageItem {
             <span className="text-body-sm font-bold text-brand-navy">
               {activeTab === 'dashboard' ? 'Tổng quan kinh doanh' :
                activeTab === 'products' ? 'Quản lý sản phẩm' :
+               activeTab === 'collections' ? 'Quản lý bộ sưu tập' :
                activeTab === 'users' ? 'Quản lý người dùng' :
                activeTab === 'orders' ? 'Quản lý đơn hàng' :
                activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' : 'Cài đặt Quota'}

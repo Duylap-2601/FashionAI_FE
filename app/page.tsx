@@ -83,7 +83,7 @@ export default function LandingPage() {
           <ProductGrid
             products={collectionProducts.length > 0 ? collectionProducts : displayProducts}
             title={selectedCollection ? `THIẾT KẾ: ${selectedCollection.name.toUpperCase()}` : 'SẢN PHẨM MỚI NHẤT'}
-            subtitle={selectedCollection?.tagline || 'Các thiết kế công sở may đo tinh tế, phom dáng tôn vinh thần thái'}
+            subtitle={selectedCollection?.tagline || 'Chuẩn dáng từ đầu, đẹp từng đường may'}
             badge="BỘ SƯU TẬP"
             viewAllLink="/products"
             showCategories={true}
