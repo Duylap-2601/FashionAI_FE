@@ -12,7 +12,13 @@ export async function GET(req: NextRequest) {
       cookie: req.headers.get('cookie') || '',
     },
     credentials: 'include',
+    redirect: 'manual',
   });
+
+  const location = res.headers.get('location');
+  if (location) {
+    return NextResponse.redirect(location, res.status);
+  }
 
   const response = new NextResponse(res.body, {
     status: res.status,

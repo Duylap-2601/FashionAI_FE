@@ -66,8 +66,19 @@ export function AuthCenteredLayout({ children }: { children: React.ReactNode }) 
 }
 
 export function GoogleButton() {
-  const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
+  const handleGoogleLogin = async () => {
+    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+    if (isNative) {
+      try {
+        const { Browser } = await import('@capacitor/browser');
+        const origin = window.location.origin;
+        await Browser.open({ url: `${origin}/api/auth/google?platform=mobile` });
+      } catch {
+        window.location.href = '/api/auth/google?platform=mobile';
+      }
+    } else {
+      window.location.href = '/api/auth/google';
+    }
   };
 
   return (

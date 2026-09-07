@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   if (location) {
     const proxyLocation = location.replace(
       `${BACKEND_ORIGIN}/api/auth/google/callback`,
-      `/api/backend/auth/google/callback`
+      `/api/auth/google/callback`
     );
     return NextResponse.redirect(proxyLocation, res.status);
   }
