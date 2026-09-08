@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Search, SlidersHorizontal, LayoutGrid, List, X, ShoppingBag, ChevronLeft, ChevronRight, Check, AlertTriangle, Star } from 'lucide-react';
+import { Search, SlidersHorizontal, LayoutGrid, List, X, ShoppingBag, Check, AlertTriangle, Star, Loader2 } from 'lucide-react';
 import { HangerIcon } from '@/components/ui/HangerIcon';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { useApp } from '@/components/navigation/Layout';
@@ -307,6 +307,7 @@ export default function ProductListing() {
   const currentPriceRange = selectedMaxPrice ?? maxPriceLimit;
   const [sortBy, setSortBy] = useState<SortBy>('Mới nhất');
   const [currentPage, setCurrentPage] = useState(1);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 12;
 
   // Dynamic Category Counts
@@ -398,21 +399,30 @@ export default function ProductListing() {
     return result;
   }, [allProducts, searchQuery, activeTab, selectedSubCategories, selectedColors, selectedMaxPrice, sortBy]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
-  const validCurrentPage = Math.min(currentPage, totalPages);
-  const paginatedProducts = useMemo(() => {
-    const start = (validCurrentPage - 1) * itemsPerPage;
-    return filteredProducts.slice(start, start + itemsPerPage);
-  }, [filteredProducts, validCurrentPage, itemsPerPage]);
+  const visibleProducts = useMemo(
+    () => filteredProducts.slice(0, currentPage * itemsPerPage),
+    [filteredProducts, currentPage, itemsPerPage]
+  );
+  const hasMoreProducts = visibleProducts.length < filteredProducts.length;
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasMoreProducts) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setCurrentPage(prev => prev + 1);
+        }
+      },
+      { rootMargin: '480px 0px' }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMoreProducts]);
 
   // Handlers for Toggling Filters
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-    // Đưa grid về đầu khung nhìn: StaggerContainer dùng whileInView nên nếu grid
-    // mới nằm ngoài viewport thì các card sẽ đứng ở opacity 0 (trang trắng).
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const toggleColor = (colorName: string) => {
     setSelectedColors(prev =>
@@ -737,7 +747,7 @@ export default function ProductListing() {
                 animateOnMount
                 className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-2.5 md:gap-3 mb-12 transition-all duration-300`}
               >
-                {paginatedProducts.map(product => {
+                {visibleProducts.map(product => {
                   const hasDiscount = product.originalPrice && product.originalPrice > product.numericPrice;
                   const discountPercent = hasDiscount && product.originalPrice
                     ? Math.round(((product.originalPrice - product.numericPrice) / product.originalPrice) * 100)
@@ -922,38 +932,22 @@ export default function ProductListing() {
                 })}
               </StaggerContainer>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-auto">
+              {hasMoreProducts ? (
+                <div ref={loadMoreRef} className="flex flex-col items-center justify-center gap-3 pb-4">
+                  <div className="flex items-center gap-2 text-body-sm font-medium text-neutral-500">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#5D1C34]" />
+                    Đang tải thêm sản phẩm...
+                  </div>
                   <button
-                    disabled={validCurrentPage === 1}
-                    onClick={() => goToPage(Math.max(1, validCurrentPage - 1))}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    className="px-5 py-2.5 rounded-full border border-neutral-200 text-body-sm font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    Xem thêm
                   </button>
-
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => goToPage(page)}
-                      className={`w-10 h-10 flex items-center justify-center rounded-xl border font-medium transition-colors ${
-                        page === validCurrentPage
-                          ? 'border-brand-navy bg-brand-navy text-white'
-                          : 'border-neutral-200 text-neutral-700 hover:bg-neutral-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-
-                  <button
-                    disabled={validCurrentPage === totalPages}
-                    onClick={() => goToPage(Math.min(totalPages, validCurrentPage + 1))}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                </div>
+              ) : (
+                <div className="pb-4 text-center text-[12px] font-medium text-neutral-400">
+                  Đã hiển thị tất cả {filteredProducts.length} sản phẩm
                 </div>
               )}
             </>
