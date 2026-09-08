@@ -339,6 +339,61 @@ export default function ProductDetail() {
             </div>
           </div>
 
+          {/* Quantity & Primary CTA */}
+          <div className="mb-6 rounded-2xl border border-[#E5DFD5] bg-[#FDFBF7] p-3.5 shadow-sm sm:p-4">
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <div>
+                <div className="text-body-sm font-bold text-brand-navy">Chọn số lượng</div>
+                <div className="text-[11px] text-neutral-500">Có thể đặt nhiều sản phẩm cùng số đo</div>
+              </div>
+              <div className="flex items-center border border-neutral-200 rounded-xl h-[44px] overflow-hidden bg-white shadow-xs">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-11 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
+                  aria-label="Giảm số lượng"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <div className="w-12 h-full flex items-center justify-center text-body-sm font-medium text-brand-navy border-x border-neutral-200">
+                  {quantity}
+                </div>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-11 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
+                  aria-label="Tăng số lượng"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-3 flex items-center justify-between rounded-xl bg-white px-3 py-2.5 text-body-sm border border-neutral-100">
+              <span className="text-neutral-600">Tạm tính</span>
+              <span className="font-bold text-brand-navy">
+                {((isComboSuit
+                  ? selectedType === 'combo'
+                    ? 1290000
+                    : selectedType === 'blazer'
+                    ? 750000
+                    : 550000
+                  : product.numericPrice) * quantity).toLocaleString('vi-VN')}đ
+              </span>
+            </div>
+
+            <button
+              onClick={handleAddToCart}
+              className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl hover:bg-brand-navy/90 active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <ShoppingBag className="w-5 h-5" /> Thêm vào giỏ hàng
+            </button>
+
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[10px] font-semibold text-neutral-600">
+              <div className="rounded-lg bg-white px-2 py-2 border border-neutral-100">May đo riêng</div>
+              <div className="rounded-lg bg-white px-2 py-2 border border-neutral-100">Tư vấn size</div>
+              <div className="rounded-lg bg-white px-2 py-2 border border-neutral-100">3-5 ngày</div>
+            </div>
+          </div>
+
           {/* Made-to-Measure (May đo theo số đo cá nhân) */}
           <div className="mb-6">
             <div className="flex flex-col gap-2 mb-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
@@ -405,35 +460,8 @@ export default function ProductDetail() {
             <span className="text-body-sm text-semantic-success font-medium">✓ Nhận may theo số đo riêng (3-5 ngày làm việc)</span>
           </div>
 
-          {/* Quantity */}
-          <div className="flex items-center mb-8">
-            <div className="flex items-center border border-neutral-200 rounded-xl h-[44px] overflow-hidden bg-white">
-              <button 
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-11 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <div className="w-12 h-full flex items-center justify-center text-body-sm font-medium text-brand-navy border-x border-neutral-200">
-                {quantity}
-              </div>
-              <button 
-                onClick={() => setQuantity(quantity + 1)}
-                className="w-11 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* CTA Buttons */}
+          {/* Secondary CTA Buttons */}
           <div className="flex flex-col gap-3 mb-6">
-            <button 
-              onClick={handleAddToCart}
-              className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl hover:bg-brand-navy/90 transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <ShoppingBag className="w-5 h-5" /> Thêm vào giỏ hàng
-            </button>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Link href={`/try-on?productId=${product.id}`} className="h-[48px] bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2">
                 <Sparkles className="w-4 h-4" /> Thử đồ ảo ngay
