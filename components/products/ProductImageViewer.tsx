@@ -310,40 +310,27 @@ export default function ProductImageViewer({
           className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex flex-col justify-between animate-in fade-in duration-200"
           onClick={closeModal}
         >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              closeModal();
-            }}
-            className="fixed right-4 top-4 z-50 p-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-md transition-colors cursor-pointer md:hidden"
-            aria-label="Đóng thư viện ảnh"
-            title="Đóng"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
           {/* MODAL HEADER */}
           <div 
-            className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40 backdrop-blur-lg shrink-0 z-20"
+            className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/40 backdrop-blur-lg shrink-0 z-20 sm:px-6 sm:py-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex flex-col text-left">
+            <div className="flex min-w-0 flex-col text-left">
               <span className="text-[11px] font-bold text-[#D4AF37] uppercase tracking-wider">{brand}</span>
-              <h3 className="text-[16px] font-semibold text-white truncate max-w-[280px] sm:max-w-[500px]">
+              <h3 className="max-w-[170px] truncate text-[14px] font-semibold text-white min-[380px]:max-w-[220px] sm:max-w-[500px] sm:text-[16px]">
                 {productName}
               </h3>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="px-3 py-1 bg-white/10 rounded-full text-white/80 text-label-sm font-medium">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <div className="px-2.5 py-1 bg-white/10 rounded-full text-white/80 text-[11px] font-medium sm:px-3 sm:text-label-sm">
                 Ảnh {modalIndex + 1} / {safeImages.length}
               </div>
 
               <button
                 type="button"
                 onClick={closeModal}
-                className="hidden p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer md:block"
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
                 title="Đóng (Esc)"
                 aria-label="Đóng thư viện ảnh"
               >
