@@ -341,37 +341,43 @@ export default function ProductDetail() {
 
           {/* Made-to-Measure (May đo theo số đo cá nhân) */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-body-sm font-bold text-brand-navy flex items-center gap-1.5">
-                <Ruler className="w-4 h-4 text-[#5D1C34]" /> Hình thức: <span className="text-[#5D1C34]">May đo theo số đo cơ thể (Made-to-measure)</span>
+            <div className="flex flex-col gap-2 mb-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+              <div className="flex items-start gap-2 text-body-sm font-bold text-brand-navy leading-snug min-w-0">
+                <Ruler className="mt-0.5 w-4 h-4 shrink-0 text-[#5D1C34]" />
+                <div className="min-w-0">
+                  <span>Hình thức: </span>
+                  <span className="text-[#5D1C34]">May đo theo số đo</span>
+                  <span className="hidden sm:inline text-[#5D1C34]"> cơ thể (Made-to-measure)</span>
+                </div>
               </div>
               <Link
                 href="/profile/measurements"
-                className="text-[12px] font-bold text-[#5D1C34] hover:underline flex items-center gap-1"
+                className="inline-flex w-fit items-center gap-1 text-[12px] font-bold text-[#5D1C34] hover:underline min-[420px]:shrink-0"
               >
                 Cập nhật số đo <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
 
             {isMeasurementComplete ? (
-              <div className="p-4 bg-[#FDFBF7] border border-[#E5DFD5] rounded-xl animate-in fade-in duration-200">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-[13px] font-bold text-green-700 flex items-center gap-1.5">
-                    <span>✓</span> Số đo của bạn đã sẵn sàng cho may đo
+              <div className="p-3.5 sm:p-4 bg-[#FDFBF7] border border-[#E5DFD5] rounded-xl animate-in fade-in duration-200">
+                <div className="flex flex-col gap-1.5 mb-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                  <div className="text-[13px] font-bold text-green-700 flex items-start gap-1.5 leading-snug">
+                    <span className="shrink-0">✓</span>
+                    <span>Số đo đã sẵn sàng cho may đo</span>
                   </div>
-                  <span className="text-[11px] text-neutral-400 font-medium">Tự động áp dụng khi đặt hàng</span>
+                  <span className="text-[11px] text-neutral-500 font-medium">Tự động áp dụng khi đặt hàng</span>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] font-medium text-neutral-600 bg-white p-2.5 rounded-lg border border-[#EFE9E1]">
-                  <div>Ngực: <strong className="text-brand-navy">{measurements?.chest || '—'}cm</strong></div>
-                  <div>Eo: <strong className="text-brand-navy">{measurements?.waist || '—'}cm</strong></div>
-                  <div>Hông: <strong className="text-brand-navy">{measurements?.hip || '—'}cm</strong></div>
-                  <div>Vai: <strong className="text-brand-navy">{measurements?.shoulder || '—'}cm</strong></div>
-                  <div>Cao: <strong className="text-brand-navy">{measurements?.height || '—'}cm</strong></div>
-                  <div>Nặng: <strong className="text-brand-navy">{measurements?.weight || '—'}kg</strong></div>
+                <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] font-medium text-neutral-600 bg-white p-2.5 rounded-lg border border-[#EFE9E1]">
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Ngực: <strong className="text-brand-navy">{measurements?.chest || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Eo: <strong className="text-brand-navy">{measurements?.waist || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Hông: <strong className="text-brand-navy">{measurements?.hip || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Vai: <strong className="text-brand-navy">{measurements?.shoulder || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Cao: <strong className="text-brand-navy">{measurements?.height || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Nặng: <strong className="text-brand-navy">{measurements?.weight || '—'}kg</strong></div>
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in duration-200">
+              <div className="p-3.5 sm:p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in duration-200">
                 <div className="flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
