@@ -113,7 +113,7 @@ export function ProductGrid({
             <p className="text-neutral-500 text-body-md">Không tìm thấy sản phẩm phù hợp trong danh mục này.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-5">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-4 md:gap-5">
             {filteredProducts.map((product) => {
               const hasSecondImage = product.gallery && product.gallery.length > 1;
               const isHovered = hoveredId === product.id;
@@ -156,14 +156,14 @@ export function ProductGrid({
                     </div>
 
                     {/* Hover Floating Actions */}
-                    <div className="absolute inset-x-2 bottom-2.5 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0 z-20">
+                    <div className="absolute inset-x-2 bottom-2.5 flex flex-col gap-1.5 opacity-100 translate-y-0 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 transition-all duration-200 z-20">
                       <button
                         onClick={(e) => handleTryOn(product, e)}
                         className="w-full h-9 bg-white/95 backdrop-blur-sm text-[#5D1C34] hover:bg-[#5D1C34] hover:text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 shadow-md transition-colors cursor-pointer"
                         title="Thử đồ trên ảnh của bạn"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Thử đồ AI</span>
+                          <span className="max-[360px]:hidden">Thử đồ AI</span>
                       </button>
 
                       <div className="flex gap-1.5">
@@ -173,7 +173,7 @@ export function ProductGrid({
                           className="flex-1 h-8 bg-neutral-900/90 hover:bg-neutral-900 text-white rounded-lg text-[11px] font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
                         >
                           <ShoppingBag className="w-3 h-3" />
-                          <span>Thêm giỏ</span>
+                          <span className="max-[360px]:hidden">Thêm giỏ</span>
                         </button>
                         <Link
                           href={`/products/${product.id}`}

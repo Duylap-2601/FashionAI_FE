@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useRef } from 'react';
-import Link from 'next/link';
 import { ChevronLeft, ChevronRight, ArrowUpRight, Sparkles } from 'lucide-react';
 import { Collection } from '@/types/collection';
 
@@ -65,14 +64,14 @@ export function CollectionCarousel({
         {/* Carousel Container */}
         <div
           ref={scrollRef}
-          className="flex gap-5 md:gap-6 overflow-x-auto pb-6 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0"
+          className="flex gap-4 md:gap-6 overflow-x-auto pb-6 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0"
         >
           {collections.map((col) => {
             const isSelected = selectedCollectionId === col.id;
             return (
               <div
                 key={col.id}
-                className={`snap-start shrink-0 w-[280px] sm:w-[320px] md:w-[360px] rounded-2xl overflow-hidden shadow-lg border transition-all duration-300 relative group flex flex-col justify-end aspect-[3/4] cursor-pointer ${
+                className={`snap-start shrink-0 w-[min(82vw,280px)] sm:w-[320px] md:w-[360px] rounded-2xl overflow-hidden shadow-lg border transition-all duration-300 relative group flex flex-col justify-end aspect-[3/4] cursor-pointer ${
                   isSelected ? 'ring-4 ring-[#5D1C34] border-transparent scale-[1.01]' : 'border-neutral-200 hover:shadow-2xl hover:-translate-y-1'
                 }`}
                 onClick={() => onSelectCollection?.(col)}
@@ -101,7 +100,7 @@ export function CollectionCarousel({
                 </div>
 
                 {/* Bottom Content */}
-                <div className="relative z-10 p-6 flex flex-col">
+                <div className="relative z-10 p-4 sm:p-6 flex flex-col">
                   <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 leading-tight group-hover:text-brand-gold transition-colors">
                     {col.name}
                   </h3>
@@ -118,7 +117,7 @@ export function CollectionCarousel({
                       {col.itemCount ? `${col.itemCount} thiết kế` : 'Độc quyền'}
                     </span>
 
-                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-neutral-900 font-bold text-xs uppercase tracking-wider group-hover:bg-brand-gold group-hover:text-brand-navy transition-all duration-300 shadow-md">
+                    <span className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-white text-neutral-900 font-bold text-[11px] sm:text-xs uppercase tracking-wider group-hover:bg-brand-gold group-hover:text-brand-navy transition-all duration-300 shadow-md">
                       <span>XEM NGAY</span>
                       <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
                     </span>
