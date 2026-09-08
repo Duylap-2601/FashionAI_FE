@@ -69,6 +69,184 @@ const AVAILABLE_COLORS = [
   { name: 'Be', color: '#E8E2D2' },
 ];
 
+type SortBy = 'Mới nhất' | 'Giá thấp đến cao' | 'Giá cao đến thấp';
+type CategoryCount = { label: string; count: number };
+type SubCategoryCount = { name: string; count: number };
+type AvailableColor = typeof AVAILABLE_COLORS[number];
+
+interface FilterSectionProps {
+  currentPriceRange: number;
+  maxPriceLimit: number;
+  selectedColors: string[];
+  subCategoryCounts: SubCategoryCount[];
+  selectedSubCategories: string[];
+  onPriceChange: (value: number) => void;
+  onToggleColor: (color: string) => void;
+  onToggleSubCategory: (category: string) => void;
+}
+
+function CategoryTabs({
+  categories,
+  activeTab,
+  onSelect,
+  mobile = false,
+}: {
+  categories: CategoryCount[];
+  activeTab: string;
+  onSelect: (tab: string) => void;
+  mobile?: boolean;
+}) {
+  return (
+    <div className={`${mobile ? 'flex w-full md:hidden' : 'hidden md:flex'} items-center gap-2 overflow-x-auto no-scrollbar`}>
+      {categories.map(tab => (
+        <button
+          key={tab.label}
+          onClick={() => onSelect(tab.label)}
+          className={`${mobile ? 'px-3.5 py-2 text-[12px] font-semibold' : 'px-4 py-2 text-label-sm font-medium'} shrink-0 rounded-full whitespace-nowrap transition-colors ${
+            activeTab === tab.label
+              ? 'bg-brand-navy text-white shadow-sm'
+              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+          }`}
+        >
+          {tab.label} ({tab.count})
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PriceFilter({ currentPriceRange, maxPriceLimit, onPriceChange }: Pick<FilterSectionProps, 'currentPriceRange' | 'maxPriceLimit' | 'onPriceChange'>) {
+  return (
+    <div>
+      <h3 className="text-label-sm font-semibold mb-3">Khoảng giá tối đa</h3>
+      <input
+        type="range"
+        min={200000}
+        max={maxPriceLimit}
+        step={100000}
+        value={currentPriceRange}
+        onChange={(e) => onPriceChange(Number(e.target.value))}
+        className="w-full accent-brand-navy cursor-pointer"
+      />
+      <div className="text-[13px] font-medium text-neutral-600 text-center mt-2">
+        Dưới {currentPriceRange.toLocaleString('vi-VN')}đ
+      </div>
+    </div>
+  );
+}
+
+function ColorFilter({ colors, selectedColors, onToggleColor, mobile = false }: {
+  colors: AvailableColor[];
+  selectedColors: string[];
+  onToggleColor: (color: string) => void;
+  mobile?: boolean;
+}) {
+  return (
+    <div>
+      <h3 className="text-label-sm font-semibold mb-4">Màu sắc</h3>
+      <div className={mobile ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-5 gap-3'}>
+        {colors.map(c => {
+          const isSelected = selectedColors.includes(c.name);
+          return mobile ? (
+            <button
+              key={c.name}
+              type="button"
+              onClick={() => onToggleColor(c.name)}
+              className="flex flex-col items-center gap-1.5 text-[11px] text-neutral-600"
+            >
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                  c.border ? 'border border-neutral-300' : ''
+                } ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`}
+                style={{ backgroundColor: c.color }}
+              >
+                {isSelected && <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />}
+              </span>
+              <span>{c.name}</span>
+            </button>
+          ) : (
+            <div key={c.name} onClick={() => onToggleColor(c.name)} className="relative group cursor-pointer flex flex-col items-center">
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                  c.border ? 'border border-neutral-300' : ''
+                } ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`}
+                style={{ backgroundColor: c.color }}
+              >
+                {isSelected && <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />}
+              </div>
+              <div className="absolute -top-8 bg-brand-navy text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                {c.name}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SubCategoryFilter({ subCategoryCounts, selectedSubCategories, onToggleSubCategory, mobile = false }: {
+  subCategoryCounts: SubCategoryCount[];
+  selectedSubCategories: string[];
+  onToggleSubCategory: (category: string) => void;
+  mobile?: boolean;
+}) {
+  return (
+    <div>
+      <h3 className="text-label-sm font-semibold mb-4">{mobile ? 'Danh mục chi tiết' : 'Danh mục'}</h3>
+      <div className={mobile ? 'grid grid-cols-1 gap-2.5' : 'flex flex-col gap-3'}>
+        {subCategoryCounts.map(item => {
+          const isChecked = selectedSubCategories.includes(item.name);
+          const checkBox = (
+            <span className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${
+              isChecked ? 'bg-brand-navy border-brand-navy' : 'border-neutral-300 bg-white'
+            }`}>
+              {isChecked && <Check className="w-3 h-3 text-white" />}
+            </span>
+          );
+
+          return mobile ? (
+            <button
+              key={item.name}
+              type="button"
+              onClick={() => onToggleSubCategory(item.name)}
+              className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${
+                isChecked ? 'border-brand-navy bg-brand-navy/5' : 'border-neutral-200 bg-white'
+              }`}
+            >
+              <span className="flex items-center gap-3 text-body-sm font-medium text-neutral-700">{checkBox}{item.name}</span>
+              <span className="text-[12px] text-neutral-400">({item.count})</span>
+            </button>
+          ) : (
+            <label key={item.name} onClick={() => onToggleSubCategory(item.name)} className="flex items-center justify-between cursor-pointer group">
+              <span className="flex items-center gap-3">
+                {checkBox}
+                <span className="text-body-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">{item.name}</span>
+              </span>
+              <span className="text-[12px] text-neutral-400">({item.count})</span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FilterSections(props: FilterSectionProps & { mobile?: boolean }) {
+  return (
+    <>
+      <PriceFilter {...props} />
+      <ColorFilter colors={AVAILABLE_COLORS} selectedColors={props.selectedColors} onToggleColor={props.onToggleColor} mobile={props.mobile} />
+      <SubCategoryFilter
+        subCategoryCounts={props.subCategoryCounts}
+        selectedSubCategories={props.selectedSubCategories}
+        onToggleSubCategory={props.onToggleSubCategory}
+        mobile={props.mobile}
+      />
+    </>
+  );
+}
+
 export default function ProductListing() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -105,7 +283,7 @@ export default function ProductListing() {
 
   const [selectedMaxPrice, setSelectedMaxPrice] = useState<number | null>(null);
   const currentPriceRange = selectedMaxPrice ?? maxPriceLimit;
-  const [sortBy, setSortBy] = useState<'Mới nhất' | 'Giá thấp đến cao' | 'Giá cao đến thấp'>('Mới nhất');
+  const [sortBy, setSortBy] = useState<SortBy>('Mới nhất');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
@@ -272,43 +450,24 @@ export default function ProductListing() {
       {/* STICKY FILTER BAR */}
       <div className="sticky top-[56px] md:top-[64px] z-40 bg-white border-b border-neutral-200 px-4 md:px-8 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
         {/* Left: Category tabs */}
-        <div className="flex w-full items-center gap-2 overflow-x-auto no-scrollbar md:hidden">
-          {categoryCounts.map(tab => (
-            <button
-              key={tab.label}
-              onClick={() => {
-                setActiveTab(tab.label);
-                setCurrentPage(1);
-              }}
-              className={`shrink-0 px-3.5 py-2 rounded-full text-[12px] font-semibold whitespace-nowrap transition-colors ${
-                activeTab === tab.label
-                  ? 'bg-brand-navy text-white shadow-sm'
-                  : 'bg-neutral-100 text-neutral-600'
-              }`}
-            >
-              {tab.label} ({tab.count})
-            </button>
-          ))}
-        </div>
+        <CategoryTabs
+          categories={categoryCounts}
+          activeTab={activeTab}
+          onSelect={(tab) => {
+            setActiveTab(tab);
+            setCurrentPage(1);
+          }}
+          mobile
+        />
 
-        <div className="hidden md:flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {categoryCounts.map(tab => (
-            <button
-              key={tab.label}
-              onClick={() => {
-                setActiveTab(tab.label);
-                setCurrentPage(1);
-              }}
-              className={`px-4 py-2 rounded-full text-label-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === tab.label
-                  ? 'bg-brand-navy text-white'
-                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-              }`}
-            >
-              {tab.label} ({tab.count})
-            </button>
-          ))}
-        </div>
+        <CategoryTabs
+          categories={categoryCounts}
+          activeTab={activeTab}
+          onSelect={(tab) => {
+            setActiveTab(tab);
+            setCurrentPage(1);
+          }}
+        />
 
         {/* Right: Actions */}
         <div className="flex w-full items-center justify-between gap-3 md:ml-auto md:w-auto md:justify-end">
@@ -395,82 +554,20 @@ export default function ProductListing() {
                 </select>
               </div>
 
-              <div>
-                <h3 className="text-label-sm font-semibold mb-3">Khoảng giá tối đa</h3>
-                <input
-                  type="range"
-                  min={200000}
-                  max={maxPriceLimit}
-                  step={100000}
-                  value={currentPriceRange}
-                  onChange={(e) => {
-                    setSelectedMaxPrice(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="w-full accent-brand-navy cursor-pointer"
-                />
-                <div className="text-[13px] font-medium text-neutral-600 text-center mt-2">
-                  Dưới {currentPriceRange.toLocaleString('vi-VN')}đ
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-label-sm font-semibold mb-4">Màu sắc</h3>
-                <div className="grid grid-cols-6 gap-3">
-                  {AVAILABLE_COLORS.map(c => {
-                    const isSelected = selectedColors.includes(c.name);
-                    return (
-                      <button
-                        key={c.name}
-                        type="button"
-                        onClick={() => toggleColor(c.name)}
-                        className="flex flex-col items-center gap-1.5 text-[11px] text-neutral-600"
-                      >
-                        <span
-                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                            c.border ? 'border border-neutral-300' : ''
-                          } ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`}
-                          style={{ backgroundColor: c.color }}
-                        >
-                          {isSelected && (
-                            <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />
-                          )}
-                        </span>
-                        <span>{c.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-label-sm font-semibold mb-4">Danh mục chi tiết</h3>
-                <div className="grid grid-cols-1 gap-2.5">
-                  {subCategoryCounts.map(item => {
-                    const isChecked = selectedSubCategories.includes(item.name);
-                    return (
-                      <button
-                        key={item.name}
-                        type="button"
-                        onClick={() => toggleSubCategory(item.name)}
-                        className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${
-                          isChecked ? 'border-brand-navy bg-brand-navy/5' : 'border-neutral-200 bg-white'
-                        }`}
-                      >
-                        <span className="flex items-center gap-3 text-body-sm font-medium text-neutral-700">
-                          <span className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${
-                            isChecked ? 'bg-brand-navy border-brand-navy' : 'border-neutral-300 bg-white'
-                          }`}>
-                            {isChecked && <Check className="w-3 h-3 text-white" />}
-                          </span>
-                          {item.name}
-                        </span>
-                        <span className="text-[12px] text-neutral-400">({item.count})</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <FilterSections
+                currentPriceRange={currentPriceRange}
+                maxPriceLimit={maxPriceLimit}
+                selectedColors={selectedColors}
+                subCategoryCounts={subCategoryCounts}
+                selectedSubCategories={selectedSubCategories}
+                onPriceChange={(value) => {
+                  setSelectedMaxPrice(value);
+                  setCurrentPage(1);
+                }}
+                onToggleColor={toggleColor}
+                onToggleSubCategory={toggleSubCategory}
+                mobile
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3 border-t border-neutral-200 bg-white p-4">
@@ -508,83 +605,19 @@ export default function ProductListing() {
             </div>
 
             <div className="flex flex-col gap-8">
-              {/* Khoảng giá */}
-              <div>
-                <h3 className="text-label-sm font-semibold mb-3">Khoảng giá tối đa</h3>
-                <input
-                  type="range"
-                  min={200000}
-                  max={maxPriceLimit}
-                  step={100000}
-                  value={currentPriceRange}
-                  onChange={(e) => {
-                    setSelectedMaxPrice(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="w-full accent-brand-navy cursor-pointer"
-                />
-                <div className="text-[13px] font-medium text-neutral-600 text-center mt-2">
-                  Dưới {currentPriceRange.toLocaleString('vi-VN')}đ
-                </div>
-              </div>
-
-              {/* Màu sắc */}
-              <div>
-                <h3 className="text-label-sm font-semibold mb-4">Màu sắc</h3>
-                <div className="grid grid-cols-5 gap-3">
-                  {AVAILABLE_COLORS.map(c => {
-                    const isSelected = selectedColors.includes(c.name);
-                    return (
-                      <div
-                        key={c.name}
-                        onClick={() => toggleColor(c.name)}
-                        className="relative group cursor-pointer flex flex-col items-center"
-                      >
-                        <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
-                            c.border ? 'border border-neutral-300' : ''
-                          } ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`}
-                          style={{ backgroundColor: c.color }}
-                        >
-                          {isSelected && (
-                            <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />
-                          )}
-                        </div>
-                        <div className="absolute -top-8 bg-brand-navy text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                          {c.name}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Danh mục con */}
-              <div>
-                <h3 className="text-label-sm font-semibold mb-4">Danh mục</h3>
-                <div className="flex flex-col gap-3">
-                  {subCategoryCounts.map(item => {
-                    const isChecked = selectedSubCategories.includes(item.name);
-                    return (
-                      <label
-                        key={item.name}
-                        onClick={() => toggleSubCategory(item.name)}
-                        className="flex items-center justify-between cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${
-                            isChecked ? 'bg-brand-navy border-brand-navy' : 'border-neutral-300 bg-white'
-                          }`}>
-                            {isChecked && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <span className="text-body-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">{item.name}</span>
-                        </div>
-                        <span className="text-[12px] text-neutral-400">({item.count})</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
+              <FilterSections
+                currentPriceRange={currentPriceRange}
+                maxPriceLimit={maxPriceLimit}
+                selectedColors={selectedColors}
+                subCategoryCounts={subCategoryCounts}
+                selectedSubCategories={selectedSubCategories}
+                onPriceChange={(value) => {
+                  setSelectedMaxPrice(value);
+                  setCurrentPage(1);
+                }}
+                onToggleColor={toggleColor}
+                onToggleSubCategory={toggleSubCategory}
+              />
 
               <button
                 onClick={() => setIsSidebarOpen(false)}
