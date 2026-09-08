@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { MessageSquarePlus, Star, Loader2, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -15,6 +14,7 @@ import {
 import { RatingOverview } from './RatingOverview';
 import { ReviewCard } from './ReviewCard';
 import { WriteReviewModal } from './WriteReviewModal';
+import { useAuthStore } from '@/store/authStore';
 
 interface ReviewSectionProps {
   productId: string;
@@ -27,9 +27,10 @@ export function ReviewSection({
   productName,
   productImage,
 }: ReviewSectionProps) {
-  const { data: session, status } = useSession();
-  const currentUserId = (session?.user as { id?: string })?.id;
-  const isAdmin = (session?.user as { role?: string })?.role === 'ADMIN';
+  const status = useAuthStore((state) => state.status);
+  const user = useAuthStore((state) => state.user);
+  const currentUserId = user?.id;
+  const isAdmin = user?.role === 'ADMIN';
 
   const [selectedRating, setSelectedRating] = useState<number | undefined>(undefined);
   const [page, setPage] = useState<number>(1);

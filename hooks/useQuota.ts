@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export type AiActionName = 'TRY_ON' | 'STYLIST' | 'CHATBOT';
 
@@ -23,7 +23,7 @@ export interface UserQuota {
 }
 
 export function useQuota(action: AiActionName = 'TRY_ON') {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
 
   const query = useQuery<UserQuota>({
     queryKey: ['quota', action],

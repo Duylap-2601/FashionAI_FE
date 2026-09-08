@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export interface BackendRackProduct {
   id: string;
@@ -25,7 +25,7 @@ export interface RackItem {
 }
 
 export function useRackItems() {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const query = useQuery<RackItem[]>({
     queryKey: ['rack'],
     queryFn: async () => {

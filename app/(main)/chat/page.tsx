@@ -2,14 +2,14 @@
 
 import React, { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { isUuid } from '@/hooks/useChat';
+import { useAuthStore } from '@/store/authStore';
 
 function ChatContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
 
   const rawSessionId = searchParams.get('session');
   const sessionId = isUuid(rawSessionId) ? rawSessionId : undefined;

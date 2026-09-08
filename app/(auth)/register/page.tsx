@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuthSplitLayout, GoogleButton } from '@/components/auth/AuthLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
-import axios from 'axios';
+import { AuthClientError, registerWithPassword } from '@/lib/authClient';
 
 export default function Register() {
   const [password, setPassword] = useState('');
@@ -56,12 +56,12 @@ export default function Register() {
 
     try {
       setIsLoading(true);
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/register`, {
+      await registerWithPassword({
         name: fullName,
         email,
         password: pass,
         confirmPassword: confirm,
-      }, { withCredentials: true });
+      });
 
       setIsSuccess(true);
       await login(email, pass);
@@ -69,12 +69,14 @@ export default function Register() {
       setTimeout(() => {
         router.push('/products');
       }, 1500);
-    } catch (err) {
-      const axiosError = err as { response?: { data?: { message?: string; details?: string[] } } };
+    } catch (err: unknown) {
+      const errorBody = err instanceof AuthClientError && err.data && typeof err.data === 'object'
+        ? err.data as { message?: string; details?: string[] }
+        : undefined;
       setIsLoading(false);
       setError(
-        axiosError.response?.data?.details?.[0] ||
-        axiosError.response?.data?.message ||
+        errorBody?.details?.[0] ||
+        errorBody?.message ||
         'Đăng ký tài khoản thất bại. Email có thể đã tồn tại.',
       );
     }

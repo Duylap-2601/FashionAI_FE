@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export interface MissingMeasurementField {
   field: string;
@@ -24,7 +24,7 @@ export interface MeasurementsCompletenessResponse {
 }
 
 export function useMeasurementsCompleteness() {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
 
   const query = useQuery<MeasurementsCompletenessResponse>({
     queryKey: ['measurements-completeness'],

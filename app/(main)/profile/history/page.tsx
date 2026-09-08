@@ -15,18 +15,16 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTryOnHistory, useDeleteTryOnHistory } from '@/hooks/useTryOn';
-import { useSession } from 'next-auth/react';
+import { useAuthStore } from '@/store/authStore';
 
 export default function TryOnHistoryPage() {
   const { history, isLoading, refetch } = useTryOnHistory();
   const { deleteHistoryItem, deleteBulkItems, isDeleting, isBulkDeleting } = useDeleteTryOnHistory();
-  const { data: session } = useSession();
+  const userTier = useAuthStore((state) => state.user?.tier || 'FREE');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-
-  const userTier = session?.user?.tier || 'free';
 
   // Filtering
   const filteredHistory = history.filter(item => {
@@ -38,7 +36,7 @@ export default function TryOnHistoryPage() {
   });
 
   // Limit display history for free tier to 10 if BE doesn't enforce it (as per UI specification)
-  const displayHistory = userTier === 'free' ? filteredHistory.slice(0, 10) : filteredHistory;
+  const displayHistory = userTier === 'FREE' ? filteredHistory.slice(0, 10) : filteredHistory;
 
   // Bulk actions
   const toggleSelectAll = () => {
@@ -212,7 +210,7 @@ export default function TryOnHistoryPage() {
         </div>
 
         {/* UPGRADE BANNER (Free Tier) */}
-        {userTier === 'free' && history.length > 10 && (
+        {userTier === 'FREE' && history.length > 10 && (
           <div className="mb-8 bg-gradient-to-r from-brand-navy/5 to-brand-gold/5 border border-brand-navy/10 rounded-xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">

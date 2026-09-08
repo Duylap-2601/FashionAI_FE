@@ -1,7 +1,9 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getSession, signIn, signOut } from 'next-auth/react';
+import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { API_BASE_URL, AuthClientError, fetchCurrentUser, refreshWebSession, toAuthSession } from '@/lib/authClient';
+import { emitAuthInvalidated } from '@/lib/authEvents';
+import { useAuthStore } from '@/store/authStore';
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const baseURL = API_BASE_URL;
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
@@ -32,22 +34,16 @@ async function readSessionToken(): Promise<string | null> {
     return cachedToken;
   }
 
-  try {
-    const session = await getSession();
-    const user = session?.user as any;
-    const token = user?.accessToken || null;
-    if (!token) {
-      invalidateSessionCache();
-      return null;
-    }
-    cachedToken = token;
-    cachedExpiresAt = parseExpiry(user?.accessTokenExpiresAt);
-    cachedSessionAt = now;
-    return token;
-  } catch {
+  const { accessToken, accessTokenExpiresAt } = useAuthStore.getState();
+  if (!accessToken) {
     invalidateSessionCache();
     return null;
   }
+
+  cachedToken = accessToken;
+  cachedExpiresAt = parseExpiry(accessTokenExpiresAt);
+  cachedSessionAt = now;
+  return accessToken;
 }
 
 /**
@@ -97,22 +93,7 @@ async function doRefreshToken(): Promise<string | null> {
 
   refreshPromise = (async () => {
     try {
-      const refreshRes = await fetch(`${baseURL.replace(/\/$/, '')}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (!refreshRes.ok) {
-        invalidateSessionCache();
-        // If refresh fails with 401/403, sign out to prevent infinite 401 loops
-        if (typeof window !== 'undefined' && (refreshRes.status === 401 || refreshRes.status === 403)) {
-          signOut({ redirect: true, callbackUrl: '/login' });
-        }
-        return null;
-      }
-
-      const body = await refreshRes.json().catch(() => null);
-      const payload = body?.data ?? body;
+      const payload = await refreshWebSession();
 
       // Web refresh chỉ trả accessToken + accessTokenExpiresAt (không có user,
       // vì user không đổi khi refresh) — chỉ mobile login/register trả user.
@@ -124,47 +105,29 @@ async function doRefreshToken(): Promise<string | null> {
         return null;
       }
 
-      // Giữ lại user hiện tại trong session nếu response refresh không trả
-      // user, để NextAuth JWT callback không bị mất role/tier đang lưu.
-      // authorize() trong lib/auth.ts bắt buộc phải có rawUser hợp lệ (id +
-      // email), nên phải build lại đúng shape từ session hiện tại thay vì bỏ
-      // trống — nếu không signIn() sẽ tự return null và session vẫn giữ token
-      // cũ đã hết hạn.
-      let userJson = payload.user ? JSON.stringify(payload.user) : undefined;
-      if (!userJson) {
-        const currentSession = await getSession();
-        const currentUser = currentSession?.user;
-        if (currentUser?.id && currentUser?.email) {
-          userJson = JSON.stringify({
-            id: currentUser.id,
-            email: currentUser.email,
-            name: currentUser.name,
-            avatarUrl: currentUser.image,
-            tier: currentUser.tier,
-            tierExpiresAt: currentUser.tierExpiresAt,
-            role: currentUser.role,
-          });
-        }
+      const currentUser = useAuthStore.getState().user;
+      let user = payload.user || currentUser;
+      if (!user) {
+        user = await fetchCurrentUser(payload.accessToken);
       }
 
-      if (!userJson) {
-        invalidateSessionCache();
-        return null;
+      const session = toAuthSession({ ...payload, user });
+      if (session) {
+        useAuthStore.getState().setSession(session);
+      } else {
+        useAuthStore.getState().setAccessToken(payload.accessToken, payload.accessTokenExpiresAt);
       }
-
-      await signIn('backend-session', {
-        accessToken: payload.accessToken,
-        accessTokenExpiresAt: payload.accessTokenExpiresAt,
-        user: userJson,
-        redirect: false,
-      });
 
       cachedToken = payload.accessToken;
       cachedExpiresAt = parseExpiry(payload.accessTokenExpiresAt);
       cachedSessionAt = Date.now();
       return payload.accessToken;
-    } catch {
+    } catch (error: unknown) {
       invalidateSessionCache();
+      const status = error instanceof AuthClientError ? error.status : undefined;
+      if (typeof window !== 'undefined' && (status === 401 || status === 403)) {
+        emitAuthInvalidated({ redirectTo: '/login' });
+      }
       return null;
     } finally {
       refreshPromise = null;
@@ -212,12 +175,13 @@ api.interceptors.response.use(
   }
 );
 
-function unwrapApiResponse(response: any) {
+function unwrapApiResponse(response: AxiosResponse<unknown>) {
   const body = response.data;
   if (body && typeof body === 'object' && 'data' in body) {
-    response.data = body.data;
-    if (body.meta && response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
-      response.data.__meta = body.meta;
+    const envelope = body as { data?: unknown; meta?: unknown };
+    response.data = envelope.data;
+    if (envelope.meta && response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+      (response.data as Record<string, unknown>).__meta = envelope.meta;
     }
   }
 }

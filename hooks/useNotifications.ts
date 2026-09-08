@@ -1,11 +1,11 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 import { api } from '@/lib/api';
 import { AppNotification, NotificationMeta, NotificationType } from '@/types/notification';
 import { useNotificationStore } from '@/store/notificationStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface UseNotificationsOptions {
   page?: number;
@@ -16,14 +16,14 @@ interface UseNotificationsOptions {
 
 export function useNotifications(options: UseNotificationsOptions = {}) {
   const { page = 1, limit = 20, type, enabled = true } = options;
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const setRecentNotifications = useNotificationStore((s) => s.setRecentNotifications);
   const setUnreadCount = useNotificationStore((s) => s.setUnreadCount);
 
   const query = useQuery<{ items: AppNotification[]; meta: NotificationMeta }>({
     queryKey: ['notifications', { page, limit, type }],
     queryFn: async () => {
-      const params: Record<string, any> = { page, limit };
+      const params: Record<string, string | number> = { page, limit };
       if (type) params.type = type;
 
       const res = await api.get('/notifications', { params });
@@ -74,7 +74,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 }
 
 export function useUnreadCount() {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const setUnreadCount = useNotificationStore((s) => s.setUnreadCount);
   const unreadCount = useNotificationStore((s) => s.unreadCount);
 

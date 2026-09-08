@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { PageHeader, PageContent } from '@/components/navigation/Layout';
 import { PRODUCTS, Product } from '@/lib/data';
 import { useTryOn, GarmentSlotInput } from '@/hooks/useTryOn';
@@ -19,8 +18,25 @@ import { useProducts, toBackendCategory } from '@/hooks/useProducts';
 import { SubscriptionRequiredModal } from '@/components/subscription/SubscriptionRequiredModal';
 import { QuotaExhaustedModal } from '@/components/stylist/QuotaExhaustedModal';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 
 type PageState = 'idle' | 'loading' | 'result' | 'quota-exhausted';
+type ProductPickerCategory = 'ALL' | 'UPPER' | 'LOWER' | 'FULL_BODY';
+
+interface TryOnErrorBody {
+  code?: string;
+  message?: string | string[];
+  details?: {
+    reason?: string;
+    resetAt?: string;
+    requested?: number;
+    remaining?: number;
+  };
+  resetAt?: string;
+  requested?: number;
+  remaining?: number;
+  missing?: { label?: string }[];
+}
 
 const MOCK_USER_PHOTO = 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=320&h=400&fit=crop&auto=format';
 
@@ -273,16 +289,16 @@ function CatalogModal({
           />
 
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-            {[
+            {([
               { id: 'ALL', label: 'Tất cả' },
               { id: 'UPPER', label: 'Áo / Blazer' },
               { id: 'LOWER', label: 'Quần / Váy' },
               { id: 'FULL_BODY', label: 'Bộ liền' },
-            ].map(cat => (
+            ] satisfies { id: ProductPickerCategory; label: string }[]).map(cat => (
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setSelectedCat(cat.id as any)}
+                onClick={() => setSelectedCat(cat.id)}
                 className={`px-3 py-1 rounded-lg text-[12px] font-semibold transition-all whitespace-nowrap ${
                   selectedCat === cat.id
                     ? 'bg-brand-navy text-white shadow-2xs'
@@ -388,7 +404,7 @@ function VirtualTryOnContent() {
   const searchParams = useSearchParams();
   const productId = searchParams.get('productId');
   const rackIds = searchParams.get('rackIds');
-  const { data: session } = useSession();
+  const user = useAuthStore((state) => state.user);
 
   const { tryOnAsync, isSubmitting } = useTryOn();
   const { quota, refetch: refetchQuota } = useQuota();
@@ -429,9 +445,9 @@ function VirtualTryOnContent() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // User tier & expiration status
-  const rawTier = (profile as any)?.tier || session?.user?.tier || 'FREE';
+  const rawTier = profile?.tier || user?.tier || 'FREE';
   const userTier = rawTier.toUpperCase();
-  const rawExpiresAt = (profile as any)?.tierExpiresAt || (session?.user as any)?.tierExpiresAt;
+  const rawExpiresAt = profile?.tierExpiresAt || user?.tierExpiresAt;
   const isSubscriptionExpired = React.useMemo(() => {
     if (!rawExpiresAt || userTier === 'FREE') return false;
     try {
@@ -595,7 +611,7 @@ function VirtualTryOnContent() {
     }, 150);
 
     try {
-      let payload: any;
+      let payload: Parameters<typeof tryOnAsync>[0];
       if (garmentMode === 'combo') {
         const garments: GarmentSlotInput[] = [];
         if (upperProduct) garments.push({ productId: upperProduct.id, garmentCategory: 'UPPER' });
@@ -629,13 +645,12 @@ function VirtualTryOnContent() {
         refetchQuota();
       }, 300);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearInterval(progressTimer);
       setPageState('idle');
       console.error('Try-On error:', error);
 
-      const status = error?.response?.status;
-      const data = error?.response?.data;
+      const { status, data, message } = readTryOnError(error);
 
       // 1. SUBSCRIPTION_REQUIRED (402)
       if (status === 402 || data?.code === 'SUBSCRIPTION_REQUIRED') {
@@ -672,16 +687,59 @@ function VirtualTryOnContent() {
 
       // 5. MEASUREMENTS_INCOMPLETE (400)
       if (data?.code === 'MEASUREMENTS_INCOMPLETE') {
-        const missingLabels = data?.missing?.map((m: any) => m.label).join(', ') || 'số đo bắt buộc';
+        const missingLabels = data.missing?.map((m) => m.label).filter(Boolean).join(', ') || 'số đo bắt buộc';
         toast.error(`Cần bổ sung số đo trước khi thử đồ: ${missingLabels}`);
         return;
       }
 
       // 6. Generic validation message or server error
-      const msg = data?.message || error?.message || 'Đã xảy ra lỗi khi tạo kết quả thử đồ. Vui lòng thử lại.';
+      const msg = data?.message || message || 'Đã xảy ra lỗi khi tạo kết quả thử đồ. Vui lòng thử lại.';
       toast.error(Array.isArray(msg) ? msg[0] : msg);
     }
   };
+
+  function readTryOnError(error: unknown): { status?: number; data?: TryOnErrorBody; message?: string } {
+    if (!(error instanceof Error) || !('response' in error)) {
+      return { message: error instanceof Error ? error.message : undefined };
+    }
+
+    const response = error.response as { status?: number; data?: unknown };
+    return {
+      status: response.status,
+      data: normalizeTryOnErrorBody(response.data),
+      message: error.message,
+    };
+  }
+
+  function normalizeTryOnErrorBody(value: unknown): TryOnErrorBody | undefined {
+    if (!value || typeof value !== 'object') return undefined;
+    const record = value as Record<string, unknown>;
+    const details = record.details && typeof record.details === 'object'
+      ? record.details as Record<string, unknown>
+      : undefined;
+    const missing = Array.isArray(record.missing)
+      ? record.missing
+          .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+          .map((item) => ({ label: typeof item.label === 'string' ? item.label : undefined }))
+      : undefined;
+
+    return {
+      code: typeof record.code === 'string' ? record.code : undefined,
+      message: typeof record.message === 'string' || Array.isArray(record.message) ? record.message as string | string[] : undefined,
+      details: details
+        ? {
+            reason: typeof details.reason === 'string' ? details.reason : undefined,
+            resetAt: typeof details.resetAt === 'string' ? details.resetAt : undefined,
+            requested: typeof details.requested === 'number' ? details.requested : undefined,
+            remaining: typeof details.remaining === 'number' ? details.remaining : undefined,
+          }
+        : undefined,
+      resetAt: typeof record.resetAt === 'string' ? record.resetAt : undefined,
+      requested: typeof record.requested === 'number' ? record.requested : undefined,
+      remaining: typeof record.remaining === 'number' ? record.remaining : undefined,
+      missing,
+    };
+  }
 
   const handleDownload = async () => {
     if (!resultPhotoUrl) return;

@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Package, CreditCard, Tag, Info, MessageSquare } from 'lucide-react';
 import { initRealtimeSocket, disconnectRealtimeSocket } from '@/lib/realtimeSocket';
 import { getValidAccessToken } from '@/lib/api';
 import { useNotificationStore } from '@/store/notificationStore';
+import { useAuthStore } from '@/store/authStore';
 import { AppNotification, NotificationType } from '@/types/notification';
 
 function getToastIcon(type: NotificationType) {
@@ -27,7 +27,7 @@ function getToastIcon(type: NotificationType) {
 }
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const queryClient = useQueryClient();
   const addNotification = useNotificationStore((s) => s.addNotification);
 

@@ -1,9 +1,9 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 import { useOrders } from './useOrders';
+import { useAuthStore } from '@/store/authStore';
 
 export interface ReviewUser {
   id: string;
@@ -281,7 +281,7 @@ export function useAdminDeleteReview() {
 
 // ─── Danh sách review của user hiện tại ─────────────────────────────────────
 export function useMyReviews(options?: { page?: number; limit?: number }) {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const page = options?.page ?? 1;
   const limit = options?.limit ?? 10;
 
@@ -308,7 +308,7 @@ export function useMyReviews(options?: { page?: number; limit?: number }) {
 
 // ─── Helper kiểm tra user đã mua và nhận hàng sản phẩm này chưa ─────────────
 export function useCanReview(productId?: string) {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const { orders, isLoading: ordersLoading } = useOrders();
   const { reviews: myReviews, isLoading: reviewsLoading } = useMyReviews({ limit: 100 });
 

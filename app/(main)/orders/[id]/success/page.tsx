@@ -5,15 +5,14 @@ import { useParams } from 'next/navigation';
 import { Check, Star, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useOrder } from '@/hooks/useOrders';
-import { useSession } from 'next-auth/react';
+import { useAuthStore } from '@/store/authStore';
 
 export default function OrderSuccessPage() {
   const { id } = useParams() as { id: string };
   const { order, isLoading } = useOrder(id);
-  const { data: session } = useSession();
+  const user = useAuthStore((state) => state.user);
 
-  const userEmail = session?.user?.email || 'email@example.com';
-  const userTier = session?.user?.tier || 'free';
+  const userEmail = user?.email || 'email@example.com';
 
   const formatPrice = (price: number) => {
     return price.toLocaleString('vi-VN') + 'đ';

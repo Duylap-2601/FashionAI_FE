@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export type SubscriptionTier = 'FREE' | 'MEMBER' | 'VIP';
 
@@ -101,7 +101,7 @@ export function usePlans() {
  * GET /api/payments/subscriptions/me - Gói hiện tại của user (requires login)
  */
 export function useMySubscription() {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
 
   const query = useQuery<MySubscriptionResponse>({
     queryKey: ['subscription-me'],
@@ -129,7 +129,7 @@ export function useMySubscription() {
  * GET /api/payments/subscriptions/history - Lịch sử gói đăng ký (requires login)
  */
 export function useSubscriptionHistory(page = 1, limit = 10) {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
 
   const query = useQuery<SubscriptionHistoryResponse>({
     queryKey: ['subscription-history', page, limit],
@@ -139,7 +139,7 @@ export function useSubscriptionHistory(page = 1, limit = 10) {
       });
       const data = res.data;
       if (Array.isArray(data)) {
-        const meta = (res.data as any)?.__meta || { total: data.length, page, limit, totalPages: 1 };
+        const meta = (res.data as { __meta?: SubscriptionHistoryResponse['meta'] }).__meta || { total: data.length, page, limit, totalPages: 1 };
         return { items: data, meta };
       }
       return {

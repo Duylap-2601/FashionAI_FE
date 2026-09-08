@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 import {
   User, Ruler, History, ShoppingBag, Sparkles, LogOut,
   ChevronRight, Lock, Edit3, CheckCircle2, AlertCircle,
@@ -11,6 +10,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useMeasurements, useChangePassword } from '@/hooks/useMeasurements';
 import { useQuota } from '@/hooks/useQuota';
+import { useAuthStore } from '@/store/authStore';
 
 // ─── Change Password Modal ──────────────────────────────────────────────────
 function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -46,8 +46,8 @@ function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
         setSuccess(false);
         setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       }, 1800);
-    } catch (err: any) {
-      const msg = err?.response?.data?.message;
+    } catch (err: unknown) {
+      const msg = readErrorMessage(err);
       setError(Array.isArray(msg) ? msg[0] : msg || 'Mật khẩu hiện tại không đúng.');
     }
   };
@@ -137,6 +137,13 @@ function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   );
 }
 
+function readErrorMessage(error: unknown): string | string[] | undefined {
+  if (!(error instanceof Error) || !('response' in error)) return undefined;
+  const response = error.response as { data?: { message?: unknown } };
+  const message = response.data?.message;
+  return typeof message === 'string' || Array.isArray(message) ? message as string | string[] : undefined;
+}
+
 // ─── Tier Badge ──────────────────────────────────────────────────────────────
 function TierBadge({ tier }: { tier: string }) {
   const t = tier?.toUpperCase();
@@ -201,16 +208,15 @@ function NavCard({ href, icon: Icon, label, desc, badge }: { href: string; icon:
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function ProfilePage() {
-  const { data: session } = useSession();
   const { currentUser, logout } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const { measurements } = useMeasurements();
   const { quota: tryOnQuota } = useQuota('TRY_ON');
   const { quota: stylistQuota } = useQuota('STYLIST');
   const [showChangePw, setShowChangePw] = useState(false);
 
-  const user = session?.user;
   const tier = (user?.tier || 'FREE') as string;
-  const isOAuth = (user as any)?.provider === 'google';
+  const isOAuth = false;
 
   const avatarInitial = (user?.name || 'U').charAt(0).toUpperCase();
   const hasMeasurements = measurements && Object.values(measurements).some(v => v != null && v !== 0);

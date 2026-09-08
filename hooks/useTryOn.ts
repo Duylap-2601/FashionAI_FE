@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export interface TryOnGarment {
   category: 'UPPER' | 'LOWER' | 'FULL_BODY' | string;
@@ -91,7 +91,7 @@ export function useTryOn() {
 }
 
 export function useTryOnHistory(page = 1, limit = 50) {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const query = useQuery<TryOnResult[]>({
     queryKey: ['try-on-history', page, limit],
     queryFn: async () => {
