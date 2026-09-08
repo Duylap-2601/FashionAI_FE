@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { AnnouncementBar } from '@/components/landing/AnnouncementBar';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { HeroBanner } from '@/components/landing/HeroBanner';
@@ -13,16 +14,17 @@ import { NewsletterBar } from '@/components/landing/NewsletterBar';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { FloatingChat } from '@/components/chat/FloatingChat';
 import { CartSlideOver } from '@/components/cart/CartSlideOver';
+import { BottomTabBar } from '@/components/navigation/BottomTabBar';
 import { useCart } from '@/store/cartStore';
 import { useProducts } from '@/hooks/useProducts';
 import { usePublishedCollections, useCollectionProducts } from '@/hooks/useCollections';
 import { PRODUCTS } from '@/lib/data';
-import { Collection } from '@/types/collection';
 
 export default function LandingPage() {
+  const pathname = usePathname();
   const { isCartOpen, setIsCartOpen } = useCart();
-  const { products: apiProducts, isLoading: isProductsLoading } = useProducts();
-  const { collections, isLoading: isCollectionsLoading } = usePublishedCollections();
+  const { products: apiProducts } = useProducts();
+  const { collections } = usePublishedCollections();
 
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
 
@@ -35,7 +37,6 @@ export default function LandingPage() {
   // Real backend products for the selected collection
   const {
     products: backendCollectionProducts,
-    isLoading: isCollectionProductsLoading,
   } = useCollectionProducts(selectedCollection?.id);
 
   // Use real products from backend if available, fallback to local PRODUCTS
@@ -53,7 +54,7 @@ export default function LandingPage() {
   const bestSellers = [...displayProducts].sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0));
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-neutral-900 selection:bg-[#5D1C34] selection:text-white">
+    <div className="min-h-screen overflow-x-hidden flex flex-col bg-white text-neutral-900 selection:bg-[#5D1C34] selection:text-white">
       {/* 1. Announcement Bar (Top) */}
       <AnnouncementBar />
 
@@ -120,6 +121,8 @@ export default function LandingPage() {
 
       {/* Global Slide-Over Cart */}
       <CartSlideOver isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+      <BottomTabBar pathname={pathname} zIndexClass="z-[70]" />
     </div>
   );
 }

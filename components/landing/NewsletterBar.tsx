@@ -20,8 +20,8 @@ export function NewsletterBar() {
   };
 
   return (
-    <section className="bg-[#15434e] text-white py-12 border-t border-[#1b505c]">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-8">
+    <section className="bg-[#15434e] text-white py-12 border-t border-[#1b505c] hidden md:block">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-8 ">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left: Newsletter Info */}
           <div className="lg:col-span-7 flex flex-col sm:flex-row items-start sm:items-center gap-5">
