@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Layers, Plus, Search, Eye, EyeOff, Pencil, Trash2,
-  ExternalLink, Sparkles, Check, X, Image as ImageIcon, Upload, Loader2
+  ExternalLink, Sparkles, Check, X, Image as ImageIcon, Upload, Loader2, Package
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -14,15 +14,19 @@ import {
 } from '@/lib/collections';
 import { Collection, CreateCollectionDto } from '@/types/collection';
 import { useProducts } from '@/hooks/useProducts';
+import type { Product } from '@/lib/data';
 import {
   useAdminAllCollections,
   useCreateCollection,
   useUpdateCollection,
   useDeleteCollection,
+  useCollectionProducts,
+  useAddProductToCollection,
+  useRemoveProductFromCollection,
 } from '@/hooks/useCollections';
 
 export function AdminCollectionManager() {
-  const { collections: apiCollections, isLoading, refetch } = useAdminAllCollections();
+  const { collections: apiCollections, isLoading, isError, refetch } = useAdminAllCollections();
   const createMutation = useCreateCollection();
   const updateMutation = useUpdateCollection();
   const deleteMutation = useDeleteCollection();
@@ -34,18 +38,19 @@ export function AdminCollectionManager() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [managingProductsCollection, setManagingProductsCollection] = useState<Collection | null>(null);
 
-  // Get real products from API so admin can select real product images for collections
+  // Get real products from API so admin can select real product images and manage products
   const { products: availableProducts } = useProducts();
 
-  // Keep state in sync with React Query / localStorage
+  // Keep state in sync with React Query / fallback
   useEffect(() => {
-    if (apiCollections && apiCollections.length > 0) {
+    if (apiCollections !== undefined) {
       setCollections(apiCollections);
-    } else {
+    } else if (isError) {
       setCollections(getAllCollections());
     }
-  }, [apiCollections]);
+  }, [apiCollections, isError]);
 
   // Clean up object URLs when previews change
   useEffect(() => {
@@ -58,7 +63,7 @@ export function AdminCollectionManager() {
     try {
       await updateMutation.mutateAsync({
         id,
-        data: { isPublished: !currentStatus } as any,
+        data: { isPublished: !currentStatus },
       });
       toast.success(
         !currentStatus
@@ -67,16 +72,9 @@ export function AdminCollectionManager() {
       );
       refetch();
     } catch (err: any) {
-      console.warn('Backend update failed, falling back to local storage:', err);
-      const updated = togglePublishCollection(id);
-      if (updated) {
-        toast.info(
-          updated.isPublished
-            ? 'Đã xuất bản (lưu cục bộ)!'
-            : 'Đã ẩn về bản nháp (lưu cục bộ).'
-        );
-        setCollections(getAllCollections());
-      }
+      console.warn('Backend update failed:', err);
+      const msg = err?.response?.data?.message || 'Cập nhật trạng thái thất bại';
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
     }
   };
 
@@ -87,11 +85,10 @@ export function AdminCollectionManager() {
       await deleteMutation.mutateAsync(id);
       toast.success(`Đã xóa bộ sưu tập "${name}"`);
       refetch();
-    } catch (err) {
-      console.warn('Backend delete failed, falling back to local storage:', err);
-      deleteCollection(id);
-      toast.success(`Đã xóa bộ sưu tập "${name}" (cục bộ)`);
-      setCollections(getAllCollections());
+    } catch (err: any) {
+      console.warn('Backend delete failed:', err);
+      const msg = err?.response?.data?.message || 'Xóa bộ sưu tập thất bại';
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
     }
   };
 
@@ -145,6 +142,10 @@ export function AdminCollectionManager() {
 
     setIsSubmitting(true);
     try {
+      const coverImages = selectedFiles.length > 0
+        ? selectedFiles
+        : (editingCollection.coverImages?.filter(Boolean) || []);
+
       if (editingCollection.id) {
         // Update existing
         await updateMutation.mutateAsync({
@@ -155,10 +156,10 @@ export function AdminCollectionManager() {
             description: editingCollection.description || undefined,
             isPublished: editingCollection.isPublished ?? true,
             displayOrder: Number(editingCollection.displayOrder) || 0,
-            coverImages: selectedFiles.length > 0 ? selectedFiles : undefined,
+            coverImages,
           },
         });
-        toast.success('Cập nhật bộ sưu tập trên máy chủ thành công!');
+        toast.success('Cập nhật bộ sưu tập thành công!');
       } else {
         // Create new
         await createMutation.mutateAsync({
@@ -167,13 +168,10 @@ export function AdminCollectionManager() {
           description: editingCollection.description || undefined,
           isPublished: editingCollection.isPublished ?? true,
           displayOrder: Number(editingCollection.displayOrder) || 0,
-          coverImages: selectedFiles,
+          coverImages,
         });
-        toast.success('Tạo mới bộ sưu tập trên máy chủ thành công!');
+        toast.success('Tạo mới bộ sưu tập thành công!');
       }
-
-      // Also persist to local mock store for instant offline feedback
-      saveCollection(editingCollection);
 
       setIsModalOpen(false);
       setEditingCollection(null);
@@ -181,16 +179,9 @@ export function AdminCollectionManager() {
       setFilePreviews([]);
       refetch();
     } catch (err: any) {
-      console.warn('Backend create/update failed, saving locally:', err);
-      saveCollection(editingCollection);
-      toast.info(
-        editingCollection.id
-          ? 'Đã cập nhật (lưu cục bộ do máy chủ chưa sẵn sàng)'
-          : 'Đã tạo mới (lưu cục bộ do máy chủ chưa sẵn sàng)'
-      );
-      setIsModalOpen(false);
-      setEditingCollection(null);
-      setCollections(getAllCollections());
+      console.error('Backend create/update failed:', err);
+      const msg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi lưu bộ sưu tập';
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
     } finally {
       setIsSubmitting(false);
     }
@@ -212,7 +203,7 @@ export function AdminCollectionManager() {
             Quản lý Bộ Sưu Tập (Collections)
           </h2>
           <p className="text-body-sm text-neutral-500 mt-0.5">
-            Tạo, xuất bản hoặc ẩn các bộ sưu tập trên Landing Page khách hàng.
+            Tạo, xuất bản, chỉnh sửa và gắn sản phẩm vào các bộ sưu tập trên Landing Page.
           </p>
         </div>
 
@@ -255,7 +246,7 @@ export function AdminCollectionManager() {
                 <th className="py-3.5 px-4">Tên bộ sưu tập</th>
                 <th className="py-3.5 px-4">Thứ tự</th>
                 <th className="py-3.5 px-4">Mùa / Season</th>
-                <th className="py-3.5 px-4">Số thiết kế</th>
+                <th className="py-3.5 px-4">Sản phẩm thuộc BST</th>
                 <th className="py-3.5 px-4">Trạng thái Landing Page</th>
                 <th className="py-3.5 px-4 text-right">Thao tác</th>
               </tr>
@@ -318,9 +309,17 @@ export function AdminCollectionManager() {
                       </span>
                     </td>
 
-                    {/* Count */}
-                    <td className="py-3 px-4 font-semibold text-neutral-700">
-                      {col.itemCount || col._count?.products || col.productIds?.length || 0} sản phẩm
+                    {/* Products count & manage button */}
+                    <td className="py-3 px-4">
+                      <button
+                        type="button"
+                        onClick={() => setManagingProductsCollection(col)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-[#5D1C34]/10 hover:text-[#5D1C34] text-xs font-semibold text-neutral-700 transition-colors cursor-pointer"
+                        title="Bấm để xem và quản lý sản phẩm trong BST"
+                      >
+                        <Package className="w-3.5 h-3.5" />
+                        <span>{col.itemCount ?? col._count?.products ?? 0} sản phẩm</span>
+                      </button>
                     </td>
 
                     {/* Publish Status Toggle */}
@@ -352,9 +351,16 @@ export function AdminCollectionManager() {
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => setManagingProductsCollection(col)}
+                          className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+                          title="Gắn sản phẩm vào BST"
+                        >
+                          <Package className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleOpenEdit(col)}
                           className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
-                          title="Chỉnh sửa"
+                          title="Chỉnh sửa bộ sưu tập"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -438,7 +444,7 @@ export function AdminCollectionManager() {
                   <input
                     type="text"
                     value={editingCollection.slug || ''}
-                    onChange={(e) => setEditingCollection({ ...editingCollection, slug: e.target.value })}
+                    onChange={(e) => setEditingCollection({ ...editingCollection, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
                     placeholder="tự tạo nếu để trống"
                     className="w-full h-10 px-3 text-body-sm bg-neutral-50 border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] focus:bg-white"
                   />
@@ -623,6 +629,217 @@ export function AdminCollectionManager() {
           </div>
         </div>
       )}
+
+      {/* Modal Manage Products inside Collection */}
+      <CollectionProductsModal
+        collection={managingProductsCollection}
+        isOpen={!!managingProductsCollection}
+        onClose={() => setManagingProductsCollection(null)}
+        availableProducts={availableProducts}
+        onCollectionUpdated={() => refetch()}
+      />
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Modal Manage Products inside Collection
+// ──────────────────────────────────────────────────────────────────────────────
+
+interface CollectionProductsModalProps {
+  collection: Collection | null;
+  isOpen: boolean;
+  onClose: () => void;
+  availableProducts: Product[];
+  onCollectionUpdated?: () => void;
+}
+
+function CollectionProductsModal({
+  collection,
+  isOpen,
+  onClose,
+  availableProducts,
+  onCollectionUpdated,
+}: CollectionProductsModalProps) {
+  const { products: collectionProducts, isLoading, refetch } = useCollectionProducts(collection?.id);
+  const addProductMutation = useAddProductToCollection();
+  const removeProductMutation = useRemoveProductFromCollection();
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  if (!isOpen || !collection) return null;
+
+  // Filter products that are not yet in the collection
+  const existingIds = new Set(collectionProducts.map((p) => p.id));
+  const candidateProducts = availableProducts.filter((p) => !existingIds.has(p.id));
+
+  const handleAddProduct = async () => {
+    if (!selectedProductId) {
+      toast.error('Vui lòng chọn sản phẩm để thêm');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await addProductMutation.mutateAsync({
+        collectionId: collection.id,
+        productId: selectedProductId,
+      });
+      toast.success('Đã thêm sản phẩm vào bộ sưu tập!');
+      setSelectedProductId('');
+      refetch();
+      onCollectionUpdated?.();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Không thể thêm sản phẩm vào BST';
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRemoveProduct = async (productId: string, productName: string) => {
+    if (!confirm(`Xóa sản phẩm "${productName}" khỏi bộ sưu tập này?`)) return;
+
+    setIsProcessing(true);
+    try {
+      await removeProductMutation.mutateAsync({
+        collectionId: collection.id,
+        productId,
+      });
+      toast.success(`Đã xóa sản phẩm khỏi bộ sưu tập!`);
+      refetch();
+      onCollectionUpdated?.();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Không thể xóa sản phẩm khỏi BST';
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-neutral-200 animate-in fade-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-neutral-100">
+          <div>
+            <h3 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
+              <Package className="w-5 h-5 text-[#5D1C34]" />
+              Sản phẩm trong: <span className="text-[#5D1C34]">{collection.name}</span>
+            </h3>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Quản lý danh sách sản phẩm hiển thị khi khách hàng chọn BST này trên Landing Page.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-neutral-400 hover:text-neutral-700 rounded-lg hover:bg-neutral-100"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content Body */}
+        <div className="p-5 flex-1 overflow-y-auto flex flex-col gap-5">
+          {/* Add product section */}
+          <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-200 flex flex-col gap-2.5">
+            <label className="text-xs font-bold uppercase text-neutral-700">
+              Thêm sản phẩm mới vào BST:
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={selectedProductId}
+                onChange={(e) => setSelectedProductId(e.target.value)}
+                disabled={isProcessing || candidateProducts.length === 0}
+                className="flex-1 h-10 px-3 text-body-sm bg-white border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] disabled:opacity-60"
+              >
+                <option value="">
+                  {candidateProducts.length === 0
+                    ? 'Tất cả sản phẩm đã có trong BST'
+                    : '-- Chọn sản phẩm để thêm --'}
+                </option>
+                {candidateProducts.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.price})
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleAddProduct}
+                disabled={!selectedProductId || isProcessing}
+                className="h-10 px-4 rounded-xl bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                <span>Thêm</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Current products list */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold uppercase text-neutral-600">
+                Danh sách hiện có ({collectionProducts.length} sản phẩm):
+              </span>
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin text-[#5D1C34]" />}
+            </div>
+
+            {collectionProducts.length === 0 ? (
+              <div className="text-center py-8 text-neutral-400 text-body-sm bg-neutral-50/50 rounded-xl border border-dashed border-neutral-200">
+                Bộ sưu tập này chưa có sản phẩm nào. Hãy chọn sản phẩm ở trên để thêm vào.
+              </div>
+            ) : (
+              <div className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden bg-white">
+                {collectionProducts.map((p) => (
+                  <div key={p.id} className="p-3 flex items-center justify-between gap-3 hover:bg-neutral-50/70 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-14 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
+                        <img
+                          src={p.image || '/images/placeholder.png'}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-neutral-900 text-body-sm truncate">{p.name}</div>
+                        <div className="text-xs text-neutral-500 flex items-center gap-2 mt-0.5">
+                          <span className="font-medium text-[#5D1C34]">
+                            {p.price}
+                          </span>
+                          <span>•</span>
+                          <span className="capitalize">{p.category}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveProduct(p.id, p.name)}
+                      disabled={isProcessing}
+                      className="p-2 text-semantic-error hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                      title="Xóa khỏi bộ sưu tập"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-neutral-100 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-semibold text-xs transition-colors cursor-pointer"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

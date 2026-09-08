@@ -40,18 +40,22 @@ export interface Collection extends BackendCollection {
  * have to handle undefined constantly.
  */
 export function mapBackendCollection(raw: BackendCollection): Collection {
+  const defaultThumbnail = 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=85';
+  const coverImages = raw.coverImages && raw.coverImages.length > 0 ? raw.coverImages : [defaultThumbnail];
+
   return {
     ...raw,
-    thumbnail: raw.coverImages?.[0] ?? undefined,
+    coverImages,
+    thumbnail: coverImages[0] || defaultThumbnail,
     // Use first sentence of description as tagline if short enough
     tagline: raw.description
       ? raw.description.length <= 100
         ? raw.description
         : raw.description.slice(0, 97) + '...'
       : undefined,
-    itemCount: raw._count?.products,
+    itemCount: raw._count?.products ?? 0,
     // lookbookImages not stored in DB — fall back to coverImages for lookbook
-    lookbookImages: raw.coverImages?.length > 0 ? raw.coverImages : undefined,
+    lookbookImages: coverImages,
   };
 }
 
@@ -65,7 +69,7 @@ export interface CreateCollectionDto {
   description?: string;
   isPublished?: boolean;
   displayOrder?: number;
-  /** Files are handled separately as FormData */
+  coverImages?: (string | File)[];
 }
 
 export type UpdateCollectionDto = Partial<CreateCollectionDto>;

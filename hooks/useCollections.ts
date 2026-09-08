@@ -29,17 +29,13 @@ export function usePublishedCollections() {
           ? res.data
           : res.data?.items || [];
 
-        if (rawList.length > 0) {
-          return rawList.map(mapBackendCollection);
-        }
-        // If backend returned empty list, fallback to mock collections
-        return INITIAL_COLLECTIONS.filter((c) => c.isPublished);
+        return rawList.map(mapBackendCollection);
       } catch (err) {
         console.warn('Backend collections unreachable, falling back to mock collections:', err);
         return INITIAL_COLLECTIONS.filter((c) => c.isPublished);
       }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
   });
 
   return {
@@ -109,7 +105,7 @@ export function useCollectionProducts(collectionId?: string) {
       }
     },
     enabled: !!collectionId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
   });
 
   return {
@@ -151,37 +147,51 @@ export function useAdminAllCollections() {
 }
 
 /**
- * Mutation to create a collection (supports multipart/form-data for image uploads).
+ * Mutation to create a collection (supports multipart/form-data for image uploads and JSON for URL lists).
  */
 export function useCreateCollection() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: FormData | (CreateCollectionDto & { coverImages?: File[] })) => {
-      let body: FormData;
-
+    mutationFn: async (payload: FormData | CreateCollectionDto) => {
       if (payload instanceof FormData) {
-        body = payload;
-      } else {
-        body = new FormData();
+        const res = await api.post('/collections', payload, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        return res.data;
+      }
+
+      const files = payload.coverImages?.filter((item): item is File => typeof item !== 'string') || [];
+      const urls = payload.coverImages?.filter((item): item is string => typeof item === 'string') || [];
+
+      if (files.length > 0) {
+        const body = new FormData();
         body.append('name', payload.name);
         if (payload.slug) body.append('slug', payload.slug);
         if (payload.description) body.append('description', payload.description);
         if (payload.isPublished !== undefined) body.append('isPublished', String(payload.isPublished));
         if (payload.displayOrder !== undefined) body.append('displayOrder', String(payload.displayOrder));
-        if (payload.coverImages && payload.coverImages.length > 0) {
-          payload.coverImages.forEach((file) => {
-            body.append('coverImages', file);
-          });
-        }
-      }
+        files.forEach((file) => body.append('coverImages', file));
 
-      const res = await api.post('/collections', body, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return res.data;
+        const res = await api.post('/collections', body, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        return res.data;
+      } else {
+        const res = await api.post('/collections', {
+          name: payload.name,
+          slug: payload.slug || undefined,
+          description: payload.description || undefined,
+          isPublished: payload.isPublished,
+          displayOrder: payload.displayOrder,
+          coverImages: urls.length > 0 ? urls : undefined,
+        });
+        return res.data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-collections'] });
@@ -202,36 +212,52 @@ export function useUpdateCollection() {
       data,
     }: {
       id: string;
-      data: FormData | (UpdateCollectionDto & { coverImages?: File[] });
+      data: FormData | UpdateCollectionDto;
     }) => {
-      let body: FormData;
-
       if (data instanceof FormData) {
-        body = data;
-      } else {
-        body = new FormData();
+        const res = await api.patch(`/collections/${id}`, data, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        return res.data;
+      }
+
+      const files = data.coverImages?.filter((item): item is File => typeof item !== 'string') || [];
+      const urls = data.coverImages?.filter((item): item is string => typeof item === 'string') || [];
+
+      if (files.length > 0) {
+        const body = new FormData();
         if (data.name !== undefined) body.append('name', data.name);
         if (data.slug !== undefined) body.append('slug', data.slug);
         if (data.description !== undefined) body.append('description', data.description);
         if (data.isPublished !== undefined) body.append('isPublished', String(data.isPublished));
         if (data.displayOrder !== undefined) body.append('displayOrder', String(data.displayOrder));
-        if (data.coverImages && data.coverImages.length > 0) {
-          data.coverImages.forEach((file) => {
-            body.append('coverImages', file);
-          });
-        }
-      }
+        files.forEach((file) => body.append('coverImages', file));
 
-      const res = await api.patch(`/collections/${id}`, body, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return res.data;
+        const res = await api.patch(`/collections/${id}`, body, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        return res.data;
+      } else {
+        const payload: Record<string, any> = {};
+        if (data.name !== undefined) payload.name = data.name;
+        if (data.slug !== undefined) payload.slug = data.slug;
+        if (data.description !== undefined) payload.description = data.description;
+        if (data.isPublished !== undefined) payload.isPublished = data.isPublished;
+        if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
+        if (urls.length > 0) payload.coverImages = urls;
+
+        const res = await api.patch(`/collections/${id}`, payload);
+        return res.data;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-collections'] });
       queryClient.invalidateQueries({ queryKey: ['collections', 'published'] });
+      queryClient.invalidateQueries({ queryKey: ['collection', variables.id] });
     },
   });
 }
