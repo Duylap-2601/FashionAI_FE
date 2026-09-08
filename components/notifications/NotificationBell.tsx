@@ -58,9 +58,20 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-50">
-          <NotificationPanel onClose={() => setIsOpen(false)} />
-        </div>
+        <>
+          <div className="fixed inset-0 z-[100] flex md:hidden">
+            <div
+              className="absolute inset-0 bg-black/40 transition-opacity animate-in fade-in"
+              onClick={() => setIsOpen(false)}
+            />
+            <div className="absolute right-0 top-0 bottom-0 w-full bg-white shadow-2xl animate-in slide-in-from-right duration-300">
+              <NotificationPanel onClose={() => setIsOpen(false)} />
+            </div>
+          </div>
+          <div className="absolute right-0 top-full mt-2 z-50 hidden md:block">
+            <NotificationPanel onClose={() => setIsOpen(false)} />
+          </div>
+        </>
       )}
     </div>
   );

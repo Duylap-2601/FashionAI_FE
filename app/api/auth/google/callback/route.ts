@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_ORIGIN = (process.env.BACKEND_ORIGIN ?? 'http://localhost:3002').replace(/\/+$/, '');
+const BACKEND_ORIGIN = (process.env.BACKEND_ORIGIN ?? 'http://localhost:3002')
+  .replace(/\/+$/, '')
+  .replace(/\/api$/, '');
 
 export async function GET(req: NextRequest) {
   const url = new URL(`${BACKEND_ORIGIN}/api/auth/google/callback`);

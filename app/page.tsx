@@ -122,7 +122,7 @@ export default function LandingPage() {
       {/* Global Slide-Over Cart */}
       <CartSlideOver isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
-      <BottomTabBar pathname={pathname} zIndexClass="z-[70]" />
+      <BottomTabBar pathname={pathname} />
     </div>
   );
 }

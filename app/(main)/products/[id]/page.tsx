@@ -339,39 +339,100 @@ export default function ProductDetail() {
             </div>
           </div>
 
+          {/* Quantity & Primary CTA */}
+          <div className="mb-6 rounded-2xl border border-[#E5DFD5] bg-[#FDFBF7] p-3.5 shadow-sm sm:p-4">
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <div>
+                <div className="text-body-sm font-bold text-brand-navy">Chọn số lượng</div>
+                <div className="text-[11px] text-neutral-500">Có thể đặt nhiều sản phẩm cùng số đo</div>
+              </div>
+              <div className="flex items-center border border-neutral-200 rounded-xl h-[44px] overflow-hidden bg-white shadow-xs">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-11 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
+                  aria-label="Giảm số lượng"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <div className="w-12 h-full flex items-center justify-center text-body-sm font-medium text-brand-navy border-x border-neutral-200">
+                  {quantity}
+                </div>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-11 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
+                  aria-label="Tăng số lượng"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-3 flex items-center justify-between rounded-xl bg-white px-3 py-2.5 text-body-sm border border-neutral-100">
+              <span className="text-neutral-600">Tạm tính</span>
+              <span className="font-bold text-brand-navy">
+                {((isComboSuit
+                  ? selectedType === 'combo'
+                    ? 1290000
+                    : selectedType === 'blazer'
+                    ? 750000
+                    : 550000
+                  : product.numericPrice) * quantity).toLocaleString('vi-VN')}đ
+              </span>
+            </div>
+
+            <button
+              onClick={handleAddToCart}
+              className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl hover:bg-brand-navy/90 active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <ShoppingBag className="w-5 h-5" /> Thêm vào giỏ hàng
+            </button>
+
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[10px] font-semibold text-neutral-600">
+              <div className="rounded-lg bg-white px-2 py-2 border border-neutral-100">May đo riêng</div>
+              <div className="rounded-lg bg-white px-2 py-2 border border-neutral-100">Tư vấn size</div>
+              <div className="rounded-lg bg-white px-2 py-2 border border-neutral-100">3-5 ngày</div>
+            </div>
+          </div>
+
           {/* Made-to-Measure (May đo theo số đo cá nhân) */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-body-sm font-bold text-brand-navy flex items-center gap-1.5">
-                <Ruler className="w-4 h-4 text-[#5D1C34]" /> Hình thức: <span className="text-[#5D1C34]">May đo theo số đo cơ thể (Made-to-measure)</span>
+            <div className="flex flex-col gap-2 mb-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+              <div className="flex items-start gap-2 text-body-sm font-bold text-brand-navy leading-snug min-w-0">
+                <Ruler className="mt-0.5 w-4 h-4 shrink-0 text-[#5D1C34]" />
+                <div className="min-w-0">
+                  <span>Hình thức: </span>
+                  <span className="text-[#5D1C34]">May đo theo số đo</span>
+                  <span className="hidden sm:inline text-[#5D1C34]"> cơ thể (Made-to-measure)</span>
+                </div>
               </div>
               <Link
                 href="/profile/measurements"
-                className="text-[12px] font-bold text-[#5D1C34] hover:underline flex items-center gap-1"
+                className="inline-flex w-fit items-center gap-1 text-[12px] font-bold text-[#5D1C34] hover:underline min-[420px]:shrink-0"
               >
                 Cập nhật số đo <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
 
             {isMeasurementComplete ? (
-              <div className="p-4 bg-[#FDFBF7] border border-[#E5DFD5] rounded-xl animate-in fade-in duration-200">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-[13px] font-bold text-green-700 flex items-center gap-1.5">
-                    <span>✓</span> Số đo của bạn đã sẵn sàng cho may đo
+              <div className="p-3.5 sm:p-4 bg-[#FDFBF7] border border-[#E5DFD5] rounded-xl animate-in fade-in duration-200">
+                <div className="flex flex-col gap-1.5 mb-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                  <div className="text-[13px] font-bold text-green-700 flex items-start gap-1.5 leading-snug">
+                    <span className="shrink-0">✓</span>
+                    <span>Số đo đã sẵn sàng cho may đo</span>
                   </div>
-                  <span className="text-[11px] text-neutral-400 font-medium">Tự động áp dụng khi đặt hàng</span>
+                  <span className="text-[11px] text-neutral-500 font-medium">Tự động áp dụng khi đặt hàng</span>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] font-medium text-neutral-600 bg-white p-2.5 rounded-lg border border-[#EFE9E1]">
-                  <div>Ngực: <strong className="text-brand-navy">{measurements?.chest || '—'}cm</strong></div>
-                  <div>Eo: <strong className="text-brand-navy">{measurements?.waist || '—'}cm</strong></div>
-                  <div>Hông: <strong className="text-brand-navy">{measurements?.hip || '—'}cm</strong></div>
-                  <div>Vai: <strong className="text-brand-navy">{measurements?.shoulder || '—'}cm</strong></div>
-                  <div>Cao: <strong className="text-brand-navy">{measurements?.height || '—'}cm</strong></div>
-                  <div>Nặng: <strong className="text-brand-navy">{measurements?.weight || '—'}kg</strong></div>
+                <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] font-medium text-neutral-600 bg-white p-2.5 rounded-lg border border-[#EFE9E1]">
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Ngực: <strong className="text-brand-navy">{measurements?.chest || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Eo: <strong className="text-brand-navy">{measurements?.waist || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Hông: <strong className="text-brand-navy">{measurements?.hip || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Vai: <strong className="text-brand-navy">{measurements?.shoulder || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Cao: <strong className="text-brand-navy">{measurements?.height || '—'}cm</strong></div>
+                  <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Nặng: <strong className="text-brand-navy">{measurements?.weight || '—'}kg</strong></div>
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in duration-200">
+              <div className="p-3.5 sm:p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in duration-200">
                 <div className="flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
@@ -399,35 +460,8 @@ export default function ProductDetail() {
             <span className="text-body-sm text-semantic-success font-medium">✓ Nhận may theo số đo riêng (3-5 ngày làm việc)</span>
           </div>
 
-          {/* Quantity */}
-          <div className="flex items-center mb-8">
-            <div className="flex items-center border border-neutral-200 rounded-xl h-[44px] overflow-hidden bg-white">
-              <button 
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-11 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <div className="w-12 h-full flex items-center justify-center text-body-sm font-medium text-brand-navy border-x border-neutral-200">
-                {quantity}
-              </div>
-              <button 
-                onClick={() => setQuantity(quantity + 1)}
-                className="w-11 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* CTA Buttons */}
+          {/* Secondary CTA Buttons */}
           <div className="flex flex-col gap-3 mb-6">
-            <button 
-              onClick={handleAddToCart}
-              className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl hover:bg-brand-navy/90 transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <ShoppingBag className="w-5 h-5" /> Thêm vào giỏ hàng
-            </button>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Link href={`/try-on?productId=${product.id}`} className="h-[48px] bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2">
                 <Sparkles className="w-4 h-4" /> Thử đồ ảo ngay

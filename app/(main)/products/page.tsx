@@ -69,6 +69,206 @@ const AVAILABLE_COLORS = [
   { name: 'Be', color: '#E8E2D2' },
 ];
 
+type SortBy = 'Mới nhất' | 'Giá thấp đến cao' | 'Giá cao đến thấp';
+type CategoryCount = { label: string; count: number };
+type SubCategoryCount = { name: string; count: number };
+type AvailableColor = typeof AVAILABLE_COLORS[number];
+
+interface FilterSectionProps {
+  currentPriceRange: number;
+  maxPriceLimit: number;
+  selectedColors: string[];
+  subCategoryCounts: SubCategoryCount[];
+  selectedSubCategories: string[];
+  onPriceChange: (value: number) => void;
+  onToggleColor: (color: string) => void;
+  onToggleSubCategory: (category: string) => void;
+}
+
+function CategoryTabs({
+  categories,
+  activeTab,
+  onSelect,
+  mobile = false,
+}: {
+  categories: CategoryCount[];
+  activeTab: string;
+  onSelect: (tab: string) => void;
+  mobile?: boolean;
+}) {
+  if (mobile) {
+    return (
+      <div className="flex w-full items-center gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-1 md:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {categories.map(tab => {
+          const isActive = activeTab === tab.label;
+          return (
+            <button
+              key={tab.label}
+              onClick={() => onSelect(tab.label)}
+              className={`relative flex shrink-0 snap-start flex-col items-center gap-1 px-1 py-1.5 text-[12px] font-semibold whitespace-nowrap transition-colors ${
+                isActive ? 'text-[#5D1C34]' : 'text-neutral-500'
+              }`}
+            >
+              <span>{tab.label} ({tab.count})</span>
+              <span className={`h-1 w-1 rounded-full transition-opacity ${isActive ? 'bg-[#5D1C34] opacity-100' : 'opacity-0'}`} />
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="hidden md:flex items-center gap-2 overflow-x-auto no-scrollbar">
+      {categories.map(tab => (
+        <button
+          key={tab.label}
+          onClick={() => onSelect(tab.label)}
+          className={`px-4 py-2 text-label-sm font-medium shrink-0 rounded-full whitespace-nowrap transition-colors ${
+            activeTab === tab.label
+              ? 'bg-brand-navy text-white shadow-sm'
+              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+          }`}
+        >
+          {tab.label} ({tab.count})
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PriceFilter({ currentPriceRange, maxPriceLimit, onPriceChange }: Pick<FilterSectionProps, 'currentPriceRange' | 'maxPriceLimit' | 'onPriceChange'>) {
+  return (
+    <div>
+      <h3 className="text-label-sm font-semibold mb-3">Khoảng giá tối đa</h3>
+      <input
+        type="range"
+        min={200000}
+        max={maxPriceLimit}
+        step={100000}
+        value={currentPriceRange}
+        onChange={(e) => onPriceChange(Number(e.target.value))}
+        className="w-full accent-brand-navy cursor-pointer"
+      />
+      <div className="text-[13px] font-medium text-neutral-600 text-center mt-2">
+        Dưới {currentPriceRange.toLocaleString('vi-VN')}đ
+      </div>
+    </div>
+  );
+}
+
+function ColorFilter({ colors, selectedColors, onToggleColor, mobile = false }: {
+  colors: AvailableColor[];
+  selectedColors: string[];
+  onToggleColor: (color: string) => void;
+  mobile?: boolean;
+}) {
+  return (
+    <div>
+      <h3 className="text-label-sm font-semibold mb-4">Màu sắc</h3>
+      <div className={mobile ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-5 gap-3'}>
+        {colors.map(c => {
+          const isSelected = selectedColors.includes(c.name);
+          return mobile ? (
+            <button
+              key={c.name}
+              type="button"
+              onClick={() => onToggleColor(c.name)}
+              className="flex flex-col items-center gap-1.5 text-[11px] text-neutral-600"
+            >
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                  c.border ? 'border border-neutral-300' : ''
+                } ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`}
+                style={{ backgroundColor: c.color }}
+              >
+                {isSelected && <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />}
+              </span>
+              <span>{c.name}</span>
+            </button>
+          ) : (
+            <div key={c.name} onClick={() => onToggleColor(c.name)} className="relative group cursor-pointer flex flex-col items-center">
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                  c.border ? 'border border-neutral-300' : ''
+                } ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`}
+                style={{ backgroundColor: c.color }}
+              >
+                {isSelected && <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />}
+              </div>
+              <div className="absolute -top-8 bg-brand-navy text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                {c.name}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SubCategoryFilter({ subCategoryCounts, selectedSubCategories, onToggleSubCategory, mobile = false }: {
+  subCategoryCounts: SubCategoryCount[];
+  selectedSubCategories: string[];
+  onToggleSubCategory: (category: string) => void;
+  mobile?: boolean;
+}) {
+  return (
+    <div>
+      <h3 className="text-label-sm font-semibold mb-4">{mobile ? 'Danh mục chi tiết' : 'Danh mục'}</h3>
+      <div className={mobile ? 'grid grid-cols-1 gap-2.5' : 'flex flex-col gap-3'}>
+        {subCategoryCounts.map(item => {
+          const isChecked = selectedSubCategories.includes(item.name);
+          const checkBox = (
+            <span className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${
+              isChecked ? 'bg-brand-navy border-brand-navy' : 'border-neutral-300 bg-white'
+            }`}>
+              {isChecked && <Check className="w-3 h-3 text-white" />}
+            </span>
+          );
+
+          return mobile ? (
+            <button
+              key={item.name}
+              type="button"
+              onClick={() => onToggleSubCategory(item.name)}
+              className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${
+                isChecked ? 'border-brand-navy bg-brand-navy/5' : 'border-neutral-200 bg-white'
+              }`}
+            >
+              <span className="flex items-center gap-3 text-body-sm font-medium text-neutral-700">{checkBox}{item.name}</span>
+              <span className="text-[12px] text-neutral-400">({item.count})</span>
+            </button>
+          ) : (
+            <label key={item.name} onClick={() => onToggleSubCategory(item.name)} className="flex items-center justify-between cursor-pointer group">
+              <span className="flex items-center gap-3">
+                {checkBox}
+                <span className="text-body-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">{item.name}</span>
+              </span>
+              <span className="text-[12px] text-neutral-400">({item.count})</span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FilterSections(props: FilterSectionProps & { mobile?: boolean }) {
+  return (
+    <>
+      <PriceFilter {...props} />
+      <ColorFilter colors={AVAILABLE_COLORS} selectedColors={props.selectedColors} onToggleColor={props.onToggleColor} mobile={props.mobile} />
+      <SubCategoryFilter
+        subCategoryCounts={props.subCategoryCounts}
+        selectedSubCategories={props.selectedSubCategories}
+        onToggleSubCategory={props.onToggleSubCategory}
+        mobile={props.mobile}
+      />
+    </>
+  );
+}
+
 export default function ProductListing() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -105,7 +305,7 @@ export default function ProductListing() {
 
   const [selectedMaxPrice, setSelectedMaxPrice] = useState<number | null>(null);
   const currentPriceRange = selectedMaxPrice ?? maxPriceLimit;
-  const [sortBy, setSortBy] = useState<'Mới nhất' | 'Giá thấp đến cao' | 'Giá cao đến thấp'>('Mới nhất');
+  const [sortBy, setSortBy] = useState<SortBy>('Mới nhất');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
@@ -270,29 +470,29 @@ export default function ProductListing() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* STICKY FILTER BAR */}
-      <div className="sticky top-[56px] md:top-[64px] z-40 bg-white border-b border-neutral-200 px-4 md:px-8 py-3 flex items-center justify-between gap-4">
+      <div className="sticky top-[56px] md:top-[64px] z-40 bg-white border-b border-neutral-200 px-4 md:px-8 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
         {/* Left: Category tabs */}
-        <div className="hidden md:flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {categoryCounts.map(tab => (
-            <button
-              key={tab.label}
-              onClick={() => {
-                setActiveTab(tab.label);
-                setCurrentPage(1);
-              }}
-              className={`px-4 py-2 rounded-full text-label-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === tab.label
-                  ? 'bg-brand-navy text-white'
-                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-              }`}
-            >
-              {tab.label} ({tab.count})
-            </button>
-          ))}
-        </div>
+        <CategoryTabs
+          categories={categoryCounts}
+          activeTab={activeTab}
+          onSelect={(tab) => {
+            setActiveTab(tab);
+            setCurrentPage(1);
+          }}
+          mobile
+        />
+
+        <CategoryTabs
+          categories={categoryCounts}
+          activeTab={activeTab}
+          onSelect={(tab) => {
+            setActiveTab(tab);
+            setCurrentPage(1);
+          }}
+        />
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="flex w-full items-center justify-between gap-3 md:ml-auto md:w-auto md:justify-end">
           <div className="relative hidden md:block w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
@@ -317,7 +517,7 @@ export default function ProductListing() {
 
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className={`h-10 px-4 rounded-full border text-label-sm font-medium flex items-center gap-2 transition-colors ${
+            className={`hidden h-10 px-4 rounded-full border text-label-sm font-medium items-center gap-2 transition-colors md:flex ${
               isSidebarOpen ? 'border-brand-navy bg-brand-navy text-white' : 'border-neutral-200 text-neutral-700 hover:bg-neutral-50'
             }`}
           >
@@ -341,6 +541,75 @@ export default function ProductListing() {
         </div>
       </div>
 
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-[100] flex items-end md:hidden">
+          <div
+            className="absolute inset-0 bg-black/40 animate-in fade-in"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+          <div className="relative z-10 w-full max-h-[82vh] rounded-t-3xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+              <div>
+                <h2 className="font-bold text-brand-navy">Bộ lọc</h2>
+                <p className="text-[12px] text-neutral-500">Tinh chỉnh sản phẩm hiển thị</p>
+              </div>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-2 -mr-2 rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-brand-navy transition-colors"
+                aria-label="Đóng bộ lọc"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-7">
+              <div>
+                <h3 className="text-label-sm font-semibold mb-3">Sắp xếp</h3>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="w-full h-11 rounded-xl border border-neutral-200 bg-white px-3 text-body-sm font-medium text-neutral-700 focus:outline-none focus:border-brand-navy"
+                >
+                  <option value="Mới nhất">Mới nhất</option>
+                  <option value="Giá thấp đến cao">Giá thấp đến cao</option>
+                  <option value="Giá cao đến thấp">Giá cao đến thấp</option>
+                </select>
+              </div>
+
+              <FilterSections
+                currentPriceRange={currentPriceRange}
+                maxPriceLimit={maxPriceLimit}
+                selectedColors={selectedColors}
+                subCategoryCounts={subCategoryCounts}
+                selectedSubCategories={selectedSubCategories}
+                onPriceChange={(value) => {
+                  setSelectedMaxPrice(value);
+                  setCurrentPage(1);
+                }}
+                onToggleColor={toggleColor}
+                onToggleSubCategory={toggleSubCategory}
+                mobile
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 border-t border-neutral-200 bg-white p-4">
+              <button
+                onClick={handleClearAllFilters}
+                className="h-12 rounded-xl border border-neutral-200 text-body-sm font-semibold text-neutral-700"
+              >
+                Xoá lọc
+              </button>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="h-12 rounded-xl bg-brand-navy text-body-sm font-semibold text-white shadow-sm"
+              >
+                Áp dụng ({filteredProducts.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MAIN CONTENT */}
       <div className="flex-1 flex max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8 items-start relative">
 
@@ -358,83 +627,19 @@ export default function ProductListing() {
             </div>
 
             <div className="flex flex-col gap-8">
-              {/* Khoảng giá */}
-              <div>
-                <h3 className="text-label-sm font-semibold mb-3">Khoảng giá tối đa</h3>
-                <input
-                  type="range"
-                  min={200000}
-                  max={maxPriceLimit}
-                  step={100000}
-                  value={currentPriceRange}
-                  onChange={(e) => {
-                    setSelectedMaxPrice(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="w-full accent-brand-navy cursor-pointer"
-                />
-                <div className="text-[13px] font-medium text-neutral-600 text-center mt-2">
-                  Dưới {currentPriceRange.toLocaleString('vi-VN')}đ
-                </div>
-              </div>
-
-              {/* Màu sắc */}
-              <div>
-                <h3 className="text-label-sm font-semibold mb-4">Màu sắc</h3>
-                <div className="grid grid-cols-5 gap-3">
-                  {AVAILABLE_COLORS.map(c => {
-                    const isSelected = selectedColors.includes(c.name);
-                    return (
-                      <div
-                        key={c.name}
-                        onClick={() => toggleColor(c.name)}
-                        className="relative group cursor-pointer flex flex-col items-center"
-                      >
-                        <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
-                            c.border ? 'border border-neutral-300' : ''
-                          } ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`}
-                          style={{ backgroundColor: c.color }}
-                        >
-                          {isSelected && (
-                            <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />
-                          )}
-                        </div>
-                        <div className="absolute -top-8 bg-brand-navy text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                          {c.name}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Danh mục con */}
-              <div>
-                <h3 className="text-label-sm font-semibold mb-4">Danh mục</h3>
-                <div className="flex flex-col gap-3">
-                  {subCategoryCounts.map(item => {
-                    const isChecked = selectedSubCategories.includes(item.name);
-                    return (
-                      <label
-                        key={item.name}
-                        onClick={() => toggleSubCategory(item.name)}
-                        className="flex items-center justify-between cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${
-                            isChecked ? 'bg-brand-navy border-brand-navy' : 'border-neutral-300 bg-white'
-                          }`}>
-                            {isChecked && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <span className="text-body-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">{item.name}</span>
-                        </div>
-                        <span className="text-[12px] text-neutral-400">({item.count})</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
+              <FilterSections
+                currentPriceRange={currentPriceRange}
+                maxPriceLimit={maxPriceLimit}
+                selectedColors={selectedColors}
+                subCategoryCounts={subCategoryCounts}
+                selectedSubCategories={selectedSubCategories}
+                onPriceChange={(value) => {
+                  setSelectedMaxPrice(value);
+                  setCurrentPage(1);
+                }}
+                onToggleColor={toggleColor}
+                onToggleSubCategory={toggleSubCategory}
+              />
 
               <button
                 onClick={() => setIsSidebarOpen(false)}
@@ -452,6 +657,13 @@ export default function ProductListing() {
             <span className="text-body-sm font-medium text-neutral-900">
               {filteredProducts.length} sản phẩm
             </span>
+
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#5D1C34] underline underline-offset-4 md:hidden"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" /> Lọc
+            </button>
 
             {activeChips.length > 0 && (
               <>
@@ -490,7 +702,7 @@ export default function ProductListing() {
           )}
 
           {isLoading && apiProducts.length === 0 ? (
-            <div className={`grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-3 md:gap-3 mb-12`}>
+            <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-2.5 md:gap-3 mb-12`}>
               {Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} className="bg-white border border-neutral-100 rounded-lg overflow-hidden animate-pulse">
                   <div className="aspect-[3/4] bg-neutral-200" />
@@ -523,7 +735,7 @@ export default function ProductListing() {
               {/* Product Grid */}
               <StaggerContainer
                 animateOnMount
-                className={`grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-3 md:gap-3 mb-12 transition-all duration-300`}
+                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-2.5 md:gap-3 mb-12 transition-all duration-300`}
               >
                 {paginatedProducts.map(product => {
                   const hasDiscount = product.originalPrice && product.originalPrice > product.numericPrice;
@@ -549,7 +761,7 @@ export default function ProductListing() {
                           />
 
                           {/* Product Badges */}
-                          <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 pointer-events-none">
+                          <div className="absolute top-1 left-1 flex flex-col gap-1 z-10 pointer-events-none sm:top-1.5 sm:left-1.5">
                             {discountPercent && discountPercent > 0 && (
                               <span className="px-1.5 py-0.5 bg-semantic-error text-white text-[9px] font-bold rounded shadow-sm">
                                 -{discountPercent}%
@@ -623,7 +835,7 @@ export default function ProductListing() {
                                 });
                               }
                             }}
-                            className={`absolute bottom-1.5 right-9.5 w-7 h-7 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm transition-all ${
+                            className={`absolute bottom-1 right-8.5 w-7 h-7 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm transition-all sm:bottom-1.5 sm:right-9.5 ${
                               pinned
                                 ? 'bg-[#5D1C34] text-white opacity-100'
                                 : 'bg-white/90 text-brand-navy opacity-100 translate-y-0 sm:opacity-0 sm:translate-y-1 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 hover:bg-[#5D1C34] hover:text-white'
@@ -679,15 +891,15 @@ export default function ProductListing() {
                                 duration: 4000
                               });
                             }}
-                            className="absolute bottom-1.5 right-1.5 w-7 h-7 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-brand-navy shadow-sm opacity-100 translate-y-0 sm:opacity-0 sm:translate-y-1 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 transition-all hover:bg-brand-navy hover:text-white"
+                            className="absolute bottom-1 right-1 w-7 h-7 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-brand-navy shadow-sm opacity-100 translate-y-0 sm:bottom-1.5 sm:right-1.5 sm:opacity-0 sm:translate-y-1 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 transition-all hover:bg-brand-navy hover:text-white"
                             title="Thêm nhanh vào giỏ"
                           >
                             <ShoppingBag className="w-3 h-3" />
                           </button>
                         </div>
-                        <div className="px-2.5 py-2.5 flex flex-col gap-0.5">
+                        <div className="px-2 py-2 flex flex-col gap-0.5 sm:px-2.5 sm:py-2.5">
                           <div className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">{product.brand}</div>
-                          <h4 className="text-[11px] font-medium text-brand-navy line-clamp-2 min-h-[28px] font-sans leading-snug">{product.name}</h4>
+                          <h4 className="text-[10.5px] sm:text-[11px] font-medium text-brand-navy line-clamp-2 min-h-[27px] sm:min-h-[28px] font-sans leading-snug">{product.name}</h4>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[11px] font-bold text-brand-navy">{product.price}</span>
                             {hasDiscount && product.originalPriceFormatted && (

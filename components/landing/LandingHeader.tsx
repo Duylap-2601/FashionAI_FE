@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { HangerIcon } from '@/components/ui/HangerIcon';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/store/cartStore';
 import { Collection } from '@/types/collection';
@@ -54,12 +55,12 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200 transition-all duration-300">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 h-[68px] flex items-center justify-between gap-4">
+      <div className="relative max-w-[1400px] mx-auto px-4 md:px-8 h-[68px] flex items-center justify-between gap-4">
         {/* Left: Mobile hamburger & Main Navigation */}
 
 
         {/* Center: Brand Logo & Slogan */}
-        <div className="flex items-center justify-center">
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center md:static md:translate-x-0">
           <Link href="/" className="flex flex-col items-center group py-1">
             <Logo size="md" />
             <span className="text-[9px] tracking-widest text-neutral-400 uppercase font-medium mt-0.5 group-hover:text-[#5D1C34] transition-colors hidden sm:block">
@@ -69,9 +70,9 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
         </div>
 
         {/* Right: Actions (Search, Rack, Account, Cart) */}
-        <div className="flex items-center gap-3 md:gap-5">
+        <div className="flex w-full items-center gap-2 md:ml-auto md:w-auto md:gap-5">
           {/* Search Toggle */}
-          <div className="relative">
+          <div className="relative order-4 hidden md:order-none md:block">
             {searchOpen ? (
               <form onSubmit={handleSearchSubmit} className="flex items-center">
                 <input
@@ -111,7 +112,7 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
           </Link>
 
           {/* User Account */}
-          <div className="relative" ref={userDropdownRef}>
+          <div className="relative order-1 mr-auto md:order-none md:mr-0" ref={userDropdownRef}>
             {isLoggedIn ? (
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
@@ -133,7 +134,7 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
             )}
 
             {userDropdownOpen && isLoggedIn && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-neutral-100 py-2 px-1 animate-in fade-in duration-150 z-50">
+              <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-neutral-100 py-2 px-1 animate-in fade-in duration-150 z-50 md:left-auto md:right-0">
                 <div className="px-3 py-2 border-b border-neutral-100 mb-1">
                   <div className="font-semibold text-neutral-900 text-body-sm truncate">{currentUser.name}</div>
                   <div className="text-[11px] text-neutral-500 truncate">{currentUser.email}</div>
@@ -179,10 +180,14 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
             )}
           </div>
 
+          {isLoggedIn && (
+            <NotificationBell className="order-2 md:order-none" />
+          )}
+
           {/* Cart Trigger */}
           <button
             onClick={() => setIsCartOpen(true)}
-            className="relative p-2 text-neutral-700 hover:text-[#5D1C34] transition-colors cursor-pointer"
+            className="relative order-3 p-2 text-neutral-700 hover:text-[#5D1C34] transition-colors cursor-pointer md:order-none"
             aria-label="Giỏ hàng"
           >
             <ShoppingBag className="w-5 h-5" />

@@ -129,7 +129,7 @@ export function Navigation() {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3 md:gap-5">
+        <div className="flex w-full items-center gap-3 md:ml-auto md:w-auto md:gap-5">
           {currentUser.role !== 'guest' && currentUser.role !== 'admin' && (
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 rounded-full border border-neutral-200">
               <Sparkles className="w-3.5 h-3.5 text-[#5D1C34]" />
@@ -138,11 +138,11 @@ export function Navigation() {
           )}
 
           {currentUser.role !== 'guest' && (
-            <NotificationBell />
+            <NotificationBell className="order-2 md:order-none" />
           )}
 
           {currentUser.role !== 'admin' && (
-            <button onClick={() => setIsCartOpen(true)} className="relative p-2 text-neutral-600 hover:bg-neutral-100 rounded-full transition-colors">
+            <button onClick={() => setIsCartOpen(true)} className="relative order-3 p-2 text-neutral-600 hover:bg-neutral-100 rounded-full transition-colors md:order-none">
               <ShoppingBag className="w-[18px] h-[18px] md:w-5 md:h-5" />
               {totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-semantic-error rounded-full ring-2 ring-white text-[9px] flex items-center justify-center text-white font-bold animate-in zoom-in duration-200">
@@ -157,7 +157,7 @@ export function Navigation() {
               Đăng nhập
             </Link>
           ) : (
-            <div className="relative" ref={dropdownRef}>
+            <div className="relative order-1 mr-auto md:order-none md:mr-0" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="w-8 h-8 md:w-8 md:h-8 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-label-sm ring-2 ring-transparent hover:ring-neutral-200 transition-all"

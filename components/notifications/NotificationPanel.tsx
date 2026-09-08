@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Bell, CheckCheck, Loader2, ArrowRight } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, ArrowRight, X } from 'lucide-react';
 import { NotificationItem } from './NotificationItem';
 import { useNotifications, useMarkAllNotificationsAsRead } from '@/hooks/useNotifications';
 import { useNotificationStore } from '@/store/notificationStore';
@@ -24,7 +24,7 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
   };
 
   return (
-    <div className="w-full max-w-[380px] sm:w-[380px] bg-white rounded-2xl shadow-xl border border-neutral-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="w-full h-full bg-white flex flex-col overflow-hidden md:h-auto md:max-h-[min(80vh,520px)] md:w-[380px] md:rounded-2xl md:border md:border-neutral-200 md:shadow-xl animate-in fade-in zoom-in-95 duration-200">
       {/* Panel Header */}
       <div className="px-4 py-3.5 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
         <div className="flex items-center gap-2">
@@ -36,21 +36,30 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
           )}
         </div>
 
-        {unreadCount > 0 && (
+        <div className="flex items-center gap-1.5">
+          {unreadCount > 0 && (
+            <button
+              onClick={handleMarkAll}
+              disabled={isMarkingAll}
+              className="text-xs font-medium text-[#5D1C34] hover:text-[#5D1C34]/80 flex items-center gap-1 transition-colors disabled:opacity-50"
+              title="Đánh dấu tất cả là đã đọc"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              <span>Đọc tất cả</span>
+            </button>
+          )}
           <button
-            onClick={handleMarkAll}
-            disabled={isMarkingAll}
-            className="text-xs font-medium text-[#5D1C34] hover:text-[#5D1C34]/80 flex items-center gap-1 transition-colors disabled:opacity-50"
-            title="Đánh dấu tất cả là đã đọc"
+            onClick={onClose}
+            className="p-2 -mr-2 text-neutral-500 hover:text-brand-navy rounded-full hover:bg-neutral-100 transition-colors md:hidden"
+            aria-label="Đóng thông báo"
           >
-            <CheckCheck className="w-3.5 h-3.5" />
-            <span>Đọc tất cả</span>
+            <X className="w-5 h-5" />
           </button>
-        )}
+        </div>
       </div>
 
       {/* Panel Body */}
-      <div className="max-h-[380px] overflow-y-auto divide-y divide-neutral-100">
+      <div className="flex-1 overflow-y-auto divide-y divide-neutral-100 md:max-h-[380px] md:flex-none">
         {isLoading && notifications.length === 0 ? (
           <div className="p-8 flex flex-col items-center justify-center text-neutral-400 gap-2">
             <Loader2 className="w-6 h-6 animate-spin text-[#5D1C34]" />
