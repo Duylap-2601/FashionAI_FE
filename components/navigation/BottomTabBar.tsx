@@ -61,14 +61,14 @@ function BottomTabBarItem({ tab, pathname }: { tab: BottomTabItem; pathname: str
   const activeClass = isActive ? 'text-[#5D1C34]' : 'text-neutral-500';
 
   return (
-    <Link href={tab.href} className="flex flex-col items-center gap-1 p-2 min-w-[64px] relative">
+    <Link href={tab.href} className="flex min-w-[64px] flex-col items-center gap-1 p-2">
       <div className={`${tab.iconPadding ?? 'p-1'} rounded-xl transition-colors ${isActive ? 'bg-[#5D1C34]/10' : ''}`}>
         <Icon className={`w-[22px] h-[22px] ${activeClass}`} />
       </div>
       <span className={`text-[10px] font-medium ${activeClass}`}>
         {tab.label}
       </span>
-      {isActive && <div className="w-1 h-1 rounded-full bg-[#5D1C34] absolute bottom-1.5" />}
+      <span className={`h-1 w-1 rounded-full transition-opacity ${isActive ? 'bg-[#5D1C34] opacity-100' : 'opacity-0'}`} />
     </Link>
   );
 }
