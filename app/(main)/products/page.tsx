@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { Search, SlidersHorizontal, LayoutGrid, List, X, ShoppingBag, Check, AlertTriangle, Star, Loader2 } from 'lucide-react';
 import { HangerIcon } from '@/components/ui/HangerIcon';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
@@ -13,6 +12,7 @@ import { toast } from 'sonner';
 import { PRODUCTS, Product } from '@/lib/data';
 import { useProducts } from '@/hooks/useProducts';
 import { useRackItems, usePinToRack, useUnpinFromRack } from '@/hooks/useRack';
+import { useAuthStore } from '@/store/authStore';
 
 function getCategoryGroup(product: Product): 'Áo' | 'Quần & Váy' | 'Suit đầy đủ' {
   const cat = (product.category || '').trim();
@@ -271,7 +271,7 @@ function FilterSections(props: FilterSectionProps & { mobile?: boolean }) {
 
 export default function ProductListing() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const user = useAuthStore((state) => state.user);
   const { setIsCartOpen } = useApp();
   const { addToCart } = useCart();
   const { products: apiProducts, isLoading, isError, refetch } = useProducts();
@@ -790,7 +790,7 @@ export default function ProductListing() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              if (!session?.user) {
+                              if (!user) {
                                 toast.error('Vui lòng đăng nhập để lưu sản phẩm vào Giá treo đồ');
                                 router.push('/login?callbackUrl=/products');
                                 return;

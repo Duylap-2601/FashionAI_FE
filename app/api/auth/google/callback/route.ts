@@ -19,7 +19,9 @@ export async function GET(req: NextRequest) {
 
   const location = res.headers.get('location');
   if (location) {
-    return NextResponse.redirect(location, res.status);
+    const response = NextResponse.redirect(location, res.status);
+    copySetCookieHeaders(res.headers, response.headers);
+    return response;
   }
 
   const response = new NextResponse(res.body, {
@@ -28,10 +30,19 @@ export async function GET(req: NextRequest) {
     headers: res.headers,
   });
 
-  const setCookie = res.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
+  copySetCookieHeaders(res.headers, response.headers);
 
   return response;
+}
+
+function copySetCookieHeaders(source: Headers, target: Headers) {
+  const withGetSetCookie = source as Headers & { getSetCookie?: () => string[] };
+  const cookies = withGetSetCookie.getSetCookie?.() ?? [];
+  if (cookies.length > 0) {
+    cookies.forEach((cookie) => target.append('set-cookie', cookie));
+    return;
+  }
+
+  const setCookie = source.get('set-cookie');
+  if (setCookie) target.set('set-cookie', setCookie);
 }

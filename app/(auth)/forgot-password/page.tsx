@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Mail } from 'lucide-react';
 import { AuthCenteredLayout } from '@/components/auth/AuthLayout';
+import { API_BASE_URL } from '@/lib/authClient';
 
 export default function ForgotPassword() {
   const [isSuccess, setIsSuccess] = useState(false);
@@ -17,10 +18,10 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${apiUrl.replace(/\/$/, '')}/auth/forgot-password`, {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email }),
       });
       const body = await response.json().catch(() => null);

@@ -2,9 +2,11 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { AuthCenteredLayout } from '@/components/auth/AuthLayout';
+import { AuthClientError, exchangeAuthCode, toAuthSession } from '@/lib/authClient';
+import { invalidateSessionCache } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export default function MobileAuthCallbackPage() {
   return (
@@ -35,35 +37,18 @@ function MobileAuthCallbackContent() {
       }
 
       try {
-        const res = await fetch('/api/backend/auth/exchange', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ code }),
-        });
-
-        const body = await res.json().catch(() => null);
-        if (!res.ok) {
-          setError(body?.message || 'Không thể xác thực. Vui lòng thử lại.');
-          return;
-        }
-
-        const payload = body?.data ?? body;
-        const result = await signIn('backend-session', {
-          accessToken: payload.accessToken,
-          accessTokenExpiresAt: payload.accessTokenExpiresAt,
-          user: JSON.stringify(payload.user),
-          redirect: false,
-        });
-
-        if (result?.error) {
+        const payload = await exchangeAuthCode(code);
+        const session = toAuthSession(payload);
+        if (!session) {
           setError('Không thể tạo phiên đăng nhập. Vui lòng thử lại.');
           return;
         }
 
+        useAuthStore.getState().setSession(session);
+        invalidateSessionCache();
         router.replace('/products');
-      } catch {
-        setError('Đã xảy ra lỗi. Vui lòng thử lại.');
+      } catch (err: unknown) {
+        setError(readErrorMessage(err) || 'Đã xảy ra lỗi. Vui lòng thử lại.');
       }
     };
 
@@ -87,6 +72,14 @@ function MobileAuthCallbackContent() {
   }
 
   return <Loading />;
+}
+
+function readErrorMessage(error: unknown) {
+  if (!(error instanceof AuthClientError)) return null;
+  const data = error.data;
+  if (!data || typeof data !== 'object') return null;
+  const message = (data as { message?: unknown }).message;
+  return typeof message === 'string' ? message : null;
 }
 
 function Loading() {

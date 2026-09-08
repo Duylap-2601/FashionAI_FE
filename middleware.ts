@@ -1,20 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const SESSION_COOKIE_NAMES = [
-  'authjs.session-token',
-  '__Secure-authjs.session-token',
-  'next-auth.session-token',
-  '__Secure-next-auth.session-token',
-];
+const AUTH_MARKER_COOKIE_NAME = 'auth_marker';
 
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const hasSession = SESSION_COOKIE_NAMES.some((name) => Boolean(req.cookies.get(name)?.value));
+  const hasAuthMarker = Boolean(req.cookies.get(AUTH_MARKER_COOKIE_NAME)?.value);
 
   const protectedRoutes = ['/try-on', '/profile', '/ai-stylist', '/chat', '/checkout', '/admin'];
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
-  if (isProtected && !hasSession) {
+  if (isProtected && !hasAuthMarker) {
     return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, req.url));
   }
 

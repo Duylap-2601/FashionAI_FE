@@ -1,7 +1,11 @@
 'use client';
 
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { AuthClientError, loginWithPassword, logoutWebSession, toAuthSession } from '@/lib/authClient';
 import { formatUserName } from '@/lib/utils';
+import { clearAuthMarker, useAuthStore } from '@/store/authStore';
+import { invalidateSessionCache } from '@/lib/api';
 
 export type UserRole = 'guest' | 'user' | 'admin';
 export type UserTier = 'free' | 'member' | 'vip';
@@ -15,78 +19,94 @@ export interface AuthUser {
   quota?: number;
 }
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
-
 export function useAuth() {
-  const { data: session, status } = useSession();
+  const { user, status, accessToken, setSession, clearSession } = useAuthStore();
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const isLoggedIn = status === 'authenticated';
 
-  const userTier = session?.user?.tier || 'FREE';
-  const role: UserRole = session?.user?.role === 'ADMIN' ? 'admin' : (isLoggedIn ? 'user' : 'guest');
+  const userTier = user?.tier || 'FREE';
+  const role: UserRole = user?.role === 'ADMIN' ? 'admin' : (isLoggedIn ? 'user' : 'guest');
 
-  const currentUser: AuthUser = isLoggedIn && session?.user
+  const currentUser: AuthUser = isLoggedIn && user
     ? {
-        name: formatUserName(session.user.name || ''),
-        email: session.user.email || '',
+        name: formatUserName(user.name || ''),
+        email: user.email || '',
         role,
         tier: mapTier(userTier),
+        avatar: user.avatarUrl || user.image || undefined,
       }
     : { name: 'Khách', role: 'guest' };
 
   const login = async (email: string, password?: string) => {
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const payload = await loginWithPassword(email, password);
+      const session = toAuthSession(payload);
+      if (!session) {
+        return {
+          ok: false,
+          error: 'LOGIN_FAILED',
+          status: 500,
+          user: undefined,
+        };
+      }
 
-    const body = await response.json().catch(() => null);
-    if (!response.ok) {
+      setSession(session);
+      invalidateSessionCache();
+
+      return {
+        ok: true,
+        error: undefined,
+        status: 200,
+        user: payload.user,
+      };
+    } catch (err: unknown) {
+      const body = readErrorBody(err);
       return {
         ok: false,
         error: body?.details?.[0] || body?.message || 'LOGIN_FAILED',
-        status: response.status,
+        status: err instanceof AuthClientError ? err.status : undefined,
         user: undefined,
       };
     }
-
-    const payload = body?.data ?? body;
-    const signInRes = await signIn('backend-session', {
-      accessToken: payload.accessToken,
-      accessTokenExpiresAt: payload.accessTokenExpiresAt,
-      user: JSON.stringify(payload.user),
-      redirect: false,
-    });
-
-    return {
-      ...signInRes,
-      user: payload.user,
-    };
   };
 
   const logout = async () => {
     try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(session?.user?.accessToken ? { Authorization: `Bearer ${session.user.accessToken}` } : {}),
-        },
-        credentials: 'include',
-      });
+      await logoutWebSession(accessToken);
     } catch (error) {
       console.warn('Backend logout failed:', error);
     } finally {
-      signOut({ redirect: true, callbackUrl: '/' });
+      clearSession();
+      clearAuthMarker();
+      invalidateSessionCache();
+      queryClient.clear();
+      import('@/lib/realtimeSocket')
+        .then(({ disconnectAllSockets }) => disconnectAllSockets())
+        .catch(() => undefined);
+      router.push('/');
     }
   };
 
   return {
     currentUser,
     isLoggedIn,
+    status,
     login,
     logout,
+  };
+}
+
+function readErrorBody(error: unknown): { message?: string; details?: string[] } | undefined {
+  if (!(error instanceof AuthClientError)) return undefined;
+  const data = error.data;
+  if (!data || typeof data !== 'object') return undefined;
+  const record = data as Record<string, unknown>;
+  return {
+    message: typeof record.message === 'string' ? record.message : undefined,
+    details: Array.isArray(record.details) && record.details.every((item) => typeof item === 'string')
+      ? record.details
+      : undefined,
   };
 }
 

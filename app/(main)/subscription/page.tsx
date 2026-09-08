@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { 
   Check, Sparkles, Crown, Zap, Shield, 
@@ -22,6 +21,7 @@ import {
 } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/authStore';
 
 interface PlanFeature {
   text: string;
@@ -39,6 +39,10 @@ interface Plan {
   description: string;
   features: PlanFeature[];
   ctaText: string;
+}
+
+interface SubscriptionErrorBody {
+  message?: string | string[];
 }
 
 const DEFAULT_PLANS: Plan[] = [
@@ -99,7 +103,8 @@ const DEFAULT_PLANS: Plan[] = [
 
 export default function SubscriptionPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const status = useAuthStore((state) => state.status);
+  const user = useAuthStore((state) => state.user);
   const { profile } = useUserProfile();
   const { checkout, isLoading: isCheckoutLoading } = useCheckout();
 
@@ -115,9 +120,9 @@ export default function SubscriptionPage() {
   const [upgradeConfirmTier, setUpgradeConfirmTier] = useState<TargetTier | null>(null);
 
   // Determine current tier & expiration date
-  const rawTier = subTier || (profile as any)?.tier || session?.user?.tier || 'FREE';
+  const rawTier = subTier || profile?.tier || user?.tier || 'FREE';
   const tier = rawTier.toUpperCase() as 'FREE' | 'MEMBER' | 'VIP';
-  const rawExpiresAt = tierExpiresAt || (profile as any)?.tierExpiresAt || (session?.user as any)?.tierExpiresAt;
+  const rawExpiresAt = tierExpiresAt || profile?.tierExpiresAt || user?.tierExpiresAt;
 
   const expirationInfo = useMemo(() => {
     if (!rawExpiresAt || tier === 'FREE') return null;
@@ -210,9 +215,9 @@ export default function SubscriptionPage() {
       } else {
         throw new Error('Không nhận được link thanh toán từ hệ thống');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss('checkout');
-      const msg = err?.response?.data?.message || err?.message || 'Không thể tạo đơn thanh toán.';
+      const msg = readSubscriptionErrorMessage(err) || 'Không thể tạo đơn thanh toán.';
       toast.error(`Lỗi: ${Array.isArray(msg) ? msg[0] : msg}`);
     }
   };
@@ -227,11 +232,21 @@ export default function SubscriptionPage() {
         await resumeSubscription();
         toast.success('Đã bật lại nhắc tự động gia hạn.');
       }
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'Không thể thay đổi trạng thái gia hạn.';
+    } catch (err: unknown) {
+      const msg = readSubscriptionErrorMessage(err) || 'Không thể thay đổi trạng thái gia hạn.';
       toast.error(Array.isArray(msg) ? msg[0] : msg);
     }
   };
+
+  function readSubscriptionErrorMessage(error: unknown): SubscriptionErrorBody['message'] | undefined {
+    if (!(error instanceof Error)) return undefined;
+    if (!('response' in error)) return error.message;
+    const response = error.response as { data?: unknown };
+    const data = response.data;
+    if (!data || typeof data !== 'object') return error.message;
+    const message = (data as Record<string, unknown>).message;
+    return typeof message === 'string' || Array.isArray(message) ? message as string | string[] : error.message;
+  }
 
   const getStatusBadge = (subStatus: SubscriptionStatus) => {
     switch (subStatus) {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AuthCenteredLayout } from '@/components/auth/AuthLayout';
+import { API_BASE_URL } from '@/lib/authClient';
 
 export default function VerifyEmailPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -18,10 +19,10 @@ export default function VerifyEmailPage() {
       }
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const response = await fetch(`${apiUrl.replace(/\/$/, '')}/auth/verify-email`, {
+        const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ token }),
         });
         const body = await response.json().catch(() => null);

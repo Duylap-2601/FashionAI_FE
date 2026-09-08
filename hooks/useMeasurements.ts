@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export interface UserMeasurements {
   height?: number;
@@ -41,7 +41,7 @@ export interface UserProfile {
 }
 
 export function useMeasurements() {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const queryClient = useQueryClient();
 
   const measurementsQuery = useQuery<UserMeasurements>({
@@ -73,7 +73,7 @@ export function useMeasurements() {
 }
 
 export function useUserProfile() {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const queryClient = useQueryClient();
 
   const profileQuery = useQuery<UserProfile>({

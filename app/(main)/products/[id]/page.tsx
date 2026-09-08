@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { ChevronRight, Star, Minus, Plus, ShoppingBag, Sparkles, AlertCircle, X, Ruler, MessageSquare } from 'lucide-react';
 import { useApp } from '@/components/navigation/Layout';
 import { useCart } from '@/store/cartStore';
@@ -18,11 +17,12 @@ import { HangerIcon } from '@/components/ui/HangerIcon';
 import { useReviewStats } from '@/hooks/useReviews';
 import { StarRating } from '@/components/reviews/StarRating';
 import { ReviewSection } from '@/components/reviews/ReviewSection';
+import { useAuthStore } from '@/store/authStore';
 
 export default function ProductDetail() {
   const { setIsCartOpen } = useApp();
   const { addToCart } = useCart();
-  const { data: session } = useSession();
+  const user = useAuthStore((state) => state.user);
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
@@ -480,7 +480,7 @@ export default function ProductDetail() {
               const rackItem = getItemByProductId(product.id);
 
               const handleTogglePin = () => {
-                if (!session?.user) {
+                if (!user) {
                   toast.error('Vui lòng đăng nhập để lưu sản phẩm vào Giá treo đồ');
                   router.push(`/login?callbackUrl=/products/${product.id}`);
                   return;

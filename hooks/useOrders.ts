@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export interface OrderItemInput {
   productId: string;
@@ -47,7 +47,7 @@ export interface OrderItem {
   quantity: number;
   color?: string;
   price: number;
-  measurementSnapshot?: Record<string, any>;
+  measurementSnapshot?: MeasurementSnapshot;
   product?: {
     name: string;
     images?: string[];
@@ -71,11 +71,19 @@ interface BackendOrderItem {
   quantity: number;
   color?: string | null;
   price: number | string;
-  measurementSnapshot?: Record<string, any> | null;
+  measurementSnapshot?: MeasurementSnapshot | null;
   product?: {
     name: string;
     images?: { imageUrl: string; isMain: boolean }[];
   };
+}
+
+interface MeasurementSnapshot {
+  chest?: number | string | null;
+  waist?: number | string | null;
+  hip?: number | string | null;
+  shoulder?: number | string | null;
+  height?: number | string | null;
 }
 
 interface BackendOrder {
@@ -162,7 +170,7 @@ export function useCreateOrder() {
 }
 
 export function useOrders() {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const query = useQuery<Order[]>({
     queryKey: ['orders'],
     queryFn: async () => {

@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export interface StylistAnalysisRequest {
   humanImage: File;
@@ -75,13 +75,15 @@ export interface StylistHistoryMeta {
 
 function extractErrorMessage(error: unknown): string {
   if (!error) return 'Không xác định được lỗi.';
-  const anyError = error as any;
-  if (anyError?.response?.data?.message) {
-    const message = anyError.response.data.message;
+  const data = error instanceof Error && 'response' in error
+    ? (error.response as { data?: { message?: string | string[]; error?: string } })?.data
+    : undefined;
+  if (data?.message) {
+    const message = data.message;
     return Array.isArray(message) ? message[0] : message;
   }
-  if (anyError?.response?.data?.error) return anyError.response.data.error;
-  if (anyError?.message) return anyError.message;
+  if (data?.error) return data.error;
+  if (error instanceof Error) return error.message;
   return 'Đã xảy ra lỗi không xác định.';
 }
 
@@ -129,7 +131,7 @@ export function useAnalyzeStylist() {
 }
 
 export function useStylistHistory(page = 1, pageSize = 20) {
-  const { status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const query = useQuery<{ items: StylistResult[]; meta: StylistHistoryMeta }>({
     queryKey: ['stylist-history', page, pageSize],
     queryFn: async () => {
@@ -137,7 +139,7 @@ export function useStylistHistory(page = 1, pageSize = 20) {
         params: { page, limit: pageSize },
       });
       const items = ((res.data || []) as StylistResult[]).map(normalizeStylistResult);
-      const meta = (res.data as any)?.__meta ?? {
+      const meta = (res.data as { __meta?: StylistHistoryMeta })?.__meta ?? {
         total: items.length,
         page,
         limit: pageSize,

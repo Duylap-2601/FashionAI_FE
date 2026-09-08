@@ -67,8 +67,10 @@ export function AuthCenteredLayout({ children }: { children: React.ReactNode }) 
 
 export function GoogleButton() {
   const handleGoogleLogin = async () => {
-    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-    console.log("🚀 ~ handleGoogleLogin ~ isNative:", isNative)
+    const capacitorWindow = window as Window & {
+      Capacitor?: { isNativePlatform?: () => boolean };
+    };
+    const isNative = Boolean(capacitorWindow.Capacitor?.isNativePlatform?.());
     if (isNative) {
       try {
         const { Browser } = await import('@capacitor/browser');

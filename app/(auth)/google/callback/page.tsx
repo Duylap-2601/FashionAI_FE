@@ -3,9 +3,11 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { AuthCenteredLayout } from '@/components/auth/AuthLayout';
+import { exchangeAuthCode, toAuthSession } from '@/lib/authClient';
+import { invalidateSessionCache } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export default function GoogleCallbackPage() {
   return (
@@ -23,27 +25,23 @@ function GoogleCallbackContent() {
   useEffect(() => {
     const completeLogin = async () => {
       const authError = searchParams.get('error');
-      const accessToken = searchParams.get('accessToken');
-      const encodedUser = searchParams.get('user');
+      const code = searchParams.get('code');
 
-      if (authError || !accessToken || !encodedUser) {
+      if (authError || !code) {
         setError('Không thể đăng nhập bằng Google. Vui lòng thử lại.');
         return;
       }
 
       try {
-        const user = JSON.parse(atobUrlSafe(encodedUser));
-        const result = await signIn('backend-session', {
-          accessToken,
-          user: JSON.stringify(user),
-          redirect: false,
-        });
-
-        if (result?.error) {
+        const payload = await exchangeAuthCode(code);
+        const session = toAuthSession(payload);
+        if (!session) {
           setError('Không thể tạo phiên đăng nhập. Vui lòng thử lại.');
           return;
         }
 
+        useAuthStore.getState().setSession(session);
+        invalidateSessionCache();
         router.replace('/products');
       } catch {
         setError('Dữ liệu đăng nhập Google không hợp lệ. Vui lòng thử lại.');
@@ -98,12 +96,3 @@ function GoogleCallbackLoading() {
   );
 }
 
-function atobUrlSafe(value: string) {
-  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = normalized.padEnd(
-    normalized.length + ((4 - (normalized.length % 4)) % 4),
-    '=',
-  );
-
-  return window.atob(padded);
-}

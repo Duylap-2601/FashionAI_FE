@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { AuthCenteredLayout } from '@/components/auth/AuthLayout';
 import { AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/authClient';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -43,10 +44,10 @@ export default function ResetPassword() {
 
     setIsLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${apiUrl.replace(/\/$/, '')}/auth/reset-password`, {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ token, newPassword: password }),
       });
       const body = await response.json().catch(() => null);

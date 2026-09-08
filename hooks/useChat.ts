@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import type { Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import { useMeasurements, useUserProfile } from '@/hooks/useMeasurements';
 import { useQuota } from '@/hooks/useQuota';
 import { useProducts } from '@/hooks/useProducts';
 import { getValidAccessToken } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/authClient';
 import { initChatSocket } from '@/lib/realtimeSocket';
 import { PRODUCTS } from '@/lib/data';
+import { useAuthStore } from '@/store/authStore';
 import {
   ChatMessage,
   ChatSession,
@@ -17,7 +19,7 @@ import {
   ChatProductContext,
 } from '@/types/chat';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
+const API_URL = API_BASE_URL;
 const LOCAL_STORAGE_SESSIONS_KEY = 'stale_chat_sessions_v1';
 const LOCAL_STORAGE_MESSAGES_PREFIX = 'stale_chat_messages_v1_';
 
@@ -34,12 +36,13 @@ export interface UseChatOptions {
 
 export function useChat(options: UseChatOptions = {}) {
   const { initialSessionId, initialProductId, onSessionCreated } = options;
-  const { data: sessionData, status: authStatus } = useSession();
+  const authStatus = useAuthStore((state) => state.status);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const userTier = useAuthStore((state) => state.user?.tier || 'FREE');
   // Chỉ dùng để biết "đã đăng nhập" và làm dependency cho effect. Token thật phải
   // lấy qua getValidAccessToken() ngay trước từng request: access token sống 15
-  // phút còn session cookie sống 30 ngày, nên token trong session hay bị hết hạn.
-  const hasSession = Boolean((sessionData?.user as any)?.accessToken);
-  const userTier = sessionData?.user?.tier || 'FREE';
+  // phút còn refresh cookie sống lâu hơn, nên token runtime có thể cần refresh.
+  const hasSession = authStatus === 'authenticated' && Boolean(accessToken);
 
   const { measurements } = useMeasurements();
   const { profile } = useUserProfile();
@@ -59,7 +62,7 @@ export function useChat(options: UseChatOptions = {}) {
   const [activeProduct, setActiveProduct] = useState<ChatProductContext | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
-  const chatSocketRef = useRef<any>(null);
+  const chatSocketRef = useRef<Socket | null>(null);
   const currentSessionIdRef = useRef<string | null>(currentSessionId);
   currentSessionIdRef.current = currentSessionId;
 
@@ -227,7 +230,7 @@ export function useChat(options: UseChatOptions = {}) {
     return () => {
       isMounted = false;
     };
-  }, [currentSessionId, hasSession]);
+  }, [currentSessionId, hasSession, authStatus]);
 
   // Helper to save messages to local storage
   const saveMessagesLocally = useCallback((sessionId: string, msgs: ChatMessage[]) => {
@@ -518,10 +521,10 @@ export function useChat(options: UseChatOptions = {}) {
               reject(new Error(message || `Lỗi phản hồi chatbot [${code}]`));
             };
 
-            const onConnectError = (err: any) => {
+            const onConnectError = (err: Error) => {
               clearTimeout(timeoutId);
               cleanup();
-              if (err?.message === 'UNAUTHORIZED') {
+              if (err.message === 'UNAUTHORIZED') {
                 toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
                 reject(new Error('UNAUTHORIZED'));
               } else {
@@ -549,10 +552,11 @@ export function useChat(options: UseChatOptions = {}) {
               context: contextPayload,
             });
           });
-        } catch (wsErr: any) {
+        } catch (wsErr: unknown) {
           // Fallback simulation nếu socket chưa sẵn sàng hoặc kết nối lỗi trước khi nhận token
-          if (!usedWs && (wsErr?.message === 'WS_TIMEOUT' || wsErr?.message === 'WS_CONNECT_FAILED')) {
-            console.warn('[Chat] WebSocket fallback triggered:', wsErr?.message);
+          const wsMessage = wsErr instanceof Error ? wsErr.message : undefined;
+          if (!usedWs && (wsMessage === 'WS_TIMEOUT' || wsMessage === 'WS_CONNECT_FAILED')) {
+            console.warn('[Chat] WebSocket fallback triggered:', wsMessage);
             await simulateAssistantStream(
               trimmed,
               attachedProd,
