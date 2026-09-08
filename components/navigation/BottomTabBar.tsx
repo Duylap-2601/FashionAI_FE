@@ -45,9 +45,9 @@ interface BottomTabBarProps {
   className?: string;
 }
 
-export function BottomTabBar({ pathname, zIndexClass = 'z-50', className = '' }: BottomTabBarProps) {
+export function BottomTabBar({ pathname, zIndexClass = 'z-[90]', className = '' }: BottomTabBarProps) {
   return (
-    <nav className={`md:hidden fixed bottom-0 left-0 right-0 h-[64px] bg-white border-t border-neutral-200 flex items-center justify-around px-2 pb-safe ${zIndexClass} ${className}`}>
+    <nav className={`md:hidden fixed bottom-0 left-0 right-0 h-[64px] bg-white border-t border-neutral-200 flex items-center justify-around px-2 pb-safe pointer-events-auto ${zIndexClass} ${className}`}>
       {bottomTabs.map((tab) => (
         <BottomTabBarItem key={tab.href} tab={tab} pathname={pathname} />
       ))}
