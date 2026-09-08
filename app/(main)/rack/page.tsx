@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import {
   Trash2, X, Check,
   ShoppingBag, Plus, ChevronRight,
@@ -16,6 +15,7 @@ import { toBackendCategory } from '@/hooks/useProducts';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { MannequinDressForm } from '@/components/rack/MannequinDressForm';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 
 function getProductImage(product: BackendRackProduct): string {
   if (Array.isArray(product?.images) && product.images.length > 0) {
@@ -59,7 +59,7 @@ type TabType = 'ALL' | 'UPPER' | 'LOWER' | 'FULL_BODY';
 
 export default function RackPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const status = useAuthStore((state) => state.status);
   const { items, isLoading, isError, refetch } = useRackItems();
   const { unpinProduct, isUnpinning } = useUnpinFromRack();
   const { clearRack, isClearing } = useClearRack();
@@ -204,6 +204,18 @@ export default function RackPage() {
     });
     return counts;
   }, [items]);
+
+  // Loading state - chờ refresh token
+  if (status === 'loading') {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#5D1C34]" />
+          <p className="text-body-sm text-neutral-500">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Not authenticated
   if (status === 'unauthenticated') {
