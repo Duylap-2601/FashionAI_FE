@@ -6,7 +6,7 @@ import { Sparkles, Camera, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export function AiTryOnFeatureBanner() {
   return (
-    <section className="py-16 md:py-24 bg-gradient-to-b from-white to-[#F9F7F5] border-t border-neutral-200">
+    <section className="py-16 md:py-24 md:block hidden bg-gradient-to-b from-white to-[#F9F7F5] border-t border-neutral-200 ">
       <div className="max-w-[1440px] mx-auto px-4 md:px-8">
         <div className="bg-[#1A1A24] rounded-3xl overflow-hidden shadow-2xl border border-white/10 p-8 sm:p-12 lg:p-16 relative">
           {/* Ambient Glow */}
