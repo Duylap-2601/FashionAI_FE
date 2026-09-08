@@ -98,22 +98,33 @@ function CategoryTabs({
 }) {
   if (mobile) {
     return (
-      <div className="flex w-full items-center gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-1 md:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {categories.map(tab => {
-          const isActive = activeTab === tab.label;
-          return (
-            <button
+      <div className="w-full md:hidden">
+        <div className="flex w-full items-center gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {categories.map(tab => {
+            const isActive = activeTab === tab.label;
+            return (
+              <button
+                key={tab.label}
+                onClick={() => onSelect(tab.label)}
+                className={`shrink-0 snap-start px-1 py-1.5 text-[12px] font-semibold whitespace-nowrap transition-colors ${
+                  isActive ? 'text-[#5D1C34]' : 'text-neutral-500'
+                }`}
+              >
+                {tab.label} ({tab.count})
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-1 flex items-center gap-1.5">
+          {categories.map(tab => (
+            <span
               key={tab.label}
-              onClick={() => onSelect(tab.label)}
-              className={`relative flex shrink-0 snap-start flex-col items-center gap-1 px-1 py-1.5 text-[12px] font-semibold whitespace-nowrap transition-colors ${
-                isActive ? 'text-[#5D1C34]' : 'text-neutral-500'
+              className={`h-0.5 flex-1 rounded-full transition-colors ${
+                activeTab === tab.label ? 'bg-[#5D1C34]' : 'bg-neutral-200'
               }`}
-            >
-              <span>{tab.label} ({tab.count})</span>
-              <span className={`h-1 w-1 rounded-full transition-opacity ${isActive ? 'bg-[#5D1C34] opacity-100' : 'opacity-0'}`} />
-            </button>
-          );
-        })}
+            />
+          ))}
+        </div>
       </div>
     );
   }
