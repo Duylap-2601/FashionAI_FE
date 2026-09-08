@@ -77,7 +77,7 @@ export function HeroBanner({ collections }: HeroBannerProps) {
             </div>
 
             {/* Center Main Hero Panel (Full width on mobile, 6 cols on desktop) */}
-            <div className="col-span-1 md:col-span-6 h-[540px] md:h-[520px] lg:h-[620px] rounded-2xl overflow-hidden shadow-2xl relative group flex flex-col justify-end p-6 md:p-10">
+            <div className="col-span-1 md:col-span-6 h-[440px] min-[420px]:h-[500px] md:h-[520px] lg:h-[620px] rounded-2xl overflow-hidden shadow-2xl relative group flex flex-col justify-end p-5 sm:p-6 md:p-10">
               <img
                 src={centerImg}
                 alt={`${activeCollection.name} Center`}
@@ -94,7 +94,7 @@ export function HeroBanner({ collections }: HeroBannerProps) {
                   {activeCollection.season || 'BỘ SƯU TẬP 2026'}
                 </span>
 
-                <h1 className="text-[32px] sm:text-[40px] lg:text-[46px] font-bold tracking-tight text-white leading-[1.15] mb-3">
+                <h1 className="text-[28px] min-[420px]:text-[32px] sm:text-[40px] lg:text-[46px] font-bold tracking-tight text-white leading-[1.15] mb-3">
                   {activeCollection.name}
                 </h1>
 
@@ -108,7 +108,7 @@ export function HeroBanner({ collections }: HeroBannerProps) {
                 <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
                   <a
                     href="#collections"
-                    className="h-11 sm:h-12 px-6 sm:px-7 rounded-full bg-white text-neutral-900 hover:bg-neutral-100 font-semibold text-body-sm flex items-center justify-center gap-2 shadow-xl hover:scale-103 active:scale-97 transition-all duration-200"
+                    className="h-11 sm:h-12 px-5 sm:px-7 rounded-full bg-white text-neutral-900 hover:bg-neutral-100 font-semibold text-body-sm flex items-center justify-center gap-2 shadow-xl hover:scale-103 active:scale-97 transition-all duration-200"
                   >
                     <span>Khám phá BST</span>
                     <ArrowRight className="w-4 h-4" />
@@ -116,7 +116,7 @@ export function HeroBanner({ collections }: HeroBannerProps) {
 
                   <Link
                     href="/try-on"
-                    className="h-11 sm:h-12 px-6 sm:px-7 rounded-full bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-body-sm flex items-center justify-center gap-2 shadow-xl border border-white/10 hover:scale-103 active:scale-97 transition-all duration-200"
+                    className="h-11 sm:h-12 px-5 sm:px-7 rounded-full bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-body-sm flex items-center justify-center gap-2 shadow-xl border border-white/10 hover:scale-103 active:scale-97 transition-all duration-200"
                   >
                     <Sparkles className="w-4 h-4 text-brand-gold" />
                     <span>Thử đồ AI</span>
