@@ -270,8 +270,27 @@ export default function ProductListing() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* STICKY FILTER BAR */}
-      <div className="sticky top-[56px] md:top-[64px] z-40 bg-white border-b border-neutral-200 px-4 md:px-8 py-3 flex items-center justify-between gap-4">
+      <div className="sticky top-[56px] md:top-[64px] z-40 bg-white border-b border-neutral-200 px-4 md:px-8 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
         {/* Left: Category tabs */}
+        <div className="flex w-full items-center gap-2 overflow-x-auto no-scrollbar md:hidden">
+          {categoryCounts.map(tab => (
+            <button
+              key={tab.label}
+              onClick={() => {
+                setActiveTab(tab.label);
+                setCurrentPage(1);
+              }}
+              className={`shrink-0 px-3.5 py-2 rounded-full text-[12px] font-semibold whitespace-nowrap transition-colors ${
+                activeTab === tab.label
+                  ? 'bg-brand-navy text-white shadow-sm'
+                  : 'bg-neutral-100 text-neutral-600'
+              }`}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
+
         <div className="hidden md:flex items-center gap-2 overflow-x-auto no-scrollbar">
           {categoryCounts.map(tab => (
             <button
@@ -292,7 +311,7 @@ export default function ProductListing() {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="flex w-full items-center justify-between gap-3 md:ml-auto md:w-auto md:justify-end">
           <div className="relative hidden md:block w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
@@ -340,6 +359,137 @@ export default function ProductListing() {
           </div>
         </div>
       </div>
+
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-[100] flex items-end md:hidden">
+          <div
+            className="absolute inset-0 bg-black/40 animate-in fade-in"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+          <div className="relative z-10 w-full max-h-[82vh] rounded-t-3xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+              <div>
+                <h2 className="font-bold text-brand-navy">Bộ lọc</h2>
+                <p className="text-[12px] text-neutral-500">Tinh chỉnh sản phẩm hiển thị</p>
+              </div>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-2 -mr-2 rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-brand-navy transition-colors"
+                aria-label="Đóng bộ lọc"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-7">
+              <div>
+                <h3 className="text-label-sm font-semibold mb-3">Sắp xếp</h3>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="w-full h-11 rounded-xl border border-neutral-200 bg-white px-3 text-body-sm font-medium text-neutral-700 focus:outline-none focus:border-brand-navy"
+                >
+                  <option value="Mới nhất">Mới nhất</option>
+                  <option value="Giá thấp đến cao">Giá thấp đến cao</option>
+                  <option value="Giá cao đến thấp">Giá cao đến thấp</option>
+                </select>
+              </div>
+
+              <div>
+                <h3 className="text-label-sm font-semibold mb-3">Khoảng giá tối đa</h3>
+                <input
+                  type="range"
+                  min={200000}
+                  max={maxPriceLimit}
+                  step={100000}
+                  value={currentPriceRange}
+                  onChange={(e) => {
+                    setSelectedMaxPrice(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="w-full accent-brand-navy cursor-pointer"
+                />
+                <div className="text-[13px] font-medium text-neutral-600 text-center mt-2">
+                  Dưới {currentPriceRange.toLocaleString('vi-VN')}đ
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-label-sm font-semibold mb-4">Màu sắc</h3>
+                <div className="grid grid-cols-6 gap-3">
+                  {AVAILABLE_COLORS.map(c => {
+                    const isSelected = selectedColors.includes(c.name);
+                    return (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => toggleColor(c.name)}
+                        className="flex flex-col items-center gap-1.5 text-[11px] text-neutral-600"
+                      >
+                        <span
+                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                            c.border ? 'border border-neutral-300' : ''
+                          } ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`}
+                          style={{ backgroundColor: c.color }}
+                        >
+                          {isSelected && (
+                            <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />
+                          )}
+                        </span>
+                        <span>{c.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-label-sm font-semibold mb-4">Danh mục chi tiết</h3>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {subCategoryCounts.map(item => {
+                    const isChecked = selectedSubCategories.includes(item.name);
+                    return (
+                      <button
+                        key={item.name}
+                        type="button"
+                        onClick={() => toggleSubCategory(item.name)}
+                        className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${
+                          isChecked ? 'border-brand-navy bg-brand-navy/5' : 'border-neutral-200 bg-white'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3 text-body-sm font-medium text-neutral-700">
+                          <span className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${
+                            isChecked ? 'bg-brand-navy border-brand-navy' : 'border-neutral-300 bg-white'
+                          }`}>
+                            {isChecked && <Check className="w-3 h-3 text-white" />}
+                          </span>
+                          {item.name}
+                        </span>
+                        <span className="text-[12px] text-neutral-400">({item.count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 border-t border-neutral-200 bg-white p-4">
+              <button
+                onClick={handleClearAllFilters}
+                className="h-12 rounded-xl border border-neutral-200 text-body-sm font-semibold text-neutral-700"
+              >
+                Xoá lọc
+              </button>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="h-12 rounded-xl bg-brand-navy text-body-sm font-semibold text-white shadow-sm"
+              >
+                Áp dụng ({filteredProducts.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8 items-start relative">
