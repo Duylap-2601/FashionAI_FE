@@ -495,7 +495,7 @@ export default function ProductListing() {
 
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className={`h-10 px-4 rounded-full border text-label-sm font-medium flex items-center gap-2 transition-colors ${
+            className={`hidden h-10 px-4 rounded-full border text-label-sm font-medium items-center gap-2 transition-colors md:flex ${
               isSidebarOpen ? 'border-brand-navy bg-brand-navy text-white' : 'border-neutral-200 text-neutral-700 hover:bg-neutral-50'
             }`}
           >
@@ -635,6 +635,13 @@ export default function ProductListing() {
             <span className="text-body-sm font-medium text-neutral-900">
               {filteredProducts.length} sản phẩm
             </span>
+
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#5D1C34] underline underline-offset-4 md:hidden"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" /> Lọc
+            </button>
 
             {activeChips.length > 0 && (
               <>
