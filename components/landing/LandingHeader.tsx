@@ -71,7 +71,7 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
         {/* Right: Actions (Search, Rack, Account, Cart) */}
         <div className="flex items-center gap-3 md:gap-5">
           {/* Search Toggle */}
-          <div className="relative">
+          <div className="relative order-1 md:order-none">
             {searchOpen ? (
               <form onSubmit={handleSearchSubmit} className="flex items-center">
                 <input
@@ -111,7 +111,7 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
           </Link>
 
           {/* User Account */}
-          <div className="relative" ref={userDropdownRef}>
+          <div className="relative order-last md:order-none" ref={userDropdownRef}>
             {isLoggedIn ? (
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
@@ -182,7 +182,7 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
           {/* Cart Trigger */}
           <button
             onClick={() => setIsCartOpen(true)}
-            className="relative p-2 text-neutral-700 hover:text-[#5D1C34] transition-colors cursor-pointer"
+            className="relative order-2 md:order-none p-2 text-neutral-700 hover:text-[#5D1C34] transition-colors cursor-pointer"
             aria-label="Giỏ hàng"
           >
             <ShoppingBag className="w-5 h-5" />

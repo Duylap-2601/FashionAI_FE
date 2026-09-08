@@ -129,7 +129,7 @@ export function Navigation() {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3 md:gap-5">
+        <div className="ml-auto flex items-center gap-3 md:gap-5">
           {currentUser.role !== 'guest' && currentUser.role !== 'admin' && (
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 rounded-full border border-neutral-200">
               <Sparkles className="w-3.5 h-3.5 text-[#5D1C34]" />
