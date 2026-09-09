@@ -68,14 +68,14 @@ export function SubscriptionHistory({ isHistoryLoading, history, formatDate, get
             </span>
             <div className="flex gap-2">
               <button
-                onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                onClick={() => setHistoryPage((p: number) => Math.max(1, p - 1))}
                 disabled={historyPage === 1}
                 className="px-3 py-1.5 border border-neutral-200 rounded-lg text-body-sm font-semibold disabled:opacity-40"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setHistoryPage(p => Math.min(historyMeta.totalPages, p + 1))}
+                onClick={() => setHistoryPage((p: number) => Math.min(historyMeta.totalPages, p + 1))}
                 disabled={historyPage === historyMeta.totalPages}
                 className="px-3 py-1.5 border border-neutral-200 rounded-lg text-body-sm font-semibold disabled:opacity-40"
               >
