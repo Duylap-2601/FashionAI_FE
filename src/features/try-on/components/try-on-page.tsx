@@ -12,10 +12,7 @@ import { QuotaExhaustedModal } from '@/features/stylist/components/QuotaExhauste
 import { SubscriptionRequiredModal } from '@/features/subscription/components/SubscriptionRequiredModal';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
 import { CatalogModal } from '@/features/try-on/components/CatalogModal';
-import { GenerateButton } from '@/features/try-on/components/GenerateButton';
-import { LoadingOverlay } from '@/features/try-on/components/LoadingOverlay';
 import { SubscriptionNotice, TryOnHeader } from '@/features/try-on/components/TryOnHeader';
-import { TryOnResult } from '@/features/try-on/components/TryOnResult';
 import { TryOnWorkspace } from '@/features/try-on/components/TryOnWorkspace';
 import { MOCK_USER_PHOTO } from '@/features/try-on/constants/try-on-types';
 import { useTryOn } from '@/features/try-on/hooks/useTryOn';
@@ -25,13 +22,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-function convertFileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const VALID_IMAGE_TYPES = new Set(['image/png', 'image/jpeg']);
+
+function validateTryOnFile(file: File): string | null {
+  if (!VALID_IMAGE_TYPES.has(file.type)) return 'Vui lòng chọn ảnh PNG hoặc JPEG.';
+  if (file.size > MAX_IMAGE_SIZE) return 'Ảnh vượt quá 10MB. Vui lòng chọn ảnh nhỏ hơn.';
+  return null;
 }
 
 function readTryOnError(error: unknown): { status?: number; data?: TryOnErrorBody; message?: string } {
@@ -94,9 +91,10 @@ function VirtualTryOnContent() {
   const [pageState, setPageState] = useState<PageState>('idle');
   const [garmentMode, setGarmentMode] = useState<GarmentMode>('single');
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
-  const [userPhotoBase64, setUserPhotoBase64] = useState<string | null>(null);
   const [userPhotoFile, setUserPhotoFile] = useState<File | null>(null);
   const [resultPhotoUrl, setResultPhotoUrl] = useState<string | null>(null);
+  const [resultSourcePhotoUrl, setResultSourcePhotoUrl] = useState<string | null>(null);
+  const [inputError, setInputError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState(initialProduct);
   const [upperProduct, setUpperProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || catalogProducts[0] || null);
   const [lowerProduct, setLowerProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || catalogProducts[1] || null);
@@ -106,7 +104,6 @@ function VirtualTryOnContent() {
   const [quotaModalData, setQuotaModalData] = useState<{ resetAt?: string; requested?: number; remaining?: number }>({});
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionReason, setSubscriptionReason] = useState('free_not_allowed');
-  const [progress, setProgress] = useState(0);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const rawTier = profile?.tier || user?.tier || 'FREE';
@@ -124,6 +121,12 @@ function VirtualTryOnContent() {
   const quotaCost = garmentMode === 'combo' ? 2 : 1;
   const remainingQuota = quota ? (quota.limit === null ? Infinity : Math.max(0, quota.limit - quota.used)) : (isBlocked ? 0 : 5);
   const limitQuota = quota?.limit ?? (userTier === 'VIP' ? 10 : userTier === 'MEMBER' ? 5 : 0);
+
+  const clearResult = () => {
+    setResultPhotoUrl(null);
+    setResultSourcePhotoUrl(null);
+    if (pageState === 'result') setPageState('idle');
+  };
 
   useEffect(() => {
     if (rackIds && catalogProducts.length > 0) {
@@ -169,29 +172,37 @@ function VirtualTryOnContent() {
   }, [rackIds, productId, catalogProducts]);
 
   const handleFileSelect = async (file: File | null) => {
+    if (pageState === 'loading') return;
     if (!file) {
       setUserPhotoUrl(null);
-      setUserPhotoBase64(null);
       setUserPhotoFile(null);
+      setInputError(null);
+      clearResult();
       return;
     }
 
-    setUserPhotoUrl(URL.createObjectURL(file));
-    setUserPhotoFile(file);
-
-    try {
-      setUserPhotoBase64(await convertFileToBase64(file));
-    } catch (error) {
-      console.error('Base64 conversion error:', error);
+    const validationError = validateTryOnFile(file);
+    if (validationError) {
+      setInputError(validationError);
+      return;
     }
+
+    if (userPhotoUrl?.startsWith('blob:')) URL.revokeObjectURL(userPhotoUrl);
+    setInputError(null);
+    clearResult();
+    const objectUrl = URL.createObjectURL(file);
+    setUserPhotoUrl(objectUrl);
+    setUserPhotoFile(file);
   };
 
   const handleOpenCatalog = (slot: CatalogSlot) => {
+    if (pageState === 'loading') return;
     setCatalogSlot(slot);
     setShowCatalogModal(true);
   };
 
   const handleSelectProductFromCatalog = (product: Product) => {
+    clearResult();
     if (catalogSlot === 'single') {
       setSelectedProduct(product);
       router.replace(`/try-on?productId=${product.id}`);
@@ -215,20 +226,23 @@ function VirtualTryOnContent() {
       return;
     }
 
-    if (!userPhotoFile) return;
-    const currentHumanImage = userPhotoFile;
-    setPageState('loading');
-    setProgress(0);
+    if (!userPhotoFile) {
+      setInputError('Hãy tải ảnh cá nhân PNG/JPG dưới 10MB trước khi thử trang phục.');
+      return;
+    }
 
-    const progressTimer = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 95) {
-          clearInterval(progressTimer);
-          return 95;
-        }
-        return prev + 1;
-      });
-    }, 150);
+    const validationError = validateTryOnFile(userPhotoFile);
+    if (validationError) {
+      setInputError(validationError);
+      return;
+    }
+
+    const currentHumanImage = userPhotoFile;
+    const currentUserPhotoUrl = userPhotoUrl;
+    setInputError(null);
+    setResultPhotoUrl(null);
+    setResultSourcePhotoUrl(null);
+    setPageState('loading');
 
     try {
       let payload: Parameters<typeof tryOnAsync>[0];
@@ -244,15 +258,11 @@ function VirtualTryOnContent() {
       }
 
       const result = await tryOnAsync(payload);
-      clearInterval(progressTimer);
-      setProgress(100);
       setResultPhotoUrl(result.resultUrl);
-      setTimeout(() => {
-        setPageState('result');
-        refetchQuota();
-      }, 300);
+      setResultSourcePhotoUrl(currentUserPhotoUrl);
+      setPageState('result');
+      refetchQuota();
     } catch (error: unknown) {
-      clearInterval(progressTimer);
       setPageState('idle');
       console.error('Try-On error:', error);
 
@@ -287,6 +297,53 @@ function VirtualTryOnContent() {
     }
   };
 
+  const handleModeChange = (mode: GarmentMode) => {
+    if (pageState === 'loading') return;
+    clearResult();
+    setGarmentMode(mode);
+  };
+
+  const handleUseMockPhoto = () => {
+    if (pageState === 'loading') return;
+    clearResult();
+    setInputError(null);
+    setUserPhotoUrl(MOCK_USER_PHOTO);
+    setUserPhotoFile(null);
+  };
+
+  const handleTryAnother = () => {
+    setResultPhotoUrl(null);
+    setResultSourcePhotoUrl(null);
+    setPageState('idle');
+  };
+
+  const handleChangePhoto = () => {
+    setResultPhotoUrl(null);
+    setResultSourcePhotoUrl(null);
+    setPageState('idle');
+    setUserPhotoUrl(null);
+    setUserPhotoFile(null);
+    setInputError(null);
+  };
+
+  const handleShare = async () => {
+    if (!resultPhotoUrl) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Kết quả Try-On từ FashionAI', text: `Thử đồ online bộ ${selectedProduct.name} tại FashionAI!`, url: resultPhotoUrl });
+        return;
+      }
+      await navigator.clipboard.writeText(resultPhotoUrl);
+      toast.success('Đã sao chép link ảnh vào clipboard.');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        toast.info('Đã hủy chia sẻ kết quả.');
+        return;
+      }
+      toast.error('Không thể chia sẻ kết quả. Vui lòng thử lại.');
+    }
+  };
+
   const handleDownload = async () => {
     if (!resultPhotoUrl) return;
     try {
@@ -307,12 +364,10 @@ function VirtualTryOnContent() {
   };
 
   const hasSelectedGarments = garmentMode === 'combo' ? Boolean(upperProduct || lowerProduct) : Boolean(selectedProduct?.id);
-  const canGenerate = userPhotoBase64 !== null && hasSelectedGarments && !isSubmitting;
+  const canGenerate = userPhotoFile !== null && hasSelectedGarments && !isSubmitting && pageState !== 'loading';
 
   return (
     <>
-      {pageState === 'loading' && <LoadingOverlay progress={progress} isCombo={garmentMode === 'combo'} />}
-
       <CatalogModal
         isOpen={showCatalogModal}
         onClose={() => setShowCatalogModal(false)}
@@ -336,7 +391,7 @@ function VirtualTryOnContent() {
         actionName="Thử đồ AI (Virtual Try-On)"
       />}
 
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0]); }} />
+      <input ref={cameraInputRef} type="file" accept="image/png,image/jpeg" capture="user" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0]); e.currentTarget.value = ''; }} />
 
       <TryOnHeader remainingQuota={remainingQuota} limitQuota={limitQuota} isBlocked={isBlocked} />
 
@@ -345,37 +400,29 @@ function VirtualTryOnContent() {
 
         <TryOnWorkspace
           userPhotoUrl={userPhotoUrl}
+          resultPhotoUrl={resultPhotoUrl}
+          resultSourcePhotoUrl={resultSourcePhotoUrl}
+          isLoading={pageState === 'loading'}
+          inputError={inputError}
           garmentMode={garmentMode}
           selectedProduct={selectedProduct}
           upperProduct={upperProduct}
           lowerProduct={lowerProduct}
+          canGenerate={canGenerate}
+          isSubmitting={isSubmitting || pageState === 'loading'}
+          isBlocked={isBlocked}
+          quotaCost={quotaCost}
           onFileSelect={handleFileSelect}
           onCameraSelect={() => cameraInputRef.current?.click()}
-          onUseMockPhoto={() => {
-            setUserPhotoUrl(MOCK_USER_PHOTO);
-            setUserPhotoBase64(null);
-            setUserPhotoFile(null);
-          }}
-          onModeChange={setGarmentMode}
+          onUseMockPhoto={handleUseMockPhoto}
+          onModeChange={handleModeChange}
           onOpenCatalog={handleOpenCatalog}
+          onGenerate={handleGenerate}
+          onDownload={handleDownload}
+          onShare={handleShare}
+          onTryAnother={handleTryAnother}
+          onChangePhoto={handleChangePhoto}
         />
-
-        <GenerateButton canGenerate={canGenerate} isSubmitting={isSubmitting} isBlocked={isBlocked} quotaCost={quotaCost} onGenerate={handleGenerate} />
-
-        {pageState === 'result' && resultPhotoUrl && (
-          <TryOnResult
-            userPhotoUrl={userPhotoUrl}
-            resultPhotoUrl={resultPhotoUrl}
-            shareProductName={selectedProduct.name}
-            onDownload={handleDownload}
-            onReset={() => {
-              setPageState('idle');
-              setUserPhotoUrl(null);
-              setUserPhotoBase64(null);
-              setUserPhotoFile(null);
-            }}
-          />
-        )}
 
         <div className="h-8" />
       </div>

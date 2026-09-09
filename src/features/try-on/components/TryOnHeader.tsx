@@ -1,16 +1,18 @@
 import { Crown } from 'lucide-react';
 import Link from 'next/link';
 
-export function QuotaBadge({ count, limit }: { count: number; limit: number }) {
+export function QuotaBadge({ count, limit }: { count: number; limit: number | null }) {
+  const isUnlimited = !Number.isFinite(count) || limit === null;
+
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label-sm font-semibold ${count > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${count > 0 ? 'bg-amber-500' : 'bg-red-500'}`} />
-      {count > 0 ? `Còn ${count} / ${limit} lượt hôm nay` : 'Hết lượt hôm nay'}
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label-sm font-semibold ${count > 0 || isUnlimited ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${count > 0 || isUnlimited ? 'bg-amber-500' : 'bg-red-500'}`} />
+      {isUnlimited ? 'Không giới hạn lượt thử' : count > 0 ? `Còn ${count} / ${limit} lượt hôm nay` : 'Hết lượt hôm nay'}
     </span>
   );
 }
 
-export function TryOnHeader({ remainingQuota, limitQuota, isBlocked }: { remainingQuota: number; limitQuota: number; isBlocked: boolean }) {
+export function TryOnHeader({ remainingQuota, limitQuota, isBlocked }: { remainingQuota: number; limitQuota: number | null; isBlocked: boolean }) {
   return (
     <div className="bg-white border-b border-neutral-200 w-full">
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8">
