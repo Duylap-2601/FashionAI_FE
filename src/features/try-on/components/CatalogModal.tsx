@@ -1,0 +1,97 @@
+'use client';
+
+import type { CatalogModalProps } from '@/features/try-on/types/catalog-modal';
+import { toBackendCategory } from '@/features/products/services/products-utils';
+import type { Product } from '@/features/products/types/products';
+import type { ProductPickerCategory } from '@/features/try-on/types/try-on-types';
+import { ChevronRight, X } from 'lucide-react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+
+export function SelectedProductCard({ product, onReplace }: { product: Product; onReplace: () => void }) {
+  return (
+    <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 shadow-sm">
+      <div className="relative w-[80px] h-[80px] shrink-0 overflow-hidden rounded-lg border border-neutral-100 bg-neutral-100">
+        <Image src={product.image} alt={product.name} fill sizes="80px" unoptimized className="object-cover" />
+      </div>
+      <div className="flex flex-col gap-1 flex-1 min-w-0">
+        <p className="text-label-sm text-neutral-500">{product.brand}</p>
+        <p className="text-body-sm font-medium text-neutral-900 leading-snug line-clamp-2">{product.name}</p>
+        <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{product.price}</p>
+      </div>
+      <button onClick={onReplace} type="button" className="shrink-0 text-label-sm font-semibold text-[#5D1C34] hover:text-[#5D1C34]/80 transition-colors flex items-center gap-1 whitespace-nowrap bg-transparent border-0 cursor-pointer">
+        Thay đổi <ChevronRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
+export function CatalogModal({ isOpen, onClose, onSelectProduct, products, currentProductId, initialCategory = 'ALL' }: CatalogModalProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCat, setSelectedCat] = useState<ProductPickerCategory>(initialCategory);
+
+  useEffect(() => {
+    if (isOpen) setSelectedCat(initialCategory);
+  }, [isOpen, initialCategory]);
+
+  if (!isOpen) return null;
+
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.category.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+    if (selectedCat === 'ALL') return true;
+    const cat = p.garmentCategory || toBackendCategory(p.category);
+    return cat === selectedCat;
+  });
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-[540px] w-full flex flex-col max-h-[80vh] overflow-hidden relative border border-neutral-200 animate-in zoom-in duration-200">
+        <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-[18px] font-bold text-brand-navy">Chọn trang phục thử đồ</h2>
+            <p className="text-[12px] text-neutral-500 mt-0.5">Chọn sản phẩm bất kỳ từ catalog cửa hàng</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-1.5 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-neutral-600 transition-colors"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="p-4 border-b border-neutral-100 bg-neutral-50 flex flex-col gap-3">
+          <input type="text" placeholder="Tìm kiếm sản phẩm, danh mục..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-white text-body-sm focus:outline-none focus:border-brand-navy transition-all" />
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+            {([
+              { id: 'ALL', label: 'Tất cả' },
+              { id: 'UPPER', label: 'Áo / Blazer' },
+              { id: 'LOWER', label: 'Quần / Váy' },
+              { id: 'FULL_BODY', label: 'Bộ liền' },
+            ] satisfies { id: ProductPickerCategory; label: string }[]).map(cat => (
+              <button key={cat.id} type="button" onClick={() => setSelectedCat(cat.id)} className={`px-3 py-1 rounded-lg text-[12px] font-semibold transition-all whitespace-nowrap ${selectedCat === cat.id ? 'bg-brand-navy text-white shadow-2xs' : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'}`}>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 no-scrollbar">
+          {filteredProducts.map((p) => {
+            const isSelected = p.id === currentProductId;
+            return (
+              <div key={p.id} onClick={() => { onSelectProduct(p); onClose(); }} className={`flex gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'border-brand-navy bg-brand-navy/5 ring-1 ring-brand-navy' : 'border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50'}`}>
+                <div className="relative w-14 h-18 shrink-0 overflow-hidden rounded-lg border border-neutral-100 bg-neutral-100">
+                  <Image src={p.image} alt={p.name} fill sizes="56px" unoptimized className="object-cover" />
+                </div>
+                <div className="flex-col flex justify-between min-w-0 py-0.5">
+                  <div>
+                    <h4 className="text-[12px] font-bold text-brand-navy line-clamp-1 leading-snug">{p.name}</h4>
+                    <span className="text-[10px] text-neutral-400 font-semibold uppercase mt-0.5 block">{p.brand}</span>
+                  </div>
+                  <span className="text-[12px] font-bold text-brand-navy">{p.price}</span>
+                </div>
+              </div>
+            );
+          })}
+          {filteredProducts.length === 0 && <div className="col-span-2 py-10 text-center text-neutral-500 text-body-sm">Không tìm thấy sản phẩm phù hợp.</div>}
+        </div>
+      </div>
+    </div>
+  );
+}

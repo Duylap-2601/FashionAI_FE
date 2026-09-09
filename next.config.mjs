@@ -5,9 +5,8 @@ import withPWA from '@ducanh2912/next-pwa';
 // request fetch/XHR — cookie SameSite=Lax không bao giờ đi kèm request cross-site.
 const BACKEND_ORIGIN = (process.env.BACKEND_ORIGIN ?? 'http://localhost:3002').replace(/\/+$/, '').replace(/\/api$/, '');
 
-// Không dùng thẳng /api/:path* : rewrite dạng array chạy ở giai đoạn afterFiles,
-// tức là TRƯỚC dynamic route, nên sẽ ăn luôn app/api/auth/[...nextauth]/route.ts
-// của NextAuth. Prefix riêng vẫn nằm dưới /api để khớp REFRESH_COOKIE_PATH=/api.
+// Prefix riêng tránh xung đột với các OAuth route handlers của frontend,
+// đồng thời vẫn nằm dưới /api để khớp REFRESH_COOKIE_PATH=/api.
 const BACKEND_PROXY_PREFIX = '/api/backend';
 
 /** @type {import('next').NextConfig} */
@@ -21,10 +20,7 @@ const nextConfig = {
     ],
   },
   eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
+    dirs: ['src'],
   },
   async rewrites() {
     return [

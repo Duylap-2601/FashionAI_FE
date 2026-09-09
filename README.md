@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FashionAI Frontend
 
-## Getting Started
+Ứng dụng Next.js 15 App Router cho mua sắm, may đo và thử đồ AI. Source được tổ chức
+theo nghiệp vụ trong `src/features`; routing nằm trong `src/app`.
 
-First, run the development server:
+## Chạy dự án
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở [localhost:3001](http://localhost:3001). Dùng `npm.cmd` trên PowerShell nếu hệ thống
+chặn thực thi file `.ps1`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Backend mặc định ở `http://localhost:3002`. Next.js proxy request qua
+`/api/backend` để giữ refresh cookie cùng origin. Các biến môi trường đang dùng:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Biến | Mục đích |
+| --- | --- |
+| `BACKEND_ORIGIN` | Origin backend cho proxy và Google OAuth route handlers |
+| `NEXT_PUBLIC_API_URL` | API base URL; mặc định `/api/backend` |
+| `NEXT_PUBLIC_WS_URL` | Origin Socket.IO; không chứa hậu tố `/api` |
 
-## Learn More
+## Cấu trúc và quyền sở hữu
 
-To learn more about Next.js, take a look at the following resources:
+```text
+src/
+├── app/          # Page wrappers, layouts, metadata, API routes
+├── features/     # UI, hooks, services, types, state theo nghiệp vụ
+├── components/   # UI dùng chung, layout, providers, PWA
+├── hooks/        # Hooks không thuộc feature
+├── lib/          # HTTP client, realtime, platform, utilities
+├── styles/
+└── middleware.ts
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Alias `@/` trỏ vào `src/`. Mỗi feature dùng `components/` cho cả component cấp trang
+và component con; không có `screen/`. Chỉ tạo thư mục có nội dung.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Feature | Màn hình / chức năng |
+| --- | --- |
+| `home` | Landing page |
+| `auth` | Đăng nhập, đăng ký, quên/đổi/reset mật khẩu, xác thực email, OAuth web/mobile, session |
+| `products`, `collections` | Danh sách/chi tiết sản phẩm, tìm kiếm, bộ sưu tập và quản trị bộ sưu tập |
+| `cart`, `checkout` | Giỏ hàng, địa chỉ giao hàng, phương thức thanh toán, tạo đơn |
+| `orders`, `payments` | Danh sách/chi tiết đơn, đặt hàng thành công, kết quả thanh toán |
+| `profile`, `measurements` | Tài khoản, hồ sơ và số đo |
+| `subscription` | Gói đăng ký, gia hạn, lịch sử và quota AI |
+| `try-on`, `stylist`, `rack` | Thử đồ, tư vấn, lịch sử AI và giá treo |
+| `chat`, `notifications`, `reviews` | Chat, thông báo, đánh giá và quản trị đánh giá |
+| `admin` | Dashboard, sản phẩm, người dùng, đơn hàng và quota |
 
-## Deploy on Vercel
+Các trang lịch sử dưới URL `/profile` vẫn thuộc feature nghiệp vụ tương ứng.
+Route groups và URL giữ nguyên. Màn hình offline thuộc shared PWA.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+HTTP GET nằm trong `services/queries.ts`, thao tác ghi trong `services/mutations.ts`.
+Hooks giữ state, cache invalidation và side effects UI. Login/refresh dùng raw fetch
+độc lập với Axios interceptor; đổi mật khẩu có xác thực dùng `password-mutations.ts`.
+Query key factories giữ nguyên cache prefixes và thứ tự tham số.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Xem [AGENTS.md](AGENTS.md) để biết quy ước import, Server/Client, types và workflow.
+
+## Kiểm tra source
+
+```bash
+npm run check:architecture
+npm test
+npm run typecheck
+npm run lint
+```
+
+- Architecture check chỉ đọc source: import hợp lệ, route wrapper, HTTP trong
+  services, shared dependencies và runtime cycles.
+- Regression tests chạy bằng Node test runner, không cần build: refresh token,
+  API mapping/payload, query keys và fallback collection.
+- NextAuth legacy đã được loại bỏ. Auth hiện tại dùng Zustand và backend session.
+  Typecheck và lint phải không có lỗi; không dùng cấu hình bỏ qua lỗi khi build.
+- Các kiểm tra source và production build không thay thế kiểm thử tích hợp OAuth,
+  thanh toán, socket, giao diện desktop/mobile hoặc PWA offline.
+
+Bỏ qua `.next/`, `node_modules/`, `out/` và các thư mục sinh tự động khi refactor.
+Để kiểm tra production, chạy `npm run build` rồi `npm start`; lưu ý PWA
+có thể sinh lại `public/sw.js` và các Workbox assets.
