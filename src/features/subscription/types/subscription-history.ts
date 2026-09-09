@@ -1,11 +1,12 @@
-import type { SubscriptionStatus } from '@/features/subscription/types/subscription';
+import type { Dispatch, JSX, SetStateAction } from 'react';
+import type { SubscriptionHistoryItem, SubscriptionStatus } from '@/features/subscription/types/subscription';
 
 export interface SubscriptionHistoryProps {
   isHistoryLoading: boolean;
-  history: import("@/features/subscription/types/subscription").SubscriptionHistoryItem[];
+  history: SubscriptionHistoryItem[];
   formatDate: (isoString?: string | null) => string;
-  getStatusBadge: (subStatus: SubscriptionStatus) => import("D:/workplace/projects/EXE/FashionAI_FE/node_modules/@types/react/index").JSX.Element;
+  getStatusBadge: (subStatus: SubscriptionStatus) => JSX.Element;
   historyMeta: { total: number; page: number; limit: number; totalPages: number; } | undefined;
-  setHistoryPage: import("D:/workplace/projects/EXE/FashionAI_FE/node_modules/@types/react/index").Dispatch<import("D:/workplace/projects/EXE/FashionAI_FE/node_modules/@types/react/index").SetStateAction<number>>;
+  setHistoryPage: Dispatch<SetStateAction<number>>;
   historyPage: number;
 }
