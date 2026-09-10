@@ -6,14 +6,9 @@ import { ArrowUpRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 export function EditorialLookbook({ images, collection }: EditorialLookbookProps) {
-  const collectionName = collection?.name?.toUpperCase() ?? null;
-  const collectionDesc = collection?.description ?? null;
-
   const looks = DEFAULT_LOOKBOOK_IMAGES.map((item, idx) => ({
     url: images && images[idx] ? images[idx] : item.url,
     category: `LOOK ${String(idx + 1).padStart(2, '0')}`,
-    title: collectionName ?? item.title,
-    subtitle: collectionDesc ?? item.subtitle,
   }));
 
   const sectionTitle = collection?.name
@@ -50,22 +45,16 @@ export function EditorialLookbook({ images, collection }: EditorialLookbookProps
             >
               <img
                 src={look.url}
-                alt={`${look.category} — ${look.title}`}
+                alt={look.category}
                 className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-106 transition-transform duration-700 ease-out"
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
 
               <div className="relative z-10 flex flex-col">
-                <span className="text-[11px] font-bold tracking-[0.2em] text-brand-gold uppercase mb-2">
+                <span className="text-[11px] font-bold tracking-[0.2em] text-brand-gold uppercase mb-4">
                   {look.category}
                 </span>
-                <h3 className="text-lg sm:text-xl font-bold tracking-wide text-white uppercase mb-1 leading-tight group-hover:text-brand-gold transition-colors">
-                  {look.title}
-                </h3>
-                <p className="text-xs text-neutral-300 mb-4 font-light">
-                  {look.subtitle}
-                </p>
 
                 <div className="flex items-center gap-3">
                   <Link
