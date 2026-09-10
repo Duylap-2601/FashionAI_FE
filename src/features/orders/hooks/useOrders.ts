@@ -4,6 +4,7 @@ import { mutationKeys } from '@/features/orders/services/mutation-keys';
 import { queryKeys as ordersQueryKeys } from '@/features/orders/services/query-keys';
 import { cancelOrder, createOrder } from '@/features/orders/services/mutations';
 import { fetchOrder, fetchOrders } from '@/features/orders/services/queries';
+import { isTerminalOrderStatus } from '@/features/orders/services/orders-utils';
 import type { Order } from '@/features/orders/types/orders';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -44,15 +45,24 @@ export function useOrders() {
 }
 
 export function useOrder(id: string) {
+  const status = useAuthStore((state) => state.status);
   const query = useQuery<Order>({
     queryKey: ordersQueryKeys.order(id),
     queryFn: () => fetchOrder(id),
-    enabled: !!id,
+    enabled: status === 'authenticated' && !!id,
+    refetchInterval: (query) => {
+      const order = query.state.data;
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
+      if (!order || isTerminalOrderStatus(order.status)) return false;
+      return 30_000;
+    },
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   return {
     order: query.data,
-    isLoading: query.isLoading,
+    isLoading: status === 'loading' || query.isLoading,
     isError: query.isError,
     refetch: query.refetch,
   };

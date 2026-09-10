@@ -47,7 +47,7 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
           </div>
 
           <div>
-            <label className="block text-body-sm font-semibold text-neutral-700 mb-2">Trạng thái vận chuyển</label>
+            <label className="block text-body-sm font-semibold text-neutral-700 mb-2">Trạng thái đơn hàng</label>
             <select
               value={selectedOrder.status}
               onChange={e => handleUpdateOrderStatus(selectedOrder.id, e.target.value as BackendOrderStatus)}
@@ -56,6 +56,11 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
               <option value="PENDING">Chờ xác nhận</option>
               <option value="PAID">Đã thanh toán</option>
               <option value="CONFIRMED">Đã xác nhận</option>
+              <option value="MEASUREMENT_REVIEW">Kiểm tra số đo</option>
+              <option value="MEASUREMENT_CONFIRMED">Chốt số đo</option>
+              <option value="TAILORING">Đang may</option>
+              <option value="QUALITY_CHECK">QC</option>
+              <option value="READY_TO_SHIP">Sẵn sàng giao</option>
               <option value="SHIPPING">Đang giao hàng</option>
               <option value="DELIVERED">Đã giao hàng</option>
               <option value="CANCELLED">Hủy đơn</option>

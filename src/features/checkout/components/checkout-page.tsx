@@ -8,6 +8,7 @@ import { PaymentMethodSelector } from '@/features/checkout/components/payment-me
 import { ShippingAddressForm } from '@/features/checkout/components/shipping-address-form';
 import { useCart } from '@/features/cart/store/cartStore';
 import { VIETNAM_PROVINCES } from '@/features/checkout/constants/vietnam-provinces';
+import { calculateShippingFee } from '@/features/checkout/services/shipping';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
 import { useCheckout } from '@/features/payments/hooks/usePayments';
@@ -26,10 +27,11 @@ export default function CheckoutPage() {
   const { createOrderAsync, isSubmitting } = useCreateOrder();
   const { checkout, isLoading: isCheckoutLoading } = useCheckout();
 
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bank'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'bank'>('bank');
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState('');
+  const [shippingFeeQuote, setShippingFeeQuote] = useState(0);
 
   // Form fields state
   const [fullName, setFullName] = useState('');
@@ -44,6 +46,7 @@ export default function CheckoutPage() {
   }, [provinceId]);
 
   const availableDistricts = currentProvince.districts;
+  const currentDistrict = availableDistricts.find(d => d.id === districtId);
 
   // Prefill profile data if available
   useEffect(() => {
@@ -64,7 +67,37 @@ export default function CheckoutPage() {
     }
   }, [profile]);
 
-  const shippingFee = paymentMethod === 'cod' ? 50000 : 0;
+  useEffect(() => {
+    const ghnDistrictId = (currentDistrict as { ghnDistrictId?: number } | undefined)?.ghnDistrictId;
+    const ghnWardCode = (currentDistrict as { ghnWardCode?: string } | undefined)?.ghnWardCode;
+    if (!ghnDistrictId || !ghnWardCode) {
+      setShippingFeeQuote(0);
+      return;
+    }
+
+    let cancelled = false;
+    calculateShippingFee({
+      toDistrictId: ghnDistrictId,
+      toWardCode: ghnWardCode,
+      weight: Math.max(500, items.reduce((sum, item) => sum + item.quantity * 500, 0)),
+      length: 25,
+      width: 20,
+      height: 8,
+      insuranceValue: totalPrice,
+    })
+      .then((quote) => {
+        if (!cancelled) setShippingFeeQuote(quote.totalFee);
+      })
+      .catch(() => {
+        if (!cancelled) setShippingFeeQuote(0);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentDistrict, items, totalPrice]);
+
+  const shippingFee = shippingFeeQuote;
   const total = Math.max(0, totalPrice - discount + shippingFee);
 
   const handleApplyCoupon = () => {
@@ -116,7 +149,6 @@ export default function CheckoutPage() {
     }
 
     const formattedProvince = currentProvince.name;
-    const currentDistrict = availableDistricts.find(d => d.id === districtId);
     const formattedDistrict = currentDistrict ? currentDistrict.name : '';
     const fullAddress = `${addressDetail}, ${formattedDistrict ? formattedDistrict + ', ' : ''}${formattedProvince}`;
 
@@ -132,8 +164,10 @@ export default function CheckoutPage() {
         phone: phone,
         address: fullAddress,
         notes: notes,
+        provinceName: formattedProvince,
+        districtName: formattedDistrict,
       },
-      paymentMethod: (paymentMethod === 'cod' ? 'COD' : 'Bank') as 'COD' | 'Bank',
+      paymentMethod: 'BANK_TRANSFER' as const,
       couponCode: discount > 0 ? coupon.toUpperCase() : undefined,
       discountAmount: discount || undefined,
       shippingFee: shippingFee,
@@ -146,14 +180,6 @@ export default function CheckoutPage() {
 
       if (!orderId) {
         throw new Error('Không nhận được ID đơn hàng từ server');
-      }
-
-      // COD: redirect to success page directly
-      if (paymentMethod === 'cod') {
-        clearCart();
-        toast.success('Đặt hàng thành công!');
-        router.push(`/orders/${orderId}/success`);
-        return;
       }
 
       // Bank/SePay/PayOS: create checkout link and redirect to payment gateway

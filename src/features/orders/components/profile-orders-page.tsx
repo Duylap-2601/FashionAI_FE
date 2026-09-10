@@ -93,7 +93,7 @@ function OrderCard({
   const status = order.status || 'PENDING';
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
   const Icon = cfg.icon;
-  const orderCode = order.id.substring(0, 8).toUpperCase();
+  const orderCode = `ORD-${order.orderCode}`;
 
   const copyCode = () => {
     navigator.clipboard.writeText(orderCode);
@@ -284,13 +284,28 @@ function OrderCard({
                   <div className="flex flex-col gap-2 text-body-sm">
                     <div className="flex justify-between text-neutral-600">
                       <span>Phí giao hàng</span>
-                      <span>Miễn phí</span>
+                      <span>{fmt(order.shippingFee)}</span>
+                    </div>
+                    {order.discountAmount > 0 && (
+                      <div className="flex justify-between text-neutral-600">
+                        <span>Giảm giá</span>
+                        <span>-{fmt(order.discountAmount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-neutral-600">
+                      <span>Thanh toán</span>
+                      <span>{order.paymentStatus || 'Chưa xác định'}</span>
                     </div>
                     <div className="flex justify-between font-bold text-brand-navy pt-2 border-t border-neutral-100">
                       <span>Tổng cộng</span>
                       <span>{fmt(order.totalAmount)}</span>
                     </div>
-                    <p className="text-label-sm text-neutral-500 mt-1">Thanh toán: {order.paymentMethod}</p>
+                    <p className="text-label-sm text-neutral-500 mt-1">Phương thức: {order.paymentMethod}</p>
+                    {order.history && order.history.length > 0 ? (
+                      <p className="text-label-sm text-neutral-500 mt-1">Mốc mới nhất: {order.history[order.history.length - 1]?.publicMessage || order.history[order.history.length - 1]?.toStatus}</p>
+                    ) : (
+                      <p className="text-label-sm text-neutral-500 mt-1">Chưa có lịch sử chi tiết</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -330,7 +345,7 @@ export default function OrdersPage() {
     const status = o.status || 'pending';
     const matchFilter = activeFilter === 'all' || status.toLowerCase() === activeFilter.toLowerCase();
 
-    const orderCode = o.id.substring(0, 8).toUpperCase();
+    const orderCode = `ORD-${o.orderCode}`;
     const matchSearch = !search ||
       orderCode.includes(search.toUpperCase()) ||
       o.items.some(i => (i.product?.name || '').toLowerCase().includes(search.toLowerCase()));

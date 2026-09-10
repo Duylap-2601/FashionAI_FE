@@ -116,10 +116,9 @@ export function NotificationItem({ notification, onItemClick }: NotificationItem
     }
 
     // Smart routing for Customer
-    if (notification.type === 'ORDER_STATUS') {
-      router.push('/profile/orders');
-    } else if (notification.type === 'PAYMENT') {
-      router.push('/profile/orders');
+    if (notification.type === 'ORDER_STATUS' || notification.type === 'PAYMENT') {
+      const orderId = notification.data?.orderId as string | undefined;
+      router.push(orderId ? `/orders/${orderId}` : '/profile/orders');
     } else if (notification.type === 'PROMOTION') {
       router.push('/products');
     } else if (notification.type === 'REVIEW') {

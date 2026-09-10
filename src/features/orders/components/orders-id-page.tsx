@@ -1,6 +1,6 @@
 'use client';
 
-import { STATUS_MAP } from '@/features/orders/constants/orders-id-page';
+import { STATUS_MAP, TAILORING_STEPS } from '@/features/orders/constants/orders-id-page';
 import { useCart } from '@/features/cart/store/cartStore';
 import { useCancelOrder, useOrder } from '@/features/orders/hooks/useOrders';
 import {
@@ -90,7 +90,16 @@ export default function OrderDetailPage() {
     );
   }
 
-  const steps = ['Đặt hàng', 'Xác nhận', 'Đang giao', 'Đã nhận'];
+  const orderCode = `ORD-${order.orderCode}`;
+  const steps = order.fulfillmentFlowVersion === 1 ? TAILORING_STEPS : ['Đặt hàng', 'Xác nhận', 'Đang giao', 'Đã nhận'];
+  const maxStep = Math.max(1, steps.length - 1);
+  const paymentLabel = order.paymentStatus === 'PAID'
+    ? 'Đã thanh toán'
+    : order.paymentStatus === 'FAILED'
+      ? 'Thanh toán thất bại'
+      : order.paymentStatus === 'REFUNDED'
+        ? 'Đã hoàn tiền'
+        : 'Chờ thanh toán';
 
   return (
     <div className="bg-brand-cream min-h-screen py-8 pb-20">
@@ -102,7 +111,7 @@ export default function OrderDetailPage() {
             <ChevronLeft className="w-4 h-4" /> Đơn hàng của tôi
           </Link>
           <span className="text-neutral-400">/</span>
-          <span className="text-brand-navy font-bold">#{order.id.slice(0, 8).toUpperCase()}</span>
+          <span className="text-brand-navy font-bold">#{orderCode}</span>
         </div>
 
         {/* Header summary */}
@@ -111,7 +120,7 @@ export default function OrderDetailPage() {
             <div>
               <div className="flex items-center gap-3 mb-1.5 flex-wrap">
                 <h1 className="text-[22px] font-bold text-brand-navy">
-                  Đơn hàng #{order.id.slice(0, 8).toUpperCase()}
+                  Đơn hàng #{orderCode}
                 </h1>
                 <span className={`px-3 py-1 rounded-full text-label-sm font-bold border ${statusInfo.color}`}>
                   {statusInfo.label}
@@ -124,7 +133,7 @@ export default function OrderDetailPage() {
 
             <div className="flex items-center gap-3">
               {order.status === 'PENDING' && (
-                <button
+                  <button
                   type="button"
                   onClick={() => setShowCancelConfirm(true)}
                   className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-body-sm font-medium rounded-xl transition-colors cursor-pointer"
@@ -149,7 +158,7 @@ export default function OrderDetailPage() {
                 <div className="absolute top-5 left-8 right-8 h-[3px] bg-neutral-200 -z-0" />
                 <div
                   className="absolute top-5 left-8 h-[3px] bg-brand-navy transition-all duration-500 -z-0"
-                  style={{ width: `${Math.min(100, Math.max(0, (statusInfo.step / 3) * 100))}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, (statusInfo.step / maxStep) * 100))}%` }}
                 />
                 {steps.map((label, idx) => {
                   const isPassed = idx <= statusInfo.step;
@@ -170,24 +179,42 @@ export default function OrderDetailPage() {
                 })}
               </div>
               <p className="text-center text-[13px] text-neutral-600 mt-4">
-                ℹ️ {statusInfo.desc}
+                {statusInfo.desc}
               </p>
             </div>
           )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-neutral-500">Thanh toán</p>
+            <p className="mt-1 text-body-md font-bold text-brand-navy">{paymentLabel}</p>
+            <p className="text-[12px] text-neutral-500">{order.paymentMethod || 'Chưa xác định'}</p>
+          </div>
+          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-neutral-500">Vận chuyển</p>
+            <p className="mt-1 text-body-md font-bold text-brand-navy">{order.shipment?.status || 'Chưa tạo vận đơn'}</p>
+            <p className="text-[12px] text-neutral-500">{order.shipment?.providerOrderCode ? `Mã: ${order.shipment.providerOrderCode}` : 'Chờ shop bàn giao'}</p>
+          </div>
+          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-neutral-500">Cập nhật</p>
+            <p className="mt-1 text-body-md font-bold text-brand-navy">{order.updatedAt ? new Date(order.updatedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '—'}</p>
+            <p className="text-[12px] text-neutral-500">{order.updatedAt ? new Date(order.updatedAt).toLocaleDateString('vi-VN') : 'Chưa có dữ liệu'}</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
 
           {/* LEFT: Products List */}
           <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-            <h3 className="text-[18px] font-bold text-brand-navy pb-3 border-b border-neutral-100">
-              Sản phẩm trong đơn ({order.items.reduce((acc, i) => acc + i.quantity, 0)})
-            </h3>
+              <h3 className="text-[18px] font-bold text-brand-navy pb-3 border-b border-neutral-100">
+                Sản phẩm trong đơn ({order.items.reduce((acc, i) => acc + i.quantity, 0)})
+              </h3>
 
             <div className="flex flex-col divide-y divide-neutral-100">
               {order.items.map((item, index) => {
                 const img = item.product?.images?.[0] || '/images/726470431_1311184104081177_6052756217829444481_n.png';
-                const name = item.product?.name || `Trang phục #${item.productId}`;
+                const name = item.productNameSnapshot || item.product?.name || `Trang phục #${item.productId}`;
 
                 return (
                   <div key={item.id || index} className="py-4 flex gap-4 items-center">
@@ -203,7 +230,7 @@ export default function OrderDetailPage() {
                       <div className="flex items-center gap-2 mt-1 text-[13px] text-neutral-500">
                         <span>Màu: <strong className="text-neutral-700">{item.color || 'Mặc định'}</strong></span>
                         <span>•</span>
-                        <span>Hình thức: <strong className="text-neutral-700">May đo theo số đo</strong></span>
+                        <span>Vải: <strong className="text-neutral-700">{item.fabricSnapshot || 'Theo sản phẩm'}</strong></span>
                       </div>
                       {item.measurementSnapshot && Object.keys(item.measurementSnapshot).length > 0 && (
                         <div className="mt-2 p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 text-[11px] text-neutral-600 flex flex-wrap gap-x-3 gap-y-1">
@@ -271,19 +298,22 @@ export default function OrderDetailPage() {
 
               <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
                 <span className="text-neutral-500">Hình thức</span>
-                <span className="font-semibold text-brand-navy">
-                  {order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng (COD)' : order.paymentMethod === 'Bank' ? 'Chuyển khoản QR' : 'Ví điện tử'}
-                </span>
+                <span className="font-semibold text-brand-navy">{order.paymentMethod === 'BANK_TRANSFER' || order.paymentMethod === 'BANK' || order.paymentMethod === 'Bank' ? 'Chuyển khoản online' : order.paymentMethod}</span>
               </div>
 
               <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
                 <span className="text-neutral-500">Tạm tính</span>
-                <span className="text-neutral-700 font-medium">{order.totalAmount.toLocaleString('vi-VN')}đ</span>
+                <span className="text-neutral-700 font-medium">{order.itemsTotal.toLocaleString('vi-VN')}đ</span>
               </div>
 
               <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
                 <span className="text-neutral-500">Phí vận chuyển</span>
-                <span className="text-green-600 font-medium">Miễn phí</span>
+                <span className="text-neutral-700 font-medium">{order.shippingFee.toLocaleString('vi-VN')}đ</span>
+              </div>
+
+              <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
+                <span className="text-neutral-500">Giảm giá</span>
+                <span className="text-neutral-700 font-medium">-{order.discountAmount.toLocaleString('vi-VN')}đ</span>
               </div>
 
               <div className="flex items-center justify-between pt-4">
@@ -292,6 +322,22 @@ export default function OrderDetailPage() {
                   {order.totalAmount.toLocaleString('vi-VN')}đ
                 </span>
               </div>
+            </div>
+
+            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
+              <h3 className="text-[16px] font-bold text-brand-navy mb-4">Lịch sử đơn hàng</h3>
+              {order.history && order.history.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {order.history.map(event => (
+                    <div key={event.id} className="border-l-2 border-brand-navy/20 pl-3">
+                      <p className="text-body-sm font-semibold text-brand-navy">{event.publicMessage || event.toStatus || event.type}</p>
+                      <p className="text-[12px] text-neutral-500">{new Date(event.occurredAt).toLocaleString('vi-VN')}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-body-sm text-neutral-500">Chưa có lịch sử chi tiết.</p>
+              )}
             </div>
 
           </div>
@@ -309,7 +355,7 @@ export default function OrderDetailPage() {
             </div>
             <h3 className="text-[18px] font-bold text-brand-navy mb-2">Xác nhận hủy đơn hàng?</h3>
             <p className="text-body-sm text-neutral-600 mb-6">
-              Bạn có chắc chắn muốn hủy đơn hàng <strong>#{order.id.slice(0, 8).toUpperCase()}</strong> không? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn hủy đơn hàng <strong>#{orderCode}</strong> không? Hành động này không thể hoàn tác.
             </p>
             <div className="flex gap-3 justify-end">
               <button
