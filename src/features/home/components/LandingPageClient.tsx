@@ -82,6 +82,7 @@ export function LandingPageClient() {
 
         <EditorialLookbook
           images={selectedCollection?.lookbookImages || selectedCollection?.coverImages}
+          collection={selectedCollection}
         />
 
         <ProductGrid

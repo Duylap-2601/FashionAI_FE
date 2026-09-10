@@ -5,11 +5,19 @@ import type { EditorialLookbookProps } from '@/features/home/types/editorial-loo
 import { ArrowUpRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
-export function EditorialLookbook({ images }: EditorialLookbookProps) {
+export function EditorialLookbook({ images, collection }: EditorialLookbookProps) {
   const looks = DEFAULT_LOOKBOOK_IMAGES.map((item, idx) => ({
     ...item,
     url: images && images[idx] ? images[idx] : item.url,
   }));
+
+  const sectionTitle = collection?.name
+    ? collection.name.toUpperCase()
+    : 'LOOKBOOK 2026: SẮC VÓC LÃNH ĐẠO';
+
+  const sectionSubtitle = collection?.description
+    ? collection.description
+    : 'Mỗi góc nhìn là một lời khẳng định cho phong cách chuyên nghiệp, thanh lịch và tự tin nơi công sở.';
 
   return (
     <section id="lookbook" className="py-14 md:py-24 bg-[#0F172A] text-white">
@@ -21,10 +29,10 @@ export function EditorialLookbook({ images }: EditorialLookbookProps) {
             EDITORIAL CAMPAIGN
           </span>
           <h2 className="text-[28px] sm:text-[38px] font-bold tracking-tight uppercase mb-3">
-            LOOKBOOK 2026: SẮC VÓC LÃNH ĐẠO
+            {sectionTitle}
           </h2>
           <p className="text-body-sm text-neutral-400 font-light">
-            Mỗi góc nhìn là một lời khẳng định cho phong cách chuyên nghiệp, thanh lịch và tự tin nơi công sở.
+            {sectionSubtitle}
           </p>
         </div>
 
