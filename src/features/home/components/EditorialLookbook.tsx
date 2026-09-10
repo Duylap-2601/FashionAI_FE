@@ -6,9 +6,14 @@ import { ArrowUpRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 export function EditorialLookbook({ images, collection }: EditorialLookbookProps) {
+  const collectionName = collection?.name?.toUpperCase() ?? null;
+  const collectionDesc = collection?.description ?? null;
+
   const looks = DEFAULT_LOOKBOOK_IMAGES.map((item, idx) => ({
-    ...item,
     url: images && images[idx] ? images[idx] : item.url,
+    category: `LOOK ${String(idx + 1).padStart(2, '0')}`,
+    title: collectionName ?? item.title,
+    subtitle: collectionDesc ?? item.subtitle,
   }));
 
   const sectionTitle = collection?.name
@@ -45,7 +50,7 @@ export function EditorialLookbook({ images, collection }: EditorialLookbookProps
             >
               <img
                 src={look.url}
-                alt={look.title}
+                alt={`${look.category} — ${look.title}`}
                 className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-106 transition-transform duration-700 ease-out"
                 loading="lazy"
               />
