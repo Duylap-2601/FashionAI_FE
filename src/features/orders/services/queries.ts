@@ -8,15 +8,8 @@ export async function fetchOrders() {
 }
 
 export async function fetchOrder(id: string) {
-  try {
-    const res = await api.get(`/orders/${id}`);
-    return mapOrder(res.data as BackendOrder);
-  } catch {
-    const res = await api.get('/orders');
-    const order = (res.data || []).find((item: BackendOrder) => item.id === id);
-    if (!order) throw new Error('Không tìm thấy đơn hàng');
-    return mapOrder(order);
-  }
+  const res = await api.get(`/orders/${id}`);
+  return mapOrder(res.data as BackendOrder);
 }
 
 export { queryKeys } from './query-keys';
