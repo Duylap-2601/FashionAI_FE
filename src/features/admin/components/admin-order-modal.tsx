@@ -7,8 +7,31 @@ import {
   X
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
-export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus }: AdminOrderModalProps) {
+export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus, handleConfirmManualPayment }: AdminOrderModalProps) {
+  const [reference, setReference] = useState('');
+  const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const isPending = selectedOrder.status === 'PENDING';
+
+  const onConfirmManualPayment = async () => {
+    if (!reference.trim() || !note.trim()) {
+      toast.error('Vui lòng nhập đầy đủ mã tham chiếu và lý do xác nhận.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await handleConfirmManualPayment(selectedOrder.orderCode, reference.trim(), note.trim());
+      setReference('');
+      setNote('');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex">
       <motion.div
@@ -46,6 +69,38 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
             <p className="text-body-sm font-bold text-brand-navy mt-1">Tổng tiền: {fmt(selectedOrder.total)}</p>
           </div>
 
+          {isPending && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <p className="text-body-sm font-semibold text-amber-800 mb-2">Xác nhận thanh toán thủ công</p>
+              <p className="text-label-sm text-amber-700 mb-3">
+                Dùng khi khách đã chuyển khoản và đã nhận được tiền nhưng hệ thống chưa tự cập nhật trạng thái.
+              </p>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="text"
+                  placeholder="Mã tham chiếu chuyển khoản"
+                  value={reference}
+                  onChange={e => setReference(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg border border-amber-300 text-body-sm"
+                />
+                <textarea
+                  placeholder="Lý do / căn cứ xác nhận (ví dụ: đối soát sao kê ngày ...)"
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm resize-none"
+                />
+                <button
+                  onClick={onConfirmManualPayment}
+                  disabled={submitting}
+                  className="h-9 rounded-lg bg-amber-600 text-white text-body-sm font-semibold hover:bg-amber-700 disabled:opacity-50 border-0 cursor-pointer"
+                >
+                  {submitting ? 'Đang xác nhận...' : 'Xác nhận đã nhận tiền'}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-body-sm font-semibold text-neutral-700 mb-2">Trạng thái đơn hàng</label>
             <select
@@ -54,8 +109,8 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
               className="w-full h-10 px-3 rounded-lg border border-neutral-300"
             >
               <option value="PENDING">Chờ xác nhận</option>
-              <option value="PAID">Đã thanh toán</option>
-              <option value="CONFIRMED">Đã xác nhận</option>
+              {!isPending && <option value="PAID">Đã thanh toán</option>}
+              {!isPending && <option value="CONFIRMED">Đã xác nhận</option>}
               <option value="MEASUREMENT_REVIEW">Kiểm tra số đo</option>
               <option value="MEASUREMENT_CONFIRMED">Chốt số đo</option>
               <option value="TAILORING">Đang may</option>
@@ -66,6 +121,11 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
               <option value="CANCELLED">Hủy đơn</option>
               <option value="RETURNED">Hoàn trả</option>
             </select>
+            {isPending && (
+              <p className="text-label-sm text-neutral-500 mt-1">
+                Đơn đang chờ thanh toán chỉ có thể hủy, hoặc xác nhận thanh toán thủ công ở trên khi đã nhận được tiền.
+              </p>
+            )}
           </div>
         </div>
       </motion.div>

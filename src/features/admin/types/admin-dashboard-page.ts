@@ -48,6 +48,7 @@ export interface AdminUser {
 export interface AdminOrder {
   id: string;
   code: string;
+  orderCode: number;
   customer: string;
   email: string;
   items: number;

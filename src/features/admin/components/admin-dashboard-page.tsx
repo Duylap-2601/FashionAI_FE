@@ -13,7 +13,7 @@ import { AdminUsersPanel } from '@/features/admin/components/admin-users-panel';
 import { DashboardOverview } from '@/features/admin/components/dashboard-overview';
 import { fmt } from '@/features/admin/services/format';
 import type { ProductImageItem } from '@/features/admin/types/admin-dashboard-page';
-import { createProduct, deleteProduct, deleteProductImage, updateOrderStatus, updateProduct, updateUser, uploadProductImage } from '@/features/admin/services/mutations';
+import { confirmManualPayment, createProduct, deleteProduct, deleteProductImage, updateOrderStatus, updateProduct, updateUser, uploadProductImage } from '@/features/admin/services/mutations';
 import { fetchAdminOrders, fetchAdminProducts, fetchAdminStats, fetchAdminUsers } from '@/features/admin/services/queries';
 import type { AdminOrder, AdminPage, AdminProduct, AdminProductImage, AdminStats, AdminUser, GarmentCategory, ProductStatus, UserRole, UserTier } from '@/features/admin/types/admin-dashboard-page';
 import { AdminGuard } from '@/features/auth/components/AdminGuard';
@@ -297,6 +297,7 @@ export default function AdminDashboard() {
         return {
           id: o.id,
           code: `#${o.orderCode}`,
+          orderCode: Number(o.orderCode),
           customer: ship?.name || o.user?.name || 'Khách hàng',
           email: o.user?.email || ship?.phone || '',
           items: o.items?.length || 1,
@@ -498,7 +499,19 @@ export default function AdminDashboard() {
       if (selectedOrder?.id === id) setSelectedOrder(prev => prev ? { ...prev, status } : null);
       toast.success('Cập nhật trạng thái đơn hàng thành công');
     } catch (e) {
-      toast.error('Không thể cập nhật trạng thái đơn hàng.');
+      toast.error(getErrorMessage(e, 'Không thể cập nhật trạng thái đơn hàng.'));
+      console.error(e);
+    }
+  };
+
+  const handleConfirmManualPayment = async (orderCode: number, reference: string, note: string) => {
+    try {
+      await confirmManualPayment(orderCode, { reference, note });
+      setOrders(prev => prev.map(o => o.orderCode === orderCode ? { ...o, status: 'PAID' } : o));
+      if (selectedOrder?.orderCode === orderCode) setSelectedOrder(prev => prev ? { ...prev, status: 'PAID' } : null);
+      toast.success('Xác nhận thanh toán thủ công thành công');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể xác nhận thanh toán thủ công.'));
       console.error(e);
     }
   };
@@ -913,7 +926,7 @@ export default function AdminDashboard() {
           {/* ─── DRAWER: ORDER DETAIL ────────────────────────────────────────────── */}
           <AnimatePresence>
             {selectedOrder && (
-              <AdminOrderModal setSelectedOrder={setSelectedOrder} selectedOrder={selectedOrder} handleUpdateOrderStatus={handleUpdateOrderStatus} />
+              <AdminOrderModal setSelectedOrder={setSelectedOrder} selectedOrder={selectedOrder} handleUpdateOrderStatus={handleUpdateOrderStatus} handleConfirmManualPayment={handleConfirmManualPayment} />
             )}
           </AnimatePresence>
 
