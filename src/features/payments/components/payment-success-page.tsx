@@ -2,10 +2,18 @@
 
 import { fetchPaymentOrderByCodeResponse } from '@/features/payments/services/queries';
 import { useOrder } from '@/features/orders/hooks/useOrders';
-import { AlertCircle, CheckCircle2, ChevronRight, CreditCard, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronRight, Clock, CreditCard, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
+
+/** Đơn ở các trạng thái này chắc chắn thất bại/hủy, không phải "đang chờ xác nhận". */
+const FAILED_ORDER_STATUSES = ['CANCELLED', 'EXPIRED', 'FAILED'];
+/** IPN webhook của SePay/PayOS gọi ngược vào server độc lập với redirect trình
+ * duyệt và có thể đến sau vài giây; poll trong lúc chờ để không báo "thất bại"
+ * nhầm khi đơn vẫn PENDING ngay lúc trang vừa mở. */
+const CONFIRM_TIMEOUT_MS = 20_000;
+const CONFIRM_POLL_INTERVAL_MS = 2_000;
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -16,6 +24,7 @@ function PaymentSuccessContent() {
   const [isResolving, setIsResolving] = useState(true);
 
   const { order, isLoading, refetch } = useOrder(resolvedOrderId || '');
+  const [confirmTimedOut, setConfirmTimedOut] = useState(false);
 
   useEffect(() => {
     if (orderCode) {
@@ -41,6 +50,28 @@ function PaymentSuccessContent() {
   }, [orderCode]);
 
   const isPaid = order?.status === 'PAID';
+  const isFailed = order ? FAILED_ORDER_STATUSES.includes(order.status) : false;
+  const isAwaitingConfirmation = status !== 'cancel' && status !== 'error' && !!order && !isPaid && !isFailed;
+
+  // IPN có thể đến sau khi trình duyệt vừa redirect về đây; poll nhanh trong
+  // ít giây trước khi chấp nhận là chưa xác nhận được (không coi là thất bại).
+  useEffect(() => {
+    if (!isAwaitingConfirmation) return;
+
+    setConfirmTimedOut(false);
+    const deadline = Date.now() + CONFIRM_TIMEOUT_MS;
+
+    const interval = setInterval(() => {
+      if (Date.now() >= deadline) {
+        clearInterval(interval);
+        setConfirmTimedOut(true);
+        return;
+      }
+      refetch();
+    }, CONFIRM_POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [isAwaitingConfirmation, resolvedOrderId, refetch]);
 
   if (isResolving || (resolvedOrderId && isLoading)) {
     return (
@@ -83,6 +114,16 @@ function PaymentSuccessContent() {
               </div>
               <h1 className="text-[24px] font-bold text-brand-navy mb-3">Thanh toán bị hủy</h1>
               <p className="text-neutral-600 mb-6">Bạn đã hủy thanh toán. Đơn hàng vẫn ở trạng thái chờ thanh toán.</p>
+            </>
+          ) : isAwaitingConfirmation && !confirmTimedOut ? (
+            <>
+              <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-6">
+                <Clock className="w-8 h-8 text-amber-600" />
+              </div>
+              <h1 className="text-[24px] font-bold text-brand-navy mb-3">Đang xác nhận thanh toán...</h1>
+              <p className="text-neutral-600 mb-6">
+                Ngân hàng/cổng thanh toán đang gửi xác nhận về hệ thống. Vui lòng đợi trong ít giây, trang sẽ tự cập nhật.
+              </p>
             </>
           ) : (
             <>
