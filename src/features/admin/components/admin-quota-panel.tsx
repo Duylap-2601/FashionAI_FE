@@ -84,9 +84,9 @@ export function AdminQuotaPanel({ users, stats }: AdminQuotaPanelProps) {
               </thead>
               <tbody>
                 {([
-                  { tier: 'FREE' as UserTier, tryon: '—', stylist: '—', chat: '10', count: freeUsers.length },
-                  { tier: 'MEMBER' as UserTier, tryon: '10', stylist: '10', chat: 'Unlimited', count: memberUsers.length },
-                  { tier: 'VIP' as UserTier, tryon: '30', stylist: '30', chat: 'Unlimited', count: vipUsers.length },
+                  { tier: 'FREE' as UserTier, tryon: '—', stylist: '3', chat: '50', count: freeUsers.length },
+                  { tier: 'MEMBER' as UserTier, tryon: '5', stylist: '20', chat: '200', count: memberUsers.length },
+                  { tier: 'VIP' as UserTier, tryon: '10', stylist: 'Unlimited', chat: 'Unlimited', count: vipUsers.length },
                 ]).map((row, i) => {
                   const cfg = TIER_QUOTA[row.tier];
                   return (

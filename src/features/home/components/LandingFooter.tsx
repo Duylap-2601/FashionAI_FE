@@ -18,14 +18,7 @@ export function LandingFooter() {
               Nền tảng thời trang công sở cao cấp tiên phong ứng dụng công nghệ thử đồ ảo AI. Chuẩn dáng từ đầu, đẹp từng đường may.
             </p>
 
-            {/* Ministry of Industry and Trade certification mock badge */}
-            <div className="inline-flex items-center gap-3 px-3.5 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-neutral-300">
-              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
-              <div>
-                <div className="font-bold text-white text-[11px]">ĐÃ ĐĂNG KÝ BỘ CÔNG THƯƠNG</div>
-                <div className="text-[10px] text-neutral-400">Chứng nhận website thương mại điện tử</div>
-              </div>
-            </div>
+
           </div>
 
           {/* Col 2: Collections & Shop (3 cols) */}
@@ -131,7 +124,7 @@ export function LandingFooter() {
                 Phương thức thanh toán
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                {['VNPAY', 'MoMo', 'Visa', 'Mastercard', 'COD'].map((item) => (
+                {['VNPAY', 'MoMo', 'COD'].map((item) => (
                   <span
                     key={item}
                     className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-[10px] font-bold text-neutral-300 rounded"

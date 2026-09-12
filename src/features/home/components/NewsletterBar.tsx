@@ -56,13 +56,7 @@ export function NewsletterBar() {
               </button>
             </form>
 
-            <div className="hidden xl:flex items-center gap-2 pl-4 border-l border-white/15 shrink-0 text-white/90">
-              <Phone className="w-4 h-4 text-brand-gold" />
-              <div className="text-xs">
-                <div className="text-white/60 text-[10px] uppercase">Hotline hỗ trợ</div>
-                <div className="font-bold">1900 6868</div>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
