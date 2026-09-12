@@ -24,6 +24,7 @@ import { NotificationBell } from '@/features/notifications/components/Notificati
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 import { AdminReviewTable } from '@/features/reviews/components/AdminReviewTable';
+import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
@@ -381,6 +382,39 @@ export default function AdminDashboard() {
     }
   }, [latestNotifId, fetchOrders, fetchStats]);
 
+  // Realtime socket listeners & visibility-based periodic sync (30s)
+  useEffect(() => {
+    const socket = getRealtimeSocket();
+    const handleRealtimeOrderUpdate = () => {
+      fetchOrders();
+      fetchStats();
+    };
+
+    if (socket) {
+      socket.on('notification', handleRealtimeOrderUpdate);
+      socket.on('order:created', handleRealtimeOrderUpdate);
+      socket.on('order:updated', handleRealtimeOrderUpdate);
+      socket.on('order_status', handleRealtimeOrderUpdate);
+    }
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchOrders();
+        fetchStats();
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(interval);
+      if (socket) {
+        socket.off('notification', handleRealtimeOrderUpdate);
+        socket.off('order:created', handleRealtimeOrderUpdate);
+        socket.off('order:updated', handleRealtimeOrderUpdate);
+        socket.off('order_status', handleRealtimeOrderUpdate);
+      }
+    };
+  }, [fetchOrders, fetchStats]);
+
   // Handle smart navigation from notification clicks
   useEffect(() => {
     const handleAdminNavigate = (e: Event) => {
@@ -509,17 +543,19 @@ export default function AdminDashboard() {
   const handleUpdateOrderStatus = async (id: string, status: BackendOrderStatus) => {
     try {
       const res = await updateOrderStatus(id, { status });
-      const updatedOrder = res.data as AdminOrderDto;
+      const rawData = res.data as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
+      const updatedOrder = rawData?.order || rawData?.data || rawData;
+      const targetStatus: BackendOrderStatus = (updatedOrder?.status || status) as BackendOrderStatus;
 
       setOrders(prev => prev.map(o => {
         if (o.id !== id) return o;
-        const ship = updatedOrder.shippingInfo;
+        const ship = updatedOrder?.shippingInfo;
         return {
           ...o,
-          status: updatedOrder.status as BackendOrderStatus,
-          refundStatus: updatedOrder.refundStatus,
-          customer: ship?.name || updatedOrder.user?.name || o.customer,
-          email: updatedOrder.user?.email || ship?.phone || o.email,
+          status: targetStatus,
+          refundStatus: updatedOrder?.refundStatus || o.refundStatus,
+          customer: ship?.name || updatedOrder?.user?.name || o.customer,
+          email: updatedOrder?.user?.email || ship?.phone || o.email,
           address: ship?.address || o.address,
           phone: ship?.phone || o.phone,
         };
@@ -528,13 +564,13 @@ export default function AdminDashboard() {
       if (selectedOrder?.id === id) {
         setSelectedOrder(prev => {
           if (!prev) return prev;
-          const ship = updatedOrder.shippingInfo;
+          const ship = updatedOrder?.shippingInfo;
           return {
             ...prev,
-            status: updatedOrder.status as BackendOrderStatus,
-            refundStatus: updatedOrder.refundStatus,
-            customer: ship?.name || updatedOrder.user?.name || prev.customer,
-            email: updatedOrder.user?.email || ship?.phone || prev.email,
+            status: targetStatus,
+            refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
+            customer: ship?.name || updatedOrder?.user?.name || prev.customer,
+            email: updatedOrder?.user?.email || ship?.phone || prev.email,
             address: ship?.address || prev.address,
             phone: ship?.phone || prev.phone,
           };
@@ -551,17 +587,19 @@ export default function AdminDashboard() {
   const handleCreateShipment = async (id: string) => {
     try {
       const res = await createShipment(id);
-      const { order: updatedOrder } = res.data as { order: AdminOrderDto };
+      const rawData = res.data as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
+      const updatedOrder = rawData?.order || rawData?.data || rawData;
+      const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'SHIPPING') as BackendOrderStatus;
 
       setOrders(prev => prev.map(o => {
         if (o.id !== id) return o;
-        const ship = updatedOrder.shippingInfo;
+        const ship = updatedOrder?.shippingInfo;
         return {
           ...o,
-          status: updatedOrder.status as BackendOrderStatus,
-          refundStatus: updatedOrder.refundStatus,
-          customer: ship?.name || updatedOrder.user?.name || o.customer,
-          email: updatedOrder.user?.email || ship?.phone || o.email,
+          status: targetStatus,
+          refundStatus: updatedOrder?.refundStatus || o.refundStatus,
+          customer: ship?.name || updatedOrder?.user?.name || o.customer,
+          email: updatedOrder?.user?.email || ship?.phone || o.email,
           address: ship?.address || o.address,
           phone: ship?.phone || o.phone,
         };
@@ -570,13 +608,13 @@ export default function AdminDashboard() {
       if (selectedOrder?.id === id) {
         setSelectedOrder(prev => {
           if (!prev) return prev;
-          const ship = updatedOrder.shippingInfo;
+          const ship = updatedOrder?.shippingInfo;
           return {
             ...prev,
-            status: updatedOrder.status as BackendOrderStatus,
-            refundStatus: updatedOrder.refundStatus,
-            customer: ship?.name || updatedOrder.user?.name || prev.customer,
-            email: updatedOrder.user?.email || ship?.phone || prev.email,
+            status: targetStatus,
+            refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
+            customer: ship?.name || updatedOrder?.user?.name || prev.customer,
+            email: updatedOrder?.user?.email || ship?.phone || prev.email,
             address: ship?.address || prev.address,
             phone: ship?.phone || prev.phone,
           };
@@ -593,17 +631,19 @@ export default function AdminDashboard() {
   const handleConfirmManualPayment = async (orderCode: number, reference: string, note: string) => {
     try {
       const res = await confirmManualPayment(orderCode, { reference, note });
-      const updatedOrder = res.data as AdminOrderDto;
+      const rawData = res.data as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
+      const updatedOrder = rawData?.order || rawData?.data || rawData;
+      const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'PAID') as BackendOrderStatus;
 
       setOrders(prev => prev.map(o => {
         if (o.orderCode !== orderCode) return o;
-        const ship = updatedOrder.shippingInfo;
+        const ship = updatedOrder?.shippingInfo;
         return {
           ...o,
-          status: updatedOrder.status as BackendOrderStatus,
-          refundStatus: updatedOrder.refundStatus,
-          customer: ship?.name || updatedOrder.user?.name || o.customer,
-          email: updatedOrder.user?.email || ship?.phone || o.email,
+          status: targetStatus,
+          refundStatus: updatedOrder?.refundStatus || o.refundStatus,
+          customer: ship?.name || updatedOrder?.user?.name || o.customer,
+          email: updatedOrder?.user?.email || ship?.phone || o.email,
           address: ship?.address || o.address,
           phone: ship?.phone || o.phone,
         };
@@ -612,13 +652,13 @@ export default function AdminDashboard() {
       if (selectedOrder?.orderCode === orderCode) {
         setSelectedOrder(prev => {
           if (!prev) return prev;
-          const ship = updatedOrder.shippingInfo;
+          const ship = updatedOrder?.shippingInfo;
           return {
             ...prev,
-            status: updatedOrder.status as BackendOrderStatus,
-            refundStatus: updatedOrder.refundStatus,
-            customer: ship?.name || updatedOrder.user?.name || prev.customer,
-            email: updatedOrder.user?.email || ship?.phone || prev.email,
+            status: targetStatus,
+            refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
+            customer: ship?.name || updatedOrder?.user?.name || prev.customer,
+            email: updatedOrder?.user?.email || ship?.phone || prev.email,
             address: ship?.address || prev.address,
             phone: ship?.phone || prev.phone,
           };
@@ -860,14 +900,15 @@ export default function AdminDashboard() {
   };
 
   // ─── Dashboard Derived Business Metrics ───────────────────────────────────
-  const totalRevenue = stats?.totalRevenue ?? orders.filter(o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED').reduce((acc, o) => acc + o.total, 0);
-  const paidOrdersCount = orders.filter(o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED').length;
+  const NON_REVENUE_STATUSES: BackendOrderStatus[] = ['CANCELLED', 'FAILED', 'EXPIRED', 'PENDING', 'RETURNED'];
+  const totalRevenue = stats?.totalRevenue ?? orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
+  const paidOrdersCount = orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).length;
   const avgOrderValue = paidOrdersCount > 0 ? Math.round(totalRevenue / paidOrdersCount) : 0;
 
   const totalOrders = stats?.orderCount ?? orders.length;
   const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
-  const shippingOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'CONFIRMED').length;
-  const deliveredOrders = orders.filter(o => o.status === 'DELIVERED' || o.status === 'PAID').length;
+  const shippingOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'CONFIRMED' || o.status === 'READY_TO_SHIP').length;
+  const deliveredOrders = orders.filter(o => o.status === 'DELIVERED').length;
   const cancelledOrders = orders.filter(o => o.status === 'CANCELLED' || o.status === 'FAILED' || o.status === 'RETURNED' || o.status === 'EXPIRED').length;
 
   const totalProducts = stats?.productCount ?? products.length;
