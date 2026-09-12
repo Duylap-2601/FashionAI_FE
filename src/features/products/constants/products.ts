@@ -15,8 +15,8 @@ export const PRODUCTS: Product[] = [
     gallery: [imgBlazer, imgSuit, imgShirt],
     colors: [
       { name: 'Đen', hex: '#111827' },
-      { name: 'Kem', hex: '#EFE9E1' },
-      { name: 'Burgundy', hex: '#38140C' },
+      { name: 'Kem', hex: '#F9F7F5' },
+      { name: 'Burgundy', hex: '#5D1C34' },
     ],
     material: 'Tuyết mưa cao cấp & Wool pha, đứng form chống nhăn',
     isGuest: true,
@@ -31,7 +31,7 @@ export const PRODUCTS: Product[] = [
     image: imgSuit,
     gallery: [imgSuit, imgBlazer, imgShirt],
     colors: [
-      { name: 'Kem', hex: '#EFE9E1' },
+      { name: 'Kem', hex: '#F9F7F5' },
       { name: 'Xám Tro', hex: '#5E6469' },
     ],
     material: 'Premium Wool pha cao cấp, đứng form và thoáng khí',
@@ -64,7 +64,7 @@ export const PRODUCTS: Product[] = [
     gallery: [imgSuit, imgBlazer, imgShirt],
     colors: [
       { name: 'Xám', hex: '#808080' },
-      { name: 'Navy', hex: '#38140C' },
+      { name: 'Burgundy', hex: '#5D1C34' },
     ],
     material: 'Wool pha sợi co giãn nhẹ, chống nhăn tự nhiên',
     isGuest: true,
@@ -79,7 +79,7 @@ export const PRODUCTS: Product[] = [
     image: imgSuit,
     gallery: [imgSuit, imgBlazer, imgShirt],
     colors: [
-      { name: 'Kem', hex: '#EFE9E1' },
+      { name: 'Kem', hex: '#F9F7F5' },
       { name: 'Đen', hex: '#111111' },
     ],
     material: 'Kaki tuyết mưa cao cấp, giữ phom li quần hoàn hảo',

@@ -5,7 +5,7 @@ import React from 'react';
 
 export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-[#EFE9E1] font-sans text-neutral-900">
+    <div className="flex min-h-screen bg-brand-cream font-sans text-neutral-900">
       <div className="hidden lg:flex w-[45%] bg-[#111111] relative overflow-hidden flex-col justify-center px-16">
         <div
           className="absolute inset-0 opacity-20 bg-cover bg-center"
@@ -54,7 +54,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
 
 export function AuthCenteredLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-[#EFE9E1] font-sans text-neutral-900 items-center justify-center p-4">
+    <div className="flex min-h-screen bg-brand-cream font-sans text-neutral-900 items-center justify-center p-4">
       <div className="w-full max-w-[400px] bg-white rounded-2xl p-8 sm:p-10 shadow-sm border border-neutral-100">
         <div className="flex justify-center mb-8">
           <Logo size="md" variant="dark" />
