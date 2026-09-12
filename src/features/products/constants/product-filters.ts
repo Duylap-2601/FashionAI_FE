@@ -12,6 +12,6 @@ export const AVAILABLE_COLORS = [
   { name: 'Trắng', color: '#FFFFFF', border: true },
   { name: 'Xám', color: '#888888' },
   { name: 'Navy', color: '#2B3450' },
-  { name: 'Kem', color: '#EFE9E1' },
+  { name: 'Kem', color: '#F9F7F5' },
   { name: 'Be', color: '#E8E2D2' },
 ];

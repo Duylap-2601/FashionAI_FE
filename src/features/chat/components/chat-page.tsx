@@ -26,7 +26,7 @@ function ChatContent() {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] bg-[#EFE9E1]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] bg-brand-cream">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-brand-navy border-t-transparent rounded-full animate-spin" />
           <span className="text-body-sm font-semibold text-neutral-700">Đang khởi tạo trợ lý AI...</span>
@@ -51,7 +51,7 @@ export default function ChatPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-[calc(100vh-64px)] bg-[#EFE9E1]">
+        <div className="flex items-center justify-center min-h-[calc(100vh-64px)] bg-brand-cream">
           <div className="w-8 h-8 border-3 border-brand-navy border-t-transparent rounded-full animate-spin" />
         </div>
       }

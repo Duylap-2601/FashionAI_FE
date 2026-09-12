@@ -57,7 +57,7 @@ function MeasurementSummary({ isMeasurementComplete, measurements, catCompletene
             </div>
             <span className="text-[11px] text-neutral-500 font-medium">Tự động áp dụng khi đặt hàng</span>
           </div>
-          <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] font-medium text-neutral-600 bg-white p-2.5 rounded-lg border border-[#EFE9E1]">
+          <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] font-medium text-neutral-600 bg-white p-2.5 rounded-lg border border-[#F0EEE9]">
             <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Ngực: <strong className="text-brand-navy">{measurements?.chest || '—'}cm</strong></div>
             <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Eo: <strong className="text-brand-navy">{measurements?.waist || '—'}cm</strong></div>
             <div className="rounded-md bg-neutral-50 px-2 py-1.5 sm:bg-transparent sm:p-0">Hông: <strong className="text-brand-navy">{measurements?.hip || '—'}cm</strong></div>

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#38140C",
+  themeColor: "#5D1C34",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning>
         <Providers>
           {children}
         </Providers>

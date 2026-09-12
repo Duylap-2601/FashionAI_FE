@@ -153,7 +153,7 @@ export function ChatWindow({
       </Drawer.Root>
 
       {/* Main Chat Conversation Area (Right Panel) */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-[#EFE9E1]/40 relative">
+      <div className="flex-1 flex flex-col h-full min-w-0 bg-brand-cream/60 relative">
 
         {/* Top Chat Header */}
         <header className="h-[56px] px-4 md:px-6 flex items-center justify-between border-b border-neutral-200/80 bg-white/90 backdrop-blur-md shrink-0 z-10">
