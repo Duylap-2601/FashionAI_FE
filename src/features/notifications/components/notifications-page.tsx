@@ -38,7 +38,7 @@ export default function NotificationsPage() {
   const totalPages = meta?.totalPages || 1;
 
   return (
-    <div className="min-h-screen bg-[#EFE9E1]">
+    <div className="min-h-screen bg-brand-cream">
       <PageHeader
         title="Thông báo"
         subtitle="Cập nhật thông tin đơn hàng, thanh toán và các ưu đãi mới nhất"

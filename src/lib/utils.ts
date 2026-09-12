@@ -14,7 +14,7 @@ export function formatPrice(price: number): string {
  * Ví dụ: "Tú Anh" → lưu thành "TÃº Anh" hoặc "Tấ° Anh" do double-encoding.
  *
  * Nguyên nhân: backend trả name đúng UTF-8, nhưng đâu đó trong pipeline
- * (NextAuth JWT serialize / cookie / JSON parse) bị interpret như Latin-1.
+ * auth/cookie/JSON parse bị interpret như Latin-1.
  *
  * Fix đúng: decode lại bytes bằng TextDecoder thay vì regex vá thủ công.
  */

@@ -120,7 +120,7 @@ export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTa
       </div>
 
       {/* Explanation card about SePay reminder */}
-      <div className="p-6 bg-[#FDFBF7] rounded-3xl border border-[#EFE9E1] text-body-sm text-neutral-600 space-y-2">
+      <div className="p-6 bg-[#FDFBF7] rounded-3xl border border-[#F0EEE9] text-body-sm text-neutral-600 space-y-2">
         <div className="flex items-center gap-2 font-bold text-brand-navy">
           <ShieldCheck className="w-5 h-5 text-[#5D1C34]" /> Bảo mật & Minh bạch thanh toán
         </div>

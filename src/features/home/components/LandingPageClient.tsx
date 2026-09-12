@@ -1,28 +1,18 @@
 'use client';
 
-import { BottomTabBar } from '@/components/layout/BottomTabBar';
-import { CartSlideOver } from '@/features/cart/components/CartSlideOver';
-import { useCart } from '@/features/cart/store/cartStore';
-import { FloatingChat } from '@/features/chat/components/FloatingChat';
 import { useCollectionProducts, usePublishedCollections } from '@/features/collections/hooks/useCollections';
 import { AiTryOnFeatureBanner } from '@/features/home/components/AiTryOnFeatureBanner';
-import { AnnouncementBar } from '@/features/home/components/AnnouncementBar';
 import { CollectionCarousel } from '@/features/home/components/CollectionCarousel';
 import { EditorialLookbook } from '@/features/home/components/EditorialLookbook';
 import { HeroBanner } from '@/features/home/components/HeroBanner';
-import { LandingFooter } from '@/features/home/components/LandingFooter';
-import { LandingHeader } from '@/features/home/components/LandingHeader';
 import { NewsletterBar } from '@/features/home/components/NewsletterBar';
 import { ProductGrid } from '@/features/home/components/ProductGrid';
 import { SaleBannerText } from '@/features/home/components/SaleBannerText';
 import { PRODUCTS } from '@/features/products/constants/products';
 import { useProducts } from '@/features/products/hooks/useProducts';
-import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 export function LandingPageClient() {
-  const pathname = usePathname();
-  const { isCartOpen, setIsCartOpen } = useCart();
   const { products: apiProducts } = useProducts();
   const { collections } = usePublishedCollections();
 
@@ -49,13 +39,8 @@ export function LandingPageClient() {
   const bestSellers = [...displayProducts].sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0));
 
   return (
-    <div className="min-h-screen overflow-x-hidden flex flex-col bg-white text-neutral-900 selection:bg-[#5D1C34] selection:text-white">
-      <AnnouncementBar />
-
-      <LandingHeader collections={collections} />
-
-      <main className="flex-1">
-        <HeroBanner collections={collections} />
+    <main className="flex-1 overflow-x-hidden bg-white text-neutral-900 selection:bg-[#5D1C34] selection:text-white">
+      <HeroBanner collections={collections} />
 
         <CollectionCarousel
           collections={collections}
@@ -96,16 +81,7 @@ export function LandingPageClient() {
 
         <AiTryOnFeatureBanner />
 
-        <NewsletterBar />
-      </main>
-
-      <LandingFooter />
-
-      <FloatingChat />
-
-      <CartSlideOver isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-
-      <BottomTabBar pathname={pathname} />
-    </div>
+      <NewsletterBar />
+    </main>
   );
 }

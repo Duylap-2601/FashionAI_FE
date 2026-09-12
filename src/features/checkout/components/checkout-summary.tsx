@@ -1,10 +1,22 @@
 'use client';
 
 import type { CheckoutSummaryProps } from '@/features/checkout/types/checkout-summary';
+import { PaymentMethodSelector } from '@/features/checkout/components/payment-method-selector';
 import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
-export function CheckoutSummary({ items, totalPrice, shippingFee, discount, total, isSubmitting }: CheckoutSummaryProps) {
+export function CheckoutSummary({
+  items,
+  totalPrice,
+  shippingFee,
+  discount,
+  total,
+  isSubmitting,
+  coupon,
+  setCoupon,
+  setDiscount,
+  handleApplyCoupon,
+}: CheckoutSummaryProps) {
   return (
     <div className="lg:sticky lg:top-[100px]">
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
@@ -28,6 +40,18 @@ export function CheckoutSummary({ items, totalPrice, shippingFee, discount, tota
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="w-full h-px bg-neutral-200 mb-4"></div>
+
+        <div className="mb-5">
+          <PaymentMethodSelector
+            coupon={coupon}
+            setCoupon={setCoupon}
+            discount={discount}
+            setDiscount={setDiscount}
+            handleApplyCoupon={handleApplyCoupon}
+          />
         </div>
 
         <div className="w-full h-px bg-neutral-200 mb-4"></div>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export function RelatedProducts({ products, onAddToCart }: RelatedProductsProps) {
   return (
-    <div className="bg-[#EFE9E1] py-[64px]">
+    <div className="bg-brand-cream py-[64px]">
       <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8">
         <div className="flex items-end justify-between mb-8">
           <h2 className="text-[28px] font-bold text-brand-navy tracking-tight">Có thể bạn sẽ thích</h2>

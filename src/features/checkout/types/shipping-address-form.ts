@@ -1,4 +1,5 @@
 import React from 'react';
+import type { GhnLocationOption } from '@/features/checkout/services/ghn-location';
 
 export interface ShippingAddressFormProps {
   fullName: string;
@@ -7,11 +8,14 @@ export interface ShippingAddressFormProps {
   setPhone: React.Dispatch<React.SetStateAction<string>>;
   addressDetail: string;
   setAddressDetail: React.Dispatch<React.SetStateAction<string>>;
-  provinceId: string;
-  setProvinceId: React.Dispatch<React.SetStateAction<string>>;
-  setDistrictId: React.Dispatch<React.SetStateAction<string>>;
-  districtId: string;
-  availableDistricts: import("@/features/checkout/types/vietnam-provinces").District[];
+  provinceId: number | '';
+  setProvinceId: React.Dispatch<React.SetStateAction<number | ''>>;
+  provinces: GhnLocationOption[];
+  isLoadingProvinces: boolean;
+  wardId: number | '';
+  setWardId: React.Dispatch<React.SetStateAction<number | ''>>;
+  wards: GhnLocationOption[];
+  isLoadingWards: boolean;
   notes: string;
   setNotes: React.Dispatch<React.SetStateAction<string>>;
 }

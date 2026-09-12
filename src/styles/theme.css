@@ -3,38 +3,37 @@
 :root {
   --font-size: 16px;
   /* Font stacks khai báo trong :root để var() hoạt động bên ngoài @theme */
-  --font-sans: 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'Be Vietnam Pro', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-serif: var(--font-sans);
   --font-mono: 'JetBrains Mono', monospace;
-  --background: #EFE9E1;
-  /* brand-cream — REGAL */
-  --foreground: #11100F;
-  /* brand-black — REGAL */
-  --card: #FDFAF7;
-  --card-foreground: #11100F;
-  --popover: #FDFAF7;
-  --popover-foreground: #11100F;
-  --primary: #38140C;
-  /* brand-burgundy — REGAL */
+  --background: #FFFFFF;
+  /* landing white */
+  --foreground: #1A1917;
+  /* landing heading ink */
+  --card: #FFFFFF;
+  --card-foreground: #1A1917;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1917;
+  --primary: #5D1C34;
+  /* landing burgundy */
   --primary-foreground: #ffffff;
   --secondary: #FFD93D;
-  /* brand-gold — REGAL */
-  --secondary-foreground: #ffffff;
-  --muted: #F0EAE1;
-  --muted-foreground: #899481;
-  /* brand-sage — REGAL */
-  --accent: #EDE5DB;
-  --accent-foreground: #38140C;
+  /* landing gold */
+  --secondary-foreground: #5D1C34;
+  --muted: #F9F7F5;
+  --muted-foreground: #8B8880;
+  --accent: #F9F7F5;
+  --accent-foreground: #5D1C34;
   --destructive: #B91C1C;
   --destructive-foreground: #ffffff;
-  --border: #CDBCAB;
-  /* brand-taupe — REGAL */
+  --border: #E5DFD5;
+  /* landing warm divider */
   --input: transparent;
-  --input-background: #F0EAE1;
-  --switch-background: #CDBCAB;
+  --input-background: #F9F7F5;
+  --switch-background: #E5DFD5;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #38140C;
+  --ring: #5D1C34;
 
   --radius: 8px;
 }
@@ -87,28 +86,29 @@
   --color-switch-background: var(--switch-background);
   --color-ring: var(--ring);
 
-  /* REGAL Brand Color Tokens */
-  --color-brand-navy: #38140C;
-  /* burgundy — replaces navy */
+  /* Landing Brand Color Tokens */
+  --color-brand-navy: #5D1C34;
+  /* legacy alias used across app, now maps to landing burgundy */
   --color-brand-gold: #FFD93D;
-  /* warm gold/bronze */
-  --color-brand-cream: #EFE9E1;
-  /* warm cream */
-  --color-brand-burgundy: #38140C;
+  /* landing gold */
+  --color-brand-bronze: #A67D44;
+  --color-brand-cream: #F9F7F5;
+  /* landing off-white section tint */
+  --color-brand-burgundy: #5D1C34;
   /* explicit alias */
-  --color-brand-sage: #899481;
-  /* sage green */
-  --color-brand-taupe: #CDBCAB;
+  --color-brand-sage: #8B8880;
+  /* muted editorial neutral */
+  --color-brand-taupe: #E5DFD5;
   /* warm taupe */
-  --color-brand-black: #11100F;
-  /* near black */
+  --color-brand-black: #111111;
+  /* landing black */
 
-  /* Neutral scale — warm-tinted to match REGAL */
-  --color-neutral-900: #11100F;
-  --color-neutral-700: #3A2020;
-  --color-neutral-500: #7A6E65;
-  --color-neutral-300: #CDBCAB;
-  --color-neutral-100: #F0EAE1;
+  /* Neutral scale — sourced from landing page */
+  --color-neutral-900: #1A1917;
+  --color-neutral-700: #4A4845;
+  --color-neutral-500: #8B8880;
+  --color-neutral-300: #C4C1B8;
+  --color-neutral-100: #F0EEE9;
   --color-neutral-white: #FFFFFF;
 
   /* Semantic (kept readable on warm bg) */
@@ -118,14 +118,14 @@
   --color-semantic-info: #1D4ED8;
 
   /* Tier colors — tuned to palette */
-  --color-tier-free: #7A6E65;
+  --color-tier-free: #8B8880;
   --color-tier-member: #899481;
   /* sage */
   --color-tier-vip: #FFD93D;
   /* warm gold */
 
   /* Fonts */
-  --font-sans: 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'Be Vietnam Pro', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-serif: var(--font-sans);
   --font-mono: 'JetBrains Mono', monospace;
 

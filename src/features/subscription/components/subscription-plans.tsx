@@ -64,7 +64,7 @@ export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, han
           </div>
 
           {tier !== 'FREE' && (
-            <div className="text-[13px] text-neutral-500 bg-[#FDFBF7] p-3.5 rounded-xl border border-[#EFE9E1] max-w-[320px]">
+            <div className="text-[13px] text-neutral-500 bg-[#FDFBF7] p-3.5 rounded-xl border border-[#F0EEE9] max-w-[320px]">
               <div className="flex items-center gap-1.5 font-bold text-brand-navy mb-0.5">
                 <RefreshCw className="w-3.5 h-3.5 text-[#5D1C34]" /> Gia hạn cộng dồn
               </div>
