@@ -26,6 +26,10 @@ export function updateOrderStatus(id: string, payload: PatchOrdersStatusInput) {
   return api.patch(`/orders/${id}/status`, payload);
 }
 
+export function createShipment(id: string, payload?: { requestKey?: string }) {
+  return api.post(`/orders/${id}/shipment`, payload || {});
+}
+
 export function confirmManualPayment(orderCode: number, payload: { reference: string; note: string }) {
   return api.post(`/payments/admin/orders/${orderCode}/confirm-manual`, payload);
 }

@@ -10,7 +10,7 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus, handleConfirmManualPayment, handleUpdateRefund }: AdminOrderModalProps) {
+export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus, handleConfirmManualPayment, handleUpdateRefund, handleCreateShipment }: AdminOrderModalProps) {
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -46,6 +46,14 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
       setRefundNote('');
     } finally {
       setRefundSubmitting(false);
+    }
+  };
+
+  const handleStatusChange = (newStatus: BackendOrderStatus) => {
+    if (newStatus === 'SHIPPING') {
+      handleCreateShipment(selectedOrder.id);
+    } else {
+      handleUpdateOrderStatus(selectedOrder.id, newStatus);
     }
   };
 
@@ -146,7 +154,7 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
             <label className="block text-body-sm font-semibold text-neutral-700 mb-2">Trạng thái đơn hàng</label>
             <select
               value={selectedOrder.status}
-              onChange={e => handleUpdateOrderStatus(selectedOrder.id, e.target.value as BackendOrderStatus)}
+              onChange={e => handleStatusChange(e.target.value as BackendOrderStatus)}
               className="w-full h-10 px-3 rounded-lg border border-neutral-300"
             >
               <option value="PENDING">Chờ xác nhận</option>
