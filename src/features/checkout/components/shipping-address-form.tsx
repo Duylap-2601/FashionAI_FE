@@ -1,9 +1,25 @@
 'use client';
 
-import { VIETNAM_PROVINCES } from '@/features/checkout/constants/vietnam-provinces';
 import type { ShippingAddressFormProps } from '@/features/checkout/types/shipping-address-form';
 
-export function ShippingAddressForm({ fullName, setFullName, phone, setPhone, addressDetail, setAddressDetail, provinceId, setProvinceId, setDistrictId, districtId, availableDistricts, notes, setNotes }: ShippingAddressFormProps) {
+export function ShippingAddressForm({
+  fullName,
+  setFullName,
+  phone,
+  setPhone,
+  addressDetail,
+  setAddressDetail,
+  provinceId,
+  setProvinceId,
+  provinces,
+  isLoadingProvinces,
+  wardId,
+  setWardId,
+  wards,
+  isLoadingWards,
+  notes,
+  setNotes,
+}: ShippingAddressFormProps) {
   return (
     <section>
       <h2 className="text-[20px] font-bold text-brand-navy mb-6">Thông tin giao hàng</h2>
@@ -28,30 +44,31 @@ export function ShippingAddressForm({ fullName, setFullName, phone, setPhone, ad
             required
             value={provinceId}
             onChange={e => {
-              const newProvId = e.target.value;
-              setProvinceId(newProvId);
-              const prov = VIETNAM_PROVINCES.find(p => p.id === newProvId);
-              if (prov && prov.districts.length > 0) {
-                setDistrictId(prov.districts[0].id);
-              }
+              setProvinceId(Number(e.target.value) || '');
             }}
-            className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer"
+            disabled={isLoadingProvinces || provinces.length === 0}
+            className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
           >
-            {VIETNAM_PROVINCES.map(p => (
+            {isLoadingProvinces && <option value="">Đang tải Tỉnh/Thành...</option>}
+            {!isLoadingProvinces && provinces.length === 0 && <option value="">Không có dữ liệu Tỉnh/Thành</option>}
+            {provinces.map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Quận/Huyện *</label>
+          <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Phường/Xã *</label>
           <select
             required
-            value={districtId}
-            onChange={e => setDistrictId(e.target.value)}
-            className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer"
+            value={wardId}
+            onChange={e => setWardId(Number(e.target.value) || '')}
+            disabled={isLoadingWards || wards.length === 0}
+            className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
           >
-            {availableDistricts.map(d => (
-              <option key={d.id} value={d.id}>{d.name}</option>
+            {isLoadingWards && <option value="">Đang tải Phường/Xã...</option>}
+            {!isLoadingWards && wards.length === 0 && <option value="">Không có dữ liệu Phường/Xã</option>}
+            {wards.map(w => (
+              <option key={w.id} value={w.id}>{w.name}</option>
             ))}
           </select>
         </div>

@@ -4,11 +4,9 @@ import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
 
 import { CheckoutSummary } from '@/features/checkout/components/checkout-summary';
 import { DeliveryOptions } from '@/features/checkout/components/delivery-options';
-import { PaymentMethodSelector } from '@/features/checkout/components/payment-method-selector';
 import { ShippingAddressForm } from '@/features/checkout/components/shipping-address-form';
 import { useCart } from '@/features/cart/store/cartStore';
-import { VIETNAM_PROVINCES } from '@/features/checkout/constants/vietnam-provinces';
-import { calculateShippingFee } from '@/features/checkout/services/shipping';
+import { getGhnProvinces, getGhnWards, type GhnLocationOption } from '@/features/checkout/services/ghn-location';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
 import { useCheckout } from '@/features/payments/hooks/usePayments';
@@ -31,7 +29,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'bank'>('bank');
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
-  const [shippingFeeQuote, setShippingFeeQuote] = useState(0);
+  const [shippingFeeQuote] = useState(0);
   const [pendingCheckout, setPendingCheckout] = useState<CheckoutResponse | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
@@ -39,16 +37,86 @@ export default function CheckoutPage() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [addressDetail, setAddressDetail] = useState('');
-  const [provinceId, setProvinceId] = useState('hcm');
-  const [districtId, setDistrictId] = useState('q1');
+  const [provinces, setProvinces] = useState<GhnLocationOption[]>([]);
+  const [wards, setWards] = useState<GhnLocationOption[]>([]);
+  const [provinceId, setProvinceId] = useState<number | ''>('');
+  const [wardId, setWardId] = useState<number | ''>('');
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
+  const [isLoadingWards, setIsLoadingWards] = useState(false);
   const [notes, setNotes] = useState('');
 
   const currentProvince = useMemo(() => {
-    return VIETNAM_PROVINCES.find(p => p.id === provinceId) || VIETNAM_PROVINCES[0];
-  }, [provinceId]);
+    return provinces.find(p => p.id === provinceId) || null;
+  }, [provinceId, provinces]);
 
-  const availableDistricts = currentProvince.districts;
-  const currentDistrict = availableDistricts.find(d => d.id === districtId);
+  const currentWard = useMemo(() => {
+    return wards.find(w => w.id === wardId) || null;
+  }, [wardId, wards]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProvinces() {
+      setIsLoadingProvinces(true);
+      try {
+        const data = await getGhnProvinces();
+        if (!isMounted) return;
+        setProvinces(data);
+
+        if (data.length > 0) {
+          const cityLower = profile?.city?.toLowerCase() || '';
+          const matched = cityLower
+            ? data.find(p => cityLower.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(cityLower))
+            : null;
+          setProvinceId(matched?.id || data[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to load GHN provinces:', error);
+        toast.error('Không thể tải danh sách Tỉnh/Thành từ GHN. Vui lòng thử lại sau.');
+      } finally {
+        if (isMounted) setIsLoadingProvinces(false);
+      }
+    }
+
+    loadProvinces();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile?.city]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadWards() {
+      if (!provinceId) {
+        setWards([]);
+        setWardId('');
+        return;
+      }
+
+      setIsLoadingWards(true);
+      setWardId('');
+      try {
+        const data = await getGhnWards(provinceId);
+        if (!isMounted) return;
+        setWards(data);
+        setWardId(data[0]?.id || '');
+      } catch (error) {
+        console.error('Failed to load GHN wards:', error);
+        setWards([]);
+        toast.error('Không thể tải danh sách Phường/Xã từ GHN. Vui lòng thử lại sau.');
+      } finally {
+        if (isMounted) setIsLoadingWards(false);
+      }
+    }
+
+    loadWards();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [provinceId]);
 
   // Prefill profile data if available
   useEffect(() => {
@@ -56,48 +124,8 @@ export default function CheckoutPage() {
       if (profile.name) setFullName(profile.name);
       if (profile.phone) setPhone(profile.phone);
       if (profile.address) setAddressDetail(profile.address);
-      if (profile.city) {
-        const cityLower = profile.city.toLowerCase();
-        const matched = VIETNAM_PROVINCES.find(p =>
-          cityLower.includes(p.name.toLowerCase()) || p.id === cityLower
-        );
-        if (matched) {
-          setProvinceId(matched.id);
-          setDistrictId(matched.districts[0]?.id || '');
-        }
-      }
     }
   }, [profile]);
-
-  useEffect(() => {
-    const ghnDistrictId = (currentDistrict as { ghnDistrictId?: number } | undefined)?.ghnDistrictId;
-    const ghnWardCode = (currentDistrict as { ghnWardCode?: string } | undefined)?.ghnWardCode;
-    if (!ghnDistrictId || !ghnWardCode) {
-      setShippingFeeQuote(0);
-      return;
-    }
-
-    let cancelled = false;
-    calculateShippingFee({
-      toDistrictId: ghnDistrictId,
-      toWardCode: ghnWardCode,
-      weight: Math.max(500, items.reduce((sum, item) => sum + item.quantity * 500, 0)),
-      length: 25,
-      width: 20,
-      height: 8,
-      insuranceValue: totalPrice,
-    })
-      .then((quote) => {
-        if (!cancelled) setShippingFeeQuote(quote.totalFee);
-      })
-      .catch(() => {
-        if (!cancelled) setShippingFeeQuote(0);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentDistrict, items, totalPrice]);
 
   const shippingFee = shippingFeeQuote;
   const total = Math.max(0, totalPrice - discount + shippingFee);
@@ -201,11 +229,12 @@ export default function CheckoutPage() {
       return;
     }
 
-    const formattedProvince = currentProvince.name;
-    const formattedDistrict = currentDistrict ? currentDistrict.name : '';
-    const ghnDistrictId = (currentDistrict as { ghnDistrictId?: number } | undefined)?.ghnDistrictId;
-    const ghnWardCode = (currentDistrict as { ghnWardCode?: string } | undefined)?.ghnWardCode;
-    const fullAddress = `${addressDetail}, ${formattedDistrict ? formattedDistrict + ', ' : ''}${formattedProvince}`;
+    if (!currentProvince || !currentWard) {
+      toast.error('Vui lòng chọn Tỉnh/Thành phố và Phường/Xã giao hàng.');
+      return;
+    }
+
+    const fullAddress = `${addressDetail}, ${currentWard.name}, ${currentProvince.name}`;
 
     const orderPayload = {
       items: items.map(item => ({
@@ -219,10 +248,10 @@ export default function CheckoutPage() {
         phone: phone,
         address: fullAddress,
         notes: notes,
-        provinceName: formattedProvince,
-        districtName: formattedDistrict,
-        ghnDistrictId: ghnDistrictId,
-        ghnWardCode: ghnWardCode,
+        provinceName: currentProvince.name,
+        wardName: currentWard.name,
+        ghnProvinceId: currentProvince.id,
+        ghnWardId: currentWard.id,
       },
       paymentMethod: 'BANK_TRANSFER' as const,
       couponCode: discount > 0 ? coupon.toUpperCase() : undefined,
@@ -354,18 +383,18 @@ export default function CheckoutPage() {
               setAddressDetail={setAddressDetail}
               provinceId={provinceId}
               setProvinceId={setProvinceId}
-              setDistrictId={setDistrictId}
-              districtId={districtId}
-              availableDistricts={availableDistricts}
+              provinces={provinces}
+              isLoadingProvinces={isLoadingProvinces}
+              wardId={wardId}
+              setWardId={setWardId}
+              wards={wards}
+              isLoadingWards={isLoadingWards}
               notes={notes}
               setNotes={setNotes}
             />
 
             {/* Section 2 */}
             <DeliveryOptions paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
-
-            {/* Section 3 */}
-            <PaymentMethodSelector coupon={coupon} setCoupon={setCoupon} discount={discount} setDiscount={setDiscount} handleApplyCoupon={handleApplyCoupon} />
 
             {/* Mobile Submit Button */}
             <div className="lg:hidden mt-8">
@@ -378,7 +407,18 @@ export default function CheckoutPage() {
           </div>
 
           {/* RIGHT - Order Summary */}
-          <CheckoutSummary items={items} totalPrice={totalPrice} shippingFee={shippingFee} discount={discount} total={total} isSubmitting={isSubmitting} />
+          <CheckoutSummary
+            items={items}
+            totalPrice={totalPrice}
+            shippingFee={shippingFee}
+            discount={discount}
+            total={total}
+            isSubmitting={isSubmitting}
+            coupon={coupon}
+            setCoupon={setCoupon}
+            setDiscount={setDiscount}
+            handleApplyCoupon={handleApplyCoupon}
+          />
 
         </form>
       </div>
