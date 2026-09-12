@@ -30,6 +30,14 @@ export function confirmManualPayment(orderCode: number, payload: { reference: st
   return api.post(`/payments/admin/orders/${orderCode}/confirm-manual`, payload);
 }
 
+export function updateOrderRefund(id: string, payload: { refundStatus: string; evidence?: Record<string, unknown>; internalNote?: string }) {
+  return api.patch(`/orders/${id}/refund`, payload);
+}
+
+export function resolveWebhookFailure(id: string) {
+  return api.patch(`/payments/admin/webhook-failures/${id}/resolve`);
+}
+
 export function updateUser(id: string, payload: PatchUsersInput) {
   return api.patch(`/users/${id}`, payload);
 }

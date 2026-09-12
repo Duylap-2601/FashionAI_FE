@@ -10,25 +10,42 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus, handleConfirmManualPayment }: AdminOrderModalProps) {
-  const [reference, setReference] = useState('');
+export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus, handleConfirmManualPayment, handleUpdateRefund }: AdminOrderModalProps) {
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const [refundNote, setRefundNote] = useState('');
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
+
   const isPending = selectedOrder.status === 'PENDING';
+  const refundRequired = selectedOrder.refundStatus === 'REQUIRED' || selectedOrder.refundStatus === 'PROCESSING';
+  const refundCompleted = selectedOrder.refundStatus === 'COMPLETED';
 
   const onConfirmManualPayment = async () => {
-    if (!reference.trim() || !note.trim()) {
-      toast.error('Vui lòng nhập đầy đủ mã tham chiếu và lý do xác nhận.');
+    if (!note.trim()) {
+      toast.error('Vui lòng nhập ghi chú xác nhận.');
       return;
     }
     setSubmitting(true);
     try {
-      await handleConfirmManualPayment(selectedOrder.orderCode, reference.trim(), note.trim());
-      setReference('');
+      await handleConfirmManualPayment(selectedOrder.orderCode, note.trim(), note.trim());
       setNote('');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const onConfirmRefund = async () => {
+    if (!refundNote.trim()) {
+      toast.error('Vui lòng nhập ghi chú xác nhận hoàn tiền.');
+      return;
+    }
+    setRefundSubmitting(true);
+    try {
+      await handleUpdateRefund(selectedOrder.id, refundNote.trim(), refundNote.trim());
+      setRefundNote('');
+    } finally {
+      setRefundSubmitting(false);
     }
   };
 
@@ -69,6 +86,37 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
             <p className="text-body-sm font-bold text-brand-navy mt-1">Tổng tiền: {fmt(selectedOrder.total)}</p>
           </div>
 
+          {refundCompleted && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-body-sm font-semibold text-emerald-800">Đã hoàn tiền cho khách</p>
+            </div>
+          )}
+
+          {refundRequired && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <p className="text-body-sm font-semibold text-amber-800 mb-2">Cần hoàn tiền cho khách</p>
+              <p className="text-label-sm text-amber-700 mb-3">
+                Đơn đã bị hủy sau khi khách đã thanh toán. Sau khi admin chuyển khoản hoàn lại tiền, ghi chú lại để lưu vết.
+              </p>
+              <div className="flex flex-col gap-2">
+                <textarea
+                  placeholder="Ghi chú xác nhận đã hoàn tiền (ví dụ: đã chuyển khoản ngày ... qua ...)"
+                  value={refundNote}
+                  onChange={e => setRefundNote(e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm resize-none"
+                />
+                <button
+                  onClick={onConfirmRefund}
+                  disabled={refundSubmitting}
+                  className="h-9 rounded-lg bg-amber-600 text-white text-body-sm font-semibold hover:bg-amber-700 disabled:opacity-50 border-0 cursor-pointer"
+                >
+                  {refundSubmitting ? 'Đang xác nhận...' : 'Xác nhận đã hoàn tiền'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {isPending && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
               <p className="text-body-sm font-semibold text-amber-800 mb-2">Xác nhận thanh toán thủ công</p>
@@ -76,15 +124,8 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
                 Dùng khi khách đã chuyển khoản và đã nhận được tiền nhưng hệ thống chưa tự cập nhật trạng thái.
               </p>
               <div className="flex flex-col gap-2">
-                <input
-                  type="text"
-                  placeholder="Mã tham chiếu chuyển khoản"
-                  value={reference}
-                  onChange={e => setReference(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg border border-amber-300 text-body-sm"
-                />
                 <textarea
-                  placeholder="Lý do / căn cứ xác nhận (ví dụ: đối soát sao kê ngày ...)"
+                  placeholder="Ghi chú xác nhận (ví dụ: đã nhận tiền qua sao kê ngày ...)"
                   value={note}
                   onChange={e => setNote(e.target.value)}
                   rows={2}

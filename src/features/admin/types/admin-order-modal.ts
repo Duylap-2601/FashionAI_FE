@@ -7,4 +7,5 @@ export interface AdminOrderModalProps {
   selectedOrder: AdminOrder;
   handleUpdateOrderStatus: (id: string, status: BackendOrderStatus) => Promise<void>;
   handleConfirmManualPayment: (orderCode: number, reference: string, note: string) => Promise<void>;
+  handleUpdateRefund: (id: string, reference: string, note: string) => Promise<void>;
 }

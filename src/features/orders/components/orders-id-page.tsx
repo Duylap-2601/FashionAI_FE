@@ -296,6 +296,16 @@ export default function OrderDetailPage() {
                 <CreditCard className="w-4 h-4 text-brand-navy" /> Thanh toán
               </h3>
 
+              {order.status === 'PENDING' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                  <p className="text-label-sm text-amber-700 mb-1">Nội dung chuyển khoản</p>
+                  <p className="text-body-lg font-bold text-amber-900 font-mono">FAI{order.orderCode}</p>
+                  <p className="text-label-sm text-amber-700 mt-2">
+                    Nếu đã chuyển khoản nhưng đơn chưa cập nhật, vui lòng kiểm tra đã ghi đúng mã này trong nội dung chuyển khoản chưa.
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
                 <span className="text-neutral-500">Hình thức</span>
                 <span className="font-semibold text-brand-navy">{order.paymentMethod === 'BANK_TRANSFER' || order.paymentMethod === 'BANK' || order.paymentMethod === 'Bank' ? 'Chuyển khoản online' : order.paymentMethod}</span>

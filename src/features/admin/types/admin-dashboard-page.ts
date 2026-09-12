@@ -1,6 +1,6 @@
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 
-export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'reviews' | 'quota';
+export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'reviews' | 'quota' | 'webhook-failures';
 
 export type GarmentCategory = 'UPPER' | 'LOWER' | 'FULL_BODY';
 
@@ -54,6 +54,7 @@ export interface AdminOrder {
   items: number;
   total: number;
   status: BackendOrderStatus;
+  refundStatus?: 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
   date: string;
   payment: string;
   address?: string;
@@ -68,6 +69,18 @@ export interface AdminStats {
   tryOnToday: number;
   stylistCount: number;
   totalRevenue: number;
+}
+
+export interface AdminWebhookFailure {
+  id: string;
+  provider: string;
+  reason: string;
+  message: string;
+  rawPayload: unknown;
+  orderCode: number | null;
+  resolved: boolean;
+  resolvedAt: string | null;
+  createdAt: string;
 }
 
 export interface ProductImageItem {

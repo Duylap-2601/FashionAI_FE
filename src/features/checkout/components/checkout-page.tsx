@@ -12,6 +12,7 @@ import { calculateShippingFee } from '@/features/checkout/services/shipping';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
 import { useCheckout } from '@/features/payments/hooks/usePayments';
+import type { CheckoutResponse } from '@/features/payments/types/payments';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import { ChevronRight, ShoppingBag, Sparkles } from 'lucide-react';
 import Link from 'next/link';
@@ -32,6 +33,8 @@ export default function CheckoutPage() {
   const [discount, setDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState('');
   const [shippingFeeQuote, setShippingFeeQuote] = useState(0);
+  const [pendingCheckout, setPendingCheckout] = useState<CheckoutResponse | null>(null);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   // Form fields state
   const [fullName, setFullName] = useState('');
@@ -124,6 +127,60 @@ export default function CheckoutPage() {
     }
   };
 
+  const proceedToGateway = (checkoutResult: CheckoutResponse) => {
+    if (!checkoutResult.checkoutUrl) {
+      toast.error('Không nhận được link thanh toán');
+      return;
+    }
+
+    clearCart();
+
+    // Case 1: Backend explicitly returned formAction and formFields for POST (SePay)
+    if (checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = checkoutResult.extra.formAction;
+      Object.entries(checkoutResult.extra.formFields).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = String(value);
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
+      return;
+    }
+
+    // Case 2: Backend returned a SePay checkout/init URL with query params (SePay gateway REQUIRES POST)
+    try {
+      const parsedUrl = new URL(checkoutResult.checkoutUrl, window.location.origin);
+      if (
+        (parsedUrl.hostname.includes('sepay.vn') || parsedUrl.pathname.includes('/checkout/init')) &&
+        parsedUrl.searchParams.size > 0
+      ) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `${parsedUrl.origin}${parsedUrl.pathname}`;
+        parsedUrl.searchParams.forEach((value, key) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = value;
+          form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      }
+    } catch (urlErr) {
+      console.warn('Could not parse checkoutUrl as URL object:', urlErr);
+    }
+
+    // Case 3: Standard direct GET redirect (PayOS, VNPAY, Momo, etc.)
+    window.location.href = checkoutResult.checkoutUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0 || isSubmitting || isCheckoutLoading) return;
@@ -182,57 +239,13 @@ export default function CheckoutPage() {
         throw new Error('Không nhận được ID đơn hàng từ server');
       }
 
-      // Bank/SePay/PayOS: create checkout link and redirect to payment gateway
+      // Bank/SePay/PayOS: create checkout link, show transfer code, then redirect to gateway
       try {
         const checkoutResult = await checkout({ orderId, provider: 'SEPAY' });
 
         if (checkoutResult.checkoutUrl) {
-          clearCart();
-
-          // Case 1: Backend explicitly returned formAction and formFields for POST (SePay)
-          if (checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = checkoutResult.extra.formAction;
-            Object.entries(checkoutResult.extra.formFields).forEach(([key, value]) => {
-              const input = document.createElement('input');
-              input.type = 'hidden';
-              input.name = key;
-              input.value = String(value);
-              form.appendChild(input);
-            });
-            document.body.appendChild(form);
-            form.submit();
-            return;
-          }
-
-          // Case 2: Backend returned a SePay checkout/init URL with query params (SePay gateway REQUIRES POST)
-          try {
-            const parsedUrl = new URL(checkoutResult.checkoutUrl, window.location.origin);
-            if (
-              (parsedUrl.hostname.includes('sepay.vn') || parsedUrl.pathname.includes('/checkout/init')) &&
-              parsedUrl.searchParams.size > 0
-            ) {
-              const form = document.createElement('form');
-              form.method = 'POST';
-              form.action = `${parsedUrl.origin}${parsedUrl.pathname}`;
-              parsedUrl.searchParams.forEach((value, key) => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = value;
-                form.appendChild(input);
-              });
-              document.body.appendChild(form);
-              form.submit();
-              return;
-            }
-          } catch (urlErr) {
-            console.warn('Could not parse checkoutUrl as URL object:', urlErr);
-          }
-
-          // Case 3: Standard direct GET redirect (PayOS, VNPAY, Momo, etc.)
-          window.location.href = checkoutResult.checkoutUrl;
+          setPendingOrderId(orderId);
+          setPendingCheckout(checkoutResult);
         } else {
           throw new Error('Không nhận được link thanh toán');
         }
@@ -369,6 +382,45 @@ export default function CheckoutPage() {
 
         </form>
       </div>
+
+      {pendingCheckout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-[18px] font-bold text-brand-navy mb-2">Ghi nhớ mã đơn hàng của bạn</h3>
+            <p className="text-body-sm text-neutral-600 mb-4">
+              Khi chuyển khoản, vui lòng ghi đúng nội dung dưới đây để hệ thống tự động xác nhận thanh toán. Nếu nội dung chuyển khoản sai, đơn hàng có thể không được cập nhật dù bạn đã chuyển tiền thành công.
+            </p>
+            <div className="bg-brand-cream rounded-xl p-4 mb-4">
+              <p className="text-label-sm text-neutral-500 mb-1">Nội dung chuyển khoản</p>
+              <p className="text-[20px] font-bold text-brand-navy font-mono">
+                {pendingCheckout.extra?.invoiceNumber || `FAI${pendingCheckout.orderCode ?? ''}`}
+              </p>
+              <p className="text-label-sm text-neutral-500 mt-3 mb-1">Số tiền cần thanh toán</p>
+              <p className="text-body-lg font-bold text-brand-navy">{total.toLocaleString('vi-VN')}đ</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const result = pendingCheckout;
+                setPendingCheckout(null);
+                setPendingOrderId(null);
+                if (result) proceedToGateway(result);
+              }}
+              className="w-full h-12 rounded-xl bg-brand-navy text-white font-semibold hover:bg-brand-navy/90 transition-colors"
+            >
+              Tiếp tục thanh toán
+            </button>
+            {pendingOrderId && (
+              <Link
+                href={`/orders/${pendingOrderId}`}
+                className="block text-center text-label-sm text-neutral-500 mt-3 hover:text-brand-navy"
+              >
+                Để thanh toán sau, xem đơn hàng
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

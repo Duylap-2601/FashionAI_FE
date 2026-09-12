@@ -16,3 +16,7 @@ export function fetchAdminUsers(config: AxiosRequestConfig) {
 export function fetchAdminStats() {
   return api.get('/admin/stats');
 }
+
+export function fetchWebhookFailures(config?: AxiosRequestConfig) {
+  return api.get('/payments/admin/webhook-failures', config);
+}

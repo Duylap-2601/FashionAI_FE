@@ -10,12 +10,13 @@ import { AdminProductsPanel } from '@/features/admin/components/admin-products-p
 import { AdminQuotaPanel } from '@/features/admin/components/admin-quota-panel';
 import { AdminUserModal } from '@/features/admin/components/admin-user-modal';
 import { AdminUsersPanel } from '@/features/admin/components/admin-users-panel';
+import { AdminWebhookFailuresPanel } from '@/features/admin/components/admin-webhook-failures-panel';
 import { DashboardOverview } from '@/features/admin/components/dashboard-overview';
 import { fmt } from '@/features/admin/services/format';
 import type { ProductImageItem } from '@/features/admin/types/admin-dashboard-page';
-import { confirmManualPayment, createProduct, deleteProduct, deleteProductImage, updateOrderStatus, updateProduct, updateUser, uploadProductImage } from '@/features/admin/services/mutations';
-import { fetchAdminOrders, fetchAdminProducts, fetchAdminStats, fetchAdminUsers } from '@/features/admin/services/queries';
-import type { AdminOrder, AdminPage, AdminProduct, AdminProductImage, AdminStats, AdminUser, GarmentCategory, ProductStatus, UserRole, UserTier } from '@/features/admin/types/admin-dashboard-page';
+import { confirmManualPayment, createProduct, deleteProduct, deleteProductImage, resolveWebhookFailure, updateOrderRefund, updateOrderStatus, updateProduct, updateUser, uploadProductImage } from '@/features/admin/services/mutations';
+import { fetchAdminOrders, fetchAdminProducts, fetchAdminStats, fetchAdminUsers, fetchWebhookFailures } from '@/features/admin/services/queries';
+import type { AdminOrder, AdminPage, AdminProduct, AdminProductImage, AdminStats, AdminUser, AdminWebhookFailure, GarmentCategory, ProductStatus, UserRole, UserTier } from '@/features/admin/types/admin-dashboard-page';
 import { AdminGuard } from '@/features/auth/components/AdminGuard';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AdminCollectionManager } from '@/features/collections/components/AdminCollectionManager';
@@ -25,6 +26,7 @@ import type { BackendOrderStatus } from '@/features/orders/types/orders';
 import { AdminReviewTable } from '@/features/reviews/components/AdminReviewTable';
 import type { LucideIcon } from 'lucide-react';
 import {
+  AlertTriangle,
   ExternalLink,
   Layers,
   LayoutDashboard,
@@ -53,6 +55,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [webhookFailures, setWebhookFailures] = useState<AdminWebhookFailure[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Dynamic Chart States
@@ -303,6 +306,7 @@ export default function AdminDashboard() {
           items: o.items?.length || 1,
           total: Number(o.amount),
           status: o.status as BackendOrderStatus,
+          refundStatus: o.refundStatus,
           date: o.createdAt?.substring(0, 10) || '',
           payment: o.payments?.[0]?.provider || 'COD',
           address: ship?.address,
@@ -346,15 +350,25 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const fetchWebhookFailuresList = useCallback(async () => {
+    try {
+      const res = await fetchWebhookFailures();
+      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as AdminWebhookFailure[];
+      setWebhookFailures(list);
+    } catch (e) {
+      console.warn('Backend API webhook failures fetch failed.', e);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
-    Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats()])
+    Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats(), fetchWebhookFailuresList()])
       .finally(() => {
         if (mounted) setIsLoading(false);
       });
     return () => { mounted = false; };
-  }, [fetchProducts, fetchOrders, fetchUsers, fetchStats]);
+  }, [fetchProducts, fetchOrders, fetchUsers, fetchStats, fetchWebhookFailuresList]);
 
   // Auto-refresh orders and stats when new notification arrives in realtime
   const recentNotifications = useNotificationStore((s) => s.recentNotifications);
@@ -512,6 +526,29 @@ export default function AdminDashboard() {
       toast.success('Xác nhận thanh toán thủ công thành công');
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể xác nhận thanh toán thủ công.'));
+      console.error(e);
+    }
+  };
+
+  const handleUpdateRefund = async (id: string, reference: string, note: string) => {
+    try {
+      await updateOrderRefund(id, { refundStatus: 'COMPLETED', evidence: { reference }, internalNote: note });
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, refundStatus: 'COMPLETED' } : o));
+      if (selectedOrder?.id === id) setSelectedOrder(prev => prev ? { ...prev, refundStatus: 'COMPLETED' } : null);
+      toast.success('Đã ghi nhận hoàn tiền thành công');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể ghi nhận hoàn tiền.'));
+      console.error(e);
+    }
+  };
+
+  const handleResolveWebhookFailure = async (id: string) => {
+    try {
+      await resolveWebhookFailure(id);
+      setWebhookFailures(prev => prev.map(f => f.id === id ? { ...f, resolved: true, resolvedAt: new Date().toISOString() } : f));
+      toast.success('Đã đánh dấu xử lý xong');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể đánh dấu xử lý.'));
       console.error(e);
     }
   };
@@ -759,11 +796,13 @@ export default function AdminDashboard() {
               { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
               { id: 'users', label: 'Người dùng', icon: Users },
               { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
+              { id: 'webhook-failures', label: 'Giao dịch lỗi', icon: AlertTriangle },
               { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
               { id: 'quota', label: 'Cài đặt Quota', icon: Settings },
             ] as { id: AdminPage; label: string; icon: LucideIcon }[]).map(item => {
               const IconComponent = item.icon;
               const active = activeTab === item.id;
+              const unresolvedCount = item.id === 'webhook-failures' ? webhookFailures.filter(f => !f.resolved).length : 0;
               return (
                 <button
                   key={item.id}
@@ -773,6 +812,11 @@ export default function AdminDashboard() {
                 >
                   <IconComponent className="w-4 h-4 shrink-0" />
                   {item.label}
+                  {unresolvedCount > 0 && (
+                    <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold">
+                      {unresolvedCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -801,7 +845,8 @@ export default function AdminDashboard() {
                     activeTab === 'collections' ? 'Quản lý bộ sưu tập' :
                       activeTab === 'users' ? 'Quản lý người dùng' :
                         activeTab === 'orders' ? 'Quản lý đơn hàng' :
-                          activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' : 'Cài đặt Quota'}
+                          activeTab === 'webhook-failures' ? 'Giao dịch lỗi' :
+                            activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' : 'Cài đặt Quota'}
               </span>
             </div>
 
@@ -818,7 +863,7 @@ export default function AdminDashboard() {
               <button
                 onClick={() => {
                   setIsLoading(true);
-                  Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats()]).finally(() => setIsLoading(false));
+                  Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats(), fetchWebhookFailuresList()]).finally(() => setIsLoading(false));
                 }}
                 disabled={isLoading}
                 title="Làm mới dữ liệu"
@@ -905,6 +950,11 @@ export default function AdminDashboard() {
               <AdminOrdersPanel orders={orders} setSelectedOrder={setSelectedOrder} />
             )}
 
+            {/* ─── TAB: WEBHOOK FAILURES ──────────────────────────────────────────── */}
+            {activeTab === 'webhook-failures' && (
+              <AdminWebhookFailuresPanel failures={webhookFailures} onResolve={handleResolveWebhookFailure} />
+            )}
+
             {/* ─── TAB: QUOTA USAGE ────────────────────────────────────────────────── */}
             {activeTab === 'quota' && <AdminQuotaPanel users={users} stats={stats} />}
 
@@ -926,7 +976,7 @@ export default function AdminDashboard() {
           {/* ─── DRAWER: ORDER DETAIL ────────────────────────────────────────────── */}
           <AnimatePresence>
             {selectedOrder && (
-              <AdminOrderModal setSelectedOrder={setSelectedOrder} selectedOrder={selectedOrder} handleUpdateOrderStatus={handleUpdateOrderStatus} handleConfirmManualPayment={handleConfirmManualPayment} />
+              <AdminOrderModal setSelectedOrder={setSelectedOrder} selectedOrder={selectedOrder} handleUpdateOrderStatus={handleUpdateOrderStatus} handleConfirmManualPayment={handleConfirmManualPayment} handleUpdateRefund={handleUpdateRefund} />
             )}
           </AnimatePresence>
 

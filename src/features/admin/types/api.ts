@@ -21,6 +21,8 @@ export interface AdminOrderDto {
   items?: unknown[];
   amount: string | number;
   status: BackendOrderStatus;
+  paymentStatus?: string;
+  refundStatus?: 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
   createdAt?: string;
   payments?: { provider?: string }[];
 }
