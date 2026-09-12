@@ -508,9 +508,39 @@ export default function AdminDashboard() {
 
   const handleUpdateOrderStatus = async (id: string, status: BackendOrderStatus) => {
     try {
-      await updateOrderStatus(id, { status });
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
-      if (selectedOrder?.id === id) setSelectedOrder(prev => prev ? { ...prev, status } : null);
+      const res = await updateOrderStatus(id, { status });
+      const updatedOrder = res.data as AdminOrderDto;
+
+      setOrders(prev => prev.map(o => {
+        if (o.id !== id) return o;
+        const ship = updatedOrder.shippingInfo;
+        return {
+          ...o,
+          status: updatedOrder.status as BackendOrderStatus,
+          refundStatus: updatedOrder.refundStatus,
+          customer: ship?.name || updatedOrder.user?.name || o.customer,
+          email: updatedOrder.user?.email || ship?.phone || o.email,
+          address: ship?.address || o.address,
+          phone: ship?.phone || o.phone,
+        };
+      }));
+
+      if (selectedOrder?.id === id) {
+        setSelectedOrder(prev => {
+          if (!prev) return prev;
+          const ship = updatedOrder.shippingInfo;
+          return {
+            ...prev,
+            status: updatedOrder.status as BackendOrderStatus,
+            refundStatus: updatedOrder.refundStatus,
+            customer: ship?.name || updatedOrder.user?.name || prev.customer,
+            email: updatedOrder.user?.email || ship?.phone || prev.email,
+            address: ship?.address || prev.address,
+            phone: ship?.phone || prev.phone,
+          };
+        });
+      }
+
       toast.success('Cập nhật trạng thái đơn hàng thành công');
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể cập nhật trạng thái đơn hàng.'));
@@ -520,9 +550,39 @@ export default function AdminDashboard() {
 
   const handleCreateShipment = async (id: string) => {
     try {
-      await createShipment(id);
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'SHIPPING' } : o));
-      if (selectedOrder?.id === id) setSelectedOrder(prev => prev ? { ...prev, status: 'SHIPPING' } : null);
+      const res = await createShipment(id);
+      const { order: updatedOrder } = res.data as { order: AdminOrderDto };
+
+      setOrders(prev => prev.map(o => {
+        if (o.id !== id) return o;
+        const ship = updatedOrder.shippingInfo;
+        return {
+          ...o,
+          status: updatedOrder.status as BackendOrderStatus,
+          refundStatus: updatedOrder.refundStatus,
+          customer: ship?.name || updatedOrder.user?.name || o.customer,
+          email: updatedOrder.user?.email || ship?.phone || o.email,
+          address: ship?.address || o.address,
+          phone: ship?.phone || o.phone,
+        };
+      }));
+
+      if (selectedOrder?.id === id) {
+        setSelectedOrder(prev => {
+          if (!prev) return prev;
+          const ship = updatedOrder.shippingInfo;
+          return {
+            ...prev,
+            status: updatedOrder.status as BackendOrderStatus,
+            refundStatus: updatedOrder.refundStatus,
+            customer: ship?.name || updatedOrder.user?.name || prev.customer,
+            email: updatedOrder.user?.email || ship?.phone || prev.email,
+            address: ship?.address || prev.address,
+            phone: ship?.phone || prev.phone,
+          };
+        });
+      }
+
       toast.success('Đã tạo vận đơn GHN thành công');
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể tạo vận đơn.'));
@@ -532,9 +592,39 @@ export default function AdminDashboard() {
 
   const handleConfirmManualPayment = async (orderCode: number, reference: string, note: string) => {
     try {
-      await confirmManualPayment(orderCode, { reference, note });
-      setOrders(prev => prev.map(o => o.orderCode === orderCode ? { ...o, status: 'PAID' } : o));
-      if (selectedOrder?.orderCode === orderCode) setSelectedOrder(prev => prev ? { ...prev, status: 'PAID' } : null);
+      const res = await confirmManualPayment(orderCode, { reference, note });
+      const updatedOrder = res.data as AdminOrderDto;
+
+      setOrders(prev => prev.map(o => {
+        if (o.orderCode !== orderCode) return o;
+        const ship = updatedOrder.shippingInfo;
+        return {
+          ...o,
+          status: updatedOrder.status as BackendOrderStatus,
+          refundStatus: updatedOrder.refundStatus,
+          customer: ship?.name || updatedOrder.user?.name || o.customer,
+          email: updatedOrder.user?.email || ship?.phone || o.email,
+          address: ship?.address || o.address,
+          phone: ship?.phone || o.phone,
+        };
+      }));
+
+      if (selectedOrder?.orderCode === orderCode) {
+        setSelectedOrder(prev => {
+          if (!prev) return prev;
+          const ship = updatedOrder.shippingInfo;
+          return {
+            ...prev,
+            status: updatedOrder.status as BackendOrderStatus,
+            refundStatus: updatedOrder.refundStatus,
+            customer: ship?.name || updatedOrder.user?.name || prev.customer,
+            email: updatedOrder.user?.email || ship?.phone || prev.email,
+            address: ship?.address || prev.address,
+            phone: ship?.phone || prev.phone,
+          };
+        });
+      }
+
       toast.success('Xác nhận thanh toán thủ công thành công');
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể xác nhận thanh toán thủ công.'));

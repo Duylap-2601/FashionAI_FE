@@ -24,14 +24,13 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems: items, totalPrice, clearCart } = useCart();
   const { profile } = useUserProfile();
-  const { canOrder, completeness, isLoading: isCompletenessLoading } = useMeasurementsCompleteness();
+  const { canOrder, completeness } = useMeasurementsCompleteness();
   const { createOrderAsync, isSubmitting } = useCreateOrder();
   const { checkout, isLoading: isCheckoutLoading } = useCheckout();
 
   const [paymentMethod, setPaymentMethod] = useState<'bank'>('bank');
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
-  const [couponMessage, setCouponMessage] = useState('');
   const [shippingFeeQuote, setShippingFeeQuote] = useState(0);
   const [pendingCheckout, setPendingCheckout] = useState<CheckoutResponse | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
@@ -110,17 +109,14 @@ export default function CheckoutPage() {
     if (code === 'WELCOME') {
       const disc = Math.min(100000, totalPrice);
       setDiscount(disc);
-      setCouponMessage('Mã WELCOME: Giảm 100.000đ');
       toast.success('Áp dụng mã WELCOME thành công!');
     } else if (code === 'STALE10') {
       const disc = Math.round(totalPrice * 0.1);
       setDiscount(disc);
-      setCouponMessage('Mã STALE10: Giảm 10%');
       toast.success('Áp dụng mã STALE10 thành công!');
     } else if (code === 'FASHIONAI') {
       const disc = Math.min(150000, totalPrice);
       setDiscount(disc);
-      setCouponMessage('Mã FASHIONAI: Giảm 150.000đ');
       toast.success('Áp dụng mã FASHIONAI thành công!');
     } else {
       toast.error('Mã giảm giá không hợp lệ hoặc đã hết hạn.');
@@ -207,6 +203,8 @@ export default function CheckoutPage() {
 
     const formattedProvince = currentProvince.name;
     const formattedDistrict = currentDistrict ? currentDistrict.name : '';
+    const ghnDistrictId = (currentDistrict as { ghnDistrictId?: number } | undefined)?.ghnDistrictId;
+    const ghnWardCode = (currentDistrict as { ghnWardCode?: string } | undefined)?.ghnWardCode;
     const fullAddress = `${addressDetail}, ${formattedDistrict ? formattedDistrict + ', ' : ''}${formattedProvince}`;
 
     const orderPayload = {
@@ -223,6 +221,8 @@ export default function CheckoutPage() {
         notes: notes,
         provinceName: formattedProvince,
         districtName: formattedDistrict,
+        ghnDistrictId: ghnDistrictId,
+        ghnWardCode: ghnWardCode,
       },
       paymentMethod: 'BANK_TRANSFER' as const,
       couponCode: discount > 0 ? coupon.toUpperCase() : undefined,
