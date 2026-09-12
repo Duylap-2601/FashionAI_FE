@@ -1,7 +1,8 @@
 'use client';
 
-import { verifyEmail } from '@/features/auth/services/mutations';
 import { AuthCenteredLayout } from '@/features/auth/components/AuthLayout';
+import { verifyEmail } from '@/features/auth/services/mutations';
+import { getErrorMessage } from '@/lib/errors';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -24,9 +25,9 @@ export default function VerifyEmailPage() {
         if (!response.ok) throw new Error(body?.message || 'Xac thuc email that bai.');
         setStatus('success');
         setMessage(body?.message || 'Xac thuc email thanh cong.');
-      } catch (error) {
+      } catch (error: unknown) {
         setStatus('error');
-        setMessage(error instanceof Error ? error.message : 'Xac thuc email that bai.');
+        setMessage(getErrorMessage(error, 'Xac thuc email that bai.'));
       }
     };
 

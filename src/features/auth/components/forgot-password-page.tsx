@@ -1,7 +1,8 @@
 'use client';
 
-import { requestPasswordReset } from '@/features/auth/services/mutations';
 import { AuthCenteredLayout } from '@/features/auth/components/AuthLayout';
+import { requestPasswordReset } from '@/features/auth/services/mutations';
+import { getErrorMessage } from '@/lib/errors';
 import { ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react';
@@ -22,8 +23,8 @@ export default function ForgotPassword() {
       const body = await response.json().catch(() => null);
       if (!response.ok) throw new Error(body?.message || 'Khong the gui email dat lai mat khau.');
       setIsSuccess(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Khong the gui email dat lai mat khau.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Khong the gui email dat lai mat khau.'));
     } finally {
       setIsLoading(false);
     }
@@ -62,9 +63,10 @@ export default function ForgotPassword() {
 
             <button
               type="submit"
-              className="w-full h-11 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors mt-2"
+              disabled={isLoading}
+              className="w-full h-11 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors mt-2 disabled:opacity-50"
             >
-              Gửi link đặt lại
+              {isLoading ? 'Đang gửi...' : 'Gửi link đặt lại'}
             </button>
           </form>
         </>
