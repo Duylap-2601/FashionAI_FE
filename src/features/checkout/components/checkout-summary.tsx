@@ -12,6 +12,8 @@ export function CheckoutSummary({
   discount,
   total,
   isSubmitting,
+  isPricingLoading,
+  pricingError,
   coupon,
   setCoupon,
   setDiscount,
@@ -63,12 +65,19 @@ export function CheckoutSummary({
           </div>
           <div className="flex justify-between text-body-sm text-neutral-600">
             <span>Vận chuyển</span>
-            {shippingFee === 0 ? (
+            {isPricingLoading ? (
+              <span className="text-neutral-500 font-medium">Đang tính...</span>
+            ) : pricingError ? (
+              <span className="text-semantic-error font-medium">Cần kiểm tra</span>
+            ) : shippingFee === 0 ? (
               <span className="text-semantic-success font-medium">Miễn phí</span>
             ) : (
               <span>{shippingFee.toLocaleString('vi-VN')}đ</span>
             )}
           </div>
+          {pricingError && (
+            <p className="text-[12px] text-semantic-error leading-relaxed">{pricingError}</p>
+          )}
           {discount > 0 && (
             <div className="flex justify-between text-body-sm text-semantic-error">
               <span>Giảm giá</span>

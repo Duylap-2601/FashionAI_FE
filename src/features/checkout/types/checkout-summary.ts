@@ -7,6 +7,8 @@ export interface CheckoutSummaryProps {
   discount: number;
   total: number;
   isSubmitting: boolean;
+  isPricingLoading?: boolean;
+  pricingError?: string | null;
   coupon: string;
   setCoupon: React.Dispatch<React.SetStateAction<string>>;
   setDiscount: React.Dispatch<React.SetStateAction<number>>;

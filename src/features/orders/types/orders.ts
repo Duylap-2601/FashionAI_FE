@@ -11,6 +11,7 @@ export interface ShippingInfo {
   address: string;
   provinceName?: string;
   districtName?: string;
+  wardName?: string;
   notes?: string;
   note?: string;
   ghnProvinceId?: number;
@@ -28,6 +29,22 @@ export interface CreateOrderRequest {
   totalAmount?: number;
   targetTier?: 'MEMBER' | 'VIP';
   provider?: 'PAYOS' | 'SEPAY';
+}
+
+export interface OrderQuote {
+  itemsTotal: number;
+  shippingFee: number;
+  discountAmount: number;
+  couponCode?: string;
+  totalAmount: number;
+  shippingQuote?: {
+    provider: 'GHN';
+    totalFee: number;
+    serviceFee?: number;
+    insuranceFee?: number;
+    codFee?: number;
+    expectedDeliveryTime?: string;
+  };
 }
 
 export type BackendOrderStatus =
@@ -125,6 +142,8 @@ export interface OrderShipment {
   providerOrderCode?: string | null;
   status: ShipmentStatus;
   shippingFee?: number | null;
+  quotedShippingFee?: number | null;
+  actualShippingFee?: number | null;
   expectedDeliveryTime?: string | null;
   lastSyncedAt?: string | null;
 }

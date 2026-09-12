@@ -49,6 +49,9 @@ src/
 ## Business Ownership
 
 - Shopping: `home`, `products`, `collections`, `cart`, `checkout`, `orders`, `payments`.
+  Checkout and order pricing are backend-owned: the frontend may request quotes
+  for display, but must not calculate or submit authoritative product totals,
+  shipping fees, or discount amounts.
 - Account: `auth`, `profile`, `measurements`, `subscription`.
 - AI and interaction: `try-on`, `stylist`, `rack`, `chat`, `notifications`, `reviews`.
 - `admin` owns the dashboard. Collection/review management belongs to the relevant feature.
@@ -100,6 +103,13 @@ src/
 - Check Tailwind source discovery after moving files. Do not delete stylesheets only because
   names look duplicated; `app/globals.css` is an existing reference file.
 - Preserve URLs, API payloads, cookies, storage keys, query keys, socket events, and streaming behavior.
+- Preserve checkout/order pricing ownership. Checkout requests should send cart
+  items, structured GHN address fields, coupon code, and an optional total for
+  backend double-checking; do not send client-resolved `shippingFee` or
+  `discountAmount` as a source of truth.
+- Admin GHN pickup origin is configured in the admin dashboard and persisted by
+  the backend. Keep the UI sending legacy GHN IDs/codes for province, district,
+  and ward; do not hard-code pickup address environment values in the frontend.
 - Preserve the `/api/backend` proxy and PWA `NetworkOnly` strategy for private APIs.
 - `src/lib/auth.ts` is legacy NextAuth code and is not part of the active auth flow.
   Do not reinstall NextAuth or activate this file during structural refactors.
