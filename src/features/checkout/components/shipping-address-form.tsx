@@ -13,8 +13,12 @@ export function ShippingAddressForm({
   setProvinceId,
   provinces,
   isLoadingProvinces,
-  wardId,
-  setWardId,
+  districtId,
+  setDistrictId,
+  districts,
+  isLoadingDistricts,
+  wardCode,
+  setWardCode,
   wards,
   isLoadingWards,
   notes,
@@ -23,7 +27,7 @@ export function ShippingAddressForm({
   return (
     <section>
       <h2 className="text-[20px] font-bold text-brand-navy mb-6">Thông tin giao hàng</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div>
           <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Họ và tên *</label>
           <input required type="text" placeholder="Nguyễn Văn A" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all" />
@@ -35,7 +39,7 @@ export function ShippingAddressForm({
       </div>
       <div className="mb-4">
         <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Địa chỉ chi tiết *</label>
-        <input required type="text" placeholder="Số nhà, Tên đường, Phường/Xã..." value={addressDetail} onChange={e => setAddressDetail(e.target.value)} className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all" />
+        <input required type="text" placeholder="Số nhà, Tên đường..." value={addressDetail} onChange={e => setAddressDetail(e.target.value)} className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
@@ -57,18 +61,36 @@ export function ShippingAddressForm({
           </select>
         </div>
         <div>
+          <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Quận/Huyện *</label>
+          <select
+            required
+            value={districtId}
+            onChange={e => {
+              setDistrictId(Number(e.target.value) || '');
+            }}
+            disabled={isLoadingDistricts || districts.length === 0}
+            className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
+          >
+            {isLoadingDistricts && <option value="">Đang tải Quận/Huyện...</option>}
+            {!isLoadingDistricts && districts.length === 0 && <option value="">Không có dữ liệu Quận/Huyện</option>}
+            {districts.map(d => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
           <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Phường/Xã *</label>
           <select
             required
-            value={wardId}
-            onChange={e => setWardId(Number(e.target.value) || '')}
+            value={wardCode}
+            onChange={e => setWardCode(e.target.value)}
             disabled={isLoadingWards || wards.length === 0}
             className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
           >
             {isLoadingWards && <option value="">Đang tải Phường/Xã...</option>}
             {!isLoadingWards && wards.length === 0 && <option value="">Không có dữ liệu Phường/Xã</option>}
             {wards.map(w => (
-              <option key={w.id} value={w.id}>{w.name}</option>
+              <option key={w.code} value={w.code}>{w.name}</option>
             ))}
           </select>
         </div>

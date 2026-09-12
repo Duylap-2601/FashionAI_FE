@@ -8,6 +8,7 @@ import { AdminOrdersPanel } from '@/features/admin/components/admin-orders-panel
 import { AdminProductModal } from '@/features/admin/components/admin-product-modal';
 import { AdminProductsPanel } from '@/features/admin/components/admin-products-panel';
 import { AdminQuotaPanel } from '@/features/admin/components/admin-quota-panel';
+import { AdminShippingSettingsPanel } from '@/features/admin/components/admin-shipping-settings-panel';
 import { AdminUserModal } from '@/features/admin/components/admin-user-modal';
 import { AdminUsersPanel } from '@/features/admin/components/admin-users-panel';
 import { AdminWebhookFailuresPanel } from '@/features/admin/components/admin-webhook-failures-panel';
@@ -37,6 +38,7 @@ import {
   RefreshCw,
   Settings,
   ShoppingBag,
+  Truck,
   Users
 } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
@@ -941,6 +943,7 @@ export default function AdminDashboard() {
               { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
               { id: 'webhook-failures', label: 'Giao dịch lỗi', icon: AlertTriangle },
               { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
+              { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
               { id: 'quota', label: 'Cài đặt Quota', icon: Settings },
             ] as { id: AdminPage; label: string; icon: LucideIcon }[]).map(item => {
               const IconComponent = item.icon;
@@ -989,7 +992,8 @@ export default function AdminDashboard() {
                       activeTab === 'users' ? 'Quản lý người dùng' :
                         activeTab === 'orders' ? 'Quản lý đơn hàng' :
                           activeTab === 'webhook-failures' ? 'Giao dịch lỗi' :
-                            activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' : 'Cài đặt Quota'}
+                            activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
+                              activeTab === 'shipping-settings' ? 'Cài đặt GHN' : 'Cài đặt Quota'}
               </span>
             </div>
 
@@ -1100,6 +1104,9 @@ export default function AdminDashboard() {
 
             {/* ─── TAB: QUOTA USAGE ────────────────────────────────────────────────── */}
             {activeTab === 'quota' && <AdminQuotaPanel users={users} stats={stats} />}
+
+            {/* ─── TAB: SHIPPING SETTINGS ─────────────────────────────────────────── */}
+            {activeTab === 'shipping-settings' && <AdminShippingSettingsPanel />}
 
             {/* ─── TAB: COLLECTIONS ──────────────────────────────────────────────── */}
             {activeTab === 'collections' && <AdminCollectionManager />}

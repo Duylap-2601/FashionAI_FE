@@ -1,6 +1,13 @@
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 
-export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'reviews' | 'quota' | 'webhook-failures';
+export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'reviews' | 'quota' | 'shipping-settings' | 'webhook-failures';
+
+export interface GhnPickupSettings {
+  provinceId?: number;
+  districtId?: number;
+  wardCode?: string;
+  source: 'database' | 'env' | 'empty';
+}
 
 export type GarmentCategory = 'UPPER' | 'LOWER' | 'FULL_BODY';
 

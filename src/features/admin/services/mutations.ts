@@ -42,6 +42,10 @@ export function resolveWebhookFailure(id: string) {
   return api.patch(`/payments/admin/webhook-failures/${id}/resolve`);
 }
 
+export function updateGhnPickupSettings(payload: { provinceId: number; districtId: number; wardCode: string }) {
+  return api.put('/admin/settings/ghn-pickup', payload);
+}
+
 export function updateUser(id: string, payload: PatchUsersInput) {
   return api.patch(`/users/${id}`, payload);
 }

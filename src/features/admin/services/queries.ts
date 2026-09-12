@@ -17,6 +17,10 @@ export function fetchAdminStats() {
   return api.get('/admin/stats');
 }
 
+export function fetchGhnPickupSettings() {
+  return api.get('/admin/settings/ghn-pickup');
+}
+
 export function fetchWebhookFailures(config?: AxiosRequestConfig) {
   return api.get('/payments/admin/webhook-failures', config);
 }

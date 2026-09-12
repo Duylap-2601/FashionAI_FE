@@ -1,17 +1,18 @@
 'use client';
-import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
-
 
 import { CheckoutSummary } from '@/features/checkout/components/checkout-summary';
 import { DeliveryOptions } from '@/features/checkout/components/delivery-options';
 import { ShippingAddressForm } from '@/features/checkout/components/shipping-address-form';
+import { useGhnDistricts, useGhnProvinces, useGhnWards } from '@/features/checkout/hooks/useGhnLocations';
 import { useCart } from '@/features/cart/store/cartStore';
-import { getGhnProvinces, getGhnWards, type GhnLocationOption } from '@/features/checkout/services/ghn-location';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
+import { quoteOrder } from '@/features/orders/services/mutations';
+import type { OrderQuote } from '@/features/orders/types/orders';
 import { useCheckout } from '@/features/payments/hooks/usePayments';
 import type { CheckoutResponse } from '@/features/payments/types/payments';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
+import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
 import { ChevronRight, ShoppingBag, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -29,125 +30,162 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'bank'>('bank');
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
-  const [shippingFeeQuote] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState('');
+  const [orderQuote, setOrderQuote] = useState<OrderQuote | null>(null);
+  const [isPricingLoading, setIsPricingLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
   const [pendingCheckout, setPendingCheckout] = useState<CheckoutResponse | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
-  // Form fields state
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [addressDetail, setAddressDetail] = useState('');
-  const [provinces, setProvinces] = useState<GhnLocationOption[]>([]);
-  const [wards, setWards] = useState<GhnLocationOption[]>([]);
   const [provinceId, setProvinceId] = useState<number | ''>('');
-  const [wardId, setWardId] = useState<number | ''>('');
-  const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
-  const [isLoadingWards, setIsLoadingWards] = useState(false);
+  const [districtId, setDistrictId] = useState<number | ''>('');
+  const [wardCode, setWardCode] = useState('');
   const [notes, setNotes] = useState('');
 
-  const currentProvince = useMemo(() => {
-    return provinces.find(p => p.id === provinceId) || null;
-  }, [provinceId, provinces]);
+  const { provinces, isLoading: isLoadingProvinces, isError: isProvincesError } = useGhnProvinces();
+  const { districts, isLoading: isLoadingDistricts, isError: isDistrictsError } = useGhnDistricts(provinceId);
+  const { wards, isLoading: isLoadingWards, isError: isWardsError } = useGhnWards(districtId);
 
-  const currentWard = useMemo(() => {
-    return wards.find(w => w.id === wardId) || null;
-  }, [wardId, wards]);
+  const currentProvince = useMemo(
+    () => provinces.find((province) => province.id === provinceId) || null,
+    [provinceId, provinces],
+  );
+  const currentDistrict = useMemo(
+    () => districts.find((district) => district.id === districtId) || null,
+    [districtId, districts],
+  );
+  const currentWard = useMemo(
+    () => wards.find((ward) => ward.code === wardCode) || null,
+    [wardCode, wards],
+  );
+
+  useEffect(() => {
+    if (profile?.name) setFullName(profile.name);
+    if (profile?.phone) setPhone(profile.phone);
+    if (profile?.address) setAddressDetail(profile.address);
+  }, [profile]);
+
+  useEffect(() => {
+    if (provinceId || provinces.length === 0) return;
+    const cityLower = profile?.city?.toLowerCase() || '';
+    const matched = cityLower
+      ? provinces.find((province) => cityLower.includes(province.name.toLowerCase()) || province.name.toLowerCase().includes(cityLower))
+      : null;
+    setProvinceId(matched?.id || provinces[0].id);
+  }, [profile?.city, provinceId, provinces]);
+
+  useEffect(() => {
+    setDistrictId('');
+    setWardCode('');
+  }, [provinceId]);
+
+  useEffect(() => {
+    if (districtId || districts.length === 0) return;
+    setDistrictId(districts[0].id);
+  }, [districtId, districts]);
+
+  useEffect(() => {
+    setWardCode('');
+  }, [districtId]);
+
+  useEffect(() => {
+    if (wardCode || wards.length === 0) return;
+    setWardCode(wards[0].code);
+  }, [wardCode, wards]);
+
+  useEffect(() => {
+    if (isProvincesError) toast.error('Không thể tải danh sách Tỉnh/Thành từ GHN. Vui lòng thử lại sau.');
+  }, [isProvincesError]);
+
+  useEffect(() => {
+    if (isDistrictsError) toast.error('Không thể tải danh sách Quận/Huyện từ GHN. Vui lòng thử lại sau.');
+  }, [isDistrictsError]);
+
+  useEffect(() => {
+    if (isWardsError) toast.error('Không thể tải dữ liệu Phường/Xã từ GHN để tính phí giao hàng. Vui lòng thử lại sau.');
+  }, [isWardsError]);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadProvinces() {
-      setIsLoadingProvinces(true);
-      try {
-        const data = await getGhnProvinces();
-        if (!isMounted) return;
-        setProvinces(data);
-
-        if (data.length > 0) {
-          const cityLower = profile?.city?.toLowerCase() || '';
-          const matched = cityLower
-            ? data.find(p => cityLower.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(cityLower))
-            : null;
-          setProvinceId(matched?.id || data[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to load GHN provinces:', error);
-        toast.error('Không thể tải danh sách Tỉnh/Thành từ GHN. Vui lòng thử lại sau.');
-      } finally {
-        if (isMounted) setIsLoadingProvinces(false);
-      }
-    }
-
-    loadProvinces();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [profile?.city]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadWards() {
-      if (!provinceId) {
-        setWards([]);
-        setWardId('');
+    async function loadQuote() {
+      if (!currentProvince || !currentDistrict || !currentWard || items.length === 0) {
+        setOrderQuote(null);
+        setDiscount(0);
+        setPricingError(null);
         return;
       }
 
-      setIsLoadingWards(true);
-      setWardId('');
+      setIsPricingLoading(true);
+      setPricingError(null);
       try {
-        const data = await getGhnWards(provinceId);
+        const quote = await quoteOrder({
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            color: item.color,
+            price: item.price,
+          })),
+          shippingInfo: {
+            name: fullName || 'Customer',
+            phone: phone || '0000000000',
+            address: addressDetail || 'Pending address',
+            ghnProvinceId: currentProvince.id,
+            ghnDistrictId: currentDistrict.id,
+            ghnWardCode: currentWard.code,
+          },
+          paymentMethod: 'BANK_TRANSFER',
+          couponCode: appliedCoupon || undefined,
+        });
         if (!isMounted) return;
-        setWards(data);
-        setWardId(data[0]?.id || '');
-      } catch (error) {
-        console.error('Failed to load GHN wards:', error);
-        setWards([]);
-        toast.error('Không thể tải danh sách Phường/Xã từ GHN. Vui lòng thử lại sau.');
+        setOrderQuote(quote);
+        setDiscount(quote.discountAmount);
+      } catch (error: unknown) {
+        if (!isMounted) return;
+        console.error('Failed to quote order:', error);
+        setOrderQuote(null);
+        setDiscount(0);
+        setPricingError(getErrorMessage(error, 'Không thể tính tổng đơn hàng. Vui lòng kiểm tra địa chỉ hoặc mã giảm giá.'));
       } finally {
-        if (isMounted) setIsLoadingWards(false);
+        if (isMounted) setIsPricingLoading(false);
       }
     }
 
-    loadWards();
+    loadQuote();
 
     return () => {
       isMounted = false;
     };
-  }, [provinceId]);
+  }, [addressDetail, appliedCoupon, currentDistrict, currentProvince, currentWard, fullName, items, phone]);
 
-  // Prefill profile data if available
-  useEffect(() => {
-    if (profile) {
-      if (profile.name) setFullName(profile.name);
-      if (profile.phone) setPhone(profile.phone);
-      if (profile.address) setAddressDetail(profile.address);
-    }
-  }, [profile]);
-
-  const shippingFee = shippingFeeQuote;
-  const total = Math.max(0, totalPrice - discount + shippingFee);
+  const shippingFee = orderQuote?.shippingFee ?? 0;
+  const total = orderQuote?.totalAmount ?? Math.max(0, totalPrice);
+  const isOrderBlocked = isSubmitting || isCheckoutLoading || isPricingLoading || !!pricingError || !orderQuote;
 
   const handleApplyCoupon = () => {
     const code = coupon.trim().toUpperCase();
     if (!code) return;
+    setAppliedCoupon(code);
+  };
 
-    if (code === 'WELCOME') {
-      const disc = Math.min(100000, totalPrice);
-      setDiscount(disc);
-      toast.success('Áp dụng mã WELCOME thành công!');
-    } else if (code === 'STALE10') {
-      const disc = Math.round(totalPrice * 0.1);
-      setDiscount(disc);
-      toast.success('Áp dụng mã STALE10 thành công!');
-    } else if (code === 'FASHIONAI') {
-      const disc = Math.min(150000, totalPrice);
-      setDiscount(disc);
-      toast.success('Áp dụng mã FASHIONAI thành công!');
-    } else {
-      toast.error('Mã giảm giá không hợp lệ hoặc đã hết hạn.');
+  const handleDiscountStateChange: React.Dispatch<React.SetStateAction<number>> = (value) => {
+    const nextValue = typeof value === 'function' ? value(discount) : value;
+    setDiscount(nextValue);
+    if (nextValue === 0) {
+      setAppliedCoupon('');
+      setPricingError(null);
+    }
+  };
+
+  const handleCouponChange: React.Dispatch<React.SetStateAction<string>> = (value) => {
+    const nextValue = typeof value === 'function' ? value(coupon) : value;
+    setCoupon(nextValue);
+    if (appliedCoupon && discount === 0) {
+      setAppliedCoupon('');
+      setPricingError(null);
     }
   };
 
@@ -159,7 +197,6 @@ export default function CheckoutPage() {
 
     clearCart();
 
-    // Case 1: Backend explicitly returned formAction and formFields for POST (SePay)
     if (checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
       const form = document.createElement('form');
       form.method = 'POST';
@@ -176,7 +213,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Case 2: Backend returned a SePay checkout/init URL with query params (SePay gateway REQUIRES POST)
     try {
       const parsedUrl = new URL(checkoutResult.checkoutUrl, window.location.origin);
       if (
@@ -201,19 +237,18 @@ export default function CheckoutPage() {
       console.warn('Could not parse checkoutUrl as URL object:', urlErr);
     }
 
-    // Case 3: Standard direct GET redirect (PayOS, VNPAY, Momo, etc.)
     window.location.href = checkoutResult.checkoutUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.length === 0 || isSubmitting || isCheckoutLoading) return;
+    if (items.length === 0 || isOrderBlocked) return;
 
     if (!canOrder && completeness) {
       const missingLabels: string[] = [];
-      completeness.byCategory.forEach(cat => {
+      completeness.byCategory.forEach((cat) => {
         if (!cat.complete && cat.missing) {
-          cat.missing.forEach(m => {
+          cat.missing.forEach((m) => {
             if (!missingLabels.includes(m.label)) missingLabels.push(m.label);
           });
         }
@@ -229,49 +264,42 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!currentProvince || !currentWard) {
-      toast.error('Vui lòng chọn Tỉnh/Thành phố và Phường/Xã giao hàng.');
+    if (!currentProvince || !currentDistrict || !currentWard) {
+      toast.error('Vui lòng chọn Tỉnh/Thành phố, Quận/Huyện và Phường/Xã giao hàng.');
       return;
     }
 
-    const fullAddress = `${addressDetail}, ${currentWard.name}, ${currentProvince.name}`;
-
-    const orderPayload = {
-      items: items.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        color: item.color,
-        price: item.price,
-      })),
-      shippingInfo: {
-        name: fullName,
-        phone: phone,
-        address: fullAddress,
-        notes: notes,
-        provinceName: currentProvince.name,
-        wardName: currentWard.name,
-        ghnProvinceId: currentProvince.id,
-        ghnWardId: currentWard.id,
-      },
-      paymentMethod: 'BANK_TRANSFER' as const,
-      couponCode: discount > 0 ? coupon.toUpperCase() : undefined,
-      discountAmount: discount || undefined,
-      shippingFee: shippingFee,
-      totalAmount: total,
-    };
+    const fullAddress = `${addressDetail}, ${currentWard.name}, ${currentDistrict.name}, ${currentProvince.name}`;
 
     try {
-      const order = await createOrderAsync(orderPayload);
+      const order = await createOrderAsync({
+        items: items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          color: item.color,
+          price: item.price,
+        })),
+        shippingInfo: {
+          name: fullName,
+          phone,
+          address: fullAddress,
+          notes,
+          ghnProvinceId: currentProvince.id,
+          ghnDistrictId: currentDistrict.id,
+          ghnWardCode: currentWard.code,
+        },
+        paymentMethod: 'BANK_TRANSFER',
+        couponCode: appliedCoupon || undefined,
+        totalAmount: orderQuote.totalAmount,
+      });
       const orderId = order?.id;
 
       if (!orderId) {
         throw new Error('Không nhận được ID đơn hàng từ server');
       }
 
-      // Bank/SePay/PayOS: create checkout link, show transfer code, then redirect to gateway
       try {
         const checkoutResult = await checkout({ orderId, provider: 'SEPAY' });
-
         if (checkoutResult.checkoutUrl) {
           setPendingOrderId(orderId);
           setPendingCheckout(checkoutResult);
@@ -279,7 +307,6 @@ export default function CheckoutPage() {
           throw new Error('Không nhận được link thanh toán');
         }
       } catch (checkoutError) {
-        // Order created but checkout failed - don't clear cart, redirect to order detail
         console.error('Checkout failed, order still pending:', checkoutError);
         toast.error('Tạo đơn hàng thành công nhưng không thể chuyển tới cổng thanh toán. Vui lòng thanh toán lại từ trang đơn hàng.');
         router.push(`/orders/${orderId}`);
@@ -299,8 +326,7 @@ export default function CheckoutPage() {
           },
         });
       } else {
-        const msg = getErrorMessage(error, 'Đã xảy ra lỗi khi tạo đơn hàng.');
-        toast.error(`Lỗi tạo đơn: ${Array.isArray(msg) ? msg[0] : msg}`);
+        toast.error(`Lỗi tạo đơn: ${getErrorMessage(error, 'Đã xảy ra lỗi khi tạo đơn hàng.')}`);
       }
     }
   };
@@ -326,8 +352,6 @@ export default function CheckoutPage() {
   return (
     <div className="bg-brand-cream min-h-screen pb-20">
       <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8">
-
-        {/* Progress Steps */}
         <div className="flex items-center gap-3 text-label-sm font-medium mb-12">
           <span className="text-brand-navy font-bold">1. Thông tin giao hàng</span>
           <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -337,11 +361,7 @@ export default function CheckoutPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[60%_1fr] gap-12 items-start">
-
-          {/* LEFT - Form */}
           <div className="flex flex-col gap-10">
-
-            {/* Incomplete Measurements Notice */}
             {!canOrder && completeness && (
               <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl animate-in fade-in duration-300">
                 <div className="flex items-start gap-3">
@@ -353,7 +373,7 @@ export default function CheckoutPage() {
                       Cần bổ sung số đo cơ thể để hoàn tất đơn may đo
                     </h3>
                     <p className="text-[13px] text-amber-700 mb-3 leading-relaxed">
-                      Sản phẩm bạn chọn là hình thức may đo riêng (Made-to-Measure). Tài khoản của bạn hiện còn thiếu một số thông số bắt buộc:
+                      Sản phẩm bạn chọn là hình thức may đo riêng. Tài khoản của bạn hiện còn thiếu một số thông số bắt buộc:
                     </p>
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {completeness.byCategory.flatMap(c => c.missing || []).map((m, idx) => (
@@ -373,7 +393,6 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* Section 1 */}
             <ShippingAddressForm
               fullName={fullName}
               setFullName={setFullName}
@@ -385,41 +404,46 @@ export default function CheckoutPage() {
               setProvinceId={setProvinceId}
               provinces={provinces}
               isLoadingProvinces={isLoadingProvinces}
-              wardId={wardId}
-              setWardId={setWardId}
+              districtId={districtId}
+              setDistrictId={setDistrictId}
+              districts={districts}
+              isLoadingDistricts={isLoadingDistricts}
+              wardCode={wardCode}
+              setWardCode={setWardCode}
               wards={wards}
               isLoadingWards={isLoadingWards}
               notes={notes}
               setNotes={setNotes}
             />
 
-            {/* Section 2 */}
             <DeliveryOptions paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
 
-            {/* Mobile Submit Button */}
             <div className="lg:hidden mt-8">
-              <button type="submit" disabled={isSubmitting} className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl flex items-center justify-between px-6 hover:bg-brand-navy/90 transition-colors disabled:opacity-50">
+              <button
+                type="submit"
+                disabled={isOrderBlocked}
+                className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl flex items-center justify-between px-6 hover:bg-brand-navy/90 transition-colors disabled:opacity-50"
+              >
                 <span>{isSubmitting ? 'Đang đặt hàng...' : 'Xác nhận đặt hàng'}</span>
                 <span>{total.toLocaleString('vi-VN')}đ</span>
               </button>
             </div>
-
           </div>
 
-          {/* RIGHT - Order Summary */}
           <CheckoutSummary
             items={items}
-            totalPrice={totalPrice}
+            totalPrice={orderQuote?.itemsTotal ?? totalPrice}
             shippingFee={shippingFee}
             discount={discount}
             total={total}
-            isSubmitting={isSubmitting}
+            isSubmitting={isOrderBlocked}
+            isPricingLoading={isPricingLoading}
+            pricingError={pricingError}
             coupon={coupon}
-            setCoupon={setCoupon}
-            setDiscount={setDiscount}
+            setCoupon={handleCouponChange}
+            setDiscount={handleDiscountStateChange}
             handleApplyCoupon={handleApplyCoupon}
           />
-
         </form>
       </div>
 
@@ -428,7 +452,7 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <h3 className="text-[18px] font-bold text-brand-navy mb-2">Ghi nhớ mã đơn hàng của bạn</h3>
             <p className="text-body-sm text-neutral-600 mb-4">
-              Khi chuyển khoản, vui lòng ghi đúng nội dung dưới đây để hệ thống tự động xác nhận thanh toán. Nếu nội dung chuyển khoản sai, đơn hàng có thể không được cập nhật dù bạn đã chuyển tiền thành công.
+              Khi chuyển khoản, vui lòng ghi đúng nội dung dưới đây để hệ thống tự động xác nhận thanh toán.
             </p>
             <div className="bg-brand-cream rounded-xl p-4 mb-4">
               <p className="text-label-sm text-neutral-500 mb-1">Nội dung chuyển khoản</p>
