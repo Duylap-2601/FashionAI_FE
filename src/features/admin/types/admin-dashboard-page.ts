@@ -1,6 +1,6 @@
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 
-export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'reviews' | 'quota' | 'shipping-settings' | 'webhook-failures';
+export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'reviews' | 'quota' | 'shipping-settings' | 'webhook-failures';
 
 export interface GhnPickupSettings {
   provinceId?: number;
@@ -61,11 +61,85 @@ export interface AdminOrder {
   items: number;
   total: number;
   status: BackendOrderStatus;
+  paymentStatus?: string;
   refundStatus?: 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
   date: string;
   payment: string;
   address?: string;
   phone?: string;
+  shipment?: AdminOrderShipmentSummary | null;
+}
+
+export interface AdminOrderShipmentSummary {
+  id: string;
+  provider: string;
+  providerOrderCode: string | null;
+  status: string;
+  rawStatus?: string | null;
+  shippingFeeVnd?: number | null;
+  expectedDeliveryTime?: string | null;
+  lastSyncedAt?: string | null;
+}
+
+export interface AdminShipment {
+  id: string;
+  provider: string;
+  providerOrderCode: string | null;
+  status: string;
+  rawStatus: string | null;
+  shippingFeeVnd: number | null;
+  shippingFee?: number | null;
+  actualShippingFee: number | null;
+  quotedShippingFee: number | null;
+  expectedDeliveryTime: string | null;
+  providerEventAt: string | null;
+  lastSyncedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  order: {
+    id: string;
+    orderCode: number;
+    status: string;
+    paymentStatus: string | null;
+    totalVnd: number | null;
+    amount: number;
+  };
+  customer: {
+    id: string;
+    name: string | null;
+    email: string;
+    phone: string | null;
+  };
+  receiver: {
+    name: string | null;
+    phone: string | null;
+    address: string | null;
+    provinceName?: string | null;
+    districtName?: string | null;
+    wardName?: string | null;
+  };
+  canCancel?: boolean;
+  issue?: boolean;
+  stale?: boolean;
+}
+
+export interface AdminShipmentEvent {
+  id: string;
+  type: string;
+  source: string;
+  fromShipmentStatus: string | null;
+  toShipmentStatus: string | null;
+  publicMessage: string | null;
+  internalNote: string | null;
+  occurredAt: string;
+}
+
+export interface AdminShipmentDetail extends AdminShipment {
+  trackingUrl: string | null;
+  trackingData: unknown;
+  items: Array<{ id: string; productId: string; name: string | null; sku: string | null; quantity: number; price: number }>;
+  events: AdminShipmentEvent[];
+  webhooks: Array<{ id: string; eventKey: string; eventType: string | null; status: string; receivedAt: string; processedAt: string | null; payload: unknown }>;
 }
 
 export interface AdminStats {

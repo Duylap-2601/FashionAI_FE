@@ -1,4 +1,4 @@
-import type { AdminProduct, AdminUser } from './admin-dashboard-page';
+import type { AdminOrderShipmentSummary, AdminProduct, AdminShipment, AdminShipmentDetail, AdminUser } from './admin-dashboard-page';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 
 export type AdminImageDto = string | {
@@ -25,7 +25,12 @@ export interface AdminOrderDto {
   refundStatus?: 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
   createdAt?: string;
   payments?: { provider?: string }[];
+  shipment?: AdminOrderShipmentSummary | null;
 }
+
+export type AdminShipmentDto = AdminShipment;
+
+export type AdminShipmentDetailDto = AdminShipmentDetail;
 
 export interface AdminUserDto extends Omit<AdminUser, 'joinDate' | 'spent'> {
   createdAt?: string;

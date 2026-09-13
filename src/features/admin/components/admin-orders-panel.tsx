@@ -20,6 +20,7 @@ export function AdminOrdersPanel({ orders, setSelectedOrder }: AdminOrdersPanelP
                 <th className="px-6 py-3">Mã đơn</th>
                 <th className="px-4 py-3">Khách hàng</th>
                 <th className="px-4 py-3 text-right">Tổng tiền</th>
+                <th className="px-4 py-3">Vận đơn</th>
                 <th className="px-4 py-3">Ngày đặt</th>
                 <th className="px-4 py-3">Trạng thái</th>
                 <th className="px-6 py-3"></th>
@@ -34,6 +35,14 @@ export function AdminOrdersPanel({ orders, setSelectedOrder }: AdminOrdersPanelP
                     <td className="px-6 py-3.5 font-semibold text-neutral-800">{o.code}</td>
                     <td className="px-4 py-3.5">{o.customer}</td>
                     <td className="px-4 py-3.5 text-right font-bold text-brand-navy">{fmt(o.total)}</td>
+                    <td className="px-4 py-3.5">
+                      {o.shipment ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-mono font-semibold text-neutral-800">{o.shipment.providerOrderCode || '—'}</span>
+                          <span className="text-label-sm text-neutral-500">{o.shipment.status}{o.shipment.rawStatus ? ` · ${o.shipment.rawStatus}` : ''}</span>
+                        </div>
+                      ) : <span className="text-neutral-400">—</span>}
+                    </td>
                     <td className="px-4 py-3.5 text-neutral-500">{o.date}</td>
                     <td className="px-4 py-3.5">
                       <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-semibold ${cfg.cls}`}>
@@ -54,7 +63,7 @@ export function AdminOrdersPanel({ orders, setSelectedOrder }: AdminOrdersPanelP
               })}
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-neutral-400">Chưa có đơn hàng nào</td>
+                  <td colSpan={7} className="px-6 py-10 text-center text-neutral-400">Chưa có đơn hàng nào</td>
                 </tr>
               )}
             </tbody>

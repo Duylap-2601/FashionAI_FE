@@ -225,18 +225,25 @@ function NavCard({ href, icon: Icon, label, desc, badge }: { href: string; icon:
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function ProfilePage() {
-  const { currentUser, logout } = useAuth();
+  const { logout } = useAuth();
   const user = useAuthStore((state) => state.user);
   const { measurements } = useMeasurements();
   const { quota: tryOnQuota } = useQuota('TRY_ON');
   const { quota: stylistQuota } = useQuota('STYLIST');
   const [showChangePw, setShowChangePw] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const tier = (user?.tier || 'FREE') as string;
   const isOAuth = false;
 
   const avatarInitial = (user?.name || 'U').charAt(0).toUpperCase();
   const hasMeasurements = measurements && Object.values(measurements).some(v => v != null && v !== 0);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    await logout();
+  };
 
   return (
     <div className="min-h-screen bg-brand-cream pb-24">
@@ -295,6 +302,13 @@ export default function ProfilePage() {
                     <Lock className="w-3.5 h-3.5" /> Đổi mật khẩu
                   </button>
                 )}
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-100 text-semantic-error rounded-lg text-label-sm font-medium hover:border-semantic-error/30 hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
+                </button>
               </div>
             </div>
           </div>
@@ -379,11 +393,12 @@ export default function ProfilePage() {
         {/* ── Danger Zone ── */}
         <div className="pt-2">
           <button
-            onClick={() => logout()}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-neutral-200 rounded-xl text-body-sm font-medium text-neutral-500 hover:text-semantic-error hover:border-semantic-error/30 hover:bg-red-50 transition-all duration-200"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="w-full flex items-center justify-center gap-2 py-3 border border-neutral-200 rounded-xl text-body-sm font-medium text-neutral-500 hover:text-semantic-error hover:border-semantic-error/30 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
           >
             <LogOut className="w-4 h-4" />
-            Đăng xuất
+            {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
           </button>
         </div>
 

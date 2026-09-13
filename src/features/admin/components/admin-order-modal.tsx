@@ -10,6 +10,45 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
+  PENDING_PAYMENT: 'Chờ thanh toán',
+  PENDING: 'Chờ xác nhận',
+  PAID: 'Đã thanh toán',
+  CONFIRMED: 'Đã xác nhận',
+  PROCESSING: 'Đang xử lý',
+  MEASUREMENT_REVIEW: 'Kiểm tra số đo',
+  MEASUREMENT_CONFIRMED: 'Chốt số đo',
+  TAILORING: 'Đang may',
+  QUALITY_CHECK: 'QC',
+  READY_TO_SHIP: 'Sẵn sàng giao',
+  SHIPPING: 'Đang giao hàng',
+  DELIVERED: 'Đã giao hàng',
+  COMPLETED: 'Hoàn tất',
+  CANCELLED: 'Hủy đơn',
+  RETURN_REQUESTED: 'Yêu cầu hoàn trả',
+  RETURN_APPROVED: 'Duyệt hoàn trả',
+  RETURNING: 'Đang hoàn trả',
+  RETURNED: 'Hoàn trả',
+  EXPIRED: 'Hết hạn',
+  FAILED: 'Thất bại',
+};
+
+const NEXT_ORDER_STATUSES: Partial<Record<BackendOrderStatus, BackendOrderStatus[]>> = {
+  PENDING: ['CANCELLED', 'EXPIRED', 'FAILED'],
+  PAID: ['MEASUREMENT_REVIEW', 'CANCELLED'],
+  MEASUREMENT_REVIEW: ['MEASUREMENT_CONFIRMED', 'CANCELLED'],
+  MEASUREMENT_CONFIRMED: ['TAILORING', 'CANCELLED'],
+  TAILORING: ['QUALITY_CHECK'],
+  QUALITY_CHECK: ['READY_TO_SHIP', 'TAILORING'],
+  READY_TO_SHIP: ['CANCELLED'],
+  SHIPPING: ['RETURN_REQUESTED', 'RETURNING', 'RETURNED'],
+  DELIVERED: ['COMPLETED', 'RETURN_REQUESTED', 'RETURNING', 'RETURNED'],
+  COMPLETED: ['RETURN_REQUESTED'],
+  RETURN_REQUESTED: ['RETURN_APPROVED', 'RETURNING', 'RETURNED', 'CANCELLED'],
+  RETURN_APPROVED: ['RETURNING', 'RETURNED'],
+  RETURNING: ['RETURNED'],
+};
+
 export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus, handleConfirmManualPayment, handleUpdateRefund, handleCreateShipment }: AdminOrderModalProps) {
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -20,6 +59,8 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
   const isPending = selectedOrder.status === 'PENDING';
   const refundRequired = selectedOrder.refundStatus === 'REQUIRED' || selectedOrder.refundStatus === 'PROCESSING';
   const refundCompleted = selectedOrder.refundStatus === 'COMPLETED';
+  const statusOptions = [selectedOrder.status, ...(NEXT_ORDER_STATUSES[selectedOrder.status] ?? [])];
+  const canCreateShipment = selectedOrder.status === 'READY_TO_SHIP' && selectedOrder.paymentStatus === 'PAID' && !selectedOrder.shipment;
 
   const onConfirmManualPayment = async () => {
     if (!note.trim()) {
@@ -50,11 +91,7 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
   };
 
   const handleStatusChange = (newStatus: BackendOrderStatus) => {
-    if (newStatus === 'SHIPPING') {
-      handleCreateShipment(selectedOrder.id);
-    } else {
-      handleUpdateOrderStatus(selectedOrder.id, newStatus);
-    }
+    handleUpdateOrderStatus(selectedOrder.id, newStatus);
   };
 
   return (
@@ -91,7 +128,36 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
           <div>
             <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Thanh toán</p>
             <p className="text-body-sm text-neutral-600">Phương thức: {selectedOrder.payment || '—'}</p>
+            <p className="text-body-sm text-neutral-600 mt-1">Trạng thái: {selectedOrder.paymentStatus || '—'}</p>
             <p className="text-body-sm font-bold text-brand-navy mt-1">Tổng tiền: {fmt(selectedOrder.total)}</p>
+          </div>
+
+          <div className="rounded-xl border border-neutral-200 p-4">
+            <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Vận chuyển</p>
+            {selectedOrder.shipment ? (
+              <div className="text-body-sm text-neutral-700 space-y-1">
+                <p>Provider: <span className="font-semibold">{selectedOrder.shipment.provider}</span></p>
+                <p>Mã GHN: <span className="font-mono font-semibold">{selectedOrder.shipment.providerOrderCode || '—'}</span></p>
+                <p>Trạng thái: {selectedOrder.shipment.status}{selectedOrder.shipment.rawStatus ? ` · ${selectedOrder.shipment.rawStatus}` : ''}</p>
+                <p>Dự kiến giao: {selectedOrder.shipment.expectedDeliveryTime?.substring(0, 16).replace('T', ' ') || '—'}</p>
+                <p>Sync cuối: {selectedOrder.shipment.lastSyncedAt?.substring(0, 16).replace('T', ' ') || '—'}</p>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('admin:navigate', { detail: { tab: 'shipments', shipmentCode: selectedOrder.shipment?.providerOrderCode, orderCode: selectedOrder.orderCode } }))}
+                  className="mt-2 text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
+                >
+                  Xem trong tab Vận đơn
+                </button>
+              </div>
+            ) : (
+              <div className="text-body-sm text-neutral-600">
+                <p>Đơn chưa có vận đơn.</p>
+                {canCreateShipment ? (
+                  <button onClick={() => handleCreateShipment(selectedOrder.id)} className="mt-3 h-9 px-4 rounded-lg bg-brand-navy text-white font-semibold hover:opacity-90 border-0 cursor-pointer">Tạo vận đơn GHN</button>
+                ) : (
+                  <p className="mt-2 text-label-sm text-neutral-500">Chỉ tạo vận đơn khi đơn sẵn sàng giao và đã thanh toán.</p>
+                )}
+              </div>
+            )}
           </div>
 
           {refundCompleted && (
@@ -157,19 +223,9 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
               onChange={e => handleStatusChange(e.target.value as BackendOrderStatus)}
               className="w-full h-10 px-3 rounded-lg border border-neutral-300"
             >
-              <option value="PENDING">Chờ xác nhận</option>
-              {!isPending && <option value="PAID">Đã thanh toán</option>}
-              {!isPending && <option value="CONFIRMED">Đã xác nhận</option>}
-              <option value="MEASUREMENT_REVIEW">Kiểm tra số đo</option>
-              <option value="MEASUREMENT_CONFIRMED">Chốt số đo</option>
-              <option value="TAILORING">Đang may</option>
-              <option value="QUALITY_CHECK">QC</option>
-              <option value="READY_TO_SHIP">Sẵn sàng giao</option>
-              <option value="SHIPPING">Đang giao hàng</option>
-              <option value="DELIVERED">Đã giao hàng</option>
-              <option value="COMPLETED">Hoàn thành</option>
-              <option value="CANCELLED">Hủy đơn</option>
-              <option value="RETURNED">Hoàn trả</option>
+              {statusOptions.map(status => (
+                <option key={status} value={status}>{ORDER_STATUS_OPTIONS[status]}</option>
+              ))}
             </select>
             {isPending && (
               <p className="text-label-sm text-neutral-500 mt-1">

@@ -1,17 +1,14 @@
 'use client';
 
-import { STANDARD_STEPS, STATUS_MAP, TAILORING_STEPS } from '@/features/orders/constants/orders-id-page';
+import { STATUS_MAP, TAILORING_STEPS } from '@/features/orders/constants/orders-id-page';
 import { useCart } from '@/features/cart/store/cartStore';
-import { ConfirmDeliveryModal } from '@/features/orders/components/confirm-delivery-modal';
-import { useCancelOrder, useConfirmDeliveryOrder, useOrder } from '@/features/orders/hooks/useOrders';
+import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
 import {
   AlertTriangle,
-  CheckCircle2,
   ChevronLeft,
   CreditCard,
   MapPin,
   Package,
-  PackageCheck,
   Phone,
   ShoppingBag,
   User
@@ -21,50 +18,14 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-function getOrderStepIndex(status: string, isTailoring: boolean): number {
-  if (['CANCELLED', 'RETURNED', 'EXPIRED', 'FAILED'].includes(status)) return -1;
-  if (isTailoring) {
-    switch (status) {
-      case 'PENDING': return 0;
-      case 'PAID':
-      case 'CONFIRMED': return 1;
-      case 'MEASUREMENT_REVIEW': return 2;
-      case 'MEASUREMENT_CONFIRMED': return 3;
-      case 'TAILORING': return 4;
-      case 'QUALITY_CHECK': return 5;
-      case 'READY_TO_SHIP': return 6;
-      case 'SHIPPING': return 7;
-      case 'DELIVERED': return 8;
-      case 'COMPLETED': return 9;
-      default: return 0;
-    }
-  } else {
-    switch (status) {
-      case 'PENDING': return 0;
-      case 'PAID':
-      case 'CONFIRMED':
-      case 'MEASUREMENT_REVIEW':
-      case 'MEASUREMENT_CONFIRMED':
-      case 'TAILORING':
-      case 'QUALITY_CHECK': return 1;
-      case 'READY_TO_SHIP':
-      case 'SHIPPING': return 2;
-      case 'DELIVERED': return 3;
-      case 'COMPLETED': return 4;
-      default: return 0;
-    }
-  }
-}
-
 export default function OrderDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const { order, isLoading, isError, refetch } = useOrder(id);
   const { cancelOrder, isCancelling } = useCancelOrder();
-  const { confirmDelivery, isConfirming } = useConfirmDeliveryOrder();
+  const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [showConfirmDelivery, setShowConfirmDelivery] = useState(false);
 
   const statusInfo = STATUS_MAP[order?.status || 'PENDING'] || STATUS_MAP.PENDING;
 
@@ -82,22 +43,17 @@ export default function OrderDetailPage() {
     });
   };
 
-  const handleConfirmDelivery = (note?: string) => {
+  const handleConfirmDelivery = () => {
     if (!order?.id) return;
-    confirmDelivery(
-      { orderId: order.id, note },
-      {
-        onSuccess: () => {
-          toast.success('Đã xác nhận nhận hàng thành công!');
-          setShowConfirmDelivery(false);
-          refetch();
-        },
-        onError: (err: unknown) => {
-          const axiosErr = err as { response?: { data?: { message?: string } } };
-          toast.error(axiosErr?.response?.data?.message || 'Không thể xác nhận nhận hàng lúc này.');
-        },
-      }
-    );
+    confirmDelivery({ id: order.id }, {
+      onSuccess: () => {
+        toast.success('Cảm ơn bạn đã xác nhận nhận hàng');
+        refetch();
+      },
+      onError: () => {
+        toast.error('Không thể xác nhận nhận hàng lúc này.');
+      },
+    });
   };
 
   const handleReorder = () => {
@@ -149,9 +105,7 @@ export default function OrderDetailPage() {
   }
 
   const orderCode = `ORD-${order.orderCode}`;
-  const isTailoring = order.fulfillmentFlowVersion === 1;
-  const steps = isTailoring ? TAILORING_STEPS : STANDARD_STEPS;
-  const currentStep = getOrderStepIndex(order.status, isTailoring);
+  const steps = order.fulfillmentFlowVersion === 1 ? TAILORING_STEPS : ['Đặt hàng', 'Xác nhận', 'Đang giao', 'Đã nhận'];
   const maxStep = Math.max(1, steps.length - 1);
   const paymentLabel = order.paymentStatus === 'PAID'
     ? 'Đã thanh toán'
@@ -193,7 +147,7 @@ export default function OrderDetailPage() {
 
             <div className="flex items-center gap-3">
               {order.status === 'PENDING' && (
-                <button
+                  <button
                   type="button"
                   onClick={() => setShowCancelConfirm(true)}
                   className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-body-sm font-medium rounded-xl transition-colors cursor-pointer"
@@ -201,13 +155,14 @@ export default function OrderDetailPage() {
                   Hủy đơn hàng
                 </button>
               )}
-              {(order.status === 'SHIPPING' || order.status === 'DELIVERED') && (
+              {order.status === 'DELIVERED' && (
                 <button
                   type="button"
-                  onClick={() => setShowConfirmDelivery(true)}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-body-sm font-semibold rounded-xl transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+                  onClick={handleConfirmDelivery}
+                  disabled={isConfirmingDelivery}
+                  className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 text-body-sm font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <PackageCheck className="w-4 h-4" /> Xác nhận đã nhận hàng
+                  {isConfirmingDelivery ? 'Đang xác nhận...' : 'Tôi đã nhận hàng'}
                 </button>
               )}
               <button
@@ -221,26 +176,26 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Tracking Step Progress */}
-          {currentStep >= 0 && (
+          {statusInfo.step >= 0 && (
             <div className="pt-6">
-              <div className="flex items-center justify-between relative max-w-xl mx-auto py-2">
+              <div className="flex items-start justify-between relative max-w-2xl mx-auto py-2 overflow-x-auto no-scrollbar">
                 <div className="absolute top-5 left-8 right-8 h-[3px] bg-neutral-200 -z-0" />
                 <div
                   className="absolute top-5 left-8 h-[3px] bg-brand-navy transition-all duration-500 -z-0"
-                  style={{ width: `${Math.min(100, Math.max(0, (currentStep / maxStep) * 100))}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, (statusInfo.step / maxStep) * 100))}%` }}
                 />
                 {steps.map((label, idx) => {
-                  const isPassed = idx <= currentStep;
-                  const isCurrent = idx === currentStep;
+                  const isPassed = idx <= statusInfo.step;
+                  const isCurrent = idx === statusInfo.step;
                   return (
-                    <div key={label} className="flex flex-col items-center gap-2 z-10">
+                    <div key={label} className="flex flex-col items-center gap-2 z-10 min-w-[82px] sm:min-w-0">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[12px] transition-all ${isPassed
                         ? 'bg-brand-navy text-white ring-4 ring-white shadow-sm'
                         : 'bg-neutral-200 text-neutral-500'
                         }`}>
                         {isPassed ? '✓' : idx + 1}
                       </div>
-                      <span className={`text-[12px] font-medium ${isCurrent ? 'text-brand-navy font-bold' : 'text-neutral-500'}`}>
+                      <span className={`text-[11px] sm:text-[12px] font-medium text-center leading-tight ${isCurrent ? 'text-brand-navy font-bold' : 'text-neutral-500'}`}>
                         {label}
                       </span>
                     </div>
@@ -423,28 +378,6 @@ export default function OrderDetailPage() {
 
         </div>
 
-        {/* Bottom Delivery Confirmation Bar */}
-        {(order.status === 'SHIPPING' || order.status === 'DELIVERED') && (
-          <div className="mt-6 bg-white border border-emerald-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <PackageCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-body-md font-bold text-brand-navy">Bạn đã nhận được kiện hàng này?</p>
-                <p className="text-body-sm text-neutral-500">Vui lòng kiểm tra kỹ sản phẩm trước khi xác nhận hoàn tất đơn hàng.</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowConfirmDelivery(true)}
-              className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-body-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-            >
-              <CheckCircle2 className="w-4 h-4" /> Xác nhận đã nhận hàng
-            </button>
-          </div>
-        )}
-
       </div>
 
       {/* Cancel Confirmation Modal */}
@@ -478,15 +411,6 @@ export default function OrderDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Confirm Delivery Modal */}
-      <ConfirmDeliveryModal
-        isOpen={showConfirmDelivery}
-        onClose={() => setShowConfirmDelivery(false)}
-        onConfirm={handleConfirmDelivery}
-        isLoading={isConfirming}
-        orderCode={orderCode}
-      />
     </div>
   );
 }
