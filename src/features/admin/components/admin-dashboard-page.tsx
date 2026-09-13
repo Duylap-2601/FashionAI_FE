@@ -834,7 +834,7 @@ export default function AdminDashboard() {
 
       const dayOrders = orders.filter(o => o.date === dateKey);
       const dayPaidOrders = dayOrders.filter(
-        o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED'
+        o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED' || o.status === 'COMPLETED'
       );
       const revenue = dayPaidOrders.reduce((sum, o) => sum + o.total, 0);
 
@@ -1012,7 +1012,7 @@ export default function AdminDashboard() {
   const totalOrders = stats?.orderCount ?? orders.length;
   const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
   const shippingOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'CONFIRMED' || o.status === 'READY_TO_SHIP').length;
-  const deliveredOrders = orders.filter(o => o.status === 'DELIVERED').length;
+  const deliveredOrders = orders.filter(o => o.status === 'DELIVERED' || o.status === 'COMPLETED').length;
   const cancelledOrders = orders.filter(o => o.status === 'CANCELLED' || o.status === 'FAILED' || o.status === 'RETURNED' || o.status === 'EXPIRED').length;
 
   const totalProducts = stats?.productCount ?? products.length;
