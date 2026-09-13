@@ -101,7 +101,7 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
               <option value="">-- Chưa chọn --</option>
               <option value="SHIRT">Áo sơ mi (SHIRT)</option>
               <option value="VEST">Áo vest (VEST)</option>
-              <option value="JACKET">Áo khoác (JACKET)</option>
+              <option value="JACKET">Áo khoác/Blazer (JACKET)</option>
               <option value="PANTS">Quần dài (PANTS)</option>
               <option value="SKIRT">Chân váy (SKIRT)</option>
               <option value="DRESS">Đầm (DRESS)</option>
@@ -225,8 +225,8 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
                       disabled={isOnlyImage}
                       onClick={() => handleRemoveImage(img)}
                       className={`absolute top-1 right-1 w-6 h-6 rounded flex items-center justify-center transition-opacity border-0 cursor-pointer ${isOnlyImage
-                          ? 'bg-neutral-400/80 text-white cursor-not-allowed opacity-0 group-hover:opacity-60'
-                          : 'bg-red-600/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100'
+                        ? 'bg-neutral-400/80 text-white cursor-not-allowed opacity-0 group-hover:opacity-60'
+                        : 'bg-red-600/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100'
                         }`}
                       title={isOnlyImage ? 'Sản phẩm phải có ít nhất 1 ảnh' : 'Xóa ảnh này'}
                     >
