@@ -68,7 +68,7 @@ function SubCategoryFilter({ subCategoryCounts, selectedSubCategories, onToggleS
           return mobile ? (
             <button key={item.name} type="button" onClick={() => onToggleSubCategory(item.name)} className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${isChecked ? 'border-brand-navy bg-brand-navy/5' : 'border-neutral-200 bg-white'}`}>
               <span className="flex items-center gap-3 text-body-sm font-medium text-neutral-700">{checkBox}{item.name}</span>
-              <span className="text-[12px] text-neutral-400">({item.count})</span>
+              {typeof item.count === 'number' && <span className="text-[12px] text-neutral-400">({item.count})</span>}
             </button>
           ) : (
             <label key={item.name} onClick={() => onToggleSubCategory(item.name)} className="flex items-center justify-between cursor-pointer group">
@@ -76,7 +76,7 @@ function SubCategoryFilter({ subCategoryCounts, selectedSubCategories, onToggleS
                 {checkBox}
                 <span className="text-body-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">{item.name}</span>
               </span>
-              <span className="text-[12px] text-neutral-400">({item.count})</span>
+              {typeof item.count === 'number' && <span className="text-[12px] text-neutral-400">({item.count})</span>}
             </label>
           );
         })}

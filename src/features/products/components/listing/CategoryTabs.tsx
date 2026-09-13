@@ -12,7 +12,7 @@ export function CategoryTabs({ categories, activeTab, onSelect, mobile = false }
               onClick={() => onSelect(tab.label)}
               className={`relative flex shrink-0 snap-start flex-col items-center gap-1 px-1 py-1.5 text-[12px] font-semibold whitespace-nowrap transition-colors ${isActive ? 'text-[#5D1C34]' : 'text-neutral-500'}`}
             >
-              <span>{tab.label} ({tab.count})</span>
+              <span>{tab.label}{typeof tab.count === 'number' ? ` (${tab.count})` : ''}</span>
               <span className={`h-1 w-1 rounded-full transition-opacity ${isActive ? 'bg-[#5D1C34] opacity-100' : 'opacity-0'}`} />
             </button>
           );
@@ -32,7 +32,7 @@ export function CategoryTabs({ categories, activeTab, onSelect, mobile = false }
               : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
             }`}
         >
-          {tab.label} ({tab.count})
+          {tab.label}{typeof tab.count === 'number' ? ` (${tab.count})` : ''}
         </button>
       ))}
     </div>

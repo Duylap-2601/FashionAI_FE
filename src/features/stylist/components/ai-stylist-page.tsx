@@ -8,7 +8,7 @@ import { StylistInputPanel } from '@/features/stylist/components/stylist-input-p
 import { StylistResultPanel } from '@/features/stylist/components/stylist-result-panel';
 import type { GenderPref, Status } from '@/features/stylist/types/ai-stylist-page';
 import { PRODUCTS } from '@/features/products/constants/products';
-import { useProducts } from '@/features/products/hooks/useProducts';
+import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { ProductPickerModal } from '@/features/stylist/components/ProductPickerModal';
 import { QuotaExhaustedModal } from '@/features/stylist/components/QuotaExhaustedModal';
 import { useAnalyzeStylist, useDeleteStylistHistory, useStylistHistory } from '@/features/stylist/hooks/useStylist';
@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 export default function AIStylistPage() {
   const { analyzeAsync, isAnalyzing, errorMessage, reset: resetAnalyzeError } = useAnalyzeStylist();
   const { quota, refetch: refetchQuota } = useQuota('STYLIST');
-  const { products: backendProducts, isLoading: productsLoading } = useProducts();
+  const { products: backendProducts, isLoading: productsLoading } = useProductCatalog();
   const catalogProducts = backendProducts.length > 0 ? backendProducts : PRODUCTS;
 
   const [page, setPage] = useState(1);

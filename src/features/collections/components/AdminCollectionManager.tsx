@@ -16,7 +16,7 @@ import {
   getAllCollections
 } from '@/features/collections/services/local-collections';
 import { Collection } from '@/features/collections/types/collection';
-import { useProducts } from '@/features/products/hooks/useProducts';
+import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import {
   ExternalLink,
   Eye, EyeOff,
@@ -48,7 +48,7 @@ export function AdminCollectionManager() {
   const [managingProductsCollection, setManagingProductsCollection] = useState<Collection | null>(null);
 
   // Get real products from API so admin can select real product images and manage products
-  const { products: availableProducts } = useProducts();
+  const { products: availableProducts } = useProductCatalog();
 
   // Keep state in sync with React Query / fallback
   useEffect(() => {
