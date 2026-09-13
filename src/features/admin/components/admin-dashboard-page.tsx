@@ -903,7 +903,8 @@ export default function AdminDashboard() {
 
   // ─── Dashboard Derived Business Metrics ───────────────────────────────────
   const NON_REVENUE_STATUSES: BackendOrderStatus[] = ['CANCELLED', 'FAILED', 'EXPIRED', 'PENDING', 'RETURNED'];
-  const totalRevenue = stats?.totalRevenue ?? orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
+  const totalRevenue = stats?.totalRevenue
+    || orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
   const paidOrdersCount = orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).length;
   const avgOrderValue = paidOrdersCount > 0 ? Math.round(totalRevenue / paidOrdersCount) : 0;
 
