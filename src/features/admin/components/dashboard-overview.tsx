@@ -147,7 +147,7 @@ export function DashboardOverview({ setIsLoading, fetchProducts, fetchOrders, fe
             className="p-3 bg-green-50/70 border border-green-200/60 rounded-xl cursor-pointer hover:bg-green-50 transition-colors"
           >
             <div className="flex items-center justify-between text-green-700 text-label-sm font-semibold mb-1">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Đã giao hàng</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Đã giao / Hoàn thành</span>
               <span className="text-body-md font-bold">{deliveredOrders}</span>
             </div>
             <span className="text-[11px] text-green-600/80">Giao thành công</span>

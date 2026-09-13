@@ -167,6 +167,7 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
               <option value="READY_TO_SHIP">Sẵn sàng giao</option>
               <option value="SHIPPING">Đang giao hàng</option>
               <option value="DELIVERED">Đã giao hàng</option>
+              <option value="COMPLETED">Hoàn thành</option>
               <option value="CANCELLED">Hủy đơn</option>
               <option value="RETURNED">Hoàn trả</option>
             </select>
