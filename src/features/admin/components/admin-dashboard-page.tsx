@@ -623,9 +623,10 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCreateShipment = async (id: string) => {
+  const handleCreateShipment = async (id: string, signal?: AbortSignal) => {
     try {
-      const res = await createShipment(id);
+      const res = await createShipment(id, undefined, { signal });
+      if (signal?.aborted) return;
       const rawData = res.data as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
       const updatedOrder = rawData?.order || rawData?.data || rawData;
       const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'SHIPPING') as BackendOrderStatus;
@@ -666,6 +667,7 @@ export default function AdminDashboard() {
       await fetchShipments();
       toast.success('Đã tạo vận đơn GHN thành công');
     } catch (e) {
+      if (signal?.aborted) return;
       toast.error(getErrorMessage(e, 'Không thể tạo vận đơn.'));
       console.error(e);
     }

@@ -26,8 +26,8 @@ export function updateOrderStatus(id: string, payload: PatchOrdersStatusInput) {
   return api.patch(`/orders/${id}/status`, payload);
 }
 
-export function createShipment(id: string, payload?: { requestKey?: string }) {
-  return api.post(`/orders/${id}/shipment`, payload || {});
+export function createShipment(id: string, payload?: { requestKey?: string }, config?: AxiosRequestConfig) {
+  return api.post(`/orders/${id}/shipment`, payload || {}, config);
 }
 
 export function syncAdminShipment(id: string) {
