@@ -732,7 +732,7 @@ export default function AdminDashboard() {
 
       const dayOrders = orders.filter(o => o.date === dateKey);
       const dayPaidOrders = dayOrders.filter(
-        o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED'
+        o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED' || o.status === 'COMPLETED'
       );
       const revenue = dayPaidOrders.reduce((sum, o) => sum + o.total, 0);
 
