@@ -2,7 +2,7 @@
 
 import { mutationKeys } from '@/features/orders/services/mutation-keys';
 import { queryKeys as ordersQueryKeys } from '@/features/orders/services/query-keys';
-import { cancelOrder, createOrder } from '@/features/orders/services/mutations';
+import { cancelOrder, confirmDelivery, createOrder } from '@/features/orders/services/mutations';
 import { fetchOrder, fetchOrders } from '@/features/orders/services/queries';
 import { isTerminalOrderStatus } from '@/features/orders/services/orders-utils';
 import type { Order } from '@/features/orders/types/orders';
@@ -83,5 +83,25 @@ export function useCancelOrder() {
   return {
     cancelOrder: cancelMutation.mutate,
     isCancelling: cancelMutation.isPending,
+  };
+}
+
+export function useConfirmDeliveryOrder() {
+  const queryClient = useQueryClient();
+
+  const confirmMutation = useMutation({
+    mutationKey: mutationKeys.confirmDelivery(),
+    mutationFn: (variables: { orderId: string; note?: string }) => confirmDelivery(variables),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(variables.orderId) });
+    },
+  });
+
+  return {
+    confirmDelivery: confirmMutation.mutate,
+    confirmDeliveryAsync: confirmMutation.mutateAsync,
+    isConfirming: confirmMutation.isPending,
+    error: confirmMutation.error,
   };
 }

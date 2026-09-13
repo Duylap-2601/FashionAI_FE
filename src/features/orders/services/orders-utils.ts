@@ -55,5 +55,5 @@ export function mapOrder(order: BackendOrder): Order {
 }
 
 export function isTerminalOrderStatus(status: string) {
-  return ['DELIVERED', 'CANCELLED', 'RETURNED', 'EXPIRED', 'FAILED'].includes(status);
+  return ['DELIVERED', 'COMPLETED', 'CANCELLED', 'RETURNED', 'EXPIRED', 'FAILED'].includes(status);
 }

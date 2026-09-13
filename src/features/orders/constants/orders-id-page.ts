@@ -8,11 +8,14 @@ export const STATUS_MAP: Record<string, { label: string; color: string; step: nu
   QUALITY_CHECK: { label: 'QC', color: 'bg-cyan-50 text-cyan-700 border-cyan-200', step: 5, desc: 'Đơn hàng đang kiểm tra chất lượng' },
   READY_TO_SHIP: { label: 'Sẵn sàng giao', color: 'bg-sky-50 text-sky-700 border-sky-200', step: 6, desc: 'Đơn hàng đã sẵn sàng bàn giao vận chuyển' },
   SHIPPING: { label: 'Đang giao hàng', color: 'bg-indigo-50 text-indigo-700 border-indigo-200', step: 7, desc: 'Đơn hàng đang trên đường giao tới bạn' },
-  DELIVERED: { label: 'Đã giao hàng', color: 'bg-green-50 text-green-700 border-green-200', step: 8, desc: 'Đơn hàng đã giao thành công' },
+  DELIVERED: { label: 'Đã giao hàng', color: 'bg-blue-50 text-blue-700 border-blue-200', step: 8, desc: 'Đơn hàng đã được giao đến bạn. Vui lòng kiểm tra và xác nhận nhận hàng.' },
+  COMPLETED: { label: 'Hoàn thành', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', step: 9, desc: 'Bạn đã xác nhận nhận hàng thành công. Cảm ơn bạn đã mua sắm!' },
   CANCELLED: { label: 'Đã hủy', color: 'bg-red-50 text-red-600 border-red-200', step: -1, desc: 'Đơn hàng đã được hủy' },
   RETURNED: { label: 'Hoàn trả', color: 'bg-neutral-100 text-neutral-600 border-neutral-300', step: -1, desc: 'Đơn hàng đã được hoàn trả' },
   EXPIRED: { label: 'Hết hạn', color: 'bg-neutral-100 text-neutral-600 border-neutral-300', step: -1, desc: 'Đơn hàng đã hết hạn thanh toán' },
   FAILED: { label: 'Thất bại', color: 'bg-red-50 text-red-600 border-red-200', step: -1, desc: 'Thanh toán hoặc xử lý đơn thất bại' },
 };
 
-export const TAILORING_STEPS = ['Đặt hàng', 'Thanh toán', 'Kiểm số đo', 'Chốt số đo', 'Đang may', 'QC', 'Sẵn sàng giao', 'Đang giao', 'Đã giao'];
+export const TAILORING_STEPS = ['Đặt hàng', 'Thanh toán', 'Kiểm số đo', 'Chốt số đo', 'Đang may', 'QC', 'Sẵn sàng giao', 'Đang giao', 'Đã giao', 'Hoàn thành'];
+export const STANDARD_STEPS = ['Đặt hàng', 'Xác nhận', 'Đang giao', 'Đã giao', 'Hoàn thành'];
+

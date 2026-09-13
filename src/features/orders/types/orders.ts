@@ -58,10 +58,21 @@ export type BackendOrderStatus =
   | 'READY_TO_SHIP'
   | 'SHIPPING'
   | 'DELIVERED'
+  | 'COMPLETED'
   | 'CANCELLED'
   | 'RETURNED'
   | 'EXPIRED'
   | 'FAILED';
+
+export interface ConfirmDeliveryRequest {
+  note?: string;
+}
+
+export interface ConfirmDeliveryResponse {
+  success: boolean;
+  message: string;
+  data: BackendOrder;
+}
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | null;
 export type RefundStatus = 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';

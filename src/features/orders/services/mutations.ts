@@ -44,4 +44,12 @@ export async function cancelOrder(id: string) {
   return res.data;
 }
 
+export async function confirmDelivery(payload: { orderId: string; note?: string } | string, maybeNote?: string) {
+  const orderId = typeof payload === 'string' ? payload : payload.orderId;
+  const rawNote = typeof payload === 'string' ? maybeNote : payload.note;
+  const note = rawNote?.trim() ? rawNote.trim() : undefined;
+  const res = await api.post(`/orders/${orderId}/confirm-delivery`, { note });
+  return res.data as BackendOrder;
+}
+
 export { mutationKeys } from './mutation-keys';

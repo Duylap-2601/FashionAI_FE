@@ -11,6 +11,7 @@ import {
   ChevronDown, ChevronRight, ChevronUp,
   Copy, ExternalLink,
   MapPin, Phone,
+  PackageCheck,
   Search,
   ShoppingBag,
   Sparkles,
@@ -197,12 +198,21 @@ function OrderCard({
           )}
           {status === 'PENDING' && (
             <button
+              type="button"
               onClick={handleCancel}
               disabled={isCancelling}
               className="px-3 py-1.5 border border-red-200 text-red-600 rounded-lg text-label-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-55"
             >
               Hủy đơn
             </button>
+          )}
+          {status === 'DELIVERED' && (
+            <Link
+              href={`/orders/${order.id}`}
+              className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-label-sm font-semibold hover:bg-emerald-700 transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <PackageCheck className="w-3.5 h-3.5" /> Xác nhận đã nhận
+            </Link>
           )}
           <button
             type="button"
@@ -248,7 +258,7 @@ function OrderCard({
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="text-body-sm font-bold text-brand-navy">{fmt(item.price * item.quantity)}</span>
-                        {status === 'DELIVERED' && onReviewItem && (
+                        {(status === 'DELIVERED' || status === 'COMPLETED') && onReviewItem && (
                           <button
                             type="button"
                             onClick={() => onReviewItem(item, order.id)}
