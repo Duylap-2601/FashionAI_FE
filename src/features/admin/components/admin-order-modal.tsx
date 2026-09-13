@@ -7,7 +7,7 @@ import {
   X
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
@@ -55,12 +55,22 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
 
   const [refundNote, setRefundNote] = useState('');
   const [refundSubmitting, setRefundSubmitting] = useState(false);
+  const [creatingShipment, setCreatingShipment] = useState(false);
+  const createShipmentAbortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
 
   const isPending = selectedOrder.status === 'PENDING';
   const refundRequired = selectedOrder.refundStatus === 'REQUIRED' || selectedOrder.refundStatus === 'PROCESSING';
   const refundCompleted = selectedOrder.refundStatus === 'COMPLETED';
   const statusOptions = [selectedOrder.status, ...(NEXT_ORDER_STATUSES[selectedOrder.status] ?? [])];
   const canCreateShipment = selectedOrder.status === 'READY_TO_SHIP' && selectedOrder.paymentStatus === 'PAID' && !selectedOrder.shipment;
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      createShipmentAbortRef.current?.abort();
+    };
+  }, []);
 
   const onConfirmManualPayment = async () => {
     if (!note.trim()) {
@@ -92,6 +102,26 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
 
   const handleStatusChange = (newStatus: BackendOrderStatus) => {
     handleUpdateOrderStatus(selectedOrder.id, newStatus);
+  };
+
+  const onCreateShipment = async () => {
+    if (creatingShipment) return;
+    createShipmentAbortRef.current?.abort();
+
+    const controller = new AbortController();
+    createShipmentAbortRef.current = controller;
+    setCreatingShipment(true);
+
+    try {
+      await handleCreateShipment(selectedOrder.id, controller.signal);
+    } finally {
+      if (createShipmentAbortRef.current === controller) {
+        createShipmentAbortRef.current = null;
+      }
+      if (mountedRef.current) {
+        setCreatingShipment(false);
+      }
+    }
   };
 
   return (
@@ -152,7 +182,13 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
               <div className="text-body-sm text-neutral-600">
                 <p>Đơn chưa có vận đơn.</p>
                 {canCreateShipment ? (
-                  <button onClick={() => handleCreateShipment(selectedOrder.id)} className="mt-3 h-9 px-4 rounded-lg bg-brand-navy text-white font-semibold hover:opacity-90 border-0 cursor-pointer">Tạo vận đơn GHN</button>
+                  <button
+                    onClick={onCreateShipment}
+                    disabled={creatingShipment}
+                    className="mt-3 h-9 px-4 rounded-lg bg-brand-navy text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed border-0 cursor-pointer"
+                  >
+                    {creatingShipment ? 'Đang tạo...' : 'Tạo vận đơn GHN'}
+                  </button>
                 ) : (
                   <p className="mt-2 text-label-sm text-neutral-500">Chỉ tạo vận đơn khi đơn sẵn sàng giao và đã thanh toán.</p>
                 )}
