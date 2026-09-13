@@ -1,16 +1,16 @@
 import { mapProduct } from '@/features/products/services/products-utils';
 import type { BackendProduct } from '@/features/products/types/products-hook';
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export async function fetchProducts() {
-  const res = await api.get('/products', { params: { limit: 100 } });
-  const rawList = Array.isArray(res.data) ? res.data : res.data?.items || [];
+  const data = await http.get<BackendProduct[] | { items?: BackendProduct[] }>('/products', { params: { limit: 100 } });
+  const rawList = Array.isArray(data) ? data : data.items || [];
   return (rawList as BackendProduct[]).map(mapProduct);
 }
 
 export async function fetchProduct(id: string | undefined) {
-  const res = await api.get(`/products/${id}`);
-  return mapProduct(res.data as BackendProduct);
+  const data = await http.get<BackendProduct>(`/products/${id}`);
+  return mapProduct(data);
 }
 
 export { queryKeys } from './query-keys';

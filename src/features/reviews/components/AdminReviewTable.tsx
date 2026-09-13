@@ -21,6 +21,15 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+function toReviewList(payload: unknown): Review[] {
+  if (Array.isArray(payload)) return payload as Review[];
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    const data = (payload as { data?: unknown }).data;
+    return Array.isArray(data) ? data as Review[] : [];
+  }
+  return [];
+}
+
 export function AdminReviewTable() {
   const [selectedProductId, setSelectedProductId] = useState<string>('all');
   const [selectedRating, setSelectedRating] = useState<number | 'all'>('all');
@@ -37,14 +46,14 @@ export function AdminReviewTable() {
       try {
         // Thử endpoint tập trung của admin trước nếu BE có
         const res = await fetchAdminReviewsResponse();
-        return (res.data?.data || res.data || []) as Review[];
+        return toReviewList(res);
       } catch {
         // Fallback: Lấy reviews theo từng sản phẩm
         if (selectedProductId && selectedProductId !== 'all') {
           const res = await fetchProductReviewsResponse(selectedProductId, {
             params: { limit: 50 },
           });
-          const list = (res.data?.data || res.data || []) as Review[];
+          const list = toReviewList(res);
           const prod = products.find((p) => p.id === selectedProductId);
           return list.map((r) => ({
             ...r,
@@ -58,7 +67,7 @@ export function AdminReviewTable() {
           const results = await Promise.allSettled(
             topProducts.map(async (p) => {
               const res = await fetchProductReviewsResponse(p.id, { params: { limit: 10 } });
-              const list = (res.data?.data || res.data || []) as Review[];
+              const list = toReviewList(res);
               return list.map((r) => ({
                 ...r,
                 product: { id: p.id, name: p.name, image: p.image },

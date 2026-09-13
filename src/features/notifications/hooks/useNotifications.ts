@@ -75,8 +75,7 @@ export function useMarkNotificationAsRead() {
     mutationFn: async (id: string) => {
       // Optimistic update
       markAsReadStore(id);
-      const res = await markNotificationRead(id);
-      return res.data;
+      return markNotificationRead(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationsQueryKeys.notifications() });
@@ -93,8 +92,7 @@ export function useMarkAllNotificationsAsRead() {
     mutationFn: async () => {
       // Optimistic update
       markAllAsReadStore();
-      const res = await markAllNotificationsRead();
-      return res.data;
+      return markAllNotificationsRead();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationsQueryKeys.notifications() });

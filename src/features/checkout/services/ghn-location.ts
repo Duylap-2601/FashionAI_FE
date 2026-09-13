@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export interface GhnLocationOption {
   id: number;
@@ -56,16 +56,16 @@ function normalizeList<T>(data: unknown, mapper: (value: unknown) => T | null) {
 }
 
 export async function getGhnProvinces(signal?: AbortSignal): Promise<GhnLocationOption[]> {
-  const res = await api.get<unknown[]>('/shipping/provinces', { signal });
-  return normalizeList(res.data, normalizeProvinceOption);
+  const data = await http.get<unknown[]>('/shipping/provinces', { signal });
+  return normalizeList(data, normalizeProvinceOption);
 }
 
 export async function getGhnDistricts(provinceId: number, signal?: AbortSignal): Promise<GhnLocationOption[]> {
-  const res = await api.get<unknown[]>('/shipping/districts', { params: { provinceId }, signal });
-  return normalizeList(res.data, normalizeDistrictOption);
+  const data = await http.get<unknown[]>('/shipping/districts', { params: { provinceId }, signal });
+  return normalizeList(data, normalizeDistrictOption);
 }
 
 export async function getGhnWards(districtId: number, signal?: AbortSignal): Promise<GhnWardOption[]> {
-  const res = await api.get<unknown[]>('/shipping/wards', { params: { districtId }, signal });
-  return normalizeList(res.data, normalizeWardOption);
+  const data = await http.get<unknown[]>('/shipping/wards', { params: { districtId }, signal });
+  return normalizeList(data, normalizeWardOption);
 }

@@ -2,16 +2,15 @@ import {
   CreateCollectionDto,
   UpdateCollectionDto
 } from '@/features/collections/types/collection';
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export async function createCollection(payload: FormData | CreateCollectionDto) {
   if (payload instanceof FormData) {
-    const res = await api.post('/collections', payload, {
+    return http.post('/collections', payload, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return res.data;
   }
 
   const files = payload.coverImages?.filter((item): item is File => typeof item !== 'string') || [];
@@ -26,14 +25,13 @@ export async function createCollection(payload: FormData | CreateCollectionDto) 
     if (payload.displayOrder !== undefined) body.append('displayOrder', String(payload.displayOrder));
     files.forEach((file) => body.append('coverImages', file));
 
-    const res = await api.post('/collections', body, {
+    return http.post('/collections', body, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return res.data;
   } else {
-    const res = await api.post('/collections', {
+    return http.post('/collections', {
       name: payload.name,
       slug: payload.slug || undefined,
       description: payload.description || undefined,
@@ -41,7 +39,6 @@ export async function createCollection(payload: FormData | CreateCollectionDto) 
       displayOrder: payload.displayOrder,
       coverImages: urls.length > 0 ? urls : undefined,
     });
-    return res.data;
   }
 }
 
@@ -53,12 +50,11 @@ export async function updateCollection({
   data: FormData | UpdateCollectionDto;
 }) {
   if (data instanceof FormData) {
-    const res = await api.patch(`/collections/${id}`, data, {
+    return http.patch(`/collections/${id}`, data, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return res.data;
   }
 
   const files = data.coverImages?.filter((item): item is File => typeof item !== 'string') || [];
@@ -73,12 +69,11 @@ export async function updateCollection({
     if (data.displayOrder !== undefined) body.append('displayOrder', String(data.displayOrder));
     files.forEach((file) => body.append('coverImages', file));
 
-    const res = await api.patch(`/collections/${id}`, body, {
+    return http.patch(`/collections/${id}`, body, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return res.data;
   } else {
     const payload: UpdateCollectionDto = {};
     if (data.name !== undefined) payload.name = data.name;
@@ -88,24 +83,20 @@ export async function updateCollection({
     if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
     if (urls.length > 0) payload.coverImages = urls;
 
-    const res = await api.patch(`/collections/${id}`, payload);
-    return res.data;
+    return http.patch(`/collections/${id}`, payload);
   }
 }
 
 export async function deleteCollection(id: string) {
-  const res = await api.delete(`/collections/${id}`);
-  return res.data;
+  return http.delete(`/collections/${id}`);
 }
 
 export async function addProductToCollection({ collectionId, productId }: { collectionId: string; productId: string }) {
-  const res = await api.post(`/collections/${collectionId}/products`, { productId });
-  return res.data;
+  return http.post(`/collections/${collectionId}/products`, { productId });
 }
 
 export async function removeProductFromCollection({ collectionId, productId }: { collectionId: string; productId: string }) {
-  const res = await api.delete(`/collections/${collectionId}/products/${productId}`);
-  return res.data;
+  return http.delete(`/collections/${collectionId}/products/${productId}`);
 }
 
 export { mutationKeys } from './mutation-keys';

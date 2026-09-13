@@ -1,6 +1,5 @@
 import type { Review, ReviewReply, ReviewsMeta } from '@/features/reviews/types/reviews';
-import { api } from '@/lib/api';
-import type { AxiosRequestConfig } from 'axios';
+import { http, type HttpOptions } from '@/lib/http';
 
 export async function fetchReviews(productId: string | undefined, page: number, limit: number, rating: number | undefined) {
   if (!productId) {
@@ -21,10 +20,10 @@ export async function fetchReviews(productId: string | undefined, page: number, 
   if (rating && rating >= 1 && rating <= 5) {
     params.rating = rating;
   }
-  const res = await api.get(`/products/${productId}/reviews`, { params });
+  const data = await http.get<Review[] | { data?: Review[]; meta?: ReviewsMeta }>(`/products/${productId}/reviews`, { params });
   return {
-    data: (res.data?.data || res.data || []) as Review[],
-    meta: (res.data?.meta || {
+    data: (Array.isArray(data) ? data : data.data) || [],
+    meta: (!Array.isArray(data) && data.meta) || {
       total: 0,
       page,
       limit,
@@ -32,7 +31,7 @@ export async function fetchReviews(productId: string | undefined, page: number, 
       avgRating: 0,
       reviewCount: 0,
       distribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
-    }) as ReviewsMeta,
+    },
   };
 }
 
@@ -44,35 +43,35 @@ export async function fetchReviewStats(productId: string | undefined) {
       distribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
     };
   }
-  const res = await api.get(`/products/${productId}/reviews/stats`);
-  const data = res.data?.data || res.data || {};
+  const data = await http.get<{ data?: Partial<ReviewsMeta>; avgRating?: number; reviewCount?: number; distribution?: ReviewsMeta['distribution'] }>(`/products/${productId}/reviews/stats`);
+  const stats = data.data || data || {};
   return {
-    avgRating: Number(data.avgRating || 0),
-    reviewCount: Number(data.reviewCount || 0),
-    distribution: data.distribution || { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
+    avgRating: Number(stats.avgRating || 0),
+    reviewCount: Number(stats.reviewCount || 0),
+    distribution: stats.distribution || { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
   };
 }
 
 export async function fetchMyReviews(page: number, limit: number) {
-  const res = await api.get('/products/reviews/my', { params: { page, limit } });
+  const data = await http.get<Review[] | { data?: Review[]; meta?: ReviewsMeta }>('/products/reviews/my', { params: { page, limit } });
   return {
-    data: (res.data?.data || res.data || []) as Review[],
-    meta: (res.data?.meta || { total: 0, page, limit, totalPages: 1 }),
+    data: (Array.isArray(data) ? data : data.data) || [],
+    meta: (!Array.isArray(data) && data.meta) || { total: 0, page, limit, totalPages: 1 },
   };
 }
 
 export async function fetchReviewReplies(reviewId: string | undefined) {
   if (!reviewId) return [];
-  const res = await api.get(`/products/reviews/${reviewId}/replies`);
-  return (res.data?.data || res.data || []) as ReviewReply[];
+  const data = await http.get<ReviewReply[] | { data?: ReviewReply[] }>(`/products/reviews/${reviewId}/replies`);
+  return (Array.isArray(data) ? data : data.data) || [];
 }
 
 export function fetchAdminReviewsResponse() {
-  return api.get('/products/admin/reviews');
+  return http.get('/products/admin/reviews');
 }
 
-export function fetchProductReviewsResponse(id: string, config: AxiosRequestConfig) {
-  return api.get(`/products/${id}/reviews`, config);
+export function fetchProductReviewsResponse(id: string, config: HttpOptions) {
+  return http.get(`/products/${id}/reviews`, config);
 }
 
 export { queryKeys } from './query-keys';

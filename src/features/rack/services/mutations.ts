@@ -1,18 +1,15 @@
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export async function pinToRack(productId: string) {
-  const res = await api.post('/rack', { productId });
-  return res.data;
+  return http.post('/rack', { productId });
 }
 
 export async function unpinFromRack(id: string) {
-  const res = await api.delete(`/rack/${id}`);
-  return res.data;
+  return http.delete(`/rack/${id}`);
 }
 
 export async function clearRack() {
-  const res = await api.delete('/rack/all');
-  return res.data;
+  return http.delete('/rack/all');
 }
 
 export { mutationKeys } from './mutation-keys';

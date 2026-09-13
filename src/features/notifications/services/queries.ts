@@ -1,13 +1,12 @@
 import type { NotificationType } from '@/features/notifications/types/notification';
 import { AppNotification, NotificationMeta } from '@/features/notifications/types/notification';
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export async function fetchNotifications(page: number, limit: number, type: NotificationType | undefined) {
   const params: Record<string, string | number> = { page, limit };
   if (type) params.type = type;
 
-  const res = await api.get('/notifications', { params });
-  const rawData = res.data;
+  const rawData = await http.get<AppNotification[] | { items?: AppNotification[]; meta?: Partial<NotificationMeta>; __meta?: Partial<NotificationMeta> }>('/notifications', { params });
 
   let items: AppNotification[] = [];
   let meta: NotificationMeta = {
@@ -34,8 +33,7 @@ export async function fetchNotifications(page: number, limit: number, type: Noti
 }
 
 export async function fetchUnreadCount() {
-  const res = await api.get('/notifications/unread-count');
-  const data = res.data;
+  const data = await http.get<number | { unread?: number }>('/notifications/unread-count');
   if (typeof data === 'number') return data;
   if (data && typeof data.unread === 'number') return data.unread;
   return 0;

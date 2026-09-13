@@ -1,13 +1,11 @@
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export async function cancelSubscription() {
-  const res = await api.post('/payments/subscriptions/cancel');
-  return res.data;
+  return http.post('/payments/subscriptions/cancel');
 }
 
 export async function resumeSubscription() {
-  const res = await api.post('/payments/subscriptions/resume');
-  return res.data;
+  return http.post('/payments/subscriptions/resume');
 }
 
 export { mutationKeys } from './mutation-keys';

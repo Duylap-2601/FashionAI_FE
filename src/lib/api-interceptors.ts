@@ -1,4 +1,4 @@
-import { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { AxiosError, AxiosInstance, AxiosResponse, CanceledError, InternalAxiosRequestConfig, isCancel } from 'axios';
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 type ApiEnvelope = { data?: unknown; meta?: unknown };
@@ -25,7 +25,9 @@ export function setupApiInterceptors({
 
   api.interceptors.request.use(
     async (config) => {
-      const accessToken = await getValidAccessToken();
+      throwIfAborted(config);
+      const accessToken = await abortable(getValidAccessToken(), config);
+      throwIfAborted(config);
       if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
       }
@@ -40,6 +42,8 @@ export function setupApiInterceptors({
       return response;
     },
     async (error: AxiosError) => {
+      if (isCancel(error)) return Promise.reject(error);
+
       const originalRequest = error.config as RetriableRequestConfig | undefined;
       const status = error.response?.status;
       const url = originalRequest?.url || '';
@@ -57,7 +61,9 @@ export function setupApiInterceptors({
       originalRequest._retry = true;
 
       try {
-        const newAccessToken = await refreshAccessToken();
+        throwIfAborted(originalRequest);
+        const newAccessToken = await abortable(refreshAccessToken(), originalRequest);
+        throwIfAborted(originalRequest);
         if (!newAccessToken) {
           return Promise.reject(error);
         }
@@ -65,11 +71,32 @@ export function setupApiInterceptors({
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
+        if (isCancel(refreshError)) return Promise.reject(refreshError);
         invalidateSessionCache();
         return Promise.reject(refreshError);
       }
     }
   );
+}
+
+function throwIfAborted(config: InternalAxiosRequestConfig) {
+  if (config.signal?.aborted) {
+    throw new CanceledError('Request aborted', config);
+  }
+}
+
+function abortable<T>(promise: Promise<T>, config: InternalAxiosRequestConfig): Promise<T> {
+  const signal = config.signal;
+  if (!signal) return promise;
+  throwIfAborted(config);
+
+  promise.catch(() => undefined);
+
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(new CanceledError('Request aborted', config));
+    signal.addEventListener?.('abort', onAbort, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener?.('abort', onAbort));
+  });
 }
 
 function unwrapApiResponse(response: AxiosResponse<unknown>) {

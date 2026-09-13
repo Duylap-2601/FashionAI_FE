@@ -1,8 +1,8 @@
-import { api } from '@/lib/api';
+import type { UserProfile } from '@/features/profile/types/profile';
+import { http } from '@/lib/http';
 
-export async function fetchUserProfile() {
-  const res = await api.get('/users/me');
-  return res.data || {};
+export async function fetchUserProfile(): Promise<UserProfile> {
+  return (await http.get<UserProfile>('/users/me')) || { name: '', email: '' };
 }
 
 export { queryKeys } from './query-keys';
