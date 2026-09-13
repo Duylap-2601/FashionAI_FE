@@ -14,7 +14,7 @@ import { RelatedProducts } from '@/features/products/components/detail/RelatedPr
 import ProductImageViewer from '@/features/products/components/ProductImageViewer';
 import { COMBO_OPTIONS } from '@/features/products/constants/product-detail-config';
 import { PRODUCTS } from '@/features/products/constants/products';
-import { useProduct, useProducts } from '@/features/products/hooks/useProducts';
+import { useProduct, useProductCatalog } from '@/features/products/hooks/useProducts';
 import type { ComboType } from '@/features/products/types/product-detail-config';
 import type { Product } from '@/features/products/types/products';
 import { usePinToRack, useRackItems, useUnpinFromRack } from '@/features/rack/hooks/useRack';
@@ -42,7 +42,7 @@ export default function ProductDetail() {
   const id = params?.id as string;
   const router = useRouter();
   const { product: apiProduct, isLoading: isProductLoading } = useProduct(id);
-  const { products: allApiProducts } = useProducts();
+  const { products: allApiProducts } = useProductCatalog();
   const { measurements } = useMeasurements();
   const { getCategoryCompleteness } = useMeasurementsCompleteness();
   const { isPinned, getItemByProductId } = useRackItems();

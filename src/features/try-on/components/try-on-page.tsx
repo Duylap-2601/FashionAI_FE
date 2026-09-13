@@ -4,7 +4,7 @@ import { fetchTryOnImage } from '@/features/try-on/services/queries';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
 import { PRODUCTS } from '@/features/products/constants/products';
-import { useProducts } from '@/features/products/hooks/useProducts';
+import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { toBackendCategory } from '@/features/products/services/products-utils';
 import type { Product } from '@/features/products/types/products';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
@@ -82,7 +82,7 @@ function VirtualTryOnContent() {
   const { tryOnAsync, isSubmitting } = useTryOn();
   const { quota, refetch: refetchQuota } = useQuota();
   const { profile } = useUserProfile();
-  const { products: backendProducts } = useProducts();
+  const { products: backendProducts } = useProductCatalog();
   useMeasurements();
 
   const catalogProducts = backendProducts.length > 0 ? backendProducts : PRODUCTS;
