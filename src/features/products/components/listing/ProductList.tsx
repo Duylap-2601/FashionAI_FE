@@ -1,7 +1,7 @@
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { ProductCard } from '@/features/products/components/listing/ProductCard';
 import type { ProductListProps } from '@/features/products/types/product-list';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, MoreHorizontal } from 'lucide-react';
 
 function ProductSkeletonGrid({ isSidebarOpen }: { isSidebarOpen: boolean }) {
   return (
@@ -31,7 +31,79 @@ function EmptyProducts({ onClearAll }: { onClearAll: () => void }) {
       <h3 className="text-[20px] font-bold text-brand-navy mb-2 tracking-tight">Không tìm thấy sản phẩm phù hợp</h3>
       <p className="text-body-md text-neutral-500 mb-8 max-w-[320px]">Thử bỏ một vài bộ lọc để xem thêm sản phẩm.</p>
       <button onClick={onClearAll} className="px-6 py-3 border border-neutral-200 text-neutral-700 text-body-sm font-medium rounded-xl hover:bg-neutral-50 transition-colors">
-        Xoá tất cả bộ lọc
+        Xóa tất cả bộ lọc
+      </button>
+    </div>
+  );
+}
+
+function getPaginationItems(currentPage: number, totalPages: number) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const sortedPages = Array.from(pages)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+  const items: Array<number | 'ellipsis'> = [];
+
+  sortedPages.forEach((page, index) => {
+    const previous = sortedPages[index - 1];
+    if (previous && page - previous > 1) items.push('ellipsis');
+    items.push(page);
+  });
+
+  return items;
+}
+
+function ProductPagination({
+  currentPage,
+  totalPages,
+  isFetching,
+  onPageChange,
+}: Pick<ProductListProps, 'currentPage' | 'totalPages' | 'isFetching' | 'onPageChange'>) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="hidden md:flex items-center justify-center gap-2 pb-4">
+      <button
+        disabled={currentPage <= 1 || isFetching}
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        className="w-10 h-10 flex items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        aria-label="Trang trước"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+
+      {getPaginationItems(currentPage, totalPages).map((item, index) => (
+        item === 'ellipsis' ? (
+          <span key={`ellipsis-${index}`} className="w-10 h-10 inline-flex items-center justify-center text-neutral-400">
+            <MoreHorizontal className="w-4 h-4" />
+          </span>
+        ) : (
+          <button
+            key={item}
+            disabled={isFetching}
+            onClick={() => onPageChange(item)}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl border font-medium transition-colors ${
+              item === currentPage
+                ? 'border-brand-navy bg-brand-navy text-white'
+                : 'border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+            } disabled:cursor-wait disabled:opacity-70`}
+          >
+            {item}
+          </button>
+        )
+      ))}
+
+      <button
+        disabled={currentPage >= totalPages || isFetching}
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        className="w-10 h-10 flex items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        aria-label="Trang sau"
+      >
+        <ChevronRight className="w-4 h-4" />
       </button>
     </div>
   );
@@ -41,15 +113,21 @@ export function ProductList({
   apiProductsLength,
   isError,
   isLoading,
+  isFetching,
+  isFetchingNextPage,
+  isMobile,
   isSidebarOpen,
-  filteredProducts,
-  visibleProducts,
+  products,
+  totalCount,
   hasMoreProducts,
+  currentPage,
+  totalPages,
   loadMoreRef,
   isPinned,
   onRetry,
   onClearAll,
   onLoadMore,
+  onPageChange,
   onToggleRack,
   onAddToCart,
 }: ProductListProps) {
@@ -58,7 +136,7 @@ export function ProductList({
       {isError && apiProductsLength === 0 && (
         <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-body-sm text-amber-800">
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
-          <span>Không thể tải sản phẩm mới nhất — đang hiển thị dữ liệu dự phòng.</span>
+          <span>Không thể tải sản phẩm mới nhất, đang hiển thị dữ liệu dự phòng.</span>
           <button onClick={onRetry} className="ml-auto shrink-0 text-amber-700 font-semibold underline hover:no-underline">
             Thử lại
           </button>
@@ -67,7 +145,7 @@ export function ProductList({
 
       {isLoading && apiProductsLength === 0 ? (
         <ProductSkeletonGrid isSidebarOpen={isSidebarOpen} />
-      ) : filteredProducts.length === 0 ? (
+      ) : products.length === 0 ? (
         <EmptyProducts onClearAll={onClearAll} />
       ) : (
         <>
@@ -75,7 +153,7 @@ export function ProductList({
             animateOnMount
             className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-2.5 md:gap-3 mb-12 transition-all duration-300`}
           >
-            {visibleProducts.map(product => (
+            {products.map(product => (
               <StaggerItem key={product.id} className="group">
                 <ProductCard
                   product={product}
@@ -87,19 +165,30 @@ export function ProductList({
             ))}
           </StaggerContainer>
 
-          {hasMoreProducts ? (
+          {isMobile && hasMoreProducts ? (
             <div ref={loadMoreRef} className="flex flex-col items-center justify-center gap-3 pb-4">
               <div className="flex items-center gap-2 text-body-sm font-medium text-neutral-500">
-                <Loader2 className="w-4 h-4 animate-spin text-[#5D1C34]" />
-                Đang tải thêm sản phẩm...
+                {isFetchingNextPage && <Loader2 className="w-4 h-4 animate-spin text-[#5D1C34]" />}
+                {isFetchingNextPage ? 'Đang tải thêm sản phẩm...' : `Đã hiển thị ${products.length}/${totalCount} sản phẩm`}
               </div>
-              <button onClick={onLoadMore} className="px-5 py-2.5 rounded-full border border-neutral-200 text-body-sm font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors">
+              <button onClick={onLoadMore} disabled={isFetchingNextPage} className="px-5 py-2.5 rounded-full border border-neutral-200 text-body-sm font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors disabled:cursor-wait disabled:opacity-60">
                 Xem thêm
               </button>
             </div>
-          ) : (
+          ) : null}
+
+          {!isMobile && (
+            <ProductPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              isFetching={isFetching}
+              onPageChange={onPageChange}
+            />
+          )}
+
+          {isMobile && !hasMoreProducts && (
             <div className="pb-4 text-center text-[12px] font-medium text-neutral-400">
-              Đã hiển thị tất cả {filteredProducts.length} sản phẩm
+              Đã hiển thị tất cả {totalCount} sản phẩm
             </div>
           )}
         </>

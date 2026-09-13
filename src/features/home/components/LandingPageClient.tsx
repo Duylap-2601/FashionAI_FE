@@ -9,11 +9,11 @@ import { NewsletterBar } from '@/features/home/components/NewsletterBar';
 import { ProductGrid } from '@/features/home/components/ProductGrid';
 import { SaleBannerText } from '@/features/home/components/SaleBannerText';
 import { PRODUCTS } from '@/features/products/constants/products';
-import { useProducts } from '@/features/products/hooks/useProducts';
+import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { useState } from 'react';
 
 export function LandingPageClient() {
-  const { products: apiProducts } = useProducts();
+  const { products: apiProducts } = useProductCatalog();
   const { collections } = usePublishedCollections();
 
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
