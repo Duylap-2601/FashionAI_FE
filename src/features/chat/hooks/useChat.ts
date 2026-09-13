@@ -15,7 +15,7 @@ import {
 } from '@/features/chat/types/chat';
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
 import { PRODUCTS } from '@/features/products/constants/products';
-import { useProducts } from '@/features/products/hooks/useProducts';
+import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
 import { getValidAccessToken } from '@/lib/api';
@@ -37,7 +37,7 @@ export function useChat(options: UseChatOptions = {}) {
   const { measurements } = useMeasurements();
   const { profile } = useUserProfile();
   const { quota, refetch: refetchQuota } = useQuota('CHATBOT');
-  const { products: apiProducts } = useProducts();
+  const { products: apiProducts } = useProductCatalog();
 
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   // Only accept initialSessionId if it is a valid UUID

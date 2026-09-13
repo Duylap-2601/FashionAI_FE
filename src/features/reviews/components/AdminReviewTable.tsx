@@ -2,7 +2,7 @@
 
 import { queryKeys as reviewsQueryKeys } from '@/features/reviews/services/query-keys';
 import { fetchAdminReviewsResponse, fetchProductReviewsResponse } from '@/features/reviews/services/queries';
-import { useProducts } from '@/features/products/hooks/useProducts';
+import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { StarRating } from '@/features/reviews/components/StarRating';
 import { useAdminDeleteReview } from '@/features/reviews/hooks/useReviews';
 import type { Review } from '@/features/reviews/types/reviews';
@@ -36,7 +36,7 @@ export function AdminReviewTable() {
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [deletingReview, setDeletingReview] = useState<Review | null>(null);
 
-  const { products, isLoading: isProductsLoading } = useProducts();
+  const { products, isLoading: isProductsLoading } = useProductCatalog();
   const adminDeleteMutation = useAdminDeleteReview();
 
   // Thử gọi GET /products/admin/reviews nếu BE có, hoặc tổng hợp từ các products

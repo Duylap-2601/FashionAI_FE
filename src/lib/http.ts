@@ -3,6 +3,7 @@ import type { HttpOptions, QueryParams, UploadProgress } from '@/lib/http-types'
 import type { AxiosInstance, AxiosRequestConfig, AxiosProgressEvent } from 'axios';
 
 type DeleteOptions<TBody, TQuery> = HttpOptions<TQuery> & { body?: TBody };
+type PayloadWithMeta = object & { __meta?: unknown };
 
 function selectClient(auth: HttpOptions['auth'] | undefined): AxiosInstance {
   return auth === 'public' ? publicApi : api;
@@ -41,8 +42,18 @@ function toUploadProgress(event: AxiosProgressEvent): UploadProgress {
   };
 }
 
-function normalizeResponse<TResponse>(data: TResponse, status: number): TResponse {
-  return (status === 204 ? undefined : data) as TResponse;
+function normalizeResponse<TResponse>(data: TResponse, status: number, meta?: unknown): TResponse {
+  if (status === 204) return undefined as TResponse;
+  if (meta && data && typeof data === 'object') {
+    (data as PayloadWithMeta).__meta = meta;
+  }
+  return data;
+}
+
+function getResponseMeta(response: unknown) {
+  return response && typeof response === 'object' && 'meta' in response
+    ? (response as { meta?: unknown }).meta
+    : undefined;
 }
 
 export async function get<TResponse = unknown, TQuery = QueryParams>(
@@ -51,7 +62,7 @@ export async function get<TResponse = unknown, TQuery = QueryParams>(
   controller?: AbortController,
 ): Promise<TResponse> {
   const response = await selectClient(options?.auth).get<TResponse>(url, toAxiosConfig(options, controller));
-  return normalizeResponse(response.data, response.status);
+  return normalizeResponse(response.data, response.status, getResponseMeta(response));
 }
 
 export async function post<TResponse = unknown, TBody = unknown, TQuery = QueryParams>(
@@ -61,7 +72,7 @@ export async function post<TResponse = unknown, TBody = unknown, TQuery = QueryP
   controller?: AbortController,
 ): Promise<TResponse> {
   const response = await selectClient(options?.auth).post<TResponse>(url, body, withBodyConfig(body, options, controller));
-  return normalizeResponse(response.data, response.status);
+  return normalizeResponse(response.data, response.status, getResponseMeta(response));
 }
 
 export async function patch<TResponse = unknown, TBody = unknown, TQuery = QueryParams>(
@@ -71,7 +82,7 @@ export async function patch<TResponse = unknown, TBody = unknown, TQuery = Query
   controller?: AbortController,
 ): Promise<TResponse> {
   const response = await selectClient(options?.auth).patch<TResponse>(url, body, withBodyConfig(body, options, controller));
-  return normalizeResponse(response.data, response.status);
+  return normalizeResponse(response.data, response.status, getResponseMeta(response));
 }
 
 async function del<TResponse = unknown, TBody = unknown, TQuery = QueryParams>(
@@ -84,7 +95,7 @@ async function del<TResponse = unknown, TBody = unknown, TQuery = QueryParams>(
     ...withBodyConfig(body, rest, controller),
     data: body,
   });
-  return normalizeResponse(response.data, response.status);
+  return normalizeResponse(response.data, response.status, getResponseMeta(response));
 }
 
 export { del as delete };

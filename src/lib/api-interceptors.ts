@@ -103,6 +103,7 @@ function unwrapApiResponse(response: AxiosResponse<unknown>) {
   const body = response.data;
   if (!isApiEnvelope(body) || !('data' in body)) return;
 
+  (response as AxiosResponse<unknown> & { meta?: unknown }).meta = body.meta;
   response.data = body.data;
 
   if (body.meta && response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
