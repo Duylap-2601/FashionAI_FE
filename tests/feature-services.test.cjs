@@ -38,7 +38,7 @@ test('feature query keys preserve list/detail prefixes and partial invalidation 
 test('try-on service preserves combo multipart fields, legacy primary fields, and timeout', async () => {
   const calls = [];
   const load = createSourceLoader({ mocks: {
-    '@/lib/api': { api: { post: async (...args) => { calls.push(args); return { data: { id: 'result' } }; } } },
+    '@/lib/http': { http: { post: async (...args) => { calls.push(args); return { id: 'result' }; } } },
   } });
   const { submitTryOn } = load('@/features/try-on/services/mutations');
   const humanImage = new File(['human'], 'human.png', { type: 'image/png' });
@@ -61,7 +61,7 @@ test('try-on service preserves combo multipart fields, legacy primary fields, an
 
 test('collections retain their published fallback when the backend is unavailable', async () => {
   const load = createSourceLoader({ mocks: {
-    '@/lib/api': { api: { get: async () => { throw new Error('offline'); } } },
+    '@/lib/http': { http: { get: async () => { throw new Error('offline'); } } },
   }, globals: { console: { ...console, warn: () => {} } } });
   const { fetchPublishedCollections } = load('@/features/collections/services/queries');
   const { INITIAL_COLLECTIONS } = load('@/features/collections/services/local-collections');
@@ -74,7 +74,7 @@ test('collections retain their published fallback when the backend is unavailabl
 test('order creation preserves shipping note mapping and payment amounts', async () => {
   const calls = [];
   const load = createSourceLoader({ mocks: {
-    '@/lib/api': { api: { post: async (...args) => { calls.push(args); return { data: { id: 'order-1' } }; } } },
+    '@/lib/http': { http: { post: async (...args) => { calls.push(args); return { id: 'order-1' }; } } },
   } });
   const { createOrder } = load('@/features/orders/services/mutations');
   const result = await createOrder({
@@ -96,7 +96,7 @@ test('order creation preserves shipping note mapping and payment amounts', async
 test('checkout keeps the default provider and distinguishes product orders from subscription upgrades', async () => {
   const calls = [];
   const load = createSourceLoader({ mocks: {
-    '@/lib/api': { api: { post: async (...args) => { calls.push(args); return { data: { checkoutUrl: 'https://example.com/pay' } }; } } },
+    '@/lib/http': { http: { post: async (...args) => { calls.push(args); return { checkoutUrl: 'https://example.com/pay' }; } } },
   } });
   const { checkout } = load('@/features/payments/services/mutations');
   await checkout({ orderId: 'order-1' });
@@ -108,11 +108,15 @@ test('checkout keeps the default provider and distinguishes product orders from 
 
 test('profile, measurements, subscriptions, and notifications retain their HTTP methods and endpoints', async () => {
   const calls = [];
-  const api = Object.fromEntries(['get', 'put', 'post', 'patch'].map((method) => [method, async (...args) => {
+  const api = Object.fromEntries(['put'].map((method) => [method, async (...args) => {
     calls.push([method, ...args]);
     return { data: {} };
   }]));
-  const load = createSourceLoader({ mocks: { '@/lib/api': { api } } });
+  const http = Object.fromEntries(['post', 'patch'].map((method) => [method, async (...args) => {
+    calls.push([method, ...args]);
+    return {};
+  }]));
+  const load = createSourceLoader({ mocks: { '@/lib/api': { api }, '@/lib/http': { http } } });
   await load('@/features/profile/services/mutations').updateUserProfile({ name: 'Updated' });
   await load('@/features/measurements/services/mutations').updateMeasurements({ height: 170 });
   await load('@/features/subscription/services/mutations').cancelSubscription();
@@ -127,24 +131,26 @@ test('profile, measurements, subscriptions, and notifications retain their HTTP 
   assert.equal(calls[1][2].height, 170);
 });
 
-test('chat services preserve bearer headers, session URLs, and rename/delete payloads', async () => {
+test('chat services use the HTTP wrapper for session list, detail, rename, and delete', async () => {
   const calls = [];
-  const load = createSourceLoader({ globals: { fetch: async (...args) => {
-    calls.push(args);
-    return Response.json({ data: [] });
-  } } });
+  const http = Object.fromEntries(['get', 'patch', 'delete'].map((method) => [method, async (...args) => {
+    calls.push([method, ...args]);
+    return method === 'get' ? [] : {};
+  }]));
+  const load = createSourceLoader({ mocks: { '@/lib/http': { http } } });
   const queries = load('@/features/chat/services/queries');
   const mutations = load('@/features/chat/services/mutations');
-  await queries.fetchChatSessions('token');
-  await queries.fetchChatSession('session-1', 'token');
-  await mutations.renameChatSession('session-1', 'New title', 'token');
-  await mutations.deleteChatSession('session-1', 'token');
-  assert.equal(calls[0][0], '/api/backend/chat/sessions');
-  assert.equal(calls[1][0], '/api/backend/chat/sessions/session-1');
-  assert.ok(calls.every(([, init]) => init.headers.Authorization === 'Bearer token'));
-  assert.equal(calls[2][1].method, 'PATCH');
-  assert.equal(calls[2][1].body, JSON.stringify({ title: 'New title' }));
-  assert.equal(calls[3][1].method, 'DELETE');
+  await queries.fetchChatSessionsPayload();
+  await queries.fetchChatSessionPayload('session-1');
+  await mutations.renameChatSessionPayload('session-1', 'New title');
+  await mutations.deleteChatSessionPayload('session-1');
+  assert.deepEqual(calls.map(([method, url]) => [method, url]), [
+    ['get', '/chat/sessions'],
+    ['get', '/chat/sessions/session-1'],
+    ['patch', '/chat/sessions/session-1'],
+    ['delete', '/chat/sessions/session-1'],
+  ]);
+  assert.equal(calls[2][2].title, 'New title');
 });
 
 test('email verification and password recovery retain JSON bodies and cookie credentials', async () => {

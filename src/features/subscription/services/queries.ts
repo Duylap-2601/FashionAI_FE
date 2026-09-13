@@ -1,16 +1,15 @@
-import type { AiActionName } from '@/features/subscription/types/quota';
-import type { MySubscriptionResponse, PlanItem, SubscriptionHistoryResponse } from '@/features/subscription/types/subscription';
-import { api } from '@/lib/api';
+import type { AiActionName, UserQuota } from '@/features/subscription/types/quota';
+import type { MySubscriptionResponse, PlanItem, SubscriptionHistoryItem, SubscriptionHistoryResponse } from '@/features/subscription/types/subscription';
+import { http } from '@/lib/http';
 
-export async function fetchQuota(action: AiActionName) {
-  const res = await api.get('/users/me/quota', { params: { action } });
-  return res.data;
+export async function fetchQuota(action: AiActionName): Promise<UserQuota> {
+  return http.get<UserQuota>('/users/me/quota', { params: { action } });
 }
 
 export async function fetchPlans() {
   try {
-    const res = await api.get('/payments/plans');
-    return (res.data || []) as PlanItem[];
+    const data = await http.get<PlanItem[]>('/payments/plans');
+    return data || [];
   } catch (err) {
     console.warn('Fallback to local plans:', err);
     return [];
@@ -18,17 +17,15 @@ export async function fetchPlans() {
 }
 
 export async function fetchMySubscription() {
-  const res = await api.get('/payments/subscriptions/me');
-  return res.data as MySubscriptionResponse;
+  return http.get<MySubscriptionResponse>('/payments/subscriptions/me');
 }
 
-export async function fetchSubscriptionHistory(page: number, limit: number) {
-  const res = await api.get('/payments/subscriptions/history', {
+export async function fetchSubscriptionHistory(page: number, limit: number): Promise<SubscriptionHistoryResponse> {
+  const data = await http.get<(SubscriptionHistoryItem[] & { __meta?: SubscriptionHistoryResponse['meta'] }) | SubscriptionHistoryResponse>('/payments/subscriptions/history', {
     params: { page, limit },
   });
-  const data = res.data;
   if (Array.isArray(data)) {
-    const meta = (res.data as { __meta?: SubscriptionHistoryResponse['meta'] }).__meta || { total: data.length, page, limit, totalPages: 1 };
+    const meta = data.__meta || { total: data.length, page, limit, totalPages: 1 };
     return { items: data, meta };
   }
   return {

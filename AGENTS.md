@@ -72,6 +72,21 @@ src/
   auth store/session utilities, but must not import auth React hooks/components.
 - Login/refresh uses raw `fetch` independently; do not call Axios with interceptors from it.
   Preserve single-flight refresh and the shared token cache used by realtime.
+- Use `src/lib/http.ts` for maintained Axios GET, POST, PATCH, and DELETE calls.
+  Feature services should import `http` or named methods from `@/lib/http`; components
+  and hooks must call feature services instead of the HTTP wrapper directly.
+- `http` returns the payload after the existing Axios interceptor unwraps the backend
+  envelope. Do not read `.data` from wrapper results unless that is a real backend
+  payload field. Use generics in services for response, body, and query DTOs.
+- Keep raw `fetch` for login/refresh, `/api/backend` proxy route handlers, streaming
+  chat flows, external URLs, and service functions that intentionally return `Response`.
+  Existing PUT endpoints remain on `api.put` until they are migrated explicitly.
+- For uploads, send caller-built `FormData` through `http.post` or `http.patch`; the
+  wrapper removes manual multipart `Content-Type` so Axios/browser can set boundaries.
+  Keep long-running AI timeouts on the request options.
+- Pass cancellation via `options.signal` or the final `AbortController` argument. The
+  controller signal takes precedence. Services with fallback data must rethrow Axios
+  cancellation instead of returning mock, local, empty, or success fallback data.
 - Use `'use client'` only when browser APIs, React state, or client hooks are required.
   Route handlers and middleware must not import browser state or client components.
 
@@ -136,6 +151,9 @@ src/
 ## Verification
 
 - Run lint and typecheck separately: Next build currently ignores these two error classes.
+- Run `npm.cmd test` for unit tests and `npm.cmd run check:architecture` after HTTP
+  boundary changes. If an e2e script is unavailable in `package.json`, state that e2e
+  could not be run rather than claiming it passed.
 - Baseline before refactor: 7 TypeScript errors in legacy NextAuth and 56 ESLint errors.
   Do not add new errors; compare diagnostics for moved files and clearly report baseline errors.
   Do not disable additional rules or add ignores to bypass checks.

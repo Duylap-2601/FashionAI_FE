@@ -1,34 +1,33 @@
-import { api } from '@/lib/api';
-import type { AxiosRequestConfig } from 'axios';
+import { http, type HttpOptions } from '@/lib/http';
 
-export function fetchAdminProducts(config: AxiosRequestConfig) {
-  return api.get('/products', config);
+export function fetchAdminProducts(config: HttpOptions) {
+  return http.get('/products', config);
 }
 
-export function fetchAdminOrders(config: AxiosRequestConfig) {
-  return api.get('/orders/all', config);
+export function fetchAdminOrders(config: HttpOptions) {
+  return http.get('/orders/all', config);
 }
 
-export function fetchAdminShipments(config?: AxiosRequestConfig) {
-  return api.get('/admin/shipments', config);
+export function fetchAdminShipments(config?: HttpOptions) {
+  return http.get('/admin/shipments', config);
 }
 
 export function fetchAdminShipmentDetail(id: string) {
-  return api.get(`/admin/shipments/${id}`);
+  return http.get(`/admin/shipments/${id}`);
 }
 
-export function fetchAdminUsers(config: AxiosRequestConfig) {
-  return api.get('/users', config);
+export function fetchAdminUsers(config: HttpOptions) {
+  return http.get('/users', config);
 }
 
 export function fetchAdminStats() {
-  return api.get('/admin/stats');
+  return http.get('/admin/stats');
 }
 
 export function fetchGhnPickupSettings() {
-  return api.get('/admin/settings/ghn-pickup');
+  return http.get('/admin/settings/ghn-pickup');
 }
 
-export function fetchWebhookFailures(config?: AxiosRequestConfig) {
-  return api.get('/payments/admin/webhook-failures', config);
+export function fetchWebhookFailures(config?: HttpOptions) {
+  return http.get('/payments/admin/webhook-failures', config);
 }

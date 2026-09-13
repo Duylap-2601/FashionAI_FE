@@ -1,5 +1,5 @@
 import type { BackendOrder, CreateOrderRequest, OrderQuote } from '@/features/orders/types/orders';
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 function toCreateOrderBody(payload: CreateOrderRequest) {
   return {
@@ -30,23 +30,19 @@ function toCreateOrderBody(payload: CreateOrderRequest) {
 }
 
 export async function createOrder(payload: CreateOrderRequest) {
-  const res = await api.post('/orders', toCreateOrderBody(payload));
-  return res.data as BackendOrder;
+  return http.post<BackendOrder>('/orders', toCreateOrderBody(payload));
 }
 
 export async function quoteOrder(payload: CreateOrderRequest) {
-  const res = await api.post('/orders/quote', toCreateOrderBody(payload));
-  return res.data as OrderQuote;
+  return http.post<OrderQuote>('/orders/quote', toCreateOrderBody(payload));
 }
 
 export async function cancelOrder(id: string) {
-  const res = await api.patch(`/orders/${id}/cancel`);
-  return res.data;
+  return http.patch(`/orders/${id}/cancel`);
 }
 
 export async function confirmDelivery({ id, note }: { id: string; note?: string }) {
-  const res = await api.post(`/orders/${id}/confirm-delivery`, { note });
-  return res.data as BackendOrder;
+  return http.post<BackendOrder>(`/orders/${id}/confirm-delivery`, { note });
 }
 
 export { mutationKeys } from './mutation-keys';

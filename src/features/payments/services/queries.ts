@@ -1,9 +1,9 @@
 import type { PaymentOrder } from '@/features/payments/types/payments';
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export async function fetchPaymentOrders() {
-  const res = await api.get('/payments/orders');
-  return (res.data || []) as PaymentOrder[];
+  const data = await http.get<PaymentOrder[]>('/payments/orders');
+  return data || [];
 }
 
 export function fetchPaymentOrderByCodeResponse(id: string) {

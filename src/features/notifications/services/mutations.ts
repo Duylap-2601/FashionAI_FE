@@ -1,11 +1,11 @@
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export function markNotificationRead(id: string) {
-  return api.patch(`/notifications/${id}/read`);
+  return http.patch(`/notifications/${id}/read`);
 }
 
 export function markAllNotificationsRead() {
-  return api.patch('/notifications/read-all');
+  return http.patch('/notifications/read-all');
 }
 
 export { mutationKeys } from './mutation-keys';

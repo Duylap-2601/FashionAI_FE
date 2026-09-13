@@ -1,15 +1,15 @@
 import { mapOrder } from '@/features/orders/services/orders-utils';
 import type { BackendOrder } from '@/features/orders/types/orders';
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export async function fetchOrders() {
-  const res = await api.get('/orders');
-  return ((res.data || []) as BackendOrder[]).map(mapOrder);
+  const data = await http.get<BackendOrder[]>('/orders');
+  return (data || []).map(mapOrder);
 }
 
 export async function fetchOrder(id: string) {
-  const res = await api.get(`/orders/${id}`);
-  return mapOrder(res.data as BackendOrder);
+  const data = await http.get<BackendOrder>(`/orders/${id}`);
+  return mapOrder(data);
 }
 
 export { queryKeys } from './query-keys';

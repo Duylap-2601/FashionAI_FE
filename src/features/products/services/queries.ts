@@ -5,7 +5,7 @@ import {
   type ProductListParams,
   type ProductListResult,
 } from '@/features/products/types/products-hook';
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export function normalizeProductListParams(params: ProductListParams = {}) {
   const queryParams: Partial<ProductListParams> = { ...params };
@@ -17,9 +17,9 @@ export function normalizeProductListParams(params: ProductListParams = {}) {
 
 export async function fetchProductsPage(params: ProductListParams = {}): Promise<ProductListResult> {
   const queryParams = normalizeProductListParams(params);
-  const res = await api.get('/products', { params: queryParams });
-  const rawList = Array.isArray(res.data) ? res.data : res.data?.items || [];
-  const responseMeta = (res as typeof res & { meta?: unknown }).meta as Partial<ProductListResult['meta']> | undefined;
+  const data = await http.get<(BackendProduct[] & { __meta?: Partial<ProductListResult['meta']> }) | { items?: BackendProduct[]; __meta?: Partial<ProductListResult['meta']> }>('/products', { params: queryParams });
+  const rawList = Array.isArray(data) ? data : data.items || [];
+  const responseMeta = data.__meta;
   const fallbackLimit = Number(queryParams.limit) || DEFAULT_PRODUCT_LIST_META.limit;
   const fallbackPage = Number(queryParams.page) || DEFAULT_PRODUCT_LIST_META.page;
 
@@ -40,8 +40,8 @@ export async function fetchProducts(params: ProductListParams = {}) {
 }
 
 export async function fetchProduct(id: string | undefined) {
-  const res = await api.get(`/products/${id}`);
-  return mapProduct(res.data as BackendProduct);
+  const data = await http.get<BackendProduct>(`/products/${id}`);
+  return mapProduct(data);
 }
 
 export { queryKeys } from './query-keys';

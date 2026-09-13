@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export interface CalculateShippingFeeRequest {
   toDistrictId: number;
@@ -19,6 +19,5 @@ export interface ShippingFeeQuote {
 }
 
 export async function calculateShippingFee(payload: CalculateShippingFeeRequest) {
-  const res = await api.post('/shipping/calculate-fee', payload);
-  return res.data as ShippingFeeQuote;
+  return http.post<ShippingFeeQuote, CalculateShippingFeeRequest>('/shipping/calculate-fee', payload);
 }

@@ -121,7 +121,7 @@ export default function AdminDashboard() {
       toast.dismiss(deletingToast);
       toast.success('Xóa ảnh sản phẩm thành công');
 
-      const updatedProd = (res.data?.data || res.data) as ProductImagesResponse;
+      const updatedProd = (res && typeof res === 'object' && 'data' in res ? res.data : res) as ProductImagesResponse;
       if (updatedProd && Array.isArray(updatedProd.images)) {
         // Cập nhật editingProduct
 
@@ -261,7 +261,7 @@ export default function AdminDashboard() {
   const fetchProducts = useCallback(async () => {
     try {
       const res = await fetchAdminProducts({ params: { limit: 100 } });
-      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as AdminProductDto[];
+      const list = (Array.isArray(res) ? res : res && typeof res === 'object' && 'items' in res ? res.items : []) as AdminProductDto[];
       setProducts(list.map((p) => {
         const rawImages: AdminImageDto[] = Array.isArray(p.images) ? p.images : [];
         const normalizedImages: AdminProductImage[] = rawImages.map((img: AdminImageDto, idx: number) => {
@@ -301,7 +301,7 @@ export default function AdminDashboard() {
   const fetchOrders = useCallback(async () => {
     try {
       const res = await fetchAdminOrders({ params: { limit: 100 } });
-      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as AdminOrderDto[];
+      const list = (Array.isArray(res) ? res : res && typeof res === 'object' && 'items' in res ? res.items : []) as AdminOrderDto[];
       setOrders(list.map((o) => {
         const ship = o.shippingInfo;
         return {
@@ -336,7 +336,7 @@ export default function AdminDashboard() {
           .map(([key, value]) => [key, typeof value === 'boolean' ? String(value) : value]),
       );
       const res = await fetchAdminShipments({ params: { limit: 100, ...params } });
-      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as AdminShipmentDto[];
+      const list = (Array.isArray(res) ? res : res && typeof res === 'object' && 'items' in res ? res.items : []) as AdminShipmentDto[];
       setShipments(list);
     } catch (e) {
       console.error('Backend API shipments fetch failed:', e);
@@ -347,7 +347,7 @@ export default function AdminDashboard() {
   const fetchUsers = useCallback(async () => {
     try {
       const res = await fetchAdminUsers({ params: { limit: 100 } });
-      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as AdminUserDto[];
+      const list = (Array.isArray(res) ? res : res && typeof res === 'object' && 'items' in res ? res.items : []) as AdminUserDto[];
       setUsers(list.map((u) => ({
         id: u.id,
         name: u.name || 'Người dùng',
@@ -369,7 +369,7 @@ export default function AdminDashboard() {
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetchAdminStats();
-      setStats(res.data as AdminStats);
+      setStats(res as AdminStats);
     } catch (e) {
       console.warn('Backend API stats fetch failed.', e);
     }
@@ -378,7 +378,7 @@ export default function AdminDashboard() {
   const fetchWebhookFailuresList = useCallback(async () => {
     try {
       const res = await fetchWebhookFailures();
-      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as AdminWebhookFailure[];
+      const list = (Array.isArray(res) ? res : res && typeof res === 'object' && 'items' in res ? res.items : []) as AdminWebhookFailure[];
       setWebhookFailures(list);
     } catch (e) {
       console.warn('Backend API webhook failures fetch failed.', e);
@@ -579,7 +579,7 @@ export default function AdminDashboard() {
   const handleUpdateOrderStatus = async (id: string, status: BackendOrderStatus) => {
     try {
       const res = await updateOrderStatus(id, { status });
-      const rawData = res.data as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
+      const rawData = res as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
       const updatedOrder = rawData?.order || rawData?.data || rawData;
       const targetStatus: BackendOrderStatus = (updatedOrder?.status || status) as BackendOrderStatus;
 
@@ -627,7 +627,7 @@ export default function AdminDashboard() {
     try {
       const res = await createShipment(id, undefined, { signal });
       if (signal?.aborted) return;
-      const rawData = res.data as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
+      const rawData = res as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
       const updatedOrder = rawData?.order || rawData?.data || rawData;
       const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'SHIPPING') as BackendOrderStatus;
 
@@ -676,7 +676,7 @@ export default function AdminDashboard() {
   const handleViewShipment = async (shipment: AdminShipment) => {
     try {
       const res = await fetchAdminShipmentDetail(shipment.id);
-      const detail = (res.data?.data || res.data) as AdminShipmentDetailDto;
+      const detail = (res && typeof res === 'object' && 'data' in res ? res.data : res) as AdminShipmentDetailDto;
       setSelectedShipment(detail);
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể tải chi tiết vận đơn.'));
@@ -686,7 +686,7 @@ export default function AdminDashboard() {
   const handleSyncShipment = async (id: string) => {
     try {
       const res = await syncAdminShipment(id);
-      const detail = (res.data?.data || res.data) as AdminShipmentDetailDto;
+      const detail = (res && typeof res === 'object' && 'data' in res ? res.data : res) as AdminShipmentDetailDto;
       setSelectedShipment(prev => prev?.id === id ? detail : prev);
       await Promise.all([fetchShipments(), fetchOrders()]);
       toast.success('Đã đồng bộ GHN');
@@ -700,7 +700,7 @@ export default function AdminDashboard() {
     const reason = window.prompt('Lý do hủy vận đơn (tùy chọn)') || undefined;
     try {
       const res = await cancelAdminShipment(id, { reason });
-      const detail = (res.data?.data || res.data) as AdminShipmentDetailDto;
+      const detail = (res && typeof res === 'object' && 'data' in res ? res.data : res) as AdminShipmentDetailDto;
       setSelectedShipment(prev => prev?.id === id ? detail : prev);
       await Promise.all([fetchShipments(), fetchOrders()]);
       toast.success('Đã hủy vận đơn');
@@ -716,7 +716,7 @@ export default function AdminDashboard() {
         reason: 'Admin staging delivery simulation',
       });
       const detailRes = await fetchAdminShipmentDetail(id);
-      const detail = (detailRes.data?.data || detailRes.data) as AdminShipmentDetailDto;
+      const detail = (detailRes && typeof detailRes === 'object' && 'data' in detailRes ? detailRes.data : detailRes) as AdminShipmentDetailDto;
       setSelectedShipment(prev => prev?.id === id ? detail : prev);
       await Promise.all([fetchShipments(), fetchOrders()]);
       toast.success('Đã giả lập giao hàng thành công');
@@ -735,7 +735,7 @@ export default function AdminDashboard() {
   const handleConfirmManualPayment = async (orderCode: number, reference: string, note: string) => {
     try {
       const res = await confirmManualPayment(orderCode, { reference, note });
-      const rawData = res.data as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
+      const rawData = res as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
       const updatedOrder = rawData?.order || rawData?.data || rawData;
       const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'PAID') as BackendOrderStatus;
 

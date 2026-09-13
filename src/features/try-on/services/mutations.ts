@@ -1,5 +1,5 @@
 import type { TryOnRequest, TryOnResult } from '@/features/try-on/types/try-on';
-import { api } from '@/lib/api';
+import { http } from '@/lib/http';
 
 export async function submitTryOn(payload: TryOnRequest) {
   const formData = new FormData();
@@ -24,20 +24,19 @@ export async function submitTryOn(payload: TryOnRequest) {
     if (payload.garmentCategory) formData.append('garmentCategory', payload.garmentCategory);
   }
 
-  const res = await api.post('/try-on', formData, {
+  return http.post<TryOnResult, FormData>('/try-on', formData, {
     timeout: 180000,
   });
-  return res.data as TryOnResult;
 }
 
 export async function deleteTryOnHistory(id: string) {
-  await api.delete(`/try-on/history/${id}`);
+  await http.delete(`/try-on/history/${id}`);
   return id;
 }
 
 export async function deleteManyTryOnHistory(ids: string[]) {
   // Execute deletions sequentially or via Promise.all if supported
-  await Promise.all(ids.map(id => api.delete(`/try-on/history/${id}`)));
+  await Promise.all(ids.map(id => http.delete(`/try-on/history/${id}`)));
   return ids;
 }
 

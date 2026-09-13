@@ -2,6 +2,8 @@
 
 import { LOCAL_STORAGE_SESSIONS_KEY, LOCAL_STORAGE_MESSAGES_PREFIX } from '@/features/chat/constants/storage';
 import { isUuid, simulateAssistantStream } from '@/features/chat/services/chat-utils';
+import { deleteChatSessionPayload, renameChatSessionPayload } from '@/features/chat/services/mutations';
+import { fetchChatSessionPayload, fetchChatSessionsPayload } from '@/features/chat/services/queries';
 import type { UseChatOptions } from '@/features/chat/types/chat-hook';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import {
@@ -16,7 +18,7 @@ import { PRODUCTS } from '@/features/products/constants/products';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
-import { api, getValidAccessToken } from '@/lib/api';
+import { getValidAccessToken } from '@/lib/api';
 import { initChatSocket } from '@/lib/realtimeSocket';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
@@ -96,8 +98,7 @@ export function useChat(options: UseChatOptions = {}) {
         // First try loading from backend if authenticated
         if (hasSession) {
           try {
-            const res = await api.get('/chat/sessions');
-            const data = res.data;
+            const data = await fetchChatSessionsPayload();
             if (Array.isArray(data)) {
               // Filter out non-UUID session objects
               const validSessions = data.filter((s: ChatSession) => isUuid(s.id));
@@ -174,11 +175,11 @@ export function useChat(options: UseChatOptions = {}) {
       }
 
       // If online, has token, and is valid UUID, sync from server
-      if (hasSession && isUuid(currentSessionId)) {
+      const sessionId = currentSessionId;
+      if (hasSession && typeof sessionId === 'string' && isUuid(sessionId)) {
         try {
-          const res = await api.get(`/chat/sessions/${currentSessionId}`);
-          const data = res.data;
-          const serverMessages = Array.isArray(data?.messages) ? data.messages : Array.isArray(data) ? data : null;
+          const data = await fetchChatSessionPayload(sessionId);
+          const serverMessages = !Array.isArray(data) && Array.isArray(data.messages) ? data.messages : Array.isArray(data) ? data : null;
           if (serverMessages && isMounted) {
             setMessages(serverMessages);
             try {
@@ -272,7 +273,7 @@ export function useChat(options: UseChatOptions = {}) {
       // Sync with server if token available and is valid UUID
       if (hasSession && isUuid(sessionId)) {
         try {
-          await api.delete(`/chat/sessions/${sessionId}`);
+          await deleteChatSessionPayload(sessionId);
         } catch (e) {
           console.warn('Failed to delete session on server', e);
         }
@@ -294,7 +295,7 @@ export function useChat(options: UseChatOptions = {}) {
 
       if (hasSession && isUuid(sessionId)) {
         try {
-          await api.patch(`/chat/sessions/${sessionId}`, { title: newTitle });
+          await renameChatSessionPayload(sessionId, newTitle);
         } catch (e) {
           console.warn('Failed to rename session on server', e);
         }

@@ -1,13 +1,10 @@
-import { API_BASE_URL } from '@/features/auth/services/session';
+import type { ChatMessage, ChatSession } from '@/features/chat/types/chat';
+import { http } from '@/lib/http';
 
-export function fetchChatSessions(token: string) {
-  return fetch(`${API_BASE_URL}/chat/sessions`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export function fetchChatSessionsPayload() {
+  return http.get<ChatSession[]>('/chat/sessions');
 }
 
-export function fetchChatSession(sessionId: string | null, token: string) {
-  return fetch(`${API_BASE_URL}/chat/sessions/${sessionId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export function fetchChatSessionPayload(sessionId: string) {
+  return http.get<{ messages?: ChatMessage[] } | ChatMessage[]>(`/chat/sessions/${sessionId}`);
 }

@@ -27,6 +27,31 @@ for (const file of files) {
   const name = relative(file);
   const text = fs.readFileSync(file, 'utf8');
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  const httpObjects = new Set();
+  const httpMethods = new Set();
+  const httpNamespaces = new Set();
+  const isHttpModule = (specifier) => {
+    const resolved = resolveSource(file, specifier);
+    return resolved && relative(resolved) === 'lib/http.ts';
+  };
+  for (const statement of source.statements) {
+    if (!ts.isImportDeclaration(statement) || !statement.moduleSpecifier) continue;
+    const specifier = statement.moduleSpecifier.text;
+    if (!isHttpModule(specifier)) continue;
+    const clause = statement.importClause;
+    const namedBindings = clause?.namedBindings;
+    if (namedBindings && ts.isNamespaceImport(namedBindings)) {
+      httpNamespaces.add(namedBindings.name.text);
+    }
+    if (namedBindings && ts.isNamedImports(namedBindings)) {
+      for (const element of namedBindings.elements) {
+        const imported = (element.propertyName || element.name).text;
+        const local = element.name.text;
+        if (imported === 'http') httpObjects.add(local);
+        if (['get', 'post', 'patch', 'delete'].includes(imported)) httpMethods.add(local);
+      }
+    }
+  }
   const inspect = (node) => {
     if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
       const specifier = node.moduleSpecifier.text;
@@ -40,6 +65,10 @@ for (const file of files) {
       const expression = node.expression.getText(source);
       if (expression === 'fetch' || /^api\.(get|post|put|patch|delete)$/.test(expression)) {
         errors.push(`${name}: HTTP belongs in feature services (${expression})`);
+      }
+      if (httpMethods.has(expression) || [...httpObjects].some((local) => new RegExp(`^${local}\\.(get|post|patch|delete)$`).test(expression)) ||
+        [...httpNamespaces].some((local) => new RegExp(`^${local}\\.(http\\.)?(get|post|patch|delete)$`).test(expression))) {
+        errors.push(`${name}: HTTP wrapper belongs in feature services (${expression})`);
       }
     }
     ts.forEachChild(node, inspect);
