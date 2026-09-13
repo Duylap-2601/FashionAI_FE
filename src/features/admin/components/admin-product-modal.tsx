@@ -1,6 +1,6 @@
 'use client';
 
-import type { GarmentCategory, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
+import type { GarmentCategory, GarmentType, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminProductModalProps } from '@/features/admin/types/admin-product-modal';
 import {
   Package,
@@ -95,7 +95,7 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
             </label>
             <select
               value={editingProduct.garmentType || ''}
-              onChange={e => setEditingProduct(prev => ({ ...prev, garmentType: e.target.value || undefined }))}
+              onChange={e => setEditingProduct(prev => ({ ...prev, garmentType: (e.target.value || undefined) as GarmentType | undefined }))}
               className="w-full h-10 px-3 rounded-lg border border-neutral-300"
             >
               <option value="">-- Chưa chọn --</option>
