@@ -31,6 +31,13 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
             <X className="w-5 h-5" />
           </button>
         </div>
+        <Link
+          href="/profile/orders"
+          onClick={onClose}
+          className="md:hidden text-center text-[13px] font-medium text-brand-navy py-2.5 border-b border-neutral-200 hover:bg-neutral-50 transition-colors"
+        >
+          Lịch sử đơn hàng
+        </Link>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">

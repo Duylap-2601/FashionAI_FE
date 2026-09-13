@@ -30,6 +30,18 @@ export function createShipment(id: string, payload?: { requestKey?: string }) {
   return api.post(`/orders/${id}/shipment`, payload || {});
 }
 
+export function syncAdminShipment(id: string) {
+  return api.post(`/admin/shipments/${id}/sync`, {});
+}
+
+export function cancelAdminShipment(id: string, payload?: { reason?: string }) {
+  return api.post(`/admin/shipments/${id}/cancel`, payload || {});
+}
+
+export function simulateAdminShipmentStatus(id: string, payload: { status: string; reason?: string }) {
+  return api.post(`/internal/staging/shipments/${id}/status`, payload);
+}
+
 export function confirmManualPayment(orderCode: number, payload: { reference: string; note: string }) {
   return api.post(`/payments/admin/orders/${orderCode}/confirm-manual`, payload);
 }

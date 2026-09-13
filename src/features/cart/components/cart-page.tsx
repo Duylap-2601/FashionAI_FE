@@ -32,7 +32,7 @@ export default function CartPage() {
               href="/profile/orders"
               className="h-[50px] px-6 bg-neutral-100 text-neutral-700 text-body-md font-semibold rounded-xl flex items-center justify-center hover:bg-neutral-200 transition-colors"
             >
-              Đơn hàng của tôi
+              Đơn hàng
             </Link>
           </div>
         </div>
@@ -158,6 +158,13 @@ export default function CartPage() {
                 className="w-full h-[52px] bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-md font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-95 transition-opacity shadow-md shadow-[#5D1C34]/20"
               >
                 Tiến hành đặt hàng <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <Link
+                href="/profile/orders"
+                className="lg:hidden mt-3 w-full h-11 bg-neutral-100 text-brand-navy text-body-sm font-semibold rounded-xl flex items-center justify-center hover:bg-neutral-200 transition-colors"
+              >
+                Đơn hàng
               </Link>
             </div>
 

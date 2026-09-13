@@ -2,7 +2,7 @@
 
 import { STATUS_MAP, TAILORING_STEPS } from '@/features/orders/constants/orders-id-page';
 import { useCart } from '@/features/cart/store/cartStore';
-import { useCancelOrder, useOrder } from '@/features/orders/hooks/useOrders';
+import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
 import {
   AlertTriangle,
   ChevronLeft,
@@ -23,6 +23,7 @@ export default function OrderDetailPage() {
   const id = params?.id as string;
   const { order, isLoading, isError, refetch } = useOrder(id);
   const { cancelOrder, isCancelling } = useCancelOrder();
+  const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
@@ -39,6 +40,19 @@ export default function OrderDetailPage() {
       onError: () => {
         toast.error('Không thể hủy đơn hàng lúc này.');
       }
+    });
+  };
+
+  const handleConfirmDelivery = () => {
+    if (!order?.id) return;
+    confirmDelivery({ id: order.id }, {
+      onSuccess: () => {
+        toast.success('Cảm ơn bạn đã xác nhận nhận hàng');
+        refetch();
+      },
+      onError: () => {
+        toast.error('Không thể xác nhận nhận hàng lúc này.');
+      },
     });
   };
 
@@ -141,6 +155,16 @@ export default function OrderDetailPage() {
                   Hủy đơn hàng
                 </button>
               )}
+              {order.status === 'DELIVERED' && (
+                <button
+                  type="button"
+                  onClick={handleConfirmDelivery}
+                  disabled={isConfirmingDelivery}
+                  className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 text-body-sm font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isConfirmingDelivery ? 'Đang xác nhận...' : 'Tôi đã nhận hàng'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleReorder}
@@ -154,7 +178,7 @@ export default function OrderDetailPage() {
           {/* Tracking Step Progress */}
           {statusInfo.step >= 0 && (
             <div className="pt-6">
-              <div className="flex items-center justify-between relative max-w-xl mx-auto py-2">
+              <div className="flex items-start justify-between relative max-w-2xl mx-auto py-2 overflow-x-auto no-scrollbar">
                 <div className="absolute top-5 left-8 right-8 h-[3px] bg-neutral-200 -z-0" />
                 <div
                   className="absolute top-5 left-8 h-[3px] bg-brand-navy transition-all duration-500 -z-0"
@@ -164,14 +188,14 @@ export default function OrderDetailPage() {
                   const isPassed = idx <= statusInfo.step;
                   const isCurrent = idx === statusInfo.step;
                   return (
-                    <div key={label} className="flex flex-col items-center gap-2 z-10">
+                    <div key={label} className="flex flex-col items-center gap-2 z-10 min-w-[82px] sm:min-w-0">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[12px] transition-all ${isPassed
                         ? 'bg-brand-navy text-white ring-4 ring-white shadow-sm'
                         : 'bg-neutral-200 text-neutral-500'
                         }`}>
                         {isPassed ? '✓' : idx + 1}
                       </div>
-                      <span className={`text-[12px] font-medium ${isCurrent ? 'text-brand-navy font-bold' : 'text-neutral-500'}`}>
+                      <span className={`text-[11px] sm:text-[12px] font-medium text-center leading-tight ${isCurrent ? 'text-brand-navy font-bold' : 'text-neutral-500'}`}>
                         {label}
                       </span>
                     </div>

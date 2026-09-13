@@ -3,7 +3,7 @@
 import { FILTER_TABS, STATUS_CONFIG, STEPS } from '@/features/orders/constants/profile-orders-page';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { useCart } from '@/features/cart/store/cartStore';
-import { useCancelOrder, useOrders } from '@/features/orders/hooks/useOrders';
+import { useCancelOrder, useConfirmDelivery, useOrders } from '@/features/orders/hooks/useOrders';
 import type { Order, OrderItem } from '@/features/orders/types/orders';
 import { WriteReviewModal } from '@/features/reviews/components/WriteReviewModal';
 import {
@@ -19,6 +19,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 
 function fmt(n: number) {
   return n.toLocaleString('vi-VN') + 'đ';
@@ -37,20 +38,20 @@ function TrackingBar({ status }: { status: string }) {
   if (step < 0) return null;
 
   return (
-    <div className="flex items-center gap-0 w-full">
+    <div className="flex items-start gap-0 w-full overflow-x-auto no-scrollbar pb-1">
       {STEPS.map((label, i) => {
         const done = i <= step;
         const active = i === step;
         return (
           <React.Fragment key={label}>
-            <div className="flex flex-col items-center gap-1.5 shrink-0">
+            <div className="flex flex-col items-center gap-1.5 shrink-0 min-w-[74px]">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-colors ${done
                   ? 'bg-brand-navy border-brand-navy'
                   : 'bg-white border-neutral-300'
                 }`}>
                 {done && <CheckCircle2 className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
               </div>
-              <span className={`text-[10px] font-medium whitespace-nowrap ${active ? 'text-brand-navy' : done ? 'text-neutral-600' : 'text-neutral-400'
+              <span className={`text-[10px] font-medium text-center leading-tight ${active ? 'text-brand-navy' : done ? 'text-neutral-600' : 'text-neutral-400'
                 }`}>{label}</span>
             </div>
             {i < STEPS.length - 1 && (
@@ -87,6 +88,7 @@ function OrderCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const { cancelOrder, isCancelling } = useCancelOrder();
+  const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
   const [copied, setCopied] = useState(false);
 
@@ -105,6 +107,13 @@ function OrderCard({
     if (confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${orderCode}?`)) {
       cancelOrder(order.id);
     }
+  };
+
+  const handleConfirmDelivery = () => {
+    confirmDelivery({ id: order.id }, {
+      onSuccess: () => toast.success('Cảm ơn bạn đã xác nhận nhận hàng'),
+      onError: () => toast.error('Không thể xác nhận nhận hàng lúc này.'),
+    });
   };
 
   const handleReorder = () => {
@@ -188,6 +197,16 @@ function OrderCard({
             Xem trang đơn <ExternalLink className="w-3 h-3" />
           </Link>
           {status === 'DELIVERED' && (
+            <button
+              type="button"
+              onClick={handleConfirmDelivery}
+              disabled={isConfirmingDelivery}
+              className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-label-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-55 cursor-pointer"
+            >
+              {isConfirmingDelivery ? 'Đang xác nhận...' : 'Đã nhận hàng'}
+            </button>
+          )}
+          {status === 'COMPLETED' && (
             <Link
               href="/try-on"
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-brand-navy/8 text-brand-navy rounded-lg text-label-sm font-medium hover:bg-brand-navy/12 transition-colors"
@@ -248,7 +267,7 @@ function OrderCard({
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="text-body-sm font-bold text-brand-navy">{fmt(item.price * item.quantity)}</span>
-                        {status === 'DELIVERED' && onReviewItem && (
+                        {status === 'COMPLETED' && onReviewItem && (
                           <button
                             type="button"
                             onClick={() => onReviewItem(item, order.id)}
