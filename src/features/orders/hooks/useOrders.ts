@@ -86,22 +86,21 @@ export function useCancelOrder() {
   };
 }
 
-export function useConfirmDeliveryOrder() {
+export function useConfirmDelivery() {
   const queryClient = useQueryClient();
 
   const confirmMutation = useMutation({
     mutationKey: mutationKeys.confirmDelivery(),
-    mutationFn: (variables: { orderId: string; note?: string }) => confirmDelivery(variables),
-    onSuccess: (data, variables) => {
+    mutationFn: confirmDelivery,
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
-      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(variables.id) });
     },
   });
 
   return {
     confirmDelivery: confirmMutation.mutate,
     confirmDeliveryAsync: confirmMutation.mutateAsync,
-    isConfirming: confirmMutation.isPending,
-    error: confirmMutation.error,
+    isConfirmingDelivery: confirmMutation.isPending,
   };
 }

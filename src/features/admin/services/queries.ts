@@ -9,6 +9,14 @@ export function fetchAdminOrders(config: AxiosRequestConfig) {
   return api.get('/orders/all', config);
 }
 
+export function fetchAdminShipments(config?: AxiosRequestConfig) {
+  return api.get('/admin/shipments', config);
+}
+
+export function fetchAdminShipmentDetail(id: string) {
+  return api.get(`/admin/shipments/${id}`);
+}
+
 export function fetchAdminUsers(config: AxiosRequestConfig) {
   return api.get('/users', config);
 }

@@ -1,6 +1,6 @@
 'use client';
 import { getErrorMessage, getErrorStatus } from '@/lib/errors';
-import type { AdminImageDto, AdminProductDto, AdminOrderDto, AdminUserDto, ProductImagesResponse } from '@/features/admin/types/api';
+import type { AdminImageDto, AdminProductDto, AdminOrderDto, AdminShipmentDetailDto, AdminShipmentDto, AdminUserDto, ProductImagesResponse } from '@/features/admin/types/api';
 
 
 import { AdminOrderModal } from '@/features/admin/components/admin-order-modal';
@@ -9,15 +9,18 @@ import { AdminProductModal } from '@/features/admin/components/admin-product-mod
 import { AdminProductsPanel } from '@/features/admin/components/admin-products-panel';
 import { AdminQuotaPanel } from '@/features/admin/components/admin-quota-panel';
 import { AdminShippingSettingsPanel } from '@/features/admin/components/admin-shipping-settings-panel';
+import { AdminShipmentModal } from '@/features/admin/components/admin-shipment-modal';
+import { AdminShipmentsPanel } from '@/features/admin/components/admin-shipments-panel';
 import { AdminUserModal } from '@/features/admin/components/admin-user-modal';
 import { AdminUsersPanel } from '@/features/admin/components/admin-users-panel';
 import { AdminWebhookFailuresPanel } from '@/features/admin/components/admin-webhook-failures-panel';
 import { DashboardOverview } from '@/features/admin/components/dashboard-overview';
 import { fmt } from '@/features/admin/services/format';
 import type { ProductImageItem } from '@/features/admin/types/admin-dashboard-page';
-import { confirmManualPayment, createProduct, createShipment, deleteProduct, deleteProductImage, resolveWebhookFailure, updateOrderRefund, updateOrderStatus, updateProduct, updateUser, uploadProductImage } from '@/features/admin/services/mutations';
-import { fetchAdminOrders, fetchAdminProducts, fetchAdminStats, fetchAdminUsers, fetchWebhookFailures } from '@/features/admin/services/queries';
-import type { AdminOrder, AdminPage, AdminProduct, AdminProductImage, AdminStats, AdminUser, AdminWebhookFailure, GarmentCategory, ProductStatus, UserRole, UserTier } from '@/features/admin/types/admin-dashboard-page';
+import { cancelAdminShipment, confirmManualPayment, createProduct, createShipment, deleteProduct, deleteProductImage, resolveWebhookFailure, simulateAdminShipmentStatus, syncAdminShipment, updateOrderRefund, updateOrderStatus, updateProduct, updateUser, uploadProductImage } from '@/features/admin/services/mutations';
+import { fetchAdminOrders, fetchAdminProducts, fetchAdminShipmentDetail, fetchAdminShipments, fetchAdminStats, fetchAdminUsers, fetchWebhookFailures } from '@/features/admin/services/queries';
+import type { AdminOrder, AdminPage, AdminProduct, AdminProductImage, AdminShipment, AdminShipmentDetail, AdminStats, AdminUser, AdminWebhookFailure, GarmentCategory, ProductStatus, UserRole, UserTier } from '@/features/admin/types/admin-dashboard-page';
+import type { AdminShipmentFilters } from '@/features/admin/types/admin-shipments-panel';
 import { AdminGuard } from '@/features/auth/components/AdminGuard';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AdminCollectionManager } from '@/features/collections/components/AdminCollectionManager';
@@ -43,12 +46,10 @@ import {
 } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function AdminDashboard() {
-  const router = useRouter();
   const { logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
@@ -57,6 +58,8 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [shipments, setShipments] = useState<AdminShipment[]>([]);
+  const [shipmentFilters, setShipmentFilters] = useState<AdminShipmentFilters>({});
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [webhookFailures, setWebhookFailures] = useState<AdminWebhookFailure[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,6 +79,7 @@ export default function AdminDashboard() {
   // Modal / Editor States
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const [selectedShipment, setSelectedShipment] = useState<AdminShipmentDetail | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<AdminProduct> | null>(null);
   const [productImages, setProductImages] = useState<ProductImageItem[]>([]);
 
@@ -309,11 +313,13 @@ export default function AdminDashboard() {
           items: o.items?.length || 1,
           total: Number(o.amount),
           status: o.status as BackendOrderStatus,
+          paymentStatus: o.paymentStatus,
           refundStatus: o.refundStatus,
           date: o.createdAt?.substring(0, 10) || '',
           payment: o.payments?.[0]?.provider || 'COD',
           address: ship?.address,
           phone: ship?.phone,
+          shipment: o.shipment || null,
         };
       }));
     } catch (e) {
@@ -321,6 +327,22 @@ export default function AdminDashboard() {
       toast.error('Không thể tải danh sách đơn hàng');
     }
   }, []);
+
+  const fetchShipments = useCallback(async () => {
+    try {
+      const params = Object.fromEntries(
+        Object.entries(shipmentFilters)
+          .filter(([, value]) => value !== undefined && value !== '')
+          .map(([key, value]) => [key, typeof value === 'boolean' ? String(value) : value]),
+      );
+      const res = await fetchAdminShipments({ params: { limit: 100, ...params } });
+      const list = (Array.isArray(res.data) ? res.data : res.data?.items || []) as AdminShipmentDto[];
+      setShipments(list);
+    } catch (e) {
+      console.error('Backend API shipments fetch failed:', e);
+      toast.error('Không thể tải danh sách vận đơn');
+    }
+  }, [shipmentFilters]);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -366,12 +388,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
-    Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats(), fetchWebhookFailuresList()])
+    Promise.all([fetchProducts(), fetchOrders(), fetchShipments(), fetchUsers(), fetchStats(), fetchWebhookFailuresList()])
       .finally(() => {
         if (mounted) setIsLoading(false);
       });
     return () => { mounted = false; };
-  }, [fetchProducts, fetchOrders, fetchUsers, fetchStats, fetchWebhookFailuresList]);
+  }, [fetchProducts, fetchOrders, fetchShipments, fetchUsers, fetchStats, fetchWebhookFailuresList]);
 
   // Auto-refresh orders and stats when new notification arrives in realtime
   const recentNotifications = useNotificationStore((s) => s.recentNotifications);
@@ -380,15 +402,17 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (latestNotifId) {
       fetchOrders();
+      fetchShipments();
       fetchStats();
     }
-  }, [latestNotifId, fetchOrders, fetchStats]);
+  }, [latestNotifId, fetchOrders, fetchShipments, fetchStats]);
 
   // Realtime socket listeners & visibility-based periodic sync (30s)
   useEffect(() => {
     const socket = getRealtimeSocket();
     const handleRealtimeOrderUpdate = () => {
       fetchOrders();
+      fetchShipments();
       fetchStats();
     };
 
@@ -397,11 +421,15 @@ export default function AdminDashboard() {
       socket.on('order:created', handleRealtimeOrderUpdate);
       socket.on('order:updated', handleRealtimeOrderUpdate);
       socket.on('order_status', handleRealtimeOrderUpdate);
+      socket.on('shipment:created', handleRealtimeOrderUpdate);
+      socket.on('shipment:updated', handleRealtimeOrderUpdate);
+      socket.on('shipment_status', handleRealtimeOrderUpdate);
     }
 
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
         fetchOrders();
+        fetchShipments();
         fetchStats();
       }
     }, 30000);
@@ -413,9 +441,12 @@ export default function AdminDashboard() {
         socket.off('order:created', handleRealtimeOrderUpdate);
         socket.off('order:updated', handleRealtimeOrderUpdate);
         socket.off('order_status', handleRealtimeOrderUpdate);
+        socket.off('shipment:created', handleRealtimeOrderUpdate);
+        socket.off('shipment:updated', handleRealtimeOrderUpdate);
+        socket.off('shipment_status', handleRealtimeOrderUpdate);
       }
     };
-  }, [fetchOrders, fetchStats]);
+  }, [fetchOrders, fetchShipments, fetchStats]);
 
   // Handle smart navigation from notification clicks
   useEffect(() => {
@@ -425,6 +456,9 @@ export default function AdminDashboard() {
         setActiveTab(customEvent.detail.tab);
         if (customEvent.detail.orderCode) {
           setSearchQuery(String(customEvent.detail.orderCode));
+        }
+        if (customEvent.detail.shipmentCode) {
+          setShipmentFilters(prev => ({ ...prev, providerOrderCode: String(customEvent.detail.shipmentCode) }));
         }
       }
     };
@@ -556,10 +590,12 @@ export default function AdminDashboard() {
           ...o,
           status: targetStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
+          paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
           email: updatedOrder?.user?.email || ship?.phone || o.email,
           address: ship?.address || o.address,
           phone: ship?.phone || o.phone,
+          shipment: updatedOrder?.shipment || o.shipment,
         };
       }));
 
@@ -571,6 +607,7 @@ export default function AdminDashboard() {
             ...prev,
             status: targetStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
+            paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
             email: updatedOrder?.user?.email || ship?.phone || prev.email,
             address: ship?.address || prev.address,
@@ -600,6 +637,7 @@ export default function AdminDashboard() {
           ...o,
           status: targetStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
+          paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
           email: updatedOrder?.user?.email || ship?.phone || o.email,
           address: ship?.address || o.address,
@@ -615,19 +653,81 @@ export default function AdminDashboard() {
             ...prev,
             status: targetStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
+            paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
             email: updatedOrder?.user?.email || ship?.phone || prev.email,
             address: ship?.address || prev.address,
             phone: ship?.phone || prev.phone,
+            shipment: updatedOrder?.shipment || prev.shipment,
           };
         });
       }
 
+      await fetchShipments();
       toast.success('Đã tạo vận đơn GHN thành công');
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể tạo vận đơn.'));
       console.error(e);
     }
+  };
+
+  const handleViewShipment = async (shipment: AdminShipment) => {
+    try {
+      const res = await fetchAdminShipmentDetail(shipment.id);
+      const detail = (res.data?.data || res.data) as AdminShipmentDetailDto;
+      setSelectedShipment(detail);
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể tải chi tiết vận đơn.'));
+    }
+  };
+
+  const handleSyncShipment = async (id: string) => {
+    try {
+      const res = await syncAdminShipment(id);
+      const detail = (res.data?.data || res.data) as AdminShipmentDetailDto;
+      setSelectedShipment(prev => prev?.id === id ? detail : prev);
+      await Promise.all([fetchShipments(), fetchOrders()]);
+      toast.success('Đã đồng bộ GHN');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể đồng bộ vận đơn.'));
+    }
+  };
+
+  const handleCancelShipment = async (shipmentOrId: AdminShipment | string) => {
+    const id = typeof shipmentOrId === 'string' ? shipmentOrId : shipmentOrId.id;
+    const reason = window.prompt('Lý do hủy vận đơn (tùy chọn)') || undefined;
+    try {
+      const res = await cancelAdminShipment(id, { reason });
+      const detail = (res.data?.data || res.data) as AdminShipmentDetailDto;
+      setSelectedShipment(prev => prev?.id === id ? detail : prev);
+      await Promise.all([fetchShipments(), fetchOrders()]);
+      toast.success('Đã hủy vận đơn');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể hủy vận đơn.'));
+    }
+  };
+
+  const handleSimulateDelivered = async (id: string) => {
+    try {
+      await simulateAdminShipmentStatus(id, {
+        status: 'DELIVERED',
+        reason: 'Admin staging delivery simulation',
+      });
+      const detailRes = await fetchAdminShipmentDetail(id);
+      const detail = (detailRes.data?.data || detailRes.data) as AdminShipmentDetailDto;
+      setSelectedShipment(prev => prev?.id === id ? detail : prev);
+      await Promise.all([fetchShipments(), fetchOrders()]);
+      toast.success('Đã giả lập giao hàng thành công');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể giả lập giao hàng.'));
+    }
+  };
+
+  const handleOpenOrderFromShipment = (orderCode: number) => {
+    const order = orders.find(item => item.orderCode === orderCode);
+    if (order) setSelectedOrder(order);
+    setActiveTab('orders');
+    setSearchQuery(String(orderCode));
   };
 
   const handleConfirmManualPayment = async (orderCode: number, reference: string, note: string) => {
@@ -644,6 +744,7 @@ export default function AdminDashboard() {
           ...o,
           status: targetStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
+          paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
           email: updatedOrder?.user?.email || ship?.phone || o.email,
           address: ship?.address || o.address,
@@ -659,6 +760,7 @@ export default function AdminDashboard() {
             ...prev,
             status: targetStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
+            paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
             email: updatedOrder?.user?.email || ship?.phone || prev.email,
             address: ship?.address || prev.address,
@@ -942,6 +1044,7 @@ export default function AdminDashboard() {
               { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
               { id: 'users', label: 'Người dùng', icon: Users },
               { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
+              { id: 'shipments', label: 'Vận đơn', icon: Truck },
               { id: 'webhook-failures', label: 'Giao dịch lỗi', icon: AlertTriangle },
               { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
               { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
@@ -992,9 +1095,10 @@ export default function AdminDashboard() {
                     activeTab === 'collections' ? 'Quản lý bộ sưu tập' :
                       activeTab === 'users' ? 'Quản lý người dùng' :
                         activeTab === 'orders' ? 'Quản lý đơn hàng' :
-                          activeTab === 'webhook-failures' ? 'Giao dịch lỗi' :
-                            activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
-                              activeTab === 'shipping-settings' ? 'Cài đặt GHN' : 'Cài đặt Quota'}
+                          activeTab === 'shipments' ? 'Quản lý vận đơn' :
+                            activeTab === 'webhook-failures' ? 'Giao dịch lỗi' :
+                              activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
+                                activeTab === 'shipping-settings' ? 'Cài đặt GHN' : 'Cài đặt Quota'}
               </span>
             </div>
 
@@ -1011,7 +1115,7 @@ export default function AdminDashboard() {
               <button
                 onClick={() => {
                   setIsLoading(true);
-                  Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats(), fetchWebhookFailuresList()]).finally(() => setIsLoading(false));
+                  Promise.all([fetchProducts(), fetchOrders(), fetchShipments(), fetchUsers(), fetchStats(), fetchWebhookFailuresList()]).finally(() => setIsLoading(false));
                 }}
                 disabled={isLoading}
                 title="Làm mới dữ liệu"
@@ -1098,6 +1202,19 @@ export default function AdminDashboard() {
               <AdminOrdersPanel orders={orders} setSelectedOrder={setSelectedOrder} />
             )}
 
+            {/* ─── TAB: SHIPMENTS ─────────────────────────────────────────────────── */}
+            {activeTab === 'shipments' && (
+              <AdminShipmentsPanel
+                shipments={shipments}
+                filters={shipmentFilters}
+                setFilters={setShipmentFilters}
+                onView={handleViewShipment}
+                onSync={handleSyncShipment}
+                onCancel={handleCancelShipment}
+                onOpenOrder={handleOpenOrderFromShipment}
+              />
+            )}
+
             {/* ─── TAB: WEBHOOK FAILURES ──────────────────────────────────────────── */}
             {activeTab === 'webhook-failures' && (
               <AdminWebhookFailuresPanel failures={webhookFailures} onResolve={handleResolveWebhookFailure} />
@@ -1128,6 +1245,20 @@ export default function AdminDashboard() {
           <AnimatePresence>
             {selectedOrder && (
               <AdminOrderModal setSelectedOrder={setSelectedOrder} selectedOrder={selectedOrder} handleUpdateOrderStatus={handleUpdateOrderStatus} handleConfirmManualPayment={handleConfirmManualPayment} handleUpdateRefund={handleUpdateRefund} handleCreateShipment={handleCreateShipment} />
+            )}
+          </AnimatePresence>
+
+          {/* ─── DRAWER: SHIPMENT DETAIL ─────────────────────────────────────────── */}
+          <AnimatePresence>
+            {selectedShipment && (
+              <AdminShipmentModal
+                shipment={selectedShipment}
+                onClose={() => setSelectedShipment(null)}
+                onSync={handleSyncShipment}
+                onCancel={handleCancelShipment}
+                onSimulateDelivered={handleSimulateDelivered}
+                onOpenOrder={handleOpenOrderFromShipment}
+              />
             )}
           </AnimatePresence>
 

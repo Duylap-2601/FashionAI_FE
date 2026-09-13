@@ -48,9 +48,11 @@ export interface OrderQuote {
 }
 
 export type BackendOrderStatus =
+  | 'PENDING_PAYMENT'
   | 'PENDING'
   | 'PAID'
   | 'CONFIRMED'
+  | 'PROCESSING'
   | 'MEASUREMENT_REVIEW'
   | 'MEASUREMENT_CONFIRMED'
   | 'TAILORING'
@@ -60,6 +62,9 @@ export type BackendOrderStatus =
   | 'DELIVERED'
   | 'COMPLETED'
   | 'CANCELLED'
+  | 'RETURN_REQUESTED'
+  | 'RETURN_APPROVED'
+  | 'RETURNING'
   | 'RETURNED'
   | 'EXPIRED'
   | 'FAILED';

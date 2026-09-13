@@ -170,9 +170,9 @@ export function useCanReview(productId?: string) {
     };
   }
 
-  // Tìm các đơn hàng DELIVERED có chứa productId này
+  // Chỉ cho đánh giá sau khi khách xác nhận đã nhận hàng.
   const deliveredOrders = orders.filter((o) => {
-    if (o.status !== 'DELIVERED') return false;
+    if (o.status !== 'COMPLETED') return false;
     return o.items.some((item) => item.productId === productId);
   });
 
@@ -186,7 +186,7 @@ export function useCanReview(productId?: string) {
     };
   }
 
-  // Tìm đơn hàng DELIVERED chưa được review cho sản phẩm này
+  // Tìm đơn hàng đã hoàn tất chưa được review cho sản phẩm này.
   const reviewedOrderIds = new Set(
     myReviews
       .filter((r) => r.productId === productId)
