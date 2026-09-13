@@ -11,6 +11,8 @@ export interface GhnPickupSettings {
 
 export type GarmentCategory = 'UPPER' | 'LOWER' | 'FULL_BODY';
 
+export type GarmentType = 'SHIRT' | 'VEST' | 'JACKET' | 'PANTS' | 'SKIRT' | 'DRESS' | 'JUMPSUIT';
+
 export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 
 export type UserTier = 'FREE' | 'MEMBER' | 'VIP';
@@ -27,6 +29,7 @@ export interface AdminProduct {
   id: string;
   name: string;
   category: GarmentCategory;
+  garmentType?: GarmentType;
   price: number;
   status: ProductStatus;
   image: string;

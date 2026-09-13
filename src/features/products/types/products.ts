@@ -1,3 +1,5 @@
+export type GarmentType = 'SHIRT' | 'VEST' | 'JACKET' | 'PANTS' | 'SKIRT' | 'DRESS' | 'JUMPSUIT';
+
 export interface Product {
   id: string;
   name: string;
@@ -8,6 +10,7 @@ export interface Product {
   originalPriceFormatted?: string;
   category: string;
   garmentCategory?: 'UPPER' | 'LOWER' | 'FULL_BODY';
+  garmentType?: GarmentType;
   image: string;
   gallery: string[];
   colors: { name: string; hex: string }[];

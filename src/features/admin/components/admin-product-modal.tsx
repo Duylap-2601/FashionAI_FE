@@ -89,6 +89,32 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
           </div>
 
           <div>
+            <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">
+              Loại trang phục (chi tiết)
+              <span className="text-neutral-400 text-[12px] ml-1">(để xác định số đo cần thiết khi đặt may)</span>
+            </label>
+            <select
+              value={editingProduct.garmentType || ''}
+              onChange={e => setEditingProduct(prev => ({ ...prev, garmentType: e.target.value || undefined }))}
+              className="w-full h-10 px-3 rounded-lg border border-neutral-300"
+            >
+              <option value="">-- Chưa chọn --</option>
+              <option value="SHIRT">Áo sơ mi (SHIRT)</option>
+              <option value="VEST">Áo vest (VEST)</option>
+              <option value="JACKET">Áo khoác (JACKET)</option>
+              <option value="PANTS">Quần dài (PANTS)</option>
+              <option value="SKIRT">Chân váy (SKIRT)</option>
+              <option value="DRESS">Đầm (DRESS)</option>
+              <option value="JUMPSUIT">Jumpsuit (JUMPSUIT)</option>
+            </select>
+            <p className="text-label-sm text-neutral-400 mt-1.5">
+              Chọn loại chi tiết để hệ thống yêu cầu đúng số đo khi khách đặt hàng:
+              • Quần → cần số đo đùi, ống quần
+              • Chân váy → không cần số đo đùi, ống quần
+            </p>
+          </div>
+
+          <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-body-sm font-medium text-neutral-700">Màu sắc</label>
               <button
