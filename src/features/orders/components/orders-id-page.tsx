@@ -201,7 +201,7 @@ export default function OrderDetailPage() {
                   Hủy đơn hàng
                 </button>
               )}
-              {order.status === 'DELIVERED' && (
+              {(order.status === 'SHIPPING' || order.status === 'DELIVERED') && (
                 <button
                   type="button"
                   onClick={() => setShowConfirmDelivery(true)}
@@ -424,7 +424,7 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Bottom Delivery Confirmation Bar */}
-        {order.status === 'DELIVERED' && (
+        {(order.status === 'SHIPPING' || order.status === 'DELIVERED') && (
           <div className="mt-6 bg-white border border-emerald-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
