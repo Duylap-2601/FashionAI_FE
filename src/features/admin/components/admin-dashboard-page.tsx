@@ -283,6 +283,7 @@ export default function AdminDashboard() {
           id: p.id,
           name: p.name,
           category: p.category as GarmentCategory,
+          garmentType: p.garmentType,
           price: Number(p.price),
           stock: p.stock ?? 0,
           status: p.status as ProductStatus,
