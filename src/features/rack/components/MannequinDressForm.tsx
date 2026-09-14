@@ -261,7 +261,7 @@ export function MannequinDressForm({
 
                 {/* 2. LOWER GARMENT (Quần / Váy) - Nối tiếp từ eo xuống qua hông */}
                 <div
-                  className="relative w-[340px] h-[320px] -mt-16 flex items-start justify-center"
+                  className="relative w-[340px] h-[320px] -mt-4 flex items-start justify-center"
                   style={zoomStyle}
                 >
                   {lowerItem ? (
