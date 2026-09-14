@@ -9,7 +9,35 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
+const GARMENT_TYPES_BY_CATEGORY: Record<GarmentCategory, { value: GarmentType; label: string }[]> = {
+  UPPER: [
+    { value: 'SHIRT', label: 'Áo sơ mi (SHIRT)' },
+    { value: 'VEST', label: 'Áo vest (VEST)' },
+    { value: 'JACKET', label: 'Áo khoác / Blazer (JACKET)' },
+  ],
+  LOWER: [
+    { value: 'PANTS', label: 'Quần dài / Quần tây (PANTS)' },
+    { value: 'SKIRT', label: 'Chân váy (SKIRT)' },
+  ],
+  FULL_BODY: [
+    { value: 'DRESS', label: 'Đầm (DRESS)' },
+    { value: 'JUMPSUIT', label: 'Jumpsuit (JUMPSUIT)' },
+  ],
+};
+
 export function AdminProductModal({ closeProductEditor, editingProduct, setEditingProduct, addColor, updateColor, removeColor, productImages, handleSelectImages, handleSetPrimaryImage, handleRemoveImage, handleSaveProduct }: AdminProductModalProps) {
+  const currentCategory = (editingProduct.category || 'UPPER') as GarmentCategory;
+  const availableGarmentTypes = GARMENT_TYPES_BY_CATEGORY[currentCategory] || [];
+
+  const handleCategoryChange = (newCategory: GarmentCategory) => {
+    const validTypes = GARMENT_TYPES_BY_CATEGORY[newCategory] || [];
+    const isCurrentValid = validTypes.some(t => t.value === editingProduct.garmentType);
+    setEditingProduct(prev => ({
+      ...prev,
+      category: newCategory,
+      garmentType: isCurrentValid ? prev.garmentType : undefined,
+    }));
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div
@@ -66,7 +94,7 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
               <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Danh mục *</label>
               <select
                 value={editingProduct.category || 'UPPER'}
-                onChange={e => setEditingProduct(prev => ({ ...prev, category: e.target.value as GarmentCategory }))}
+                onChange={e => handleCategoryChange(e.target.value as GarmentCategory)}
                 className="w-full h-10 px-3 rounded-lg border border-neutral-300"
               >
                 <option value="UPPER">Áo (UPPER)</option>
@@ -91,26 +119,24 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
           <div>
             <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">
               Loại trang phục (chi tiết)
-              <span className="text-neutral-400 text-[12px] ml-1">(để xác định số đo cần thiết khi đặt may)</span>
+              <span className="text-neutral-400 text-[12px] ml-1">(theo danh mục {currentCategory === 'UPPER' ? 'Áo' : currentCategory === 'LOWER' ? 'Quần / Váy' : 'Toàn thân'})</span>
             </label>
             <select
               value={editingProduct.garmentType || ''}
               onChange={e => setEditingProduct(prev => ({ ...prev, garmentType: (e.target.value || undefined) as GarmentType | undefined }))}
               className="w-full h-10 px-3 rounded-lg border border-neutral-300"
             >
-              <option value="">-- Chưa chọn --</option>
-              <option value="SHIRT">Áo sơ mi (SHIRT)</option>
-              <option value="VEST">Áo vest (VEST)</option>
-              <option value="JACKET">Áo khoác/Blazer (JACKET)</option>
-              <option value="PANTS">Quần dài (PANTS)</option>
-              <option value="SKIRT">Chân váy (SKIRT)</option>
-              <option value="DRESS">Đầm (DRESS)</option>
-              <option value="JUMPSUIT">Jumpsuit (JUMPSUIT)</option>
+              <option value="">-- Chọn loại cụ thể --</option>
+              {availableGarmentTypes.map(item => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
             </select>
             <p className="text-label-sm text-neutral-400 mt-1.5">
-              Chọn loại chi tiết để hệ thống yêu cầu đúng số đo khi khách đặt hàng:
-              • Quần → cần số đo đùi, ống quần
-              • Chân váy → không cần số đo đùi, ống quần
+              {currentCategory === 'LOWER' && '• Quần (PANTS) → cần số đo đùi, ống quần | Chân váy (SKIRT) → không cần số đo đùi, ống'}
+              {currentCategory === 'UPPER' && '• Áo sơ mi / Vest / Blazer → yêu cầu số đo vai, ngực, dài tay khi đặt may'}
+              {currentCategory === 'FULL_BODY' && '• Đầm / Jumpsuit → yêu cầu số đo toàn thân (ngực, eo, mông, dài đầm)'}
             </p>
           </div>
 
