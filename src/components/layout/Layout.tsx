@@ -310,7 +310,7 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
               type="button"
               onClick={() => setIsNavMenuOpen((open) => !open)}
               className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-brand-navy"
-              aria-label="Má»Ÿ menu Ä‘iá»u hÆ°á»›ng"
+              aria-label="Mở menu điều hướng"
               aria-expanded={isNavMenuOpen}
             >
               {isNavMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
