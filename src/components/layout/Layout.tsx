@@ -132,206 +132,206 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
     <>
       <header className="sticky top-0 z-50 shrink-0 border-b border-neutral-200 bg-white/95 backdrop-blur-md transition-all duration-300">
         <div className="relative mx-auto flex h-[68px] max-w-[1400px] items-center gap-3 px-4 md:gap-4 md:px-8">
-        {/* Logo */}
-        <div className="flex shrink-0 items-center gap-2 md:gap-8">
-          <Link href="/" className="group flex flex-col items-center py-1">
-            <Logo size="md" />
-            <span className="mt-0.5 hidden text-[9px] font-medium uppercase tracking-widest text-neutral-400 transition-colors group-hover:text-brand-navy sm:block">
-              Chuẩn dáng từ đầu, đẹp từng đường may
-            </span>
-            {currentUser.role === 'admin' && (
-              <span className="hidden md:inline-block px-2 py-0.5 bg-semantic-error text-white text-[10px] font-bold uppercase rounded-full tracking-wide">
-                Admin
+          {/* Logo */}
+          <div className="flex shrink-0 items-center gap-2 md:gap-8">
+            <Link href="/" className="group flex flex-col items-center py-1">
+              <Logo size="md" />
+              <span className="mt-0.5 hidden text-[9px] font-medium uppercase tracking-widest text-neutral-400 transition-colors group-hover:text-brand-navy sm:block">
+                Chuẩn dáng từ đầu, đẹp từng đường may
               </span>
-            )}
-          </Link>
-        </div>
-
-        {/* Right Actions */}
-        <div className="ml-auto flex min-w-0 items-center justify-end gap-1.5 md:gap-3 lg:gap-4">
-          {currentUser.role !== 'guest' && currentUser.role !== 'admin' && (
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 rounded-full border border-neutral-200">
-              <Sparkles className="w-3.5 h-3.5 text-[#5D1C34]" />
-              <span className="text-label-sm font-medium text-neutral-700">{currentUser.quota} <span className="text-neutral-500 font-normal">lượt</span></span>
-            </div>
-          )}
-
-          <HeaderSearch className="order-2 shrink-0 sm:hidden" />
-
-          <form
-            onSubmit={handleSearchSubmit}
-            className="relative order-2 hidden min-w-0 shrink-0 items-center sm:flex md:order-none"
-          >
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Bạn đang tìm sản phẩm gì?"
-              className={`h-10 rounded-full border border-neutral-200 bg-neutral-100 pl-11 pr-10 text-body-sm text-neutral-900 placeholder:text-neutral-400 transition-all focus:border-brand-navy focus:bg-white focus:outline-none ${searchInputWidth}`}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-700"
-                aria-label="Xóa tìm kiếm"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </form>
-
-          {currentUser.role !== 'admin' && (
-            <Link
-              href={rackHref}
-              className="order-3 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-brand-navy sm:flex md:order-none"
-              aria-label="Giá treo đồ"
-            >
-              <HangerIcon className="h-5 w-5" />
-            </Link>
-          )}
-
-          {currentUser.role !== 'guest' && (
-            <NotificationBell className="order-3 shrink-0 md:order-none" />
-          )}
-
-          {currentUser.role !== 'admin' && (
-            <button
-              onClick={onOpenCart}
-              className="relative order-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-brand-navy md:order-none"
-              aria-label="Giỏ hàng"
-            >
-              <ShoppingBag className="w-[18px] h-[18px] md:w-5 md:h-5" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-semantic-error rounded-full ring-2 ring-white text-[9px] flex items-center justify-center text-white font-bold animate-in zoom-in duration-200">
-                  {totalItems}
+              {currentUser.role === 'admin' && (
+                <span className="hidden md:inline-block px-2 py-0.5 bg-semantic-error text-white text-[10px] font-bold uppercase rounded-full tracking-wide">
+                  Admin
                 </span>
               )}
-            </button>
-          )}
-
-          {currentUser.role === 'guest' ? (
-            <>
-              <Link
-                href="/login"
-                className="order-1 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-brand-navy"
-                aria-label="Đăng nhập"
-              >
-                <UserIcon className="h-[18px] w-[18px]" />
-              </Link>
-              <Link href="/login" className="hidden rounded-full bg-brand-navy px-5 py-2 text-label-sm font-semibold text-white transition-colors hover:bg-brand-navy/90 md:order-none md:block">
-              Đăng nhập
             </Link>
-            </>
-          ) : (
-            <div className="relative order-1 hidden shrink-0 md:order-none md:block" ref={dropdownRef}>
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-navy text-label-sm font-bold text-white ring-2 ring-transparent transition-all hover:ring-neutral-200 md:h-8 md:w-8"
-                aria-label="Tài khoản"
+          </div>
+
+          {/* Right Actions */}
+          <div className="ml-auto flex min-w-0 items-center justify-end gap-1.5 md:gap-3 lg:gap-4">
+            {currentUser.role !== 'guest' && currentUser.role !== 'admin' && (
+              <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 rounded-full border border-neutral-200">
+                <Sparkles className="w-3.5 h-3.5 text-[#5D1C34]" />
+                <span className="text-label-sm font-medium text-neutral-700">{currentUser.quota} <span className="text-neutral-500 font-normal">lượt</span></span>
+              </div>
+            )}
+
+            <HeaderSearch className="order-2 shrink-0 sm:hidden" />
+
+            <form
+              onSubmit={handleSearchSubmit}
+              className="relative order-2 hidden min-w-0 shrink-0 items-center sm:flex md:order-none"
+            >
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Bạn đang tìm sản phẩm gì?"
+                className={`h-10 rounded-full border border-neutral-200 bg-neutral-100 pl-11 pr-10 text-body-sm text-neutral-900 placeholder:text-neutral-400 transition-all focus:border-brand-navy focus:bg-white focus:outline-none ${searchInputWidth}`}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-700"
+                  aria-label="Xóa tìm kiếm"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </form>
+
+            {currentUser.role !== 'admin' && (
+              <Link
+                href={rackHref}
+                className="order-3 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-brand-navy sm:flex md:order-none"
+                aria-label="Giá treo đồ"
               >
-                {currentUser.avatar ? (
-                  <Image src={currentUser.avatar} alt={displayName} width={32} height={32} unoptimized className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  displayInitial
-                )}
-                {currentUser.role === 'admin' && (
-                  <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-semantic-error border-2 border-white rounded-full"></div>
+                <HangerIcon className="h-5 w-5" />
+              </Link>
+            )}
+
+            {currentUser.role !== 'guest' && (
+              <NotificationBell className="order-3 shrink-0 md:order-none" />
+            )}
+
+            {currentUser.role !== 'admin' && (
+              <button
+                onClick={onOpenCart}
+                className="relative order-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-brand-navy md:order-none"
+                aria-label="Giỏ hàng"
+              >
+                <ShoppingBag className="w-[18px] h-[18px] md:w-5 md:h-5" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-semantic-error rounded-full ring-2 ring-white text-[9px] flex items-center justify-center text-white font-bold animate-in zoom-in duration-200">
+                    {totalItems}
+                  </span>
                 )}
               </button>
+            )}
 
-              {/* Desktop Dropdown */}
-              {isDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-[240px] bg-white rounded-xl shadow-lg border border-neutral-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 hidden md:block">
-                  <div className="px-4 py-3 border-b border-neutral-100 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-body-md shrink-0">
-                      {currentUser.avatar ? <Image src={currentUser.avatar} alt="Avatar" width={40} height={40} unoptimized className="w-full h-full rounded-full object-cover" /> : displayInitial}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-label-md font-semibold text-neutral-900 truncate">{displayName}</span>
-                      {currentUser.role === 'admin' ? (
-                        <span className="text-xs text-semantic-error font-medium">Admin</span>
-                      ) : (
-                        <span className={`text-xs font-medium flex items-center gap-1 ${getTierColor(currentUser.tier as UserTier)}`}>
-                          {getTierLabel(currentUser.tier as UserTier)} <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {currentUser.role !== 'admin' ? (
-                    <div className="py-1 border-b border-neutral-100">
-                      <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
-                      </Link>
-                      <Link href="/rack" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <HangerIcon className="w-4 h-4 text-[#5D1C34]" /> Giá treo đồ
-                      </Link>
-                      <Link href="/profile/measurements" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <Ruler className="w-4 h-4" /> Số đo & chi tiết
-                      </Link>
-                      <Link href="/profile/history" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <History className="w-4 h-4" /> Lịch sử Try-On
-                      </Link>
-                      <Link href="/profile/stylist-history" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <Sparkles className="w-4 h-4" /> Lịch sử AI Stylist
-                      </Link>
-                      <Link href="/profile/orders" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <Package className="w-4 h-4" /> Đơn hàng
-                      </Link>
-                      <Link href="/profile/reviews" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <Star className="w-4 h-4" /> Đánh giá của tôi
-                      </Link>
-                      <Link href="/notifications" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <Bell className="w-4 h-4" /> Thông báo
-                      </Link>
-                    </div>
+            {currentUser.role === 'guest' ? (
+              <>
+                <Link
+                  href="/login"
+                  className="order-1 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-brand-navy"
+                  aria-label="Đăng nhập"
+                >
+                  <UserIcon className="h-[18px] w-[18px]" />
+                </Link>
+                <Link href="/login" className="hidden rounded-full bg-brand-navy px-5 py-2 text-label-sm font-semibold text-white transition-colors hover:bg-brand-navy/90 md:order-none md:block">
+                  Đăng nhập
+                </Link>
+              </>
+            ) : (
+              <div className="relative order-1 hidden shrink-0 md:order-none md:block" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-navy text-label-sm font-bold text-white ring-2 ring-transparent transition-all hover:ring-neutral-200 md:h-8 md:w-8"
+                  aria-label="Tài khoản"
+                >
+                  {currentUser.avatar ? (
+                    <Image src={currentUser.avatar} alt={displayName} width={32} height={32} unoptimized className="w-full h-full rounded-full object-cover" />
                   ) : (
-                    <div className="py-1 border-b border-neutral-100">
-                      <Link href="/admin/profile" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                        <UserIcon className="w-4 h-4" /> Thông tin cá nhân
-                      </Link>
-                    </div>
+                    displayInitial
                   )}
+                  {currentUser.role === 'admin' && (
+                    <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-semantic-error border-2 border-white rounded-full"></div>
+                  )}
+                </button>
 
-                  <div className="py-1">
-                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-semantic-error hover:bg-red-50 transition-colors">
-                      <LogOut className="w-4 h-4" /> Đăng xuất
-                    </button>
+                {/* Desktop Dropdown */}
+                {isDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-[240px] bg-white rounded-xl shadow-lg border border-neutral-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 hidden md:block">
+                    <div className="px-4 py-3 border-b border-neutral-100 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-body-md shrink-0">
+                        {currentUser.avatar ? <Image src={currentUser.avatar} alt="Avatar" width={40} height={40} unoptimized className="w-full h-full rounded-full object-cover" /> : displayInitial}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-label-md font-semibold text-neutral-900 truncate">{displayName}</span>
+                        {currentUser.role === 'admin' ? (
+                          <span className="text-xs text-semantic-error font-medium">Admin</span>
+                        ) : (
+                          <span className={`text-xs font-medium flex items-center gap-1 ${getTierColor(currentUser.tier as UserTier)}`}>
+                            {getTierLabel(currentUser.tier as UserTier)} <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {currentUser.role !== 'admin' ? (
+                      <div className="py-1 border-b border-neutral-100">
+                        <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                          <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
+                        </Link>
+                        <Link href="/rack" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                          <HangerIcon className="w-4 h-4 text-[#5D1C34]" /> Giá treo đồ
+                        </Link>
+                        <Link href="/profile/measurements" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                          <Ruler className="w-4 h-4" /> Số đo & chi tiết
+                        </Link>
+                        <Link href="/profile/history" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                          <History className="w-4 h-4" /> Lịch sử Try-On
+                        </Link>
+                        <Link href="/profile/stylist-history" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                          <Sparkles className="w-4 h-4" /> Lịch sử AI Stylist
+                        </Link>
+                        <Link href="/profile/orders" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                          <Package className="w-4 h-4" /> Đơn hàng
+                        </Link>
+                        <Link href="/profile/reviews" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                          <Star className="w-4 h-4" /> Đánh giá của tôi
+                        </Link>
+                        <Link href="/notifications" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                          <Bell className="w-4 h-4" /> Thông báo
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="py-1 border-b border-neutral-100">
+                        <Link href="/admin/profile" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
+                          <UserIcon className="w-4 h-4" /> Thông tin cá nhân
+                        </Link>
+                      </div>
+                    )}
+
+                    <div className="py-1">
+                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-semantic-error hover:bg-red-50 transition-colors">
+                        <LogOut className="w-4 h-4" /> Đăng xuất
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
+              </div>
+            )}
+
+            <div className="relative order-6 hidden shrink-0 md:block" ref={navMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsNavMenuOpen((open) => !open)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-brand-navy"
+                aria-label="Mở menu điều hướng"
+                aria-expanded={isNavMenuOpen}
+              >
+                {isNavMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+
+              {isNavMenuOpen && (
+                <nav className="absolute right-0 top-full z-50 mt-3 w-[240px] rounded-xl border border-neutral-200 bg-white p-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      className={`block rounded-lg px-3 py-2.5 text-body-sm font-medium transition-colors hover:bg-neutral-50 hover:text-brand-navy ${pathname === link.href ? 'bg-brand-navy/5 text-brand-navy' : 'text-neutral-700'
+                        }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </nav>
               )}
             </div>
-          )}
-
-          <div className="relative order-6 hidden shrink-0 md:block" ref={navMenuRef}>
-            <button
-              type="button"
-              onClick={() => setIsNavMenuOpen((open) => !open)}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-brand-navy"
-              aria-label="Mở menu điều hướng"
-              aria-expanded={isNavMenuOpen}
-            >
-              {isNavMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-
-            {isNavMenuOpen && (
-              <nav className="absolute right-0 top-full z-50 mt-3 w-[240px] rounded-xl border border-neutral-200 bg-white p-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className={`block rounded-lg px-3 py-2.5 text-body-sm font-medium transition-colors hover:bg-neutral-50 hover:text-brand-navy ${pathname === link.href ? 'bg-brand-navy/5 text-brand-navy' : 'text-neutral-700'
-                      }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            )}
           </div>
-        </div>
         </div>
       </header>
     </>
@@ -371,14 +371,6 @@ function MarketingFooter() {
             <p className="mb-6 max-w-sm text-body-sm leading-relaxed text-neutral-400">
               Nền tảng thời trang công sở cao cấp tiên phong ứng dụng công nghệ thử đồ ảo AI. Chuẩn dáng từ đầu, đẹp từng đường may.
             </p>
-
-            <div className="inline-flex items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2 text-xs text-neutral-300">
-              <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-400" />
-              <div>
-                <div className="text-[11px] font-bold text-white">ĐÃ ĐĂNG KÝ BỘ CÔNG THƯƠNG</div>
-                <div className="text-[10px] text-neutral-400">Chứng nhận website thương mại điện tử</div>
-              </div>
-            </div>
           </div>
 
           <div className="lg:col-span-3">
@@ -436,7 +428,7 @@ function MarketingFooter() {
                 Phương thức thanh toán
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {['VNPAY', 'MoMo', 'Visa', 'Mastercard', 'COD'].map((item) => (
+                {['VNPAY', 'MoMo'].map((item) => (
                   <span key={item} className="rounded border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-[10px] font-bold text-neutral-300">
                     {item}
                   </span>
