@@ -63,7 +63,8 @@ export function mapProduct(product: BackendProduct): Product {
     originalPrice: origPriceNumber,
     originalPriceFormatted: origPriceNumber ? `${origPriceNumber.toLocaleString('vi-VN')} ₫` : undefined,
     category: mapCategory(product.category),
-    garmentCategory: toBackendCategory(product.category),
+    garmentCategory: toBackendCategory(product.category, product.garmentType as string),
+    garmentType: (product.garmentType as import('@/features/products/types/products').GarmentType) || undefined,
     image: mainImage,
     gallery,
     colors,
@@ -77,7 +78,13 @@ export function mapProduct(product: BackendProduct): Product {
   };
 }
 
-export function toBackendCategory(cat?: string | null): 'UPPER' | 'LOWER' | 'FULL_BODY' {
+export function toBackendCategory(cat?: string | null, garmentType?: string | null): 'UPPER' | 'LOWER' | 'FULL_BODY' {
+  if (garmentType) {
+    const gt = garmentType.toUpperCase();
+    if (gt === 'DRESS' || gt === 'JUMPSUIT') return 'FULL_BODY';
+    if (gt === 'PANTS' || gt === 'SKIRT') return 'LOWER';
+    if (gt === 'SHIRT' || gt === 'VEST' || gt === 'JACKET') return 'UPPER';
+  }
   if (!cat) return 'UPPER';
   const c = cat.trim();
   const cUpper = c.toUpperCase();

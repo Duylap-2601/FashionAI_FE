@@ -8,11 +8,10 @@ import { DesktopFilterSidebar, MobileFilterSheet, MobileSortSheet } from '@/feat
 import { ProductList } from '@/features/products/components/listing/ProductList';
 import { ProductResultsHeader } from '@/features/products/components/listing/ProductResultsHeader';
 import { ProductToolbar } from '@/features/products/components/listing/ProductToolbar';
-import { SUB_CATEGORIES } from '@/features/products/constants/product-filters';
+import { GARMENT_TYPE_TABS, SUB_CATEGORIES } from '@/features/products/constants/product-filters';
 import { PRODUCTS } from '@/features/products/constants/products';
 import { ITEMS_PER_PAGE } from '@/features/products/constants/products-page';
 import { useInfiniteProducts, useProducts } from '@/features/products/hooks/useProducts';
-import { toBackendCategory } from '@/features/products/services/products-utils';
 import type { ActiveChip, SortBy } from '@/features/products/types/product-filters';
 import type { Product } from '@/features/products/types/products';
 import type { ProductListParams } from '@/features/products/types/products-hook';
@@ -68,7 +67,16 @@ export default function ProductListing() {
       setCurrentPage(1);
     };
 
-    applySearch(new URLSearchParams(window.location.search).get('search') ?? '');
+    const searchParams = new URLSearchParams(window.location.search);
+    applySearch(searchParams.get('search') ?? '');
+
+    const paramGarmentType = searchParams.get('garmentType');
+    if (paramGarmentType) {
+      const matchTab = GARMENT_TYPE_TABS.find(
+        (t) => t.garmentType === paramGarmentType || t.key === paramGarmentType
+      );
+      if (matchTab) setActiveTab(matchTab.label);
+    }
 
     const handleProductSearch = (event: Event) => {
       const nextSearch = (event as CustomEvent<string>).detail;
@@ -87,15 +95,22 @@ export default function ProductListing() {
     return () => window.clearTimeout(timeoutId);
   }, [searchQuery]);
 
+  const activeGarmentType = useMemo(() => {
+    const matchTab = GARMENT_TYPE_TABS.find(
+      (t) => t.label === activeTab || t.key === activeTab
+    );
+    return matchTab?.garmentType;
+  }, [activeTab]);
+
   const productQueryParams = useMemo<Omit<ProductListParams, 'page' | 'enabled'>>(() => ({
     limit: ITEMS_PER_PAGE,
     search: debouncedSearchQuery || undefined,
-    category: activeTab === 'Tất cả' ? undefined : toBackendCategory(activeTab),
+    garmentType: activeGarmentType,
     color: selectedColors.length > 0 ? selectedColors.join(',') : undefined,
     subCategory: selectedSubCategories.length > 0 ? selectedSubCategories.join(',') : undefined,
     maxPrice: selectedMaxPrice ?? undefined,
     sort: toSortParam(sortBy),
-  }), [activeTab, debouncedSearchQuery, selectedColors, selectedMaxPrice, selectedSubCategories, sortBy]);
+  }), [activeGarmentType, debouncedSearchQuery, selectedColors, selectedMaxPrice, selectedSubCategories, sortBy]);
 
   const desktopQuery = useProducts({
     ...productQueryParams,
@@ -122,12 +137,12 @@ export default function ProductListing() {
   const totalPages = Math.max(1, queryMeta.totalPages);
   const hasMoreProducts = Boolean(isMobile && hasNextPage);
 
-  const categoryCounts = useMemo(() => ([
-    { label: 'Tất cả', count: totalProducts },
-    { label: 'Áo' },
-    { label: 'Quần & Váy' },
-    { label: 'Suit đầy đủ' },
-  ]), [totalProducts]);
+  const categoryCounts = useMemo(() => (
+    GARMENT_TYPE_TABS.map((tab) => ({
+      label: tab.label,
+      count: tab.key === 'ALL' ? totalProducts : undefined,
+    }))
+  ), [totalProducts]);
 
   const subCategoryCounts = useMemo(() => SUB_CATEGORIES.map(sub => ({ name: sub.name })), []);
 

@@ -36,6 +36,7 @@ import {
   Layers,
   LayoutDashboard,
   LogOut,
+  Menu,
   MessageSquare,
   Package,
   RefreshCw,
@@ -54,6 +55,7 @@ export default function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -498,6 +500,7 @@ export default function AdminDashboard() {
           name: editingProduct.name,
           price: editingProduct.price,
           category: editingProduct.category,
+          garmentType: editingProduct.garmentType ?? null,
           color: primaryColor || undefined,
           colors,
           stock,
@@ -1030,8 +1033,16 @@ export default function AdminDashboard() {
     <AdminGuard>
       <div className="flex bg-neutral-100 min-h-screen text-neutral-800 font-sans">
 
+        {/* MOBILE OVERLAY */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* SIDEBAR */}
-        <aside className="w-[240px] shrink-0 bg-brand-navy flex flex-col min-h-screen sticky top-0">
+        <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[240px] shrink-0 bg-brand-navy flex flex-col min-h-screen lg:sticky lg:top-0 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           <div className="px-6 pt-7 pb-6 border-b border-white/10 flex flex-col gap-1">
             <span className="text-white font-bold text-heading-h3 tracking-wide">FashionAI</span>
             <span className="inline-flex items-center self-start px-2 py-0.5 bg-brand-gold text-white text-[9px] font-bold tracking-widest rounded-full uppercase">
@@ -1058,7 +1069,7 @@ export default function AdminDashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => { setActiveTab(item.id); setSearchQuery(''); }}
+                  onClick={() => { setActiveTab(item.id); setSearchQuery(''); setSidebarOpen(false); }}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-body-sm font-medium transition-all text-left w-full border-0 cursor-pointer ${active ? 'bg-white text-brand-navy shadow-sm' : 'text-white/70 hover:text-white hover:bg-white/8 bg-transparent'
                     }`}
                 >
@@ -1087,8 +1098,16 @@ export default function AdminDashboard() {
         {/* MAIN CONTENT WRAPPER */}
         <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-hidden">
           {/* ADMIN TOPBAR */}
-          <header className="h-16 px-6 md:px-8 bg-white border-b border-neutral-200 flex items-center justify-between shrink-0 z-30 sticky top-0 shadow-2xs">
-            <div className="flex items-center gap-3">
+          <header className="h-16 px-4 md:px-8 bg-white border-b border-neutral-200 flex items-center justify-between shrink-0 z-30 sticky top-0 shadow-2xs">
+            <div className="flex items-center gap-2 md:gap-3">
+              {/* Hamburger - chỉ hiện trên mobile */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 border-0 bg-transparent cursor-pointer"
+                aria-label="Mở menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
               <span className="text-body-sm font-semibold text-neutral-500">Quản trị</span>
               <span className="text-neutral-300">/</span>
               <span className="text-body-sm font-bold text-brand-navy">

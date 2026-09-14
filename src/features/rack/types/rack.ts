@@ -3,6 +3,7 @@ export interface BackendRackProduct {
   name: string;
   brand?: string | null;
   category: string;
+  garmentType?: string | null;
   price: string | number;
   originalPrice?: string | number | null;
   images?: ({ imageUrl?: string; url?: string; isMain?: boolean } | string)[] | null;

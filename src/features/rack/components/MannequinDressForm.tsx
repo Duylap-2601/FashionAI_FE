@@ -3,7 +3,8 @@
 import type { MannequinDressFormProps } from '@/features/rack/types/mannequin-dress-form';
 import type { BackendRackProduct } from '@/features/rack/types/rack';
 import { ArrowRight, RotateCcw, Sparkles, X } from 'lucide-react';
-import React from 'react';
+import Image from 'next/image';
+import React, { useState } from 'react';
 
 function getProductImage(product: BackendRackProduct): string {
   if (Array.isArray(product?.images) && product.images.length > 0) {
@@ -23,14 +24,6 @@ function getProductImage(product: BackendRackProduct): string {
   return '/images/731163514_999523332788054_1114320478812927640_n.png';
 }
 
-function formatPrice(price: string | number): string {
-  const num = Number(price);
-  if (Number.isFinite(num)) {
-    return `${num.toLocaleString('vi-VN')} ₫`;
-  }
-  return String(price || '0');
-}
-
 export function MannequinDressForm({
   upperItem,
   lowerItem,
@@ -45,7 +38,23 @@ export function MannequinDressForm({
   const hasAnyItem = !!(upperItem || lowerItem || fullBodyItem);
   const isComboComplete = isFullBody || (!!upperItem && !!lowerItem);
 
-  // Calculate total price
+  // Clothing scale: 1.0 (chuẩn), 1.15 (che phủ đẹp - mặc định), 1.3 (phóng to cực đại)
+  const [scaleMode, setScaleMode] = useState<'fit' | 'cover' | 'max'>('cover');
+
+  const scaleClass = React.useMemo(() => {
+    switch (scaleMode) {
+      case 'fit':
+        return 'scale-100';
+      case 'cover':
+        return 'scale-115';
+      case 'max':
+        return 'scale-130';
+      default:
+        return 'scale-115';
+    }
+  }, [scaleMode]);
+
+  // Calculate total outfit price
   const totalPrice = React.useMemo(() => {
     let total = 0;
     if (fullBodyItem) {
@@ -58,9 +67,9 @@ export function MannequinDressForm({
   }, [upperItem, lowerItem, fullBodyItem]);
 
   return (
-    <div className="relative bg-gradient-to-b from-[#FAF7F2] via-[#F5EFEB] to-[#EFE7E0] rounded-3xl p-5 md:p-6 text-neutral-900 border border-[#E3D9CE] shadow-xl overflow-hidden flex flex-col justify-between">
+    <div className="relative bg-gradient-to-b from-[#FAF7F2] via-[#F6EFEB] to-[#EFE6DE] rounded-3xl p-5 md:p-6 text-neutral-900 border border-[#E3D9CE] shadow-xl overflow-hidden flex flex-col justify-between">
       {/* Studio Lighting Background Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-radial from-white via-amber-100/30 to-transparent rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-88 h-88 bg-radial from-white via-amber-100/30 to-transparent rounded-full blur-2xl pointer-events-none" />
       <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-[#5D1C34]/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
@@ -80,49 +89,81 @@ export function MannequinDressForm({
             </h3>
             <p className="text-[11px] text-neutral-500">
               {!hasAnyItem
-                ? 'Chọn quần áo bên trái để ướm thử'
+                ? 'Bấm đồ bên tủ để mặc lên ma-nơ-canh'
                 : isComboComplete
-                  ? 'Bộ trang phục đã sẵn sàng để thử đồ AI!'
+                  ? 'Trang phục chuẩn form sẵn sàng thử đồ AI!'
                   : upperItem
-                    ? 'Đã có áo — hãy chọn thêm quần/váy'
-                    : 'Đã có quần — hãy chọn thêm áo'}
+                    ? 'Đã có áo — chọn thêm quần/váy'
+                    : 'Đã có quần/váy — chọn thêm áo'}
             </p>
           </div>
         </div>
 
-        {hasAnyItem && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 text-xs font-semibold transition-all border border-neutral-200 shadow-2xs"
-            title="Tháo toàn bộ đồ trên ma-nơ-canh"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Tháo đồ</span>
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {/* Scale / Coverage Selector */}
+          {hasAnyItem && (
+            <div className="flex items-center bg-white/80 rounded-xl p-0.5 border border-[#E2D8CC] shadow-2xs text-[10px] font-semibold text-neutral-600">
+              <button
+                type="button"
+                onClick={() => setScaleMode('fit')}
+                className={`px-2 py-1 rounded-lg transition-all ${scaleMode === 'fit' ? 'bg-[#5D1C34] text-white shadow-xs' : 'hover:text-neutral-900'}`}
+                title="Vừa vặn (100%)"
+              >
+                Vừa
+              </button>
+              <button
+                type="button"
+                onClick={() => setScaleMode('cover')}
+                className={`px-2 py-1 rounded-lg transition-all ${scaleMode === 'cover' ? 'bg-[#5D1C34] text-white shadow-xs' : 'hover:text-neutral-900'}`}
+                title="Che kín thân (115% - Chuẩn đề xuất)"
+              >
+                Phủ kín ✨
+              </button>
+              <button
+                type="button"
+                onClick={() => setScaleMode('max')}
+                className={`px-2 py-1 rounded-lg transition-all ${scaleMode === 'max' ? 'bg-[#5D1C34] text-white shadow-xs' : 'hover:text-neutral-900'}`}
+                title="Phóng to (130%)"
+              >
+                Lớn
+              </button>
+            </div>
+          )}
+
+          {hasAnyItem && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 text-xs font-semibold transition-all border border-neutral-200 shadow-2xs"
+              title="Tháo toàn bộ đồ trên ma-nơ-canh"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Tháo</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Virtual Mannequin Dressing Stage */}
-      <div className="relative z-10 flex-1 min-h-[490px] flex flex-col items-center justify-center py-2">
+      <div className="relative z-10 flex-1 min-h-[500px] flex flex-col items-center justify-center py-2">
         {/* Spotlight Circle Floor */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-64 h-12 bg-neutral-300/40 rounded-full blur-md pointer-events-none" />
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-72 h-14 bg-neutral-300/40 rounded-full blur-md pointer-events-none" />
 
         {/* Mannequin & Clothes Composite Stage */}
-        <div className="relative w-full max-w-[320px] h-[480px] flex flex-col items-center select-none">
-          {/* 1. Mannequin Finial Top (Đầu chốt gỗ) */}
-          <div className="w-5 h-5 rounded-t-full bg-gradient-to-b from-[#2B292D] via-[#1B191E] to-[#110F13] shadow-md z-10 border-t border-white/20" />
-          <div className="w-7 h-3 rounded-xs bg-[#1F1D22] z-10 border-x border-white/10" />
+        <div className="relative w-full max-w-[340px] h-[490px] flex flex-col items-center select-none">
+          {/* 1. Mannequin Finial Top (Đầu chốt gỗ / kim loại) */}
+          <div className="w-6 h-6 rounded-t-full bg-gradient-to-b from-[#38333D] via-[#221F26] to-[#141217] shadow-md z-10 border-t border-white/20" />
+          <div className="w-8 h-3 rounded-xs bg-[#1F1C22] z-10 border-x border-white/10" />
 
-          {/* 2. Mannequin Neck (Cổ) */}
-          <div className="w-10 h-5 bg-gradient-to-r from-[#2A282D] via-[#1E1C21] to-[#2A282D] z-10 shadow-xs" />
+          {/* 2. Mannequin Neck (Cổ tượng) */}
+          <div className="w-12 h-6 bg-gradient-to-r from-[#2A272E] via-[#1E1B21] to-[#2A272E] z-10 shadow-xs" />
 
-          {/* 3. Mannequin Torso & Clothing Layer Area (Thân & Trang Phục) */}
-          <div className="relative w-64 h-[350px] flex flex-col items-center">
-            {/* Background Mannequin Silhouette (Hiển thị khi chưa có đồ hoặc làm nền) */}
-            <div className="absolute inset-0 flex flex-col items-center pointer-events-none opacity-90">
+          {/* 3. Mannequin Torso & Clothes Layer Area */}
+          <div className="relative w-[300px] h-[360px] flex flex-col items-center">
+            {/* Background Mannequin Silhouette */}
+            <div className="absolute inset-0 flex flex-col items-center pointer-events-none">
               <svg
-                className="w-56 h-[330px] drop-shadow-[0_8px_16px_rgba(0,0,0,0.15)]"
+                className="w-[230px] h-[340px] drop-shadow-[0_10px_20px_rgba(0,0,0,0.18)]"
                 viewBox="0 0 200 300"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -147,81 +188,114 @@ export function MannequinDressForm({
               </svg>
             </div>
 
-            {/* A. FULL BODY GARMENT (Khi chọn Bộ liền / Suit) */}
+            {/* A. FULL BODY GARMENT (Đầm / Set đồ / Jumpsuit) - Che phủ gần như toàn bộ ma-nơ-canh */}
             {isFullBody && fullBodyItem && (
-              <div className="relative z-20 w-60 h-[340px] flex items-center justify-center animate-in zoom-in-95 fade-in duration-300 group">
-                <img
-                  src={getProductImage(fullBodyItem.product)}
-                  alt={fullBodyItem.product.name}
-                  className="w-full h-full object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.25)] hover:scale-[1.02] transition-transform"
-                />
-                {/* Quick Remove Button */}
-                <button
-                  type="button"
-                  onClick={onRemoveFullBody}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md"
-                  title="Tháo bộ liền"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              <div
+                className={`absolute top-0 z-20 w-[290px] h-[370px] flex items-start justify-center transition-transform duration-300 ${scaleClass}`}
+              >
+                <div className="relative w-full h-full flex items-start justify-center group">
+                  <Image
+                    src={getProductImage(fullBodyItem.product)}
+                    alt={fullBodyItem.product.name}
+                    fill
+                    unoptimized
+                    className="object-contain object-top filter drop-shadow-[0_12px_28px_rgba(0,0,0,0.28)] hover:scale-[1.02] transition-transform duration-200"
+                  />
+
+                  {/* Remove Full Body Button */}
+                  <button
+                    type="button"
+                    onClick={onRemoveFullBody}
+                    className="absolute top-1 right-2 z-30 w-7 h-7 rounded-full bg-black/75 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-85 hover:opacity-100 shadow-md cursor-pointer"
+                    title="Tháo đầm/suit"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+
+                  {/* Category Chip */}
+                  <div className="absolute bottom-2 left-2 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-xs border border-neutral-200 shadow-xs">
+                    <span className="w-2 h-2 rounded-full bg-purple-500" />
+                    <span className="text-[10px] font-bold text-neutral-800">Bộ liền / Đầm</span>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* B. UPPER & LOWER COMBO (Áo + Quần ghép nối liền mạch) */}
+            {/* B. UPPER + LOWER GARMENTS (Áo + Quần/Váy) */}
             {!isFullBody && (
               <div className="relative z-20 w-full h-full flex flex-col items-center">
-                {/* 1. UPPER GARMENT (Áo / Blazer) - Khớp với ngực & vai */}
-                <div className="relative w-56 h-[175px] flex items-center justify-center">
+                {/* 1. UPPER GARMENT (Áo / Blazer / Sơ mi) - Khớp với vai & ngực ma-nơ-canh */}
+                <div
+                  className={`relative w-[280px] h-[210px] flex items-start justify-center transition-transform duration-300 ${scaleClass}`}
+                >
                   {upperItem ? (
-                    <div className="relative w-full h-full flex items-center justify-center animate-in zoom-in-95 fade-in duration-300 group">
-                      <img
+                    <div className="relative w-full h-full flex items-start justify-center group animate-in zoom-in-95 fade-in duration-300">
+                      <Image
                         src={getProductImage(upperItem.product)}
                         alt={upperItem.product.name}
-                        className="w-full h-full object-contain object-top filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] transition-transform"
+                        fill
+                        unoptimized
+                        className="object-contain object-top filter drop-shadow-[0_10px_22px_rgba(0,0,0,0.26)] hover:scale-[1.02] transition-transform duration-200"
                       />
                       {/* Remove Upper Button */}
                       <button
                         type="button"
                         onClick={onRemoveUpper}
-                        className="absolute top-1 right-2 w-6 h-6 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md"
+                        className="absolute top-1 right-2 z-30 w-6 h-6 rounded-full bg-black/75 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-85 hover:opacity-100 shadow-md cursor-pointer"
                         title="Tháo áo"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
+
+                      {/* Upper Category Chip */}
+                      <div className="absolute bottom-1 left-2 z-30 flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-xs border border-neutral-200 shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                        <span className="text-[9px] font-bold text-neutral-800">Áo</span>
+                      </div>
                     </div>
                   ) : (
                     /* Upper Placeholder Guide */
-                    <div className="w-48 h-32 rounded-2xl border-2 border-dashed border-[#A67D44]/40 bg-[#FAF7F2]/40 backdrop-blur-2xs flex flex-col items-center justify-center p-2 text-center transition-all hover:border-[#5D1C34]/60">
+                    <div className="w-52 h-32 mt-4 rounded-2xl border-2 border-dashed border-[#A67D44]/35 bg-[#FAF7F2]/30 backdrop-blur-2xs flex flex-col items-center justify-center p-2 text-center transition-all">
                       <span className="text-[11px] font-bold text-[#5D1C34]">Vùng Áo / Thân trên</span>
-                      <span className="text-[10px] text-neutral-500 mt-0.5">Chạm áo bên trái để mặc lên</span>
+                      <span className="text-[10px] text-neutral-500 mt-0.5">Chạm áo bên trái để mặc</span>
                     </div>
                   )}
                 </div>
 
-                {/* 2. LOWER GARMENT (Quần / Váy) - Nối tiếp liền mạch từ eo xuống */}
-                <div className="relative w-56 h-[175px] -mt-3 flex items-center justify-center">
+                {/* 2. LOWER GARMENT (Quần / Váy) - Bắt đầu từ eo xuống qua hông */}
+                <div
+                  className={`relative w-[270px] h-[220px] -mt-10 flex items-start justify-center transition-transform duration-300 ${scaleClass}`}
+                >
                   {lowerItem ? (
-                    <div className="relative w-full h-full flex items-center justify-center animate-in zoom-in-95 fade-in duration-300 group">
-                      <img
+                    <div className="relative w-full h-full flex items-start justify-center group animate-in zoom-in-95 fade-in duration-300">
+                      <Image
                         src={getProductImage(lowerItem.product)}
                         alt={lowerItem.product.name}
-                        className="w-full h-full object-contain object-top filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] transition-transform"
+                        fill
+                        unoptimized
+                        className="object-contain object-top filter drop-shadow-[0_10px_22px_rgba(0,0,0,0.26)] hover:scale-[1.02] transition-transform duration-200"
                       />
                       {/* Remove Lower Button */}
                       <button
                         type="button"
                         onClick={onRemoveLower}
-                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md"
+                        className="absolute top-2 right-2 z-30 w-6 h-6 rounded-full bg-black/75 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-85 hover:opacity-100 shadow-md cursor-pointer"
                         title="Tháo quần/váy"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
+
+                      {/* Lower Category Chip */}
+                      <div className="absolute bottom-1 left-2 z-30 flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-xs border border-neutral-200 shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-[9px] font-bold text-neutral-800">Quần / Váy</span>
+                      </div>
                     </div>
                   ) : (
                     /* Lower Placeholder Guide */
-                    <div className="w-48 h-32 rounded-2xl border-2 border-dashed border-[#A67D44]/40 bg-[#FAF7F2]/40 backdrop-blur-2xs flex flex-col items-center justify-center p-2 text-center transition-all hover:border-[#5D1C34]/60">
+                    <div className="w-52 h-32 mt-2 rounded-2xl border-2 border-dashed border-[#A67D44]/35 bg-[#FAF7F2]/30 backdrop-blur-2xs flex flex-col items-center justify-center p-2 text-center transition-all">
                       <span className="text-[11px] font-bold text-[#5D1C34]">Vùng Quần / Váy</span>
-                      <span className="text-[10px] text-neutral-500 mt-0.5">Chạm quần/váy bên trái để mặc lên</span>
+                      <span className="text-[10px] text-neutral-500 mt-0.5">Chạm quần/váy bên trái để mặc</span>
                     </div>
                   )}
                 </div>
@@ -230,14 +304,14 @@ export function MannequinDressForm({
           </div>
 
           {/* 4. Mannequin Stand Pole & Base (Cọc kim loại & Chân đế tripod) */}
-          <div className="w-3 h-16 bg-gradient-to-r from-neutral-700 via-neutral-400 to-neutral-800 shadow-inner z-0" />
-          <div className="w-5 h-2.5 rounded-full bg-neutral-800 border border-neutral-600 z-0" />
+          <div className="w-3.5 h-16 bg-gradient-to-r from-neutral-700 via-neutral-300 to-neutral-800 shadow-inner z-0" />
+          <div className="w-6 h-2.5 rounded-full bg-neutral-800 border border-neutral-600 z-0" />
 
           {/* Tripod Base */}
-          <div className="relative w-40 h-10 flex justify-center items-end z-0">
-            <div className="w-3 h-8 bg-neutral-800 rounded-b-sm" />
-            <div className="absolute left-3 bottom-0 w-14 h-6 border-b-[3px] border-l-[3px] border-neutral-800 rounded-bl-2xl transform -rotate-12" />
-            <div className="absolute right-3 bottom-0 w-14 h-6 border-b-[3px] border-r-[3px] border-neutral-800 rounded-br-2xl transform rotate-12" />
+          <div className="relative w-44 h-11 flex justify-center items-end z-0">
+            <div className="w-3.5 h-8 bg-neutral-800 rounded-b-sm" />
+            <div className="absolute left-3 bottom-0 w-16 h-7 border-b-[3px] border-l-[3px] border-neutral-800 rounded-bl-2xl transform -rotate-12" />
+            <div className="absolute right-3 bottom-0 w-16 h-7 border-b-[3px] border-r-[3px] border-neutral-800 rounded-br-2xl transform rotate-12" />
           </div>
         </div>
       </div>

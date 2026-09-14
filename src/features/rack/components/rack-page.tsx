@@ -48,15 +48,15 @@ function formatPrice(price: string | number): string {
   return String(price || '0');
 }
 
-function getCategoryBadge(catStr?: string) {
-  const backendCat = toBackendCategory(catStr);
+function getCategoryBadge(catStr?: string, garmentType?: string | null) {
+  const backendCat = toBackendCategory(catStr, garmentType);
   switch (backendCat) {
     case 'UPPER':
-      return { label: 'Áo / Blazer', bg: 'bg-blue-50 text-blue-700 border-blue-200' };
+      return { label: 'Áo / Top', bg: 'bg-blue-50 text-blue-700 border-blue-200' };
     case 'LOWER':
       return { label: 'Quần / Váy', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
     case 'FULL_BODY':
-      return { label: 'Bộ liền / Suit', bg: 'bg-purple-50 text-purple-700 border-purple-200' };
+      return { label: 'Bộ liền / Đầm', bg: 'bg-purple-50 text-purple-700 border-purple-200' };
   }
 }
 
@@ -80,7 +80,7 @@ export default function RackPage() {
   // Filtered wardrobe items
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const cat = toBackendCategory(item.product.category);
+      const cat = toBackendCategory(item.product.category, item.product.garmentType);
       if (currentTab !== 'ALL' && cat !== currentTab) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -103,7 +103,7 @@ export default function RackPage() {
 
   // Handle clicking an item from wardrobe to wear/remove on mannequin
   const handleItemClick = (item: RackItem) => {
-    const cat = toBackendCategory(item.product.category);
+    const cat = toBackendCategory(item.product.category, item.product.garmentType);
     const worn = isItemWorn(item.productId);
 
     if (worn) {
@@ -200,7 +200,7 @@ export default function RackPage() {
   const categoryCounts = useMemo(() => {
     const counts = { ALL: items.length, UPPER: 0, LOWER: 0, FULL_BODY: 0 };
     items.forEach(item => {
-      const cat = toBackendCategory(item.product.category);
+      const cat = toBackendCategory(item.product.category, item.product.garmentType);
       if (counts[cat] !== undefined) {
         counts[cat]++;
       }
@@ -376,7 +376,7 @@ export default function RackPage() {
                 <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                   {filteredItems.map((item) => {
                     const worn = isItemWorn(item.productId);
-                    const badge = getCategoryBadge(item.product.category);
+                    const badge = getCategoryBadge(item.product.category, item.product.garmentType);
                     const imageUrl = getProductImage(item.product);
 
                     return (

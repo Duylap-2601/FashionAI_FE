@@ -1,9 +1,12 @@
+import type { GarmentType } from '@/features/products/types/products';
+
 export interface BackendProduct {
   id: string;
   name: string;
   description?: string | null;
   material?: string | null;
   category: string;
+  garmentType?: GarmentType | string | null;
   brand?: string | null;
   color?: string | null;
   colors?: ({ name: string; hex?: string } | string)[] | null;
@@ -31,6 +34,7 @@ export interface ProductListParams {
   limit?: number;
   search?: string;
   category?: 'UPPER' | 'LOWER' | 'FULL_BODY';
+  garmentType?: GarmentType;
   color?: string;
   subCategory?: string;
   material?: string;
