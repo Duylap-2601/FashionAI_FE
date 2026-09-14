@@ -32,11 +32,14 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
   const handleCategoryChange = (newCategory: GarmentCategory) => {
     const validTypes = GARMENT_TYPES_BY_CATEGORY[newCategory] || [];
     const isCurrentValid = validTypes.some(t => t.value === editingProduct.garmentType);
-    setEditingProduct(prev => ({
-      ...prev,
-      category: newCategory,
-      garmentType: isCurrentValid ? prev.garmentType : undefined,
-    }));
+    setEditingProduct(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        category: newCategory,
+        garmentType: isCurrentValid ? prev.garmentType : undefined,
+      };
+    });
   };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
