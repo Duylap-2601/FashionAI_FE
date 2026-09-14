@@ -1,4 +1,5 @@
 import type { TryOnResult } from '@/features/try-on/types/try-on';
+import type { LiveTryOnGarment } from '@/features/try-on/types/live-try-on';
 import { http } from '@/lib/http';
 
 export async function fetchTryOnHistory(page: number, limit: number) {
@@ -9,6 +10,10 @@ export async function fetchTryOnHistory(page: number, limit: number) {
 
 export function fetchTryOnImage(url: string) {
   return fetch(url);
+}
+
+export async function fetchLiveTryOnGarment(productId: string, signal?: AbortSignal) {
+  return http.get<LiveTryOnGarment>(`/try-on/live/garments/${productId}`, { signal });
 }
 
 export { queryKeys } from './query-keys';
