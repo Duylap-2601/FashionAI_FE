@@ -1,13 +1,16 @@
+import { Capacitor } from '@capacitor/core';
+
 type CapacitorWindow = Window & {
-  Capacitor?: { isNativePlatform?: () => boolean };
+  Capacitor?: unknown;
 };
 
 export function isCapacitorNative(): boolean {
   if (typeof window === 'undefined') return false;
-  return !!(window as CapacitorWindow).Capacitor?.isNativePlatform?.();
+  return Capacitor.isNativePlatform();
 }
 
 export function isCapacitorWebView(): boolean {
   if (typeof window === 'undefined') return false;
-  return !!(window as CapacitorWindow).Capacitor;
+  return typeof (window as CapacitorWindow).Capacitor !== 'undefined';
 }
+
