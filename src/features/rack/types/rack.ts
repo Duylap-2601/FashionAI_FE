@@ -18,3 +18,13 @@ export interface RackItem {
   createdAt: string;
   product: BackendRackProduct;
 }
+
+export interface CanvasPlacedItem {
+  instanceId: string;
+  rackItem: RackItem;
+  x: number;
+  y: number;
+  scale: number;
+  zIndex: number;
+  rotation?: number;
+}

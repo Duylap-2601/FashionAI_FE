@@ -8,7 +8,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { toBackendCategory } from '@/features/products/services/products-utils';
 import { MannequinDressForm } from '@/features/rack/components/MannequinDressForm';
 import { useClearRack, useRackItems, useUnpinFromRack } from '@/features/rack/hooks/useRack';
-import type { BackendRackProduct, RackItem } from '@/features/rack/types/rack';
+import type { BackendRackProduct, CanvasPlacedItem, RackItem } from '@/features/rack/types/rack';
 import {
   Check,
   ChevronRight,
@@ -63,14 +63,13 @@ function getCategoryBadge(catStr?: string, garmentType?: string | null) {
 export default function RackPage() {
   const router = useRouter();
   const status = useAuthStore((state) => state.status);
-  const { items, isLoading, isError, refetch } = useRackItems();
+  const { items, isLoading } = useRackItems();
   const { unpinProduct, isUnpinning } = useUnpinFromRack();
   const { clearRack, isClearing } = useClearRack();
 
-  // Mannequin Outfit Slot States
-  const [upperItem, setUpperItem] = useState<RackItem | null>(null);
-  const [lowerItem, setLowerItem] = useState<RackItem | null>(null);
-  const [fullBodyItem, setFullBodyItem] = useState<RackItem | null>(null);
+  // Freeform Canvas State
+  const [placedItems, setPlacedItems] = useState<CanvasPlacedItem[]>([]);
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
   // Tab & Search filter for wardrobe
   const [currentTab, setCurrentTab] = useState<TabType>('ALL');
@@ -92,58 +91,130 @@ export default function RackPage() {
     });
   }, [items, currentTab, searchQuery]);
 
-  // Check if an item is currently placed on mannequin
+  // Check if an item is currently placed on mannequin canvas
   const isItemWorn = (productId: string) => {
-    return (
-      upperItem?.productId === productId ||
-      lowerItem?.productId === productId ||
-      fullBodyItem?.productId === productId
-    );
+    return placedItems.some((item) => item.rackItem.productId === productId);
   };
 
   // Handle clicking an item from wardrobe to wear/remove on mannequin
   const handleItemClick = (item: RackItem) => {
-    const cat = toBackendCategory(item.product.category, item.product.garmentType);
-    const worn = isItemWorn(item.productId);
+    const existingIndex = placedItems.findIndex((p) => p.rackItem.productId === item.productId);
 
-    if (worn) {
-      // Remove item
-      if (upperItem?.productId === item.productId) setUpperItem(null);
-      if (lowerItem?.productId === item.productId) setLowerItem(null);
-      if (fullBodyItem?.productId === item.productId) setFullBodyItem(null);
+    if (existingIndex !== -1) {
+      // Toggle off: remove from canvas
+      const removed = placedItems[existingIndex];
+      setPlacedItems((prev) => prev.filter((_, idx) => idx !== existingIndex));
+      if (selectedInstanceId === removed.instanceId) {
+        setSelectedInstanceId(null);
+      }
       toast.info(`Đã gỡ "${item.product.name}" khỏi ma-nơ-canh`);
       return;
     }
 
-    // Wear item based on category
-    if (cat === 'FULL_BODY') {
-      setFullBodyItem(item);
-      setUpperItem(null);
-      setLowerItem(null);
-      toast.success(`Đã mặc "${item.product.name}" lên ma-nơ-canh`);
-      return;
-    }
+    // Add to canvas with smart initial position based on category
+    const cat = toBackendCategory(item.product.category, item.product.garmentType);
+    const maxZ = placedItems.reduce((max, i) => Math.max(max, i.zIndex), 0);
+    const instanceId = `${item.id}-${Date.now()}`;
+
+    let defaultY = 0;
+    let defaultScale = 1.15;
 
     if (cat === 'UPPER') {
-      setFullBodyItem(null);
-      setUpperItem(item);
-      toast.success(`Đã gắn áo "${item.product.name}" vào ma-nơ-canh`);
-      return;
+      defaultY = -65;
+      defaultScale = 1.15;
+    } else if (cat === 'LOWER') {
+      defaultY = 75;
+      defaultScale = 1.15;
+    } else if (cat === 'FULL_BODY') {
+      defaultY = 10;
+      defaultScale = 1.25;
     }
 
-    if (cat === 'LOWER') {
-      setFullBodyItem(null);
-      setLowerItem(item);
-      toast.success(`Đã gắn quần/váy "${item.product.name}" vào ma-nơ-canh`);
-      return;
+    const newItem: CanvasPlacedItem = {
+      instanceId,
+      rackItem: item,
+      x: 0,
+      y: defaultY,
+      scale: defaultScale,
+      zIndex: maxZ + 1,
+      rotation: 0,
+    };
+
+    setPlacedItems((prev) => [...prev, newItem]);
+    setSelectedInstanceId(instanceId);
+    toast.success(`Đã thêm "${item.product.name}" lên ma-nơ-canh`);
+  };
+
+  // Update item transform on canvas
+  const handleUpdateTransform = (
+    instanceId: string,
+    updates: Partial<Pick<CanvasPlacedItem, 'x' | 'y' | 'scale' | 'rotation' | 'zIndex'>>
+  ) => {
+    setPlacedItems((prev) =>
+      prev.map((item) => (item.instanceId === instanceId ? { ...item, ...updates } : item))
+    );
+  };
+
+  // Bring item layer forward
+  const handleBringForward = (instanceId: string) => {
+    setPlacedItems((prev) => {
+      const maxZ = prev.reduce((max, i) => Math.max(max, i.zIndex), 0);
+      return prev.map((item) =>
+        item.instanceId === instanceId ? { ...item, zIndex: maxZ + 1 } : item
+      );
+    });
+  };
+
+  // Send item layer backward
+  const handleSendBackward = (instanceId: string) => {
+    setPlacedItems((prev) => {
+      const minZ = prev.reduce((min, i) => Math.min(min, i.zIndex), 1);
+      return prev.map((item) =>
+        item.instanceId === instanceId ? { ...item, zIndex: Math.max(0, minZ - 1) } : item
+      );
+    });
+  };
+
+  // Reset transform to default category placement
+  const handleResetItemTransform = (instanceId: string) => {
+    setPlacedItems((prev) =>
+      prev.map((item) => {
+        if (item.instanceId !== instanceId) return item;
+        const cat = toBackendCategory(item.rackItem.product.category, item.rackItem.product.garmentType);
+        let defaultY = 0;
+        let defaultScale = 1.15;
+        if (cat === 'UPPER') {
+          defaultY = -65;
+        } else if (cat === 'LOWER') {
+          defaultY = 75;
+        } else if (cat === 'FULL_BODY') {
+          defaultY = 10;
+          defaultScale = 1.25;
+        }
+        return {
+          ...item,
+          x: 0,
+          y: defaultY,
+          scale: defaultScale,
+          rotation: 0,
+        };
+      })
+    );
+    toast.info('Đã đặt lại vị trí chuẩn cho món đồ');
+  };
+
+  // Remove a single item from canvas
+  const handleRemoveCanvasItem = (instanceId: string) => {
+    setPlacedItems((prev) => prev.filter((item) => item.instanceId !== instanceId));
+    if (selectedInstanceId === instanceId) {
+      setSelectedInstanceId(null);
     }
   };
 
   // Reset entire mannequin outfit
   const handleResetMannequin = () => {
-    setUpperItem(null);
-    setLowerItem(null);
-    setFullBodyItem(null);
+    setPlacedItems([]);
+    setSelectedInstanceId(null);
     toast.info('Đã làm mới ma-nơ-canh');
   };
 
@@ -152,9 +223,7 @@ export default function RackPage() {
     e.stopPropagation();
     unpinProduct(item.id, {
       onSuccess: () => {
-        if (upperItem?.productId === item.productId) setUpperItem(null);
-        if (lowerItem?.productId === item.productId) setLowerItem(null);
-        if (fullBodyItem?.productId === item.productId) setFullBodyItem(null);
+        setPlacedItems((prev) => prev.filter((p) => p.rackItem.productId !== item.productId));
         toast.info(`Đã xóa "${item.product.name}" khỏi Tủ đồ`);
       },
       onError: () => {
@@ -179,20 +248,35 @@ export default function RackPage() {
 
   // Navigate to try-on studio with selected combination
   const handleGoToTryOn = () => {
-    const selectedList: RackItem[] = [];
-    if (fullBodyItem) {
-      selectedList.push(fullBodyItem);
-    } else {
-      if (upperItem) selectedList.push(upperItem);
-      if (lowerItem) selectedList.push(lowerItem);
-    }
-
-    if (selectedList.length === 0) {
+    if (placedItems.length === 0) {
       toast.error('Vui lòng gắn ít nhất 1 món đồ lên ma-nơ-canh để thử');
       return;
     }
 
-    const ids = selectedList.map(i => i.productId).join(',');
+    // Try-on studio supports up to 2 items (1 Upper + 1 Lower, or 1 Full body, or first 2 items)
+    let selected = [...placedItems];
+    const fullBody = selected.find(
+      (i) => toBackendCategory(i.rackItem.product.category, i.rackItem.product.garmentType) === 'FULL_BODY'
+    );
+
+    if (fullBody) {
+      selected = [fullBody];
+    } else if (selected.length > 2) {
+      const upper = selected.find(
+        (i) => toBackendCategory(i.rackItem.product.category, i.rackItem.product.garmentType) === 'UPPER'
+      );
+      const lower = selected.find(
+        (i) => toBackendCategory(i.rackItem.product.category, i.rackItem.product.garmentType) === 'LOWER'
+      );
+      if (upper && lower) {
+        selected = [upper, lower];
+      } else {
+        selected = selected.slice(0, 2);
+      }
+      toast.info('Phòng thử AI hỗ trợ tối đa 2 món, đã chọn 2 trang phục chính');
+    }
+
+    const ids = selected.map((i) => i.rackItem.productId).join(',');
     router.push(`/try-on?rackIds=${ids}`);
   };
 
@@ -463,12 +547,14 @@ export default function RackPage() {
             {/* Right Column: Virtual Mannequin Studio (5 cols on lg, sticky) */}
             <div className="lg:col-span-5 xl:col-span-5 sticky top-24">
               <MannequinDressForm
-                upperItem={upperItem}
-                lowerItem={lowerItem}
-                fullBodyItem={fullBodyItem}
-                onRemoveUpper={() => setUpperItem(null)}
-                onRemoveLower={() => setLowerItem(null)}
-                onRemoveFullBody={() => setFullBodyItem(null)}
+                placedItems={placedItems}
+                selectedId={selectedInstanceId}
+                onSelect={setSelectedInstanceId}
+                onUpdateTransform={handleUpdateTransform}
+                onBringForward={handleBringForward}
+                onSendBackward={handleSendBackward}
+                onResetItemTransform={handleResetItemTransform}
+                onRemoveItem={handleRemoveCanvasItem}
                 onReset={handleResetMannequin}
                 onGoToTryOn={handleGoToTryOn}
               />
