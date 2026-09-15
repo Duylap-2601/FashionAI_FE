@@ -8,10 +8,11 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { toBackendCategory } from '@/features/products/services/products-utils';
 import { MannequinDressForm } from '@/features/rack/components/MannequinDressForm';
 import { useClearRack, useRackItems, useUnpinFromRack } from '@/features/rack/hooks/useRack';
-import type { BackendRackProduct, RackItem } from '@/features/rack/types/rack';
+import type { BackendRackProduct, CanvasPlacedItem, RackItem } from '@/features/rack/types/rack';
 import {
   Check,
   ChevronRight,
+  Move,
   Plus,
   RefreshCw, Search,
   ShoppingBag,
@@ -48,29 +49,28 @@ function formatPrice(price: string | number): string {
   return String(price || '0');
 }
 
-function getCategoryBadge(catStr?: string) {
-  const backendCat = toBackendCategory(catStr);
+function getCategoryBadge(catStr?: string, garmentType?: string | null) {
+  const backendCat = toBackendCategory(catStr, garmentType);
   switch (backendCat) {
     case 'UPPER':
-      return { label: 'Áo / Blazer', bg: 'bg-blue-50 text-blue-700 border-blue-200' };
+      return { label: 'Áo / Top', bg: 'bg-blue-50 text-blue-700 border-blue-200' };
     case 'LOWER':
       return { label: 'Quần / Váy', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
     case 'FULL_BODY':
-      return { label: 'Bộ liền / Suit', bg: 'bg-purple-50 text-purple-700 border-purple-200' };
+      return { label: 'Bộ liền / Đầm', bg: 'bg-purple-50 text-purple-700 border-purple-200' };
   }
 }
 
 export default function RackPage() {
   const router = useRouter();
   const status = useAuthStore((state) => state.status);
-  const { items, isLoading, isError, refetch } = useRackItems();
+  const { items, isLoading } = useRackItems();
   const { unpinProduct, isUnpinning } = useUnpinFromRack();
   const { clearRack, isClearing } = useClearRack();
 
-  // Mannequin Outfit Slot States
-  const [upperItem, setUpperItem] = useState<RackItem | null>(null);
-  const [lowerItem, setLowerItem] = useState<RackItem | null>(null);
-  const [fullBodyItem, setFullBodyItem] = useState<RackItem | null>(null);
+  // Freeform Canvas State
+  const [placedItems, setPlacedItems] = useState<CanvasPlacedItem[]>([]);
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
   // Tab & Search filter for wardrobe
   const [currentTab, setCurrentTab] = useState<TabType>('ALL');
@@ -80,7 +80,7 @@ export default function RackPage() {
   // Filtered wardrobe items
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const cat = toBackendCategory(item.product.category);
+      const cat = toBackendCategory(item.product.category, item.product.garmentType);
       if (currentTab !== 'ALL' && cat !== currentTab) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -92,58 +92,166 @@ export default function RackPage() {
     });
   }, [items, currentTab, searchQuery]);
 
-  // Check if an item is currently placed on mannequin
+  // Check if an item is currently placed on mannequin canvas
   const isItemWorn = (productId: string) => {
-    return (
-      upperItem?.productId === productId ||
-      lowerItem?.productId === productId ||
-      fullBodyItem?.productId === productId
-    );
+    return placedItems.some((item) => item.rackItem.productId === productId);
   };
 
   // Handle clicking an item from wardrobe to wear/remove on mannequin
   const handleItemClick = (item: RackItem) => {
-    const cat = toBackendCategory(item.product.category);
-    const worn = isItemWorn(item.productId);
+    const existingIndex = placedItems.findIndex((p) => p.rackItem.productId === item.productId);
 
-    if (worn) {
-      // Remove item
-      if (upperItem?.productId === item.productId) setUpperItem(null);
-      if (lowerItem?.productId === item.productId) setLowerItem(null);
-      if (fullBodyItem?.productId === item.productId) setFullBodyItem(null);
+    if (existingIndex !== -1) {
+      // Toggle off: remove from canvas
+      const removed = placedItems[existingIndex];
+      setPlacedItems((prev) => prev.filter((_, idx) => idx !== existingIndex));
+      if (selectedInstanceId === removed.instanceId) {
+        setSelectedInstanceId(null);
+      }
       toast.info(`Đã gỡ "${item.product.name}" khỏi ma-nơ-canh`);
       return;
     }
 
-    // Wear item based on category
-    if (cat === 'FULL_BODY') {
-      setFullBodyItem(item);
-      setUpperItem(null);
-      setLowerItem(null);
-      toast.success(`Đã mặc "${item.product.name}" lên ma-nơ-canh`);
-      return;
-    }
+    // Add to canvas with smart initial position based on category
+    const cat = toBackendCategory(item.product.category, item.product.garmentType);
+    const maxZ = placedItems.reduce((max, i) => Math.max(max, i.zIndex), 0);
+    const instanceId = `${item.id}-${Date.now()}`;
+
+    let defaultY = 0;
+    let defaultScale = 1.15;
 
     if (cat === 'UPPER') {
-      setFullBodyItem(null);
-      setUpperItem(item);
-      toast.success(`Đã gắn áo "${item.product.name}" vào ma-nơ-canh`);
+      defaultY = -65;
+      defaultScale = 1.15;
+    } else if (cat === 'LOWER') {
+      defaultY = 75;
+      defaultScale = 1.15;
+    } else if (cat === 'FULL_BODY') {
+      defaultY = 10;
+      defaultScale = 1.25;
+    }
+
+    const newItem: CanvasPlacedItem = {
+      instanceId,
+      rackItem: item,
+      x: 0,
+      y: defaultY,
+      scale: defaultScale,
+      zIndex: maxZ + 1,
+      rotation: 0,
+    };
+
+    setPlacedItems((prev) => [...prev, newItem]);
+    setSelectedInstanceId(instanceId);
+    toast.success(`Đã thêm "${item.product.name}" lên ma-nơ-canh`);
+  };
+
+  // Handle dropping an item directly from wardrobe onto canvas
+  const handleDropItem = (productId: string, dropX: number, dropY: number) => {
+    const item = items.find((i) => i.productId === productId);
+    if (!item) return;
+
+    const existingIndex = placedItems.findIndex((p) => p.rackItem.productId === productId);
+    if (existingIndex !== -1) {
+      const target = placedItems[existingIndex];
+      handleUpdateTransform(target.instanceId, { x: dropX, y: dropY });
+      setSelectedInstanceId(target.instanceId);
+      toast.info(`Đã di chuyển "${item.product.name}" đến vị trí mới`);
       return;
     }
 
-    if (cat === 'LOWER') {
-      setFullBodyItem(null);
-      setLowerItem(item);
-      toast.success(`Đã gắn quần/váy "${item.product.name}" vào ma-nơ-canh`);
-      return;
+    const cat = toBackendCategory(item.product.category, item.product.garmentType);
+    const maxZ = placedItems.reduce((max, i) => Math.max(max, i.zIndex), 0);
+    const instanceId = `${item.id}-${Date.now()}`;
+
+    let defaultScale = 1.15;
+    if (cat === 'FULL_BODY') defaultScale = 1.25;
+
+    const newItem: CanvasPlacedItem = {
+      instanceId,
+      rackItem: item,
+      x: dropX,
+      y: dropY,
+      scale: defaultScale,
+      zIndex: maxZ + 1,
+      rotation: 0,
+    };
+
+    setPlacedItems((prev) => [...prev, newItem]);
+    setSelectedInstanceId(instanceId);
+    toast.success(`Đã ướm "${item.product.name}" lên studio`);
+  };
+
+  // Update item transform on canvas
+  const handleUpdateTransform = (
+    instanceId: string,
+    updates: Partial<Pick<CanvasPlacedItem, 'x' | 'y' | 'scale' | 'rotation' | 'zIndex'>>
+  ) => {
+    setPlacedItems((prev) =>
+      prev.map((item) => (item.instanceId === instanceId ? { ...item, ...updates } : item))
+    );
+  };
+
+  // Bring item layer forward
+  const handleBringForward = (instanceId: string) => {
+    setPlacedItems((prev) => {
+      const maxZ = prev.reduce((max, i) => Math.max(max, i.zIndex), 0);
+      return prev.map((item) =>
+        item.instanceId === instanceId ? { ...item, zIndex: maxZ + 1 } : item
+      );
+    });
+  };
+
+  // Send item layer backward
+  const handleSendBackward = (instanceId: string) => {
+    setPlacedItems((prev) => {
+      const minZ = prev.reduce((min, i) => Math.min(min, i.zIndex), 1);
+      return prev.map((item) =>
+        item.instanceId === instanceId ? { ...item, zIndex: Math.max(0, minZ - 1) } : item
+      );
+    });
+  };
+
+  // Reset transform to default category placement
+  const handleResetItemTransform = (instanceId: string) => {
+    setPlacedItems((prev) =>
+      prev.map((item) => {
+        if (item.instanceId !== instanceId) return item;
+        const cat = toBackendCategory(item.rackItem.product.category, item.rackItem.product.garmentType);
+        let defaultY = 0;
+        let defaultScale = 1.15;
+        if (cat === 'UPPER') {
+          defaultY = -65;
+        } else if (cat === 'LOWER') {
+          defaultY = 75;
+        } else if (cat === 'FULL_BODY') {
+          defaultY = 10;
+          defaultScale = 1.25;
+        }
+        return {
+          ...item,
+          x: 0,
+          y: defaultY,
+          scale: defaultScale,
+          rotation: 0,
+        };
+      })
+    );
+    toast.info('Đã đặt lại vị trí chuẩn cho món đồ');
+  };
+
+  // Remove a single item from canvas
+  const handleRemoveCanvasItem = (instanceId: string) => {
+    setPlacedItems((prev) => prev.filter((item) => item.instanceId !== instanceId));
+    if (selectedInstanceId === instanceId) {
+      setSelectedInstanceId(null);
     }
   };
 
   // Reset entire mannequin outfit
   const handleResetMannequin = () => {
-    setUpperItem(null);
-    setLowerItem(null);
-    setFullBodyItem(null);
+    setPlacedItems([]);
+    setSelectedInstanceId(null);
     toast.info('Đã làm mới ma-nơ-canh');
   };
 
@@ -152,9 +260,7 @@ export default function RackPage() {
     e.stopPropagation();
     unpinProduct(item.id, {
       onSuccess: () => {
-        if (upperItem?.productId === item.productId) setUpperItem(null);
-        if (lowerItem?.productId === item.productId) setLowerItem(null);
-        if (fullBodyItem?.productId === item.productId) setFullBodyItem(null);
+        setPlacedItems((prev) => prev.filter((p) => p.rackItem.productId !== item.productId));
         toast.info(`Đã xóa "${item.product.name}" khỏi Tủ đồ`);
       },
       onError: () => {
@@ -179,20 +285,35 @@ export default function RackPage() {
 
   // Navigate to try-on studio with selected combination
   const handleGoToTryOn = () => {
-    const selectedList: RackItem[] = [];
-    if (fullBodyItem) {
-      selectedList.push(fullBodyItem);
-    } else {
-      if (upperItem) selectedList.push(upperItem);
-      if (lowerItem) selectedList.push(lowerItem);
-    }
-
-    if (selectedList.length === 0) {
+    if (placedItems.length === 0) {
       toast.error('Vui lòng gắn ít nhất 1 món đồ lên ma-nơ-canh để thử');
       return;
     }
 
-    const ids = selectedList.map(i => i.productId).join(',');
+    // Try-on studio supports up to 2 items (1 Upper + 1 Lower, or 1 Full body, or first 2 items)
+    let selected = [...placedItems];
+    const fullBody = selected.find(
+      (i) => toBackendCategory(i.rackItem.product.category, i.rackItem.product.garmentType) === 'FULL_BODY'
+    );
+
+    if (fullBody) {
+      selected = [fullBody];
+    } else if (selected.length > 2) {
+      const upper = selected.find(
+        (i) => toBackendCategory(i.rackItem.product.category, i.rackItem.product.garmentType) === 'UPPER'
+      );
+      const lower = selected.find(
+        (i) => toBackendCategory(i.rackItem.product.category, i.rackItem.product.garmentType) === 'LOWER'
+      );
+      if (upper && lower) {
+        selected = [upper, lower];
+      } else {
+        selected = selected.slice(0, 2);
+      }
+      toast.info('Phòng thử AI hỗ trợ tối đa 2 món, đã chọn 2 trang phục chính');
+    }
+
+    const ids = selected.map((i) => i.rackItem.productId).join(',');
     router.push(`/try-on?rackIds=${ids}`);
   };
 
@@ -200,7 +321,7 @@ export default function RackPage() {
   const categoryCounts = useMemo(() => {
     const counts = { ALL: items.length, UPPER: 0, LOWER: 0, FULL_BODY: 0 };
     items.forEach(item => {
-      const cat = toBackendCategory(item.product.category);
+      const cat = toBackendCategory(item.product.category, item.product.garmentType);
       if (counts[cat] !== undefined) {
         counts[cat]++;
       }
@@ -301,8 +422,8 @@ export default function RackPage() {
         {/* 2-Column Mix & Match Layout */}
         {!isLoading && items.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-            {/* Left Column: Wardrobe Inventory (7 cols on lg) */}
-            <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-4">
+            {/* Left Column: Wardrobe Inventory (5 cols on lg) */}
+            <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-4">
               {/* Filter Tabs & Search */}
               <div className="bg-white border border-neutral-200/80 rounded-2xl p-4 shadow-xs flex flex-col gap-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -373,17 +494,23 @@ export default function RackPage() {
                   <p className="text-body-sm text-neutral-500">Không tìm thấy món đồ phù hợp trong mục này.</p>
                 </div>
               ) : (
-                <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+                <StaggerContainer className="grid grid-cols-2 gap-3 sm:gap-4">
                   {filteredItems.map((item) => {
                     const worn = isItemWorn(item.productId);
-                    const badge = getCategoryBadge(item.product.category);
+                    const badge = getCategoryBadge(item.product.category, item.product.garmentType);
                     const imageUrl = getProductImage(item.product);
 
                     return (
                       <StaggerItem key={item.id}>
                         <div
+                          draggable={true}
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('application/json', JSON.stringify({ productId: item.productId }));
+                            e.dataTransfer.setData('text/plain', item.productId);
+                            e.dataTransfer.effectAllowed = 'copy';
+                          }}
                           onClick={() => handleItemClick(item)}
-                          className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-200 shadow-2xs hover:shadow-md ${worn
+                          className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all duration-200 shadow-2xs hover:shadow-md ${worn
                               ? 'border-[#5D1C34] ring-3 ring-[#5D1C34]/20 shadow-md bg-[#5D1C34]/[0.02]'
                               : 'border-neutral-200 hover:border-neutral-300'
                             }`}
@@ -393,12 +520,18 @@ export default function RackPage() {
                             <img
                               src={imageUrl}
                               alt={item.product.name}
+                              draggable={false}
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).src =
                                   '/images/731163514_999523332788054_1114320478812927640_n.png';
                               }}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 select-none pointer-events-none"
                             />
+
+                            {/* Drag hint on hover */}
+                            <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[9px] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pointer-events-none">
+                              <Move className="w-2.5 h-2.5" /> Kéo vào studio
+                            </div>
 
                             {/* Worn Indicator Overlay */}
                             <div
@@ -460,17 +593,20 @@ export default function RackPage() {
               )}
             </div>
 
-            {/* Right Column: Virtual Mannequin Studio (5 cols on lg, sticky) */}
-            <div className="lg:col-span-5 xl:col-span-5 sticky top-24">
+            {/* Right Column: Virtual Mannequin Studio (7 cols on lg, expanded spacious stage) */}
+            <div className="lg:col-span-7 xl:col-span-7 sticky top-24">
               <MannequinDressForm
-                upperItem={upperItem}
-                lowerItem={lowerItem}
-                fullBodyItem={fullBodyItem}
-                onRemoveUpper={() => setUpperItem(null)}
-                onRemoveLower={() => setLowerItem(null)}
-                onRemoveFullBody={() => setFullBodyItem(null)}
+                placedItems={placedItems}
+                selectedId={selectedInstanceId}
+                onSelect={setSelectedInstanceId}
+                onUpdateTransform={handleUpdateTransform}
+                onBringForward={handleBringForward}
+                onSendBackward={handleSendBackward}
+                onResetItemTransform={handleResetItemTransform}
+                onRemoveItem={handleRemoveCanvasItem}
                 onReset={handleResetMannequin}
                 onGoToTryOn={handleGoToTryOn}
+                onDropItem={handleDropItem}
               />
             </div>
           </div>

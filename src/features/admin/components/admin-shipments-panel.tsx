@@ -12,13 +12,13 @@ export function AdminShipmentsPanel({ shipments, filters, setFilters, onView, on
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
+    <div className="flex flex-col gap-6 flex-1 min-h-0">
+      <div className="shrink-0">
         <h1 className="text-heading-h2 font-bold text-neutral-900">Quản lý Vận đơn</h1>
         <p className="text-body-sm text-neutral-500 mt-1">Theo dõi GHN, đồng bộ trạng thái và xử lý ngoại lệ giao hàng</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 grid grid-cols-1 md:grid-cols-4 gap-3 shrink-0">
         <div className="relative md:col-span-2">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input value={filters.providerOrderCode || ''} onChange={e => updateFilter('providerOrderCode', e.target.value)} placeholder="Tìm mã GHN" className="w-full h-10 pl-9 pr-3 rounded-lg border border-neutral-300 text-body-sm" />
@@ -37,22 +37,22 @@ export function AdminShipmentsPanel({ shipments, filters, setFilters, onView, on
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[1180px]">
-            <thead>
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="overflow-auto flex-1 min-h-0">
+          <table className="w-full text-left min-w-[1180px] border-collapse">
+            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
               <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
-                <th className="px-5 py-3">Mã GHN</th>
-                <th className="px-4 py-3">Mã đơn</th>
-                <th className="px-4 py-3">Khách hàng</th>
-                <th className="px-4 py-3">Điện thoại</th>
-                <th className="px-4 py-3">Provider</th>
-                <th className="px-4 py-3">Trạng thái</th>
-                <th className="px-4 py-3">Raw</th>
-                <th className="px-4 py-3 text-right">Phí</th>
-                <th className="px-4 py-3">Dự kiến giao</th>
-                <th className="px-4 py-3">Sync cuối</th>
-                <th className="px-5 py-3"></th>
+                <th className="px-5 py-3 bg-neutral-50">Mã GHN</th>
+                <th className="px-4 py-3 bg-neutral-50">Mã đơn</th>
+                <th className="px-4 py-3 bg-neutral-50">Khách hàng</th>
+                <th className="px-4 py-3 bg-neutral-50">Điện thoại</th>
+                <th className="px-4 py-3 bg-neutral-50">Provider</th>
+                <th className="px-4 py-3 bg-neutral-50">Trạng thái</th>
+                <th className="px-4 py-3 bg-neutral-50">Raw</th>
+                <th className="px-4 py-3 text-right bg-neutral-50">Phí</th>
+                <th className="px-4 py-3 bg-neutral-50">Dự kiến giao</th>
+                <th className="px-4 py-3 bg-neutral-50">Sync cuối</th>
+                <th className="px-5 py-3 bg-neutral-50"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 text-body-sm">

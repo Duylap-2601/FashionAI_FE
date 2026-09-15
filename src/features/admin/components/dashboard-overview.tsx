@@ -10,27 +10,18 @@ import {
   Clock,
   CreditCard,
   Package,
-  RefreshCw,
   ShoppingBag,
   Truck,
   Users,
   XCircle
 } from 'lucide-react';
 
-export function DashboardOverview({ setIsLoading, fetchProducts, fetchOrders, fetchUsers, fetchStats, totalRevenue, avgOrderValue, totalOrders, pendingOrders, deliveredOrders, totalProducts, activeProducts, outOfStockCount, totalUsers, memberUsers, vipUsers, users, setActiveTab, shippingOrders, cancelledOrders, setChartDays, setHoveredPoint, chartDays, renderRevenueChart, orders, setSelectedOrder, products, openProductEditor }: DashboardOverviewProps) {
+export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pendingOrders, deliveredOrders, totalProducts, activeProducts, outOfStockCount, totalUsers, memberUsers, vipUsers, users, setActiveTab, shippingOrders, cancelledOrders, setChartDays, setHoveredPoint, chartDays, renderRevenueChart, orders, setSelectedOrder, products, openProductEditor }: DashboardOverviewProps) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-heading-h2 font-bold text-neutral-900">Tổng quan kinh doanh</h1>
-          <p className="text-body-sm text-neutral-500 mt-1">Theo dõi doanh thu, trạng thái đơn hàng, kho sản phẩm và thành viên</p>
-        </div>
-        <button
-          onClick={() => { setIsLoading(true); Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchStats()]).finally(() => setIsLoading(false)); }}
-          className="px-4 py-2.5 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-sm font-bold border-0 cursor-pointer flex items-center gap-2"
-        >
-          <RefreshCw className="w-4 h-4" /> Làm mới
-        </button>
+      <div>
+        <h1 className="text-heading-h2 font-bold text-neutral-900">Tổng quan kinh doanh</h1>
+        <p className="text-body-sm text-neutral-500 mt-1">Theo dõi doanh thu, trạng thái đơn hàng, kho sản phẩm và thành viên</p>
       </div>
 
       {/* Metrics cards */}

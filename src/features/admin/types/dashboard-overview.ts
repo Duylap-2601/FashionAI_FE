@@ -2,11 +2,6 @@ import type { AdminOrder, AdminPage, AdminProduct, AdminUser } from '@/features/
 import React from 'react';
 
 export interface DashboardOverviewProps {
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  fetchProducts: () => Promise<void>;
-  fetchOrders: () => Promise<void>;
-  fetchUsers: () => Promise<void>;
-  fetchStats: () => Promise<void>;
   totalRevenue: number;
   avgOrderValue: number;
   totalOrders: number;

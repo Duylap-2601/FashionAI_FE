@@ -16,7 +16,13 @@ const RealtimeProvider = dynamic(
   { ssr: false },
 );
 
+const NativeBackButtonHandler = dynamic(
+  () => import('@/components/native/NativeBackButtonHandler').then((mod) => mod.NativeBackButtonHandler),
+  { ssr: false },
+);
+
 export function Providers({ children }: { children: React.ReactNode }) {
+
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'development' || !('serviceWorker' in navigator)) return;
@@ -58,6 +64,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         {children}
         <Toaster />
         <InstallPrompt />
+        <NativeBackButtonHandler />
       </RealtimeProvider>
     </QueryClientProvider>
   );

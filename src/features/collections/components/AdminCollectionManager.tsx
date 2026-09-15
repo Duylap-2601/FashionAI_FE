@@ -201,9 +201,9 @@ export function AdminCollectionManager() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 flex-1 min-h-0">
       {/* Top action bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-xs shrink-0">
         <div>
           <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2.5">
             <Layers className="w-5 h-5 text-[#5D1C34]" />
@@ -217,7 +217,7 @@ export function AdminCollectionManager() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleOpenNew}
-            className="h-10 px-5 rounded-xl bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer"
+            className="h-10 px-5 rounded-xl bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Thêm bộ sưu tập</span>
@@ -226,7 +226,7 @@ export function AdminCollectionManager() {
       </div>
 
       {/* Search Filter & Status Summary */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input
@@ -244,18 +244,18 @@ export function AdminCollectionManager() {
       </div>
 
       {/* Table list */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-xs flex flex-col flex-1 min-h-0">
+        <div className="overflow-auto flex-1 min-h-0">
           <table className="w-full text-left border-collapse">
-            <thead>
+            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
               <tr className="bg-neutral-50 border-b border-neutral-200 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                <th className="py-3.5 px-4">Ảnh bìa</th>
-                <th className="py-3.5 px-4">Tên bộ sưu tập</th>
-                <th className="py-3.5 px-4">Thứ tự</th>
-                <th className="py-3.5 px-4">Mùa / Season</th>
-                <th className="py-3.5 px-4">Sản phẩm thuộc BST</th>
-                <th className="py-3.5 px-4">Trạng thái Landing Page</th>
-                <th className="py-3.5 px-4 text-right">Thao tác</th>
+                <th className="py-3.5 px-4 bg-neutral-50">Ảnh bìa</th>
+                <th className="py-3.5 px-4 bg-neutral-50">Tên bộ sưu tập</th>
+                <th className="py-3.5 px-4 bg-neutral-50">Thứ tự</th>
+                <th className="py-3.5 px-4 bg-neutral-50">Mùa / Season</th>
+                <th className="py-3.5 px-4 bg-neutral-50">Sản phẩm thuộc BST</th>
+                <th className="py-3.5 px-4 bg-neutral-50">Trạng thái Landing Page</th>
+                <th className="py-3.5 px-4 text-right bg-neutral-50">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 text-body-sm">

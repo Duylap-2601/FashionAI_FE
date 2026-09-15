@@ -6,24 +6,24 @@ import type { AdminOrdersPanelProps } from '@/features/admin/types/admin-orders-
 
 export function AdminOrdersPanel({ orders, setSelectedOrder }: AdminOrdersPanelProps) {
   return (
-    <div className="flex flex-col gap-6">
-      <div>
+    <div className="flex flex-col gap-6 flex-1 min-h-0">
+      <div className="shrink-0">
         <h1 className="text-heading-h2 font-bold text-neutral-900">Quản lý Đơn hàng</h1>
         <p className="text-body-sm text-neutral-500 mt-1">Theo dõi, kiểm tra thanh toán và chuyển trạng thái vận chuyển</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="overflow-auto flex-1 min-h-0">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
               <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
-                <th className="px-6 py-3">Mã đơn</th>
-                <th className="px-4 py-3">Khách hàng</th>
-                <th className="px-4 py-3 text-right">Tổng tiền</th>
-                <th className="px-4 py-3">Vận đơn</th>
-                <th className="px-4 py-3">Ngày đặt</th>
-                <th className="px-4 py-3">Trạng thái</th>
-                <th className="px-6 py-3"></th>
+                <th className="px-6 py-3 bg-neutral-50">Mã đơn</th>
+                <th className="px-4 py-3 bg-neutral-50">Khách hàng</th>
+                <th className="px-4 py-3 text-right bg-neutral-50">Tổng tiền</th>
+                <th className="px-4 py-3 bg-neutral-50">Vận đơn</th>
+                <th className="px-4 py-3 bg-neutral-50">Ngày đặt</th>
+                <th className="px-4 py-3 bg-neutral-50">Trạng thái</th>
+                <th className="px-6 py-3 bg-neutral-50"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 text-body-sm">

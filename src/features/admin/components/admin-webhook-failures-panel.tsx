@@ -12,25 +12,25 @@ const REASON_LABEL: Record<string, string> = {
 
 export function AdminWebhookFailuresPanel({ failures, onResolve }: AdminWebhookFailuresPanelProps) {
   return (
-    <div className="flex flex-col gap-6">
-      <div>
+    <div className="flex flex-col gap-6 flex-1 min-h-0">
+      <div className="shrink-0">
         <h1 className="text-heading-h2 font-bold text-neutral-900">Giao dịch chưa khớp đơn hàng</h1>
         <p className="text-body-sm text-neutral-500 mt-1">
           Các webhook thanh toán từ SePay mà hệ thống không tự xử lý được (sai nội dung chuyển khoản, không tìm thấy đơn, sai số tiền...). Kiểm tra kỹ trước khi dùng &quot;Xác nhận thanh toán thủ công&quot; ở trang Đơn hàng.
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="overflow-auto flex-1 min-h-0">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
               <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
-                <th className="px-6 py-3">Thời gian</th>
-                <th className="px-4 py-3">Nguồn</th>
-                <th className="px-4 py-3">Lý do</th>
-                <th className="px-4 py-3">Mã đơn (nếu có)</th>
-                <th className="px-4 py-3">Chi tiết</th>
-                <th className="px-6 py-3"></th>
+                <th className="px-6 py-3 bg-neutral-50">Thời gian</th>
+                <th className="px-4 py-3 bg-neutral-50">Nguồn</th>
+                <th className="px-4 py-3 bg-neutral-50">Lý do</th>
+                <th className="px-4 py-3 bg-neutral-50">Mã đơn (nếu có)</th>
+                <th className="px-4 py-3 bg-neutral-50">Chi tiết</th>
+                <th className="px-6 py-3 bg-neutral-50"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 text-body-sm">
