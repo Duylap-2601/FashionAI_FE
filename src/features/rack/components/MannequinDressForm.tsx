@@ -184,10 +184,10 @@ function DraggableCanvasItem({
               onRemoveItem(item.instanceId);
             }}
             onPointerDown={(e) => e.stopPropagation()}
-            className="absolute -top-3 -right-3 z-40 w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer"
+            className="absolute -top-3 -right-3 z-40 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer"
             title="Gỡ món đồ này"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
 
           {/* Layer order pill */}
@@ -233,45 +233,47 @@ export function MannequinDressForm({
   return (
     <div className="relative bg-gradient-to-b from-[#FAF7F2] via-[#F6EFEB] to-[#EFE6DE] rounded-3xl p-4 sm:p-5 md:p-6 text-neutral-900 border border-[#E3D9CE] shadow-xl overflow-hidden flex flex-col justify-between select-none">
       {/* Studio Lighting Background Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-88 h-88 bg-radial from-white via-amber-100/30 to-transparent rounded-full blur-2xl pointer-events-none" />
-      <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-[#5D1C34]/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-radial from-white via-amber-100/30 to-transparent rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-[#5D1C34]/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
-      <div className="relative z-10 flex items-center justify-between border-b border-[#E2D8CC] pb-3 mb-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#5D1C34] text-white flex items-center justify-center shadow-sm">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-[#E2D8CC] pb-3 mb-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-[#5D1C34] text-white flex items-center justify-center shadow-sm shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
-          <div>
-            <h3 className="text-body-md font-bold text-[#1F242D] flex items-center gap-2">
-              Studio Phối Đồ Tự Do
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-body-md sm:text-body-lg font-bold text-[#1F242D] whitespace-nowrap">
+                Studio Phối Đồ Tự Do
+              </h3>
               {placedItems.length >= 2 && (
-                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 animate-in fade-in">
+                <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0 whitespace-nowrap animate-in fade-in">
                   Đủ Bộ ({placedItems.length} món) ✨
                 </span>
               )}
-            </h3>
-            <p className="text-[11px] text-neutral-500">
-              Kéo trực tiếp từ tủ đồ vào studio, tự do di chuyển và phóng to thu nhỏ
+            </div>
+            <p className="text-xs text-neutral-500 truncate">
+              Kéo thả trang phục khắp khung canvas, điều chỉnh kích thước tùy thích
             </p>
           </div>
         </div>
 
         {/* Studio Controls Header */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Toggle Mannequin Silhouette */}
           <button
             type="button"
             onClick={() => setShowMannequin((prev) => !prev)}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all border shadow-2xs cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border shadow-2xs cursor-pointer ${
               showMannequin
                 ? 'bg-white text-neutral-800 border-[#E2D8CC] hover:bg-neutral-50'
-                : 'bg-neutral-200/80 text-neutral-500 border-neutral-300'
+                : 'bg-neutral-200/90 text-neutral-600 border-neutral-300'
             }`}
             title={showMannequin ? 'Ẩn ma-nơ-canh (chế độ flat-lay)' : 'Hiện ma-nơ-canh'}
           >
             {showMannequin ? <Eye className="w-3.5 h-3.5 text-[#5D1C34]" /> : <EyeOff className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Ma-nơ-canh</span>
+            <span>{showMannequin ? 'Ẩn ma-nơ-canh' : 'Hiện ma-nơ-canh'}</span>
           </button>
 
           {/* Reset Canvas Button */}
@@ -279,119 +281,139 @@ export function MannequinDressForm({
             <button
               type="button"
               onClick={onReset}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 text-xs font-semibold transition-all border border-neutral-200 shadow-2xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-rose-50 text-neutral-700 hover:text-rose-600 text-xs font-semibold whitespace-nowrap transition-all border border-neutral-200 shadow-2xs cursor-pointer"
               title="Tháo toàn bộ đồ trên ma-nơ-canh"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Tháo hết</span>
+              <span>Tháo hết</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Selected Item Floating Control Dock */}
+      {/* Selected Item Floating Control Dock - Spacious & Well Organized */}
       {selectedItem && (
-        <div className="relative z-30 mb-2 p-2.5 bg-white/95 backdrop-blur-md rounded-2xl border border-[#E2D8CC] shadow-md flex flex-wrap items-center justify-between gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-[#5D1C34] animate-pulse shrink-0" />
-            <span className="text-xs font-bold text-neutral-800 truncate max-w-[140px] sm:max-w-[190px]">
-              {selectedItem.rackItem.product.name}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Scale / Zoom Controller */}
-            <div className="flex items-center bg-neutral-100/90 rounded-xl p-0.5 border border-neutral-200 text-xs">
-              <button
-                type="button"
-                onClick={() =>
-                  onUpdateTransform(selectedItem.instanceId, {
-                    scale: Math.max(0.5, Number((selectedItem.scale - 0.1).toFixed(2))),
-                  })
-                }
-                className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-white text-neutral-700 transition-colors"
-                title="Thu nhỏ (-10%)"
-              >
-                <Minus className="w-3 h-3" />
-              </button>
-              <span className="px-2 font-mono font-bold text-[11px] text-[#5D1C34] min-w-11 text-center">
-                {Math.round(selectedItem.scale * 100)}%
+        <div className="relative z-30 mb-3 p-3 bg-white/95 backdrop-blur-md rounded-2xl border border-[#E2D8CC] shadow-md flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Row 1: Item Name & Quick Remove */}
+          <div className="flex items-center justify-between gap-2 border-b border-neutral-100 pb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#5D1C34] shrink-0" />
+              <span className="text-xs font-bold text-neutral-900 truncate">
+                {selectedItem.rackItem.product.name}
               </span>
-              <button
-                type="button"
-                onClick={() =>
-                  onUpdateTransform(selectedItem.instanceId, {
-                    scale: Math.min(2.5, Number((selectedItem.scale + 0.1).toFixed(2))),
-                  })
-                }
-                className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-white text-neutral-700 transition-colors"
-                title="Phóng to (+10%)"
-              >
-                <Plus className="w-3 h-3" />
-              </button>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-600 shrink-0">
+                Lớp {selectedItem.zIndex}
+              </span>
             </div>
 
-            {/* Scale Slider */}
-            <input
-              type="range"
-              min="0.5"
-              max="2.5"
-              step="0.05"
-              value={selectedItem.scale}
-              onChange={(e) =>
-                onUpdateTransform(selectedItem.instanceId, {
-                  scale: Number(e.target.value),
-                })
-              }
-              className="w-16 sm:w-20 accent-[#5D1C34] cursor-pointer"
-              title="Kéo thanh trượt để phóng to / thu nhỏ"
-            />
+            <button
+              type="button"
+              onClick={() => onRemoveItem(selectedItem.instanceId)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors shrink-0 cursor-pointer"
+              title="Gỡ món này khỏi ma-nơ-canh"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Gỡ món</span>
+            </button>
+          </div>
 
-            {/* Layer Control Buttons */}
-            <div className="flex items-center gap-0.5 border-l border-neutral-200 pl-1.5">
-              <button
-                type="button"
-                onClick={() => onBringForward(selectedItem.instanceId)}
-                className="w-7 h-7 rounded-lg hover:bg-neutral-100 flex items-center justify-center text-neutral-600 hover:text-neutral-900 transition-colors"
-                title="Đưa lên lớp trên"
-              >
-                <ArrowUp className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => onSendBackward(selectedItem.instanceId)}
-                className="w-7 h-7 rounded-lg hover:bg-neutral-100 flex items-center justify-center text-neutral-600 hover:text-neutral-900 transition-colors"
-                title="Đưa xuống lớp dưới"
-              >
-                <ArrowDown className="w-3.5 h-3.5" />
-              </button>
+          {/* Row 2: Distinct, Spaced Tool Groups */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Zoom / Scale Control */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-neutral-500 whitespace-nowrap">
+                Kích thước:
+              </span>
+              <div className="flex items-center bg-neutral-100 rounded-xl p-0.5 border border-neutral-200 text-xs">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdateTransform(selectedItem.instanceId, {
+                      scale: Math.max(0.5, Number((selectedItem.scale - 0.1).toFixed(2))),
+                    })
+                  }
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white text-neutral-700 transition-colors cursor-pointer font-bold"
+                  title="Thu nhỏ (-10%)"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="px-2.5 font-mono font-bold text-xs text-[#5D1C34] min-w-12 text-center">
+                  {Math.round(selectedItem.scale * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdateTransform(selectedItem.instanceId, {
+                      scale: Math.min(2.5, Number((selectedItem.scale + 0.1).toFixed(2))),
+                    })
+                  }
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white text-neutral-700 transition-colors cursor-pointer font-bold"
+                  title="Phóng to (+10%)"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Range Slider */}
+              <input
+                type="range"
+                min="0.5"
+                max="2.5"
+                step="0.05"
+                value={selectedItem.scale}
+                onChange={(e) =>
+                  onUpdateTransform(selectedItem.instanceId, {
+                    scale: Number(e.target.value),
+                  })
+                }
+                className="w-24 sm:w-32 accent-[#5D1C34] cursor-pointer"
+                title="Kéo để phóng to / thu nhỏ"
+              />
+            </div>
+
+            {/* Action Group: Layering & Reset */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-neutral-100 rounded-xl p-0.5 border border-neutral-200">
+                <button
+                  type="button"
+                  onClick={() => onBringForward(selectedItem.instanceId)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-white text-xs font-semibold text-neutral-700 transition-colors cursor-pointer whitespace-nowrap"
+                  title="Đưa lên lớp trước"
+                >
+                  <ArrowUp className="w-3.5 h-3.5 text-[#5D1C34]" />
+                  <span>Lên trên</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSendBackward(selectedItem.instanceId)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-white text-xs font-semibold text-neutral-700 transition-colors cursor-pointer whitespace-nowrap"
+                  title="Đưa xuống lớp sau"
+                >
+                  <ArrowDown className="w-3.5 h-3.5 text-neutral-600" />
+                  <span>Xuống dưới</span>
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={() => onResetItemTransform(selectedItem.instanceId)}
-                className="w-7 h-7 rounded-lg hover:bg-neutral-100 flex items-center justify-center text-neutral-600 hover:text-neutral-900 transition-colors"
-                title="Đặt lại vị trí chuẩn ma-nơ-canh"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 text-xs font-semibold text-neutral-700 transition-colors border border-neutral-200 cursor-pointer whitespace-nowrap"
+                title="Đặt lại vị trí chuẩn trên ma-nơ-canh"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => onRemoveItem(selectedItem.instanceId)}
-                className="w-7 h-7 rounded-lg hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors"
-                title="Gỡ món đồ này"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3.5 h-3.5 text-neutral-600" />
+                <span>Đặt lại</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Virtual Interactive Canvas Stage - Full Studio Card Width */}
-      <div className="relative z-10 flex-1 min-h-[580px] sm:min-h-[620px] flex flex-col items-center justify-center py-2">
+      {/* Virtual Interactive Canvas Stage - Generously Expanded Full Width & Height */}
+      <div className="relative z-10 flex-1 min-h-[640px] sm:min-h-[680px] flex flex-col items-center justify-center py-2">
         {/* Spotlight Circle Floor */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-88 h-16 bg-neutral-300/40 rounded-full blur-md pointer-events-none" />
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-96 h-16 bg-neutral-300/40 rounded-full blur-md pointer-events-none" />
 
-        {/* Studio Canvas Box: takes the full width and full height of the card */}
+        {/* Studio Canvas Box: takes the full width and expanded height */}
         <div
           ref={stageRef}
           onClick={() => onSelect(null)}
@@ -427,7 +449,7 @@ export function MannequinDressForm({
               onDropItem(productId, dropX, dropY);
             }
           }}
-          className={`relative w-full h-[580px] sm:h-[620px] flex items-center justify-center overflow-hidden rounded-3xl cursor-default transition-all duration-200 ${
+          className={`relative w-full h-[640px] sm:h-[680px] flex items-center justify-center overflow-hidden rounded-3xl cursor-default transition-all duration-200 ${
             isDragOver
               ? 'ring-3 ring-[#5D1C34] bg-[#5D1C34]/[0.04] border-2 border-dashed border-[#5D1C34]'
               : 'border border-neutral-200/40'

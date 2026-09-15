@@ -422,8 +422,8 @@ export default function RackPage() {
         {/* 2-Column Mix & Match Layout */}
         {!isLoading && items.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-            {/* Left Column: Wardrobe Inventory (7 cols on lg) */}
-            <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-4">
+            {/* Left Column: Wardrobe Inventory (5 cols on lg) */}
+            <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-4">
               {/* Filter Tabs & Search */}
               <div className="bg-white border border-neutral-200/80 rounded-2xl p-4 shadow-xs flex flex-col gap-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -494,7 +494,7 @@ export default function RackPage() {
                   <p className="text-body-sm text-neutral-500">Không tìm thấy món đồ phù hợp trong mục này.</p>
                 </div>
               ) : (
-                <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+                <StaggerContainer className="grid grid-cols-2 gap-3 sm:gap-4">
                   {filteredItems.map((item) => {
                     const worn = isItemWorn(item.productId);
                     const badge = getCategoryBadge(item.product.category, item.product.garmentType);
@@ -593,8 +593,8 @@ export default function RackPage() {
               )}
             </div>
 
-            {/* Right Column: Virtual Mannequin Studio (5 cols on lg, sticky) */}
-            <div className="lg:col-span-5 xl:col-span-5 sticky top-24">
+            {/* Right Column: Virtual Mannequin Studio (7 cols on lg, expanded spacious stage) */}
+            <div className="lg:col-span-7 xl:col-span-7 sticky top-24">
               <MannequinDressForm
                 placedItems={placedItems}
                 selectedId={selectedInstanceId}
