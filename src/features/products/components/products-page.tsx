@@ -8,11 +8,10 @@ import { DesktopFilterSidebar, MobileFilterSheet, MobileSortSheet } from '@/feat
 import { ProductList } from '@/features/products/components/listing/ProductList';
 import { ProductResultsHeader } from '@/features/products/components/listing/ProductResultsHeader';
 import { ProductToolbar } from '@/features/products/components/listing/ProductToolbar';
-import { SUB_CATEGORIES } from '@/features/products/constants/product-filters';
+import { GARMENT_TYPE_TABS, SUB_CATEGORIES } from '@/features/products/constants/product-filters';
 import { PRODUCTS } from '@/features/products/constants/products';
 import { ITEMS_PER_PAGE } from '@/features/products/constants/products-page';
 import { useInfiniteProducts, useProducts } from '@/features/products/hooks/useProducts';
-import { toBackendCategory } from '@/features/products/services/products-utils';
 import type { ActiveChip, SortBy } from '@/features/products/types/product-filters';
 import type { Product } from '@/features/products/types/products';
 import type { ProductListParams } from '@/features/products/types/products-hook';
@@ -23,14 +22,11 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-const DEFAULT_SORT_BY = 'Má»›i nháº¥t' as SortBy;
+const DEFAULT_SORT_BY: SortBy = 'Mới nhất';
 
 function toSortParam(sortBy: SortBy): ProductListParams['sort'] {
-  const value = String(sortBy).toLowerCase();
-  const lowIndex = value.indexOf('th');
-  const highIndex = value.indexOf('cao');
-  if (lowIndex >= 0 && highIndex >= 0 && lowIndex < highIndex) return 'price_asc';
-  if (lowIndex >= 0 && highIndex >= 0 && highIndex < lowIndex) return 'price_desc';
+  if (sortBy === 'Giá thấp đến cao') return 'price_asc';
+  if (sortBy === 'Giá cao đến thấp') return 'price_desc';
   return 'latest';
 }
 
@@ -47,7 +43,7 @@ export default function ProductListing() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('Táº¥t cáº£');
+  const [activeTab, setActiveTab] = useState<string>('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -71,7 +67,16 @@ export default function ProductListing() {
       setCurrentPage(1);
     };
 
-    applySearch(new URLSearchParams(window.location.search).get('search') ?? '');
+    const searchParams = new URLSearchParams(window.location.search);
+    applySearch(searchParams.get('search') ?? '');
+
+    const paramGarmentType = searchParams.get('garmentType');
+    if (paramGarmentType) {
+      const matchTab = GARMENT_TYPE_TABS.find(
+        (t) => t.garmentType === paramGarmentType || t.key === paramGarmentType
+      );
+      if (matchTab) setActiveTab(matchTab.label);
+    }
 
     const handleProductSearch = (event: Event) => {
       const nextSearch = (event as CustomEvent<string>).detail;
@@ -90,15 +95,22 @@ export default function ProductListing() {
     return () => window.clearTimeout(timeoutId);
   }, [searchQuery]);
 
+  const activeGarmentType = useMemo(() => {
+    const matchTab = GARMENT_TYPE_TABS.find(
+      (t) => t.label === activeTab || t.key === activeTab
+    );
+    return matchTab?.garmentType;
+  }, [activeTab]);
+
   const productQueryParams = useMemo<Omit<ProductListParams, 'page' | 'enabled'>>(() => ({
     limit: ITEMS_PER_PAGE,
     search: debouncedSearchQuery || undefined,
-    category: activeTab === 'Táº¥t cáº£' ? undefined : toBackendCategory(activeTab),
+    garmentType: activeGarmentType,
     color: selectedColors.length > 0 ? selectedColors.join(',') : undefined,
     subCategory: selectedSubCategories.length > 0 ? selectedSubCategories.join(',') : undefined,
     maxPrice: selectedMaxPrice ?? undefined,
     sort: toSortParam(sortBy),
-  }), [activeTab, debouncedSearchQuery, selectedColors, selectedMaxPrice, selectedSubCategories, sortBy]);
+  }), [activeGarmentType, debouncedSearchQuery, selectedColors, selectedMaxPrice, selectedSubCategories, sortBy]);
 
   const desktopQuery = useProducts({
     ...productQueryParams,
@@ -125,12 +137,12 @@ export default function ProductListing() {
   const totalPages = Math.max(1, queryMeta.totalPages);
   const hasMoreProducts = Boolean(isMobile && hasNextPage);
 
-  const categoryCounts = useMemo(() => ([
-    { label: 'Táº¥t cáº£', count: totalProducts },
-    { label: 'Ão' },
-    { label: 'Quáº§n & VÃ¡y' },
-    { label: 'Suit Ä‘áº§y Ä‘á»§' },
-  ]), [totalProducts]);
+  const categoryCounts = useMemo(() => (
+    GARMENT_TYPE_TABS.map((tab) => ({
+      label: tab.label,
+      count: tab.key === 'ALL' ? totalProducts : undefined,
+    }))
+  ), [totalProducts]);
 
   const subCategoryCounts = useMemo(() => SUB_CATEGORIES.map(sub => ({ name: sub.name })), []);
 
@@ -168,7 +180,7 @@ export default function ProductListing() {
   const handleClearAllFilters = () => {
     setSearchQuery('');
     setDebouncedSearchQuery('');
-    setActiveTab('Táº¥t cáº£');
+    setActiveTab('Tất cả');
     setSelectedColors([]);
     setSelectedSubCategories([]);
     setSelectedMaxPrice(null);
@@ -180,12 +192,12 @@ export default function ProductListing() {
   const activeChips = useMemo<ActiveChip[]>(() => {
     const chips: ActiveChip[] = [];
 
-    if (activeTab !== 'Táº¥t cáº£') {
+    if (activeTab !== 'Tất cả') {
       chips.push({
         id: 'tab',
         label: activeTab,
         onRemove: () => {
-          setActiveTab('Táº¥t cáº£');
+          setActiveTab('Tất cả');
           resetToFirstPage();
         },
       });
@@ -203,14 +215,14 @@ export default function ProductListing() {
     if (selectedMaxPrice !== null && selectedMaxPrice < maxPriceLimit) {
       chips.push({
         id: 'price',
-        label: `â‰¤ ${(selectedMaxPrice / 1000).toLocaleString('vi-VN')}kÄ‘`,
+        label: `≤ ${(selectedMaxPrice / 1000).toLocaleString('vi-VN')}kđ`,
         onRemove: () => {
           setSelectedMaxPrice(null);
           resetToFirstPage();
         },
       });
     }
-    selectedColors.forEach(color => chips.push({ id: `color-${color}`, label: `MÃ u ${color}`, onRemove: () => toggleColor(color) }));
+    selectedColors.forEach(color => chips.push({ id: `color-${color}`, label: `Màu ${color}`, onRemove: () => toggleColor(color) }));
     selectedSubCategories.forEach(sub => chips.push({ id: `sub-${sub}`, label: sub, onRemove: () => toggleSubCategory(sub) }));
 
     return chips;
@@ -218,7 +230,7 @@ export default function ProductListing() {
 
   const handleToggleRack = (product: Product) => {
     if (!user) {
-      toast.error('Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ lÆ°u sáº£n pháº©m vÃ o GiÃ¡ treo Ä‘á»“');
+      toast.error('Vui lòng đăng nhập để lưu sản phẩm vào Giá treo đồ');
       router.push('/login?callbackUrl=/products');
       return;
     }
@@ -226,8 +238,8 @@ export default function ProductListing() {
     const rackItem = getItemByProductId(product.id);
     if (rackItem) {
       unpinProduct(rackItem.id, {
-        onSuccess: () => toast.info(`ÄÃ£ bá» ${product.name} khá»i GiÃ¡ treo Ä‘á»“`),
-        onError: () => toast.error('KhÃ´ng thá»ƒ xÃ³a khá»i GiÃ¡ treo Ä‘á»“'),
+        onSuccess: () => toast.info(`Đã bỏ ${product.name} khỏi Giá treo đồ`),
+        onError: () => toast.error('Không thể xóa khỏi Giá treo đồ'),
       });
       return;
     }
@@ -240,27 +252,27 @@ export default function ProductListing() {
               <HangerIcon className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0 pr-4">
-              <h4 className="text-[14px] font-bold text-brand-navy leading-snug">ÄÃ£ ghim vÃ o GiÃ¡ treo Ä‘á»“!</h4>
+              <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã ghim vào Giá treo đồ!</h4>
               <p className="text-[12px] text-neutral-700 font-semibold mt-1 truncate">{product.name}</p>
-              <p className="text-[11px] text-neutral-500 mt-0.5">Sáºµn sÃ ng Ä‘á»ƒ phá»‘i Ä‘á»“ vÃ  thá»­ Ä‘á»“ áº£o</p>
+              <p className="text-[11px] text-neutral-500 mt-0.5">Sẵn sàng để phối đồ và thử đồ ảo</p>
             </div>
             <div className="flex flex-col items-end justify-between self-stretch shrink-0 min-h-[56px]">
               <button type="button" onClick={() => toast.dismiss(t)} className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-neutral-600 transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
               <button type="button" onClick={() => { router.push('/rack'); toast.dismiss(t); }} className="text-[12px] font-bold text-[#5D1C34] hover:underline underline-offset-2 transition-all mt-auto">
-                Xem giÃ¡ treo
+                Xem giá treo
               </button>
             </div>
           </div>
         ), { duration: 4000 });
       },
-      onError: () => toast.error('KhÃ´ng thá»ƒ ghim vÃ o GiÃ¡ treo Ä‘á»“'),
+      onError: () => toast.error('Không thể ghim vào Giá treo đồ'),
     });
   };
 
   const handleAddToCart = (product: Product) => {
-    const color = product.colors?.[0]?.name || 'Máº·c Ä‘á»‹nh';
+    const color = product.colors?.[0]?.name || 'Mặc định';
     addToCart({
       productId: product.id,
       name: product.name,
@@ -268,7 +280,7 @@ export default function ProductListing() {
       quantity: 1,
       image: product.image,
       color,
-      variant: `MÃ u: ${color} Â· May Ä‘o`,
+      variant: `Màu: ${color} · May đo`,
     });
 
     toast.custom((t) => (
@@ -277,16 +289,16 @@ export default function ProductListing() {
           <ShoppingBag className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0 pr-4">
-          <h4 className="text-[14px] font-bold text-brand-navy leading-snug">ÄÃ£ thÃªm vÃ o giá» hÃ ng!</h4>
+          <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã thêm vào giỏ hàng!</h4>
           <p className="text-[12px] text-neutral-700 font-semibold mt-1 truncate">{product.name}</p>
-          <p className="text-[11px] text-neutral-500 mt-0.5">MÃ u: {color} Â· May Ä‘o theo sá»‘ Ä‘o | SL: 1</p>
+          <p className="text-[11px] text-neutral-500 mt-0.5">Màu: {color} · May đo theo số đo | SL: 1</p>
         </div>
         <div className="flex flex-col items-end justify-between self-stretch shrink-0 min-h-[56px]">
           <button type="button" onClick={() => toast.dismiss(t)} className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-neutral-600 transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
           <button type="button" onClick={() => { setIsCartOpen(true); toast.dismiss(t); }} className="text-[12px] font-bold text-[#5D1C34] hover:underline underline-offset-2 transition-all mt-auto">
-            Xem giá» hÃ ng
+            Xem giỏ hàng
           </button>
         </div>
       </div>

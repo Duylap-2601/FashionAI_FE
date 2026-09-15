@@ -12,8 +12,57 @@ import {
   Wallet,
   X
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, cameraInputRef, selectedProduct, setShowCatalogModal, productsLoading, setOccasion, occasion, setStylePreference, stylePreference, setBudget, budget, setGenderPreference, genderPreference, pageState, errorMessage, handleAnalyze, photoFile, isAnalyzing }: StylistInputPanelProps) {
+  const [isCustomOccasion, setIsCustomOccasion] = useState(
+    () => !!occasion && !OCCASIONS.includes(occasion)
+  );
+  const [customOccasionInput, setCustomOccasionInput] = useState(
+    () => (!OCCASIONS.includes(occasion) ? occasion : '')
+  );
+
+  const [isCustomStyle, setIsCustomStyle] = useState(
+    () => !!stylePreference && !STYLE_PREFERENCES.includes(stylePreference)
+  );
+  const [customStyleInput, setCustomStyleInput] = useState(
+    () => (!STYLE_PREFERENCES.includes(stylePreference) ? stylePreference : '')
+  );
+
+  const handleSelectPresetOccasion = (occ: string) => {
+    setIsCustomOccasion(false);
+    setOccasion(occ);
+  };
+
+  const handleSelectCustomOccasion = () => {
+    setIsCustomOccasion(true);
+    setOccasion(customOccasionInput.trim());
+  };
+
+  const handleCustomOccasionChange = (val: string) => {
+    setCustomOccasionInput(val);
+    setOccasion(val);
+  };
+
+  const handleSelectPresetStyle = (style: string) => {
+    setIsCustomStyle(false);
+    setStylePreference(stylePreference === style ? '' : style);
+  };
+
+  const handleToggleCustomStyle = () => {
+    if (isCustomStyle) {
+      setIsCustomStyle(false);
+      setStylePreference('');
+    } else {
+      setIsCustomStyle(true);
+      setStylePreference(customStyleInput.trim());
+    }
+  };
+
+  const handleCustomStyleChange = (val: string) => {
+    setCustomStyleInput(val);
+    setStylePreference(val);
+  };
   return (
     <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-neutral-200 mb-8 transition-all">
       <h2 className="text-heading-h3 font-semibold text-brand-navy mb-6">
@@ -107,23 +156,15 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={() => setShowCatalogModal(true)}
-                  type="button"
-                  className="flex-1 h-11 px-4 rounded-xl border border-brand-navy/40 text-brand-navy font-semibold text-label-sm hover:bg-brand-navy hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Package className="w-4 h-4" />
-                  {productsLoading ? 'Đang tải catalog...' : 'Chọn từ catalog'}
-                </button>
-                <button
-                  onClick={() => setShowCatalogModal(true)}
-                  type="button"
-                  className="sm:w-auto px-4 h-11 rounded-xl border border-neutral-200 text-neutral-600 font-semibold text-label-sm hover:bg-neutral-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  Xem tất cả
-                </button>
-              </div>
+              <button
+                onClick={() => setShowCatalogModal(true)}
+                type="button"
+                className="w-full h-11 px-4 rounded-xl border border-brand-navy/40 text-brand-navy font-semibold text-label-sm hover:bg-brand-navy hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Package className="w-4 h-4" />
+                {productsLoading ? 'Đang tải catalog...' : 'Chọn từ catalog'}
+              </button>
+
             )}
           </div>
 
@@ -137,16 +178,41 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
                 <button
                   key={occ}
                   type="button"
-                  onClick={() => setOccasion(occ)}
-                  className={`px-4 py-2 rounded-full text-label-md font-medium transition-colors border cursor-pointer ${occasion === occ
+                  onClick={() => handleSelectPresetOccasion(occ)}
+                  className={`px-4 py-2 rounded-full text-label-md font-medium transition-colors border cursor-pointer ${
+                    !isCustomOccasion && occasion === occ
                       ? 'bg-brand-navy text-white border-brand-navy'
                       : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                    }`}
+                  }`}
                 >
                   {occ}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={handleSelectCustomOccasion}
+                className={`px-4 py-2 rounded-full text-label-md font-medium transition-colors border cursor-pointer ${
+                  isCustomOccasion
+                    ? 'bg-brand-navy text-white border-brand-navy'
+                    : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+                }`}
+              >
+                Khác...
+              </button>
             </div>
+
+            {isCustomOccasion && (
+              <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                <input
+                  type="text"
+                  value={customOccasionInput}
+                  onChange={(e) => handleCustomOccasionChange(e.target.value)}
+                  placeholder="Nhập dịp mặc của bạn (VD: Dạo phố, Du lịch biển, Tiệc sinh nhật, Hẹn hò...)"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 bg-neutral-50 focus:bg-white text-body-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all"
+                  autoFocus
+                />
+              </div>
+            )}
           </div>
 
           {/* Style + budget */}
@@ -160,16 +226,41 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
                   <button
                     key={style}
                     type="button"
-                    onClick={() => setStylePreference(stylePreference === style ? '' : style)}
-                    className={`px-3 py-1.5 rounded-full text-label-sm font-medium transition-colors border cursor-pointer ${stylePreference === style
-                        ? 'bg-brand-navy/10 text-brand-navy border-brand-navy/40'
+                    onClick={() => handleSelectPresetStyle(style)}
+                    className={`px-3 py-1.5 rounded-full text-label-sm font-medium transition-colors border cursor-pointer ${
+                      !isCustomStyle && stylePreference === style
+                        ? 'bg-brand-navy/10 text-brand-navy border-brand-navy/40 font-semibold'
                         : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                      }`}
+                    }`}
                   >
                     {style}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={handleToggleCustomStyle}
+                  className={`px-3 py-1.5 rounded-full text-label-sm font-medium transition-colors border cursor-pointer ${
+                    isCustomStyle
+                      ? 'bg-brand-navy/10 text-brand-navy border-brand-navy/40 font-semibold'
+                      : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+                  }`}
+                >
+                  Khác...
+                </button>
               </div>
+
+              {isCustomStyle && (
+                <div className="mt-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <input
+                    type="text"
+                    value={customStyleInput}
+                    onChange={(e) => handleCustomStyleChange(e.target.value)}
+                    placeholder="Nhập phong cách (VD: Vintage, Y2K, Streetwear, Cổ điển...)"
+                    className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 bg-neutral-50 focus:bg-white text-body-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all"
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
             <div>
               <label className="text-label-md font-semibold text-neutral-900 mb-2 block">

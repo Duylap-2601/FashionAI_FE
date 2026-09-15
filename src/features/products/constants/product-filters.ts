@@ -1,3 +1,22 @@
+import type { GarmentType } from '@/features/products/types/products';
+
+export interface GarmentTypeTab {
+  key: string;
+  label: string;
+  garmentType?: GarmentType;
+}
+
+export const GARMENT_TYPE_TABS: readonly GarmentTypeTab[] = [
+  { key: 'ALL', label: 'Tất cả', garmentType: undefined },
+  { key: 'SHIRT', label: 'Áo sơ mi', garmentType: 'SHIRT' },
+  { key: 'VEST', label: 'Áo vest', garmentType: 'VEST' },
+  { key: 'JACKET', label: 'Áo khoác / Blazer', garmentType: 'JACKET' },
+  { key: 'PANTS', label: 'Quần tây', garmentType: 'PANTS' },
+  { key: 'SKIRT', label: 'Chân váy', garmentType: 'SKIRT' },
+  { key: 'DRESS', label: 'Đầm', garmentType: 'DRESS' },
+  { key: 'JUMPSUIT', label: 'Jumpsuit', garmentType: 'JUMPSUIT' },
+] as const;
+
 export const SUB_CATEGORIES = [
   { name: 'Áo sơ mi', match: ['sơ mi', 'shirt'] },
   { name: 'Blazer', match: ['blazer', 'vest'] },

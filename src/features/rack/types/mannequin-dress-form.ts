@@ -1,12 +1,19 @@
-import type { RackItem } from '@/features/rack/types/rack';
+import type { CanvasPlacedItem } from '@/features/rack/types/rack';
 
 export interface MannequinDressFormProps {
-  upperItem: RackItem | null;
-  lowerItem: RackItem | null;
-  fullBodyItem: RackItem | null;
-  onRemoveUpper: () => void;
-  onRemoveLower: () => void;
-  onRemoveFullBody: () => void;
+  placedItems: CanvasPlacedItem[];
+  selectedId: string | null;
+  onSelect: (instanceId: string | null) => void;
+  onUpdateTransform: (
+    instanceId: string,
+    updates: Partial<Pick<CanvasPlacedItem, 'x' | 'y' | 'scale' | 'rotation' | 'zIndex'>>
+  ) => void;
+  onBringForward: (instanceId: string) => void;
+  onSendBackward: (instanceId: string) => void;
+  onResetItemTransform: (instanceId: string) => void;
+  onRemoveItem: (instanceId: string) => void;
   onReset: () => void;
   onGoToTryOn: () => void;
+  onDropItem?: (productId: string, dropX: number, dropY: number) => void;
 }
+
