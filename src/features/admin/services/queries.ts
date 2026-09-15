@@ -1,4 +1,5 @@
 import { http, type HttpOptions } from '@/lib/http';
+import type { LiveTryOnSettings } from '@/features/admin/types/admin-dashboard-page';
 
 export function fetchAdminProducts(config: HttpOptions) {
   return http.get('/products', config);
@@ -26,6 +27,10 @@ export function fetchAdminStats() {
 
 export function fetchGhnPickupSettings() {
   return http.get('/admin/settings/ghn-pickup');
+}
+
+export function fetchLiveTryOnSettings() {
+  return http.get<LiveTryOnSettings>('/admin/settings/live-try-on');
 }
 
 export function fetchWebhookFailures(config?: HttpOptions) {

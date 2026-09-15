@@ -1,9 +1,14 @@
 import type { AiActionName, UserQuota } from '@/features/subscription/types/quota';
+import type { LiveTryOnQuota } from '@/features/subscription/types/live-try-on-quota';
 import type { MySubscriptionResponse, PlanItem, SubscriptionHistoryItem, SubscriptionHistoryResponse } from '@/features/subscription/types/subscription';
 import { http } from '@/lib/http';
 
 export async function fetchQuota(action: AiActionName): Promise<UserQuota> {
   return http.get<UserQuota>('/users/me/quota', { params: { action } });
+}
+
+export async function fetchLiveTryOnQuota(): Promise<LiveTryOnQuota> {
+  return http.get<LiveTryOnQuota>('/try-on/live/quota');
 }
 
 export async function fetchPlans() {

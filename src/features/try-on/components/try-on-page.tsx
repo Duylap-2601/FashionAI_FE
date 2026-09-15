@@ -3,7 +3,6 @@
 import { fetchTryOnImage } from '@/features/try-on/services/queries';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
-import { PRODUCTS } from '@/features/products/constants/products';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { toBackendCategory } from '@/features/products/services/products-utils';
 import type { Product } from '@/features/products/types/products';
@@ -14,6 +13,7 @@ import { useQuota } from '@/features/subscription/hooks/useQuota';
 import { CatalogModal } from '@/features/try-on/components/CatalogModal';
 import { SubscriptionNotice, TryOnHeader } from '@/features/try-on/components/TryOnHeader';
 import { TryOnWorkspace } from '@/features/try-on/components/TryOnWorkspace';
+import { LiveTryOnWorkspace } from '@/features/try-on/components/live-try-on-workspace';
 import { MOCK_USER_PHOTO } from '@/features/try-on/constants/try-on-types';
 import { useTryOn } from '@/features/try-on/hooks/useTryOn';
 import type { GarmentSlotInput } from '@/features/try-on/types/try-on';
@@ -85,19 +85,20 @@ function VirtualTryOnContent() {
   const { products: backendProducts } = useProductCatalog();
   useMeasurements();
 
-  const catalogProducts = backendProducts.length > 0 ? backendProducts : PRODUCTS;
-  const initialProduct = catalogProducts.find(p => p.id === productId) || catalogProducts[0];
+  const catalogProducts = backendProducts;
+  const initialProduct = catalogProducts.find(p => p.id === productId) || catalogProducts[0] || null;
 
   const [pageState, setPageState] = useState<PageState>('idle');
+  const [tryOnMode, setTryOnMode] = useState<'photo' | 'live'>('photo');
   const [garmentMode, setGarmentMode] = useState<GarmentMode>('single');
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
   const [userPhotoFile, setUserPhotoFile] = useState<File | null>(null);
   const [resultPhotoUrl, setResultPhotoUrl] = useState<string | null>(null);
   const [resultSourcePhotoUrl, setResultSourcePhotoUrl] = useState<string | null>(null);
   const [inputError, setInputError] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState(initialProduct);
-  const [upperProduct, setUpperProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || catalogProducts[0] || null);
-  const [lowerProduct, setLowerProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || catalogProducts[1] || null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialProduct);
+  const [upperProduct, setUpperProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null);
+  const [lowerProduct, setLowerProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || null);
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [catalogSlot, setCatalogSlot] = useState<CatalogSlot>('single');
   const [showQuotaModal, setShowQuotaModal] = useState(false);
@@ -303,6 +304,13 @@ function VirtualTryOnContent() {
     setGarmentMode(mode);
   };
 
+  const handleTryOnModeChange = (mode: 'photo' | 'live') => {
+    if (pageState === 'loading') return;
+    clearResult();
+    setTryOnMode(mode);
+    if (mode === 'live') setGarmentMode('single');
+  };
+
   const handleUseMockPhoto = () => {
     if (pageState === 'loading') return;
     clearResult();
@@ -330,7 +338,7 @@ function VirtualTryOnContent() {
     if (!resultPhotoUrl) return;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Kết quả Try-On từ FashionAI', text: `Thử đồ online bộ ${selectedProduct.name} tại FashionAI!`, url: resultPhotoUrl });
+      await navigator.share({ title: 'Kết quả Try-On từ FashionAI', text: `Thử đồ online bộ ${selectedProduct?.name || 'thời trang'} tại FashionAI!`, url: resultPhotoUrl });
         return;
       }
       await navigator.clipboard.writeText(resultPhotoUrl);
@@ -396,33 +404,55 @@ function VirtualTryOnContent() {
       <TryOnHeader remainingQuota={remainingQuota} limitQuota={limitQuota} isBlocked={isBlocked} />
 
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-10">
-        {isBlocked && <SubscriptionNotice isSubscriptionExpired={isSubscriptionExpired} />}
+        {isBlocked && tryOnMode === 'photo' && <SubscriptionNotice isSubscriptionExpired={isSubscriptionExpired} />}
 
-        <TryOnWorkspace
-          userPhotoUrl={userPhotoUrl}
-          resultPhotoUrl={resultPhotoUrl}
-          resultSourcePhotoUrl={resultSourcePhotoUrl}
-          isLoading={pageState === 'loading'}
-          inputError={inputError}
-          garmentMode={garmentMode}
-          selectedProduct={selectedProduct}
-          upperProduct={upperProduct}
-          lowerProduct={lowerProduct}
-          canGenerate={canGenerate}
-          isSubmitting={isSubmitting || pageState === 'loading'}
-          isBlocked={isBlocked}
-          quotaCost={quotaCost}
-          onFileSelect={handleFileSelect}
-          onCameraSelect={() => cameraInputRef.current?.click()}
-          onUseMockPhoto={handleUseMockPhoto}
-          onModeChange={handleModeChange}
-          onOpenCatalog={handleOpenCatalog}
-          onGenerate={handleGenerate}
-          onDownload={handleDownload}
-          onShare={handleShare}
-          onTryAnother={handleTryAnother}
-          onChangePhoto={handleChangePhoto}
-        />
+        <div className="mb-5 inline-flex rounded-2xl border border-[#E5DFD5] bg-white p-1 shadow-sm">
+          <button type="button" onClick={() => handleTryOnModeChange('photo')} disabled={pageState === 'loading'} className={`rounded-xl px-5 py-2 text-label-sm font-semibold transition-colors disabled:opacity-60 ${tryOnMode === 'photo' ? 'bg-[#5D1C34] text-white' : 'text-neutral-600 hover:bg-[#F9F7F5]'}`}>Thử bằng ảnh</button>
+          <button type="button" onClick={() => handleTryOnModeChange('live')} disabled={pageState === 'loading'} className={`rounded-xl px-5 py-2 text-label-sm font-semibold transition-colors disabled:opacity-60 ${tryOnMode === 'live' ? 'bg-[#5D1C34] text-white' : 'text-neutral-600 hover:bg-[#F9F7F5]'}`}>Live Try-On</button>
+        </div>
+
+        {catalogProducts.length === 0 ? (
+          <div className="rounded-2xl border border-[#E5DFD5] bg-white p-8 text-center shadow-sm">
+            <h2 className="text-[20px] font-semibold text-[#1A1917]">Chưa có sản phẩm từ backend</h2>
+            <p className="mt-2 text-body-sm text-neutral-600">Try-On hiện chỉ dùng catalog thật. Vui lòng kiểm tra API sản phẩm hoặc thêm sản phẩm ACTIVE có garmentUrl.</p>
+          </div>
+        ) : tryOnMode === 'live' && selectedProduct ? (
+          <LiveTryOnWorkspace
+            selectedProduct={selectedProduct}
+            upperProduct={upperProduct}
+            lowerProduct={lowerProduct}
+            onOpenUpperCatalog={() => handleOpenCatalog('upper')}
+            onOpenLowerCatalog={() => handleOpenCatalog('lower')}
+            onOpenCatalog={() => handleOpenCatalog('single')}
+            onSwitchToPhoto={() => handleTryOnModeChange('photo')}
+          />
+        ) : selectedProduct ? (
+          <TryOnWorkspace
+            userPhotoUrl={userPhotoUrl}
+            resultPhotoUrl={resultPhotoUrl}
+            resultSourcePhotoUrl={resultSourcePhotoUrl}
+            isLoading={pageState === 'loading'}
+            inputError={inputError}
+            garmentMode={garmentMode}
+            selectedProduct={selectedProduct}
+            upperProduct={upperProduct}
+            lowerProduct={lowerProduct}
+            canGenerate={canGenerate}
+            isSubmitting={isSubmitting || pageState === 'loading'}
+            isBlocked={isBlocked}
+            quotaCost={quotaCost}
+            onFileSelect={handleFileSelect}
+            onCameraSelect={() => cameraInputRef.current?.click()}
+            onUseMockPhoto={handleUseMockPhoto}
+            onModeChange={handleModeChange}
+            onOpenCatalog={handleOpenCatalog}
+            onGenerate={handleGenerate}
+            onDownload={handleDownload}
+            onShare={handleShare}
+            onTryAnother={handleTryAnother}
+            onChangePhoto={handleChangePhoto}
+          />
+        ) : null}
 
         <div className="h-8" />
       </div>

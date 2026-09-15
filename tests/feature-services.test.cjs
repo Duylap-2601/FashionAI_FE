@@ -153,6 +153,45 @@ test('chat services use the HTTP wrapper for session list, detail, rename, and d
   assert.equal(calls[2][2].title, 'New title');
 });
 
+test('live try-on services keep credential creation one-shot with idempotency header', async () => {
+  const calls = [];
+  const load = createSourceLoader({ mocks: {
+    '@/lib/http': {
+      http: {
+        get: async (...args) => { calls.push(['get', ...args]); return { productId: 'p1' }; },
+        post: async (...args) => { calls.push(['post', ...args]); return { sessionId: 's1' }; },
+      },
+    },
+  } });
+  const queries = load('@/features/try-on/services/queries');
+  const mutations = load('@/features/try-on/services/mutations');
+  const signal = new AbortController().signal;
+
+  await queries.fetchLiveTryOnGarment('p1', signal);
+  await mutations.createLiveTryOnSession('p1', '33333333-3333-4333-8333-333333333333', signal);
+  await mutations.endLiveTryOnSession('s1', 'client_end');
+
+  assert.deepEqual(calls.map(([method, url]) => [method, url]), [
+    ['get', '/try-on/live/garments/p1'],
+    ['post', '/try-on/live/sessions'],
+    ['post', '/try-on/live/sessions/s1/end'],
+  ]);
+  assert.equal(calls[1][3].headers['Idempotency-Key'], '33333333-3333-4333-8333-333333333333');
+  assert.equal(calls[1][3].signal, signal);
+  assert.equal(JSON.stringify(calls[2][2]), JSON.stringify({ reason: 'client_end' }));
+});
+
+test('live try-on quota uses a dedicated seconds endpoint', async () => {
+  const calls = [];
+  const load = createSourceLoader({ mocks: {
+    '@/lib/http': { http: { get: async (...args) => { calls.push(args); return { unit: 'seconds', remaining: 60 }; } } },
+  } });
+  const { fetchLiveTryOnQuota } = load('@/features/subscription/services/queries');
+  const quota = await fetchLiveTryOnQuota();
+  assert.equal(quota.unit, 'seconds');
+  assert.equal(calls[0][0], '/try-on/live/quota');
+});
+
 test('email verification and password recovery retain JSON bodies and cookie credentials', async () => {
   const calls = [];
   const load = createSourceLoader({ globals: { fetch: async (...args) => {
