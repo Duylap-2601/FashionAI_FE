@@ -1,4 +1,5 @@
 import type { LiveTryOnGarment, LiveTryOnSessionResponse } from '@/features/try-on/types/live-try-on';
+import type { LiveOutfitReference } from '@/features/try-on/services/live-outfit-reference';
 
 export interface LiveConnection {
   remoteStream: MediaStream;
@@ -37,6 +38,7 @@ export async function connectDecartRealtime(
   session: LiveTryOnSessionResponse,
   cameraStream: MediaStream,
   callbacks: DecartRealtimeCallbacks = {},
+  reference?: LiveOutfitReference,
 ): Promise<LiveConnection> {
   const sdk = await loadDecartSdk();
   if (!sdk.createDecartClient || !sdk.models?.realtime) throw new Error('Decart SDK realtime API is unavailable');
@@ -54,10 +56,10 @@ export async function connectDecartRealtime(
   const connection = toConnectionShape(rawConnection);
   const offListeners = attachConnectionListeners(connection, callbacks);
   callbacks.onDiagnostic?.('connected; downloading garment image');
-  const garmentImage = await fetchGarmentBlob(session.garment.imageUrl);
+  const garmentImage = reference?.image ?? await fetchGarmentBlob(session.garment.imageUrl);
   callbacks.onDiagnostic?.(`garment downloaded ${Math.round(garmentImage.size / 1024)}KB`);
   if (connection.set) {
-    await connection.set({ prompt: session.garment.prompt, image: garmentImage });
+    await connection.set({ prompt: reference?.prompt ?? session.garment.prompt, image: garmentImage });
     callbacks.onDiagnostic?.('garment state applied');
   }
   const remoteStream = await remoteStreamWaiter.promise;

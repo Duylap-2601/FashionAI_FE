@@ -1,5 +1,5 @@
 import type { TryOnResult } from '@/features/try-on/types/try-on';
-import type { LiveTryOnGarment } from '@/features/try-on/types/live-try-on';
+import type { LiveTryOnGarment, LiveTryOnSessionStatusResponse } from '@/features/try-on/types/live-try-on';
 import { http } from '@/lib/http';
 
 export async function fetchTryOnHistory(page: number, limit: number) {
@@ -14,6 +14,10 @@ export function fetchTryOnImage(url: string) {
 
 export async function fetchLiveTryOnGarment(productId: string, signal?: AbortSignal) {
   return http.get<LiveTryOnGarment>(`/try-on/live/garments/${productId}`, { signal });
+}
+
+export async function fetchLiveTryOnSession(sessionId: string, signal?: AbortSignal) {
+  return http.get<LiveTryOnSessionStatusResponse>(`/try-on/live/sessions/${sessionId}`, { signal });
 }
 
 export { queryKeys } from './query-keys';

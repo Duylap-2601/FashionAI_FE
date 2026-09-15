@@ -11,7 +11,9 @@ export interface LiveTryOnQuota {
   maxDurationSeconds: number;
   activeSession: {
     sessionId: string;
+    productId: string;
     status: string;
     blockedUntil: string;
+    remainingSeconds: number;
   } | null;
 }

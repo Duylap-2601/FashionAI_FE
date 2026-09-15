@@ -4,6 +4,7 @@ import type { AdminImageDto, AdminProductDto, AdminOrderDto, AdminShipmentDetail
 
 
 import { AdminOrderModal } from '@/features/admin/components/admin-order-modal';
+import { AdminLiveTryOnSettingsPanel } from '@/features/admin/components/admin-live-try-on-settings-panel';
 import { AdminOrdersPanel } from '@/features/admin/components/admin-orders-panel';
 import { AdminProductModal } from '@/features/admin/components/admin-product-modal';
 import { AdminProductsPanel } from '@/features/admin/components/admin-products-panel';
@@ -38,6 +39,7 @@ import {
   LogOut,
   MessageSquare,
   Package,
+  Radio,
   RefreshCw,
   Settings,
   ShoppingBag,
@@ -1050,6 +1052,7 @@ export default function AdminDashboard() {
               { id: 'webhook-failures', label: 'Giao dịch lỗi', icon: AlertTriangle },
               { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
               { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
+              { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
               { id: 'quota', label: 'Cài đặt Quota', icon: Settings },
             ] as { id: AdminPage; label: string; icon: LucideIcon }[]).map(item => {
               const IconComponent = item.icon;
@@ -1098,9 +1101,10 @@ export default function AdminDashboard() {
                       activeTab === 'users' ? 'Quản lý người dùng' :
                         activeTab === 'orders' ? 'Quản lý đơn hàng' :
                           activeTab === 'shipments' ? 'Quản lý vận đơn' :
-                            activeTab === 'webhook-failures' ? 'Giao dịch lỗi' :
-                              activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
-                                activeTab === 'shipping-settings' ? 'Cài đặt GHN' : 'Cài đặt Quota'}
+                              activeTab === 'webhook-failures' ? 'Giao dịch lỗi' :
+                                activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
+                                  activeTab === 'shipping-settings' ? 'Cài đặt GHN' :
+                                    activeTab === 'live-try-on-settings' ? 'Cài đặt Live Try-On' : 'Cài đặt Quota'}
               </span>
             </div>
 
@@ -1227,6 +1231,9 @@ export default function AdminDashboard() {
 
             {/* ─── TAB: SHIPPING SETTINGS ─────────────────────────────────────────── */}
             {activeTab === 'shipping-settings' && <AdminShippingSettingsPanel />}
+
+            {/* ─── TAB: LIVE TRY-ON SETTINGS ──────────────────────────────────────── */}
+            {activeTab === 'live-try-on-settings' && <AdminLiveTryOnSettingsPanel />}
 
             {/* ─── TAB: COLLECTIONS ──────────────────────────────────────────────── */}
             {activeTab === 'collections' && <AdminCollectionManager />}

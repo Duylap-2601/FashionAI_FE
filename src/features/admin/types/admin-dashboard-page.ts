@@ -1,6 +1,6 @@
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 
-export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'reviews' | 'quota' | 'shipping-settings' | 'webhook-failures';
+export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'reviews' | 'quota' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures';
 
 export interface GhnPickupSettings {
   provinceId?: number;
@@ -8,6 +8,29 @@ export interface GhnPickupSettings {
   wardCode?: string;
   source: 'database' | 'env' | 'empty';
 }
+
+export interface LiveTryOnTierPolicySettings {
+  liveEnabled: boolean;
+  dailySeconds: number;
+  maxSessionSeconds: number;
+}
+
+export interface LiveTryOnSettings {
+  enabled: boolean;
+  version: number;
+  globalDailyCredits: number;
+  maxConcurrentSessions: number;
+  pauseTimeoutSeconds: number;
+  allowedCategories: GarmentCategory[];
+  betaUserIds: string[];
+  betaProductIds: string[];
+  tiers: Record<UserTier, LiveTryOnTierPolicySettings>;
+  source: 'database' | 'env';
+}
+
+export type UpdateLiveTryOnSettingsInput = Omit<LiveTryOnSettings, 'source'> & {
+  reason?: string;
+};
 
 export type GarmentCategory = 'UPPER' | 'LOWER' | 'FULL_BODY';
 

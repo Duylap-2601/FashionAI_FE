@@ -1,3 +1,4 @@
+import type { UpdateLiveTryOnSettingsInput } from '@/features/admin/types/admin-dashboard-page';
 import type { PatchOrdersStatusInput, PatchUsersInput, PutProductsInput } from '@/features/admin/types/requests';
 import { api } from '@/lib/api';
 import { http, type HttpOptions } from '@/lib/http';
@@ -56,6 +57,10 @@ export function resolveWebhookFailure(id: string) {
 
 export function updateGhnPickupSettings(payload: { provinceId: number; districtId: number; wardCode: string }) {
   return api.put('/admin/settings/ghn-pickup', payload);
+}
+
+export function updateLiveTryOnSettings(payload: UpdateLiveTryOnSettingsInput) {
+  return api.put('/admin/settings/live-try-on', payload);
 }
 
 export function updateUser(id: string, payload: PatchUsersInput) {

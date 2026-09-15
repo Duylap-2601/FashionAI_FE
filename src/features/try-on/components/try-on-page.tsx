@@ -419,6 +419,10 @@ function VirtualTryOnContent() {
         ) : tryOnMode === 'live' && selectedProduct ? (
           <LiveTryOnWorkspace
             selectedProduct={selectedProduct}
+            upperProduct={upperProduct}
+            lowerProduct={lowerProduct}
+            onOpenUpperCatalog={() => handleOpenCatalog('upper')}
+            onOpenLowerCatalog={() => handleOpenCatalog('lower')}
             onOpenCatalog={() => handleOpenCatalog('single')}
             onSwitchToPhoto={() => handleTryOnModeChange('photo')}
           />

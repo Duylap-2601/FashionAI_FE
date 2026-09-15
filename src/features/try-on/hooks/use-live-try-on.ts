@@ -1,8 +1,9 @@
 'use client';
 
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { createLiveTryOnSession, endLiveTryOnSession } from '@/features/try-on/services/mutations';
 import { fetchLiveTryOnGarment } from '@/features/try-on/services/queries';
+import { prepareLiveOutfitReference } from '@/features/try-on/services/live-outfit-reference';
+import { createLiveTryOnSession, endLiveTryOnSession, pauseLiveTryOnSession, pauseLiveTryOnSessionKeepalive, resumeLiveTryOnSession } from '@/features/try-on/services/mutations';
 import { connectDecartRealtime, getDecartRealtimeVideoConstraints, type LiveConnection } from '@/features/try-on/services/decart-realtime';
 import type { LiveTryOnGarment, LiveTryOnSessionResponse, LiveTryOnStatus } from '@/features/try-on/types/live-try-on';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -27,8 +28,6 @@ export function useLiveTryOn() {
   const countdownRef = useRef<number | null>(null);
   const firstFrameTimeoutRef = useRef<number | null>(null);
   const trackCleanupRef = useRef<(() => void) | null>(null);
-  const pendingGarmentProductRef = useRef<string | null>(null);
-  const isUpdatingGarmentRef = useRef(false);
 
   const clearCountdown = useCallback(() => {
     if (countdownRef.current != null) {
@@ -44,7 +43,7 @@ export function useLiveTryOn() {
     }
   }, []);
 
-  const pause = useCallback(async (reason = 'page_pause') => {
+  const disconnectLocal = useCallback(async () => {
     epochRef.current += 1;
     abortRef.current?.abort();
     abortRef.current = null;
@@ -56,50 +55,62 @@ export function useLiveTryOn() {
     const stream = cameraRef.current;
     connectionRef.current = null;
     cameraRef.current = null;
-    setStatus('stopping');
     setRemoteStream(null);
     setCameraStream(null);
     setSdkState(null);
-    setDiagnostic(`session paused locally: ${reason}`);
 
     try {
       await connection?.disconnect();
     } finally {
       stream?.getTracks().forEach((track) => track.stop());
-      setStatus('ended');
     }
   }, [clearCountdown, clearFirstFrameTimeout]);
 
-  const cleanup = useCallback(async (reason = 'client_stop') => {
-    epochRef.current += 1;
-    abortRef.current?.abort();
-    abortRef.current = null;
-    clearCountdown();
-    clearFirstFrameTimeout();
-    trackCleanupRef.current?.();
-    trackCleanupRef.current = null;
+  const pause = useCallback(async (reason = 'page_pause') => {
     const activeSessionId = sessionIdRef.current;
-    const connection = connectionRef.current;
-    const stream = cameraRef.current;
-    connectionRef.current = null;
-    cameraRef.current = null;
-    sessionIdRef.current = null;
+    setStatus('pausing');
+    await disconnectLocal();
+    if (!activeSessionId) {
+      setStatus('ended');
+      return;
+    }
+
+    try {
+      const paused = await pauseLiveTryOnSession(activeSessionId, reason);
+      setSessionId(paused.sessionId);
+      sessionIdRef.current = paused.sessionId;
+      setBlockedUntil(paused.blockedUntil);
+      setRemainingSeconds(paused.remainingSeconds);
+      setAppliedGarment(paused.garment);
+      setDiagnostic(`session paused on server: ${reason}`);
+      setStatus('paused');
+    } catch (err) {
+      setError(readErrorMessage(err));
+      setStatus('error');
+    }
+  }, [disconnectLocal]);
+
+  const cleanup = useCallback(async (reason = 'client_stop', targetSessionId?: string) => {
+    const activeSessionId = targetSessionId ?? sessionIdRef.current;
     setStatus('stopping');
-    setRemoteStream(null);
-    setCameraStream(null);
-    setSdkState(null);
     setDiagnostic(null);
 
     try {
-      await connection?.disconnect();
-    } finally {
-      stream?.getTracks().forEach((track) => track.stop());
-      if (activeSessionId) void endLiveTryOnSession(activeSessionId, reason).catch(() => undefined);
-      clearStoredSession();
+      await disconnectLocal();
+      if (activeSessionId) await endLiveTryOnSession(activeSessionId, reason);
+      setError(null);
+      sessionIdRef.current = null;
       setSessionId(null);
+      setBlockedUntil(null);
+      setAppliedGarment(null);
       setStatus('ended');
+    } catch (err) {
+      sessionIdRef.current = activeSessionId;
+      setSessionId(activeSessionId);
+      setError(readErrorMessage(err));
+      setStatus('error');
     }
-  }, [clearCountdown, clearFirstFrameTimeout]);
+  }, [disconnectLocal]);
 
   const startCountdown = useCallback((durationSeconds: number) => {
     const startedAt = performance.now();
@@ -113,7 +124,7 @@ export function useLiveTryOn() {
     }, 500);
   }, [cleanup, clearCountdown]);
 
-  const start = useCallback(async (productId: string) => {
+  const start = useCallback(async (productId: string, resumeSessionId?: string, lowerProductId?: string) => {
     const epoch = epochRef.current + 1;
     epochRef.current = epoch;
     const abort = new AbortController();
@@ -137,31 +148,35 @@ export function useLiveTryOn() {
       setCameraStream(stream);
 
       setStatus('preparing-garment');
-      const garment = await fetchLiveTryOnGarment(productId, abort.signal);
-      await preloadImage(garment.imageUrl, abort.signal);
+      const outfitReference = lowerProductId
+        ? await Promise.all([
+          fetchLiveTryOnGarment(productId, abort.signal),
+          fetchLiveTryOnGarment(lowerProductId, abort.signal),
+        ]).then(([upper, lower]) => prepareLiveOutfitReference(upper, lower, abort.signal))
+        : undefined;
       if (epochRef.current !== epoch) return;
-
       setStatus('connecting');
-      const idempotencyKey = crypto.randomUUID();
-      const storedSession = readStoredSession(productId);
-      const session = storedSession ?? await createLiveTryOnSession(productId, idempotencyKey, abort.signal);
-      storeSession(session);
+      const session = resumeSessionId
+        ? await resumeLiveTryOnSession(resumeSessionId, productId)
+        : await createLiveTryOnSession(productId, crypto.randomUUID(), abort.signal);
+      setStatus('preparing-garment');
+      await preloadImage(session.garment.imageUrl, abort.signal);
       setSessionId(session.sessionId);
       sessionIdRef.current = session.sessionId;
       setBlockedUntil(session.blockedUntil);
-      startCountdown(session.maxDurationSeconds);
+      startCountdown(session.remainingSeconds);
 
       setStatus('awaiting-first-frame');
       const connection = await withTimeout(
         connectDecartRealtime(session, stream, {
           onConnectionState: (state) => {
             setSdkState(state);
-            if (state === 'reconnecting' || state === 'disconnected') void cleanup(`sdk_${state}`);
+            if (state === 'reconnecting' || state === 'disconnected') void pause(`sdk_${state}`);
           },
           onError: (message) => setError(message),
-          onGenerationTick: (seconds) => setRemainingSeconds(Math.max(0, session.maxDurationSeconds - seconds)),
+          onGenerationTick: undefined,
           onDiagnostic: (message) => setDiagnostic(message),
-        }),
+        }, outfitReference),
         30000,
         'Không thể kết nối Decart trong thời gian cho phép.',
       );
@@ -187,41 +202,14 @@ export function useLiveTryOn() {
       setStatus('error');
       setError(readErrorMessage(err));
     }
-  }, [cleanup, clearFirstFrameTimeout, startCountdown]);
+  }, [cleanup, clearFirstFrameTimeout, pause, startCountdown]);
 
   const updateGarment = useCallback(async (productId: string) => {
-    if (!connectionRef.current) return;
-    pendingGarmentProductRef.current = productId;
-    if (isUpdatingGarmentRef.current) return;
-
-    isUpdatingGarmentRef.current = true;
-    const epoch = epochRef.current;
-    while (pendingGarmentProductRef.current && connectionRef.current) {
-      if (epochRef.current !== epoch) break;
-      const connection: LiveConnection = connectionRef.current;
-      const nextProductId = pendingGarmentProductRef.current;
-      pendingGarmentProductRef.current = null;
-      setError(null);
-      const abort = new AbortController();
-      try {
-        const garment = await fetchLiveTryOnGarment(nextProductId, abort.signal);
-        await preloadImage(garment.imageUrl, abort.signal);
-        if (epochRef.current !== epoch || connectionRef.current !== connection) break;
-        await connection.setGarment(garment);
-        if (epochRef.current !== epoch || connectionRef.current !== connection) break;
-        setAppliedGarment(garment);
-        const storedSession = readStoredSession();
-        if (storedSession?.sessionId === sessionIdRef.current) {
-          storeSession({ ...storedSession, garment });
-        }
-      } catch (err) {
-        setError(readErrorMessage(err) || 'Không thể đổi trang phục live. Trang phục đang áp dụng được giữ nguyên.');
-      }
-    }
-    isUpdatingGarmentRef.current = false;
+    void productId;
+    setError('Không thể đổi sản phẩm trong phiên Live đang chạy. Hãy kết thúc Live rồi bắt đầu phiên mới.');
   }, []);
 
-  const hasResumableSession = useCallback((productId: string) => Boolean(readStoredSession(productId)), []);
+  const hasResumableSession = useCallback(() => Boolean(sessionIdRef.current), []);
 
   const markFirstFrame = useCallback(() => {
     clearFirstFrameTimeout();
@@ -242,6 +230,7 @@ export function useLiveTryOn() {
 
   useEffect(() => {
     const endOnPageHide = () => {
+      if (sessionIdRef.current && connectionRef.current) pauseLiveTryOnSessionKeepalive(sessionIdRef.current, 'pagehide');
       connectionRef.current?.disconnect();
       cameraRef.current?.getTracks().forEach((track) => track.stop());
     };
