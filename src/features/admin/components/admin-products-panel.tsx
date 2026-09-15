@@ -11,22 +11,22 @@ import {
 
 export function AdminProductsPanel({ openProductEditor, searchQuery, setSearchQuery, products, handleDeleteProduct }: AdminProductsPanelProps) {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col gap-6 flex-1 min-h-0">
+      <div className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-heading-h2 font-bold text-neutral-900">Danh mục sản phẩm</h1>
           <p className="text-body-sm text-neutral-500 mt-1">Cấu hình phôi ảnh cho tính năng Try-On</p>
         </div>
         <button
           onClick={() => openProductEditor(null)}
-          className="px-4 py-2.5 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-sm font-bold border-0 cursor-pointer flex items-center gap-2"
+          className="px-4 py-2.5 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-sm font-bold border-0 cursor-pointer flex items-center gap-2 shrink-0"
         >
           + Thêm sản phẩm
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-neutral-100 flex items-center gap-4">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="p-4 border-b border-neutral-100 flex items-center gap-4 shrink-0">
           <div className="relative">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -38,16 +38,16 @@ export function AdminProductsPanel({ openProductEditor, searchQuery, setSearchQu
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
+        <div className="overflow-auto flex-1 min-h-0">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
               <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
-                <th className="px-6 py-3">Sản phẩm</th>
-                <th className="px-4 py-3">Danh mục</th>
-                <th className="px-4 py-3 text-right">Giá bán</th>
-                <th className="px-4 py-3 text-right">Tồn kho</th>
-                <th className="px-4 py-3">Trạng thái</th>
-                <th className="px-6 py-3">Thao tác</th>
+                <th className="px-6 py-3 bg-neutral-50">Sản phẩm</th>
+                <th className="px-4 py-3 bg-neutral-50">Danh mục</th>
+                <th className="px-4 py-3 text-right bg-neutral-50">Giá bán</th>
+                <th className="px-4 py-3 text-right bg-neutral-50">Tồn kho</th>
+                <th className="px-4 py-3 bg-neutral-50">Trạng thái</th>
+                <th className="px-6 py-3 bg-neutral-50">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 text-body-sm">

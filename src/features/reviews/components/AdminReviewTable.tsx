@@ -120,9 +120,9 @@ export function AdminReviewTable() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-xs overflow-hidden">
+    <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-xs overflow-hidden flex flex-col flex-1 min-h-0">
       {/* Header & Controls */}
-      <div className="p-6 border-b border-neutral-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 border-b border-neutral-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
           <h3 className="text-[20px] font-bold text-brand-navy flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-brand-navy" />
@@ -180,16 +180,16 @@ export function AdminReviewTable() {
       </div>
 
       {/* Bảng danh sách Reviews */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-body-sm">
-          <thead className="bg-neutral-50 border-b border-neutral-200 text-[12px] font-bold text-neutral-500 uppercase tracking-wider">
-            <tr>
-              <th className="py-3.5 px-6">Khách hàng</th>
-              <th className="py-3.5 px-6">Sản phẩm</th>
-              <th className="py-3.5 px-6">Điểm sao</th>
-              <th className="py-3.5 px-6">Nhận xét & Feedback</th>
-              <th className="py-3.5 px-6">Ngày đánh giá</th>
-              <th className="py-3.5 px-6 text-right">Thao tác</th>
+      <div className="overflow-auto flex-1 min-h-0">
+        <table className="w-full text-left text-body-sm border-collapse">
+          <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs text-[12px] font-bold text-neutral-500 uppercase tracking-wider">
+            <tr className="bg-neutral-50 border-b border-neutral-200">
+              <th className="py-3.5 px-6 bg-neutral-50">Khách hàng</th>
+              <th className="py-3.5 px-6 bg-neutral-50">Sản phẩm</th>
+              <th className="py-3.5 px-6 bg-neutral-50">Điểm sao</th>
+              <th className="py-3.5 px-6 bg-neutral-50">Nhận xét & Feedback</th>
+              <th className="py-3.5 px-6 bg-neutral-50">Ngày đánh giá</th>
+              <th className="py-3.5 px-6 text-right bg-neutral-50">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
