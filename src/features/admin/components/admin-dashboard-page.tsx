@@ -51,7 +51,7 @@ import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   const { logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
@@ -1029,8 +1029,7 @@ export default function AdminDashboard() {
   const vipUsers = users.filter(u => u.tier === 'VIP').length;
 
   return (
-    <AdminGuard>
-      <div className="flex bg-neutral-100 min-h-screen text-neutral-800 font-sans">
+    <div className="flex bg-neutral-100 min-h-screen text-neutral-800 font-sans">
 
         {/* SIDEBAR */}
         <aside className="w-[240px] shrink-0 bg-brand-navy flex flex-col min-h-screen sticky top-0">
@@ -1291,7 +1290,14 @@ export default function AdminDashboard() {
           </AnimatePresence>
 
         </div>
-      </div>
+    </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <AdminGuard>
+      <AdminDashboardContent />
     </AdminGuard>
   );
 }
