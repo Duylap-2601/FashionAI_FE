@@ -52,7 +52,7 @@ import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   const { logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
@@ -1033,16 +1033,15 @@ export default function AdminDashboard() {
   const vipUsers = users.filter(u => u.tier === 'VIP').length;
 
   return (
-    <AdminGuard>
-      <div className="flex bg-neutral-100 h-screen overflow-hidden text-neutral-800 font-sans">
+    <div className="flex bg-neutral-100 h-screen overflow-hidden text-neutral-800 font-sans">
 
-        {/* MOBILE OVERLAY */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+      {/* MOBILE OVERLAY */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
         {/* SIDEBAR */}
         <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[240px] shrink-0 bg-brand-navy flex flex-col h-screen lg:h-full transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
@@ -1304,7 +1303,14 @@ export default function AdminDashboard() {
           </AnimatePresence>
 
         </div>
-      </div>
+    </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <AdminGuard>
+      <AdminDashboardContent />
     </AdminGuard>
   );
 }
