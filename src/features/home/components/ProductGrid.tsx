@@ -2,6 +2,8 @@
 
 import type { ProductGridProps } from '@/features/home/types/product-grid';
 import { useCart } from '@/features/cart/store/cartStore';
+import { GARMENT_TYPE_TABS } from '@/features/products/constants/product-filters';
+import { matchesGarmentType } from '@/features/products/services/product-filters';
 import type { Product } from '@/features/products/types/products';
 import { ChevronRight, Eye, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import Link from 'next/link';
@@ -19,15 +21,18 @@ export function ProductGrid({
 }: ProductGridProps) {
   const router = useRouter();
   const { addToCart } = useCart();
-  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
+  const [selectedTabKey, setSelectedTabKey] = useState<string>('ALL');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const categories = ['Tất cả', 'Blazer', 'Suit', 'Áo sơ mi', 'Quần tây', 'Chân váy'];
+  const selectedTab = GARMENT_TYPE_TABS.find((t) => t.key === selectedTabKey) || GARMENT_TYPE_TABS[0];
 
   const filteredProducts = products.filter((p) => {
-    if (selectedCategory === 'Tất cả') return true;
-    return p.category.toLowerCase().includes(selectedCategory.toLowerCase());
+    return matchesGarmentType(p, selectedTab.garmentType);
   });
+
+  const activeViewAllLink = selectedTab.garmentType
+    ? `${viewAllLink}${viewAllLink.includes('?') ? '&' : '?'}garmentType=${selectedTab.garmentType}`
+    : viewAllLink;
 
   const handleQuickAdd = (product: Product, e: React.MouseEvent) => {
     e.preventDefault();
@@ -71,7 +76,7 @@ export function ProductGrid({
 
           {viewAllLink && (
             <Link
-              href={viewAllLink}
+              href={activeViewAllLink}
               className="flex items-center gap-1.5 text-body-sm font-semibold text-[#5D1C34] hover:text-[#7A2445] transition-colors self-start md:self-auto"
             >
               <span>Xem tất cả</span>
@@ -83,18 +88,22 @@ export function ProductGrid({
         {/* Category filter pills */}
         {showCategories && (
           <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`shrink-0 h-9 px-5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${selectedCategory === cat
-                    ? 'bg-[#5D1C34] text-white shadow-md'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+            {GARMENT_TYPE_TABS.map((tab) => {
+              const isActive = selectedTabKey === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setSelectedTabKey(tab.key)}
+                  className={`shrink-0 h-9 px-5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? 'bg-[#5D1C34] text-white shadow-md'
+                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                   }`}
-              >
-                {cat}
-              </button>
-            ))}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -206,10 +215,10 @@ export function ProductGrid({
                         )}
                       </div>
 
-                      {product.rating && (
+                      {Boolean(product.rating && product.rating > 0) && (
                         <div className="flex items-center gap-0.5 text-[11px] text-amber-600 shrink-0 font-medium">
                           <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          <span>{product.rating.toFixed(1)}</span>
+                          <span>{product.rating!.toFixed(1)}</span>
                         </div>
                       )}
                     </div>
