@@ -12,6 +12,7 @@ import type { BackendRackProduct, CanvasPlacedItem, RackItem } from '@/features/
 import {
   Check,
   ChevronRight,
+  Move,
   Plus,
   RefreshCw, Search,
   ShoppingBag,
@@ -143,6 +144,42 @@ export default function RackPage() {
     setPlacedItems((prev) => [...prev, newItem]);
     setSelectedInstanceId(instanceId);
     toast.success(`Đã thêm "${item.product.name}" lên ma-nơ-canh`);
+  };
+
+  // Handle dropping an item directly from wardrobe onto canvas
+  const handleDropItem = (productId: string, dropX: number, dropY: number) => {
+    const item = items.find((i) => i.productId === productId);
+    if (!item) return;
+
+    const existingIndex = placedItems.findIndex((p) => p.rackItem.productId === productId);
+    if (existingIndex !== -1) {
+      const target = placedItems[existingIndex];
+      handleUpdateTransform(target.instanceId, { x: dropX, y: dropY });
+      setSelectedInstanceId(target.instanceId);
+      toast.info(`Đã di chuyển "${item.product.name}" đến vị trí mới`);
+      return;
+    }
+
+    const cat = toBackendCategory(item.product.category, item.product.garmentType);
+    const maxZ = placedItems.reduce((max, i) => Math.max(max, i.zIndex), 0);
+    const instanceId = `${item.id}-${Date.now()}`;
+
+    let defaultScale = 1.15;
+    if (cat === 'FULL_BODY') defaultScale = 1.25;
+
+    const newItem: CanvasPlacedItem = {
+      instanceId,
+      rackItem: item,
+      x: dropX,
+      y: dropY,
+      scale: defaultScale,
+      zIndex: maxZ + 1,
+      rotation: 0,
+    };
+
+    setPlacedItems((prev) => [...prev, newItem]);
+    setSelectedInstanceId(instanceId);
+    toast.success(`Đã ướm "${item.product.name}" lên studio`);
   };
 
   // Update item transform on canvas
@@ -466,8 +503,14 @@ export default function RackPage() {
                     return (
                       <StaggerItem key={item.id}>
                         <div
+                          draggable={true}
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('application/json', JSON.stringify({ productId: item.productId }));
+                            e.dataTransfer.setData('text/plain', item.productId);
+                            e.dataTransfer.effectAllowed = 'copy';
+                          }}
                           onClick={() => handleItemClick(item)}
-                          className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-200 shadow-2xs hover:shadow-md ${worn
+                          className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all duration-200 shadow-2xs hover:shadow-md ${worn
                               ? 'border-[#5D1C34] ring-3 ring-[#5D1C34]/20 shadow-md bg-[#5D1C34]/[0.02]'
                               : 'border-neutral-200 hover:border-neutral-300'
                             }`}
@@ -477,12 +520,18 @@ export default function RackPage() {
                             <img
                               src={imageUrl}
                               alt={item.product.name}
+                              draggable={false}
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).src =
                                   '/images/731163514_999523332788054_1114320478812927640_n.png';
                               }}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 select-none pointer-events-none"
                             />
+
+                            {/* Drag hint on hover */}
+                            <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[9px] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pointer-events-none">
+                              <Move className="w-2.5 h-2.5" /> Kéo vào studio
+                            </div>
 
                             {/* Worn Indicator Overlay */}
                             <div
@@ -557,6 +606,7 @@ export default function RackPage() {
                 onRemoveItem={handleRemoveCanvasItem}
                 onReset={handleResetMannequin}
                 onGoToTryOn={handleGoToTryOn}
+                onDropItem={handleDropItem}
               />
             </div>
           </div>

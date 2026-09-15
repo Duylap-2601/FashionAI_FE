@@ -14,5 +14,6 @@ export interface MannequinDressFormProps {
   onRemoveItem: (instanceId: string) => void;
   onReset: () => void;
   onGoToTryOn: () => void;
+  onDropItem?: (productId: string, dropX: number, dropY: number) => void;
 }
 

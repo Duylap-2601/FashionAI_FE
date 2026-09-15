@@ -353,7 +353,7 @@ export default function ProfilePage() {
                 <p className="text-label-sm text-neutral-500 flex items-center justify-between">
                   <span>Gói Free không có lượt Thử đồ AI.</span>
                   <Link href="/subscription" className="text-[#5D1C34] font-bold hover:underline">
-                    Nâng cấp Member (99k) &rarr;
+                    Nâng cấp Member (49k) &rarr;
                   </Link>
                 </p>
               </div>

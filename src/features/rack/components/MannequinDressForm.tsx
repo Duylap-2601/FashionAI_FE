@@ -1,7 +1,7 @@
 'use client';
 
 import type { MannequinDressFormProps } from '@/features/rack/types/mannequin-dress-form';
-import type { BackendRackProduct } from '@/features/rack/types/rack';
+import type { BackendRackProduct, CanvasPlacedItem } from '@/features/rack/types/rack';
 import {
   ArrowDown,
   ArrowRight,
@@ -16,7 +16,6 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import Image from 'next/image';
 import React, { useRef, useState } from 'react';
 
@@ -38,6 +37,174 @@ function getProductImage(product: BackendRackProduct): string {
   return '/images/731163514_999523332788054_1114320478812927640_n.png';
 }
 
+interface DraggableCanvasItemProps {
+  item: CanvasPlacedItem;
+  isSelected: boolean;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  onSelect: (instanceId: string) => void;
+  onUpdateTransform: (
+    instanceId: string,
+    updates: Partial<Pick<CanvasPlacedItem, 'x' | 'y' | 'scale' | 'rotation' | 'zIndex'>>
+  ) => void;
+  onRemoveItem: (instanceId: string) => void;
+}
+
+function DraggableCanvasItem({
+  item,
+  isSelected,
+  containerRef,
+  onSelect,
+  onUpdateTransform,
+  onRemoveItem,
+}: DraggableCanvasItemProps) {
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const dragStartRef = useRef<{ startX: number; startY: number; itemX: number; itemY: number }>({
+    startX: 0,
+    startY: 0,
+    itemX: 0,
+    itemY: 0,
+  });
+  const hasMovedRef = useRef(false);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Only primary mouse button or touch
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+
+    onSelect(item.instanceId);
+    hasMovedRef.current = false;
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      itemX: item.x,
+      itemY: item.y,
+    };
+    setDragOffset({ x: item.x, y: item.y });
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragOffset) return;
+    e.stopPropagation();
+
+    const deltaX = e.clientX - dragStartRef.current.startX;
+    const deltaY = e.clientY - dragStartRef.current.startY;
+
+    if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+      hasMovedRef.current = true;
+    }
+
+    let nextX = Math.round(dragStartRef.current.itemX + deltaX);
+    let nextY = Math.round(dragStartRef.current.itemY + deltaY);
+
+    // Clamp within the full canvas card so items cannot completely disappear
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const halfW = rect.width / 2;
+      const halfH = rect.height / 2;
+      const maxX = halfW - 40;
+      const minX = -halfW + 40;
+      const maxY = halfH - 40;
+      const minY = -halfH + 40;
+      nextX = Math.max(minX, Math.min(maxX, nextX));
+      nextY = Math.max(minY, Math.min(maxY, nextY));
+    }
+
+    setDragOffset({ x: nextX, y: nextY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragOffset) return;
+    e.stopPropagation();
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+
+    if (hasMovedRef.current) {
+      onUpdateTransform(item.instanceId, { x: dragOffset.x, y: dragOffset.y });
+    }
+    setDragOffset(null);
+  };
+
+  const currentX = dragOffset ? dragOffset.x : item.x;
+  const currentY = dragOffset ? dragOffset.y : item.y;
+  const imageUrl = getProductImage(item.rackItem.product);
+
+  return (
+    <div
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(item.instanceId);
+      }}
+      onWheel={(e) => {
+        e.stopPropagation();
+        const delta = e.deltaY < 0 ? 0.05 : -0.05;
+        const newScale = Math.min(2.5, Math.max(0.5, Number((item.scale + delta).toFixed(2))));
+        onUpdateTransform(item.instanceId, { scale: newScale });
+      }}
+      style={{
+        transform: `translate3d(${currentX}px, ${currentY}px, 0) scale(${item.scale}) rotate(${item.rotation || 0}deg)`,
+        zIndex: item.zIndex,
+        touchAction: 'none',
+        userSelect: 'none',
+        willChange: 'transform',
+      }}
+      className={`absolute left-[calc(50%-150px)] top-[calc(50%-170px)] w-[300px] h-[340px] cursor-grab active:cursor-grabbing select-none group flex items-center justify-center transition-[shadow,border-color] duration-150 ${
+        isSelected
+          ? 'ring-2 ring-[#5D1C34] ring-offset-2 ring-offset-[#F6EFEB] rounded-2xl shadow-2xl'
+          : 'hover:ring-1 hover:ring-[#5D1C34]/40 rounded-2xl'
+      }`}
+    >
+      {/* Item Image - Draggable disabled to prevent native browser image drag conflict */}
+      <div className="relative w-full h-full flex items-center justify-center pointer-events-none select-none">
+        <Image
+          src={imageUrl}
+          alt={item.rackItem.product.name}
+          fill
+          unoptimized
+          draggable={false}
+          className="object-contain object-center filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.22)] select-none pointer-events-none"
+        />
+      </div>
+
+      {/* Selected Box Corner Indicators */}
+      {isSelected && (
+        <>
+          {/* Quick Remove Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemoveItem(item.instanceId);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="absolute -top-3 -right-3 z-40 w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer"
+            title="Gỡ món đồ này"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          {/* Layer order pill */}
+          <div className="absolute -top-3 -left-3 z-40 px-2 py-0.5 rounded-full bg-[#5D1C34] text-white text-[10px] font-bold shadow-md pointer-events-none">
+            Lớp {item.zIndex}
+          </div>
+
+          {/* Scale % pill */}
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-40 px-2 py-0.5 rounded-full bg-neutral-900/90 text-white text-[10px] font-mono font-bold shadow-md pointer-events-none">
+            {Math.round(item.scale * 100)}%
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function MannequinDressForm({
   placedItems,
   selectedId,
@@ -49,9 +216,11 @@ export function MannequinDressForm({
   onRemoveItem,
   onReset,
   onGoToTryOn,
+  onDropItem,
 }: MannequinDressFormProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [showMannequin, setShowMannequin] = useState<boolean>(true);
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
 
   const hasAnyItem = placedItems.length > 0;
   const selectedItem = placedItems.find((item) => item.instanceId === selectedId) || null;
@@ -83,9 +252,7 @@ export function MannequinDressForm({
               )}
             </h3>
             <p className="text-[11px] text-neutral-500">
-              {!hasAnyItem
-                ? 'Bấm đồ bên tủ để đưa lên canvas'
-                : 'Kéo thả, cuộn chuột hoặc dùng thanh trượt để phóng to/thu nhỏ'}
+              Kéo trực tiếp từ tủ đồ vào studio, tự do di chuyển và phóng to thu nhỏ
             </p>
           </div>
         </div>
@@ -219,22 +386,68 @@ export function MannequinDressForm({
         </div>
       )}
 
-      {/* Virtual Interactive Canvas Stage */}
-      <div className="relative z-10 flex-1 min-h-[550px] flex flex-col items-center justify-center py-2">
+      {/* Virtual Interactive Canvas Stage - Full Studio Card Width */}
+      <div className="relative z-10 flex-1 min-h-[580px] sm:min-h-[620px] flex flex-col items-center justify-center py-2">
         {/* Spotlight Circle Floor */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-80 h-16 bg-neutral-300/40 rounded-full blur-md pointer-events-none" />
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-88 h-16 bg-neutral-300/40 rounded-full blur-md pointer-events-none" />
 
-        {/* Mannequin & Clothes Composite Stage Container */}
+        {/* Studio Canvas Box: takes the full width and full height of the card */}
         <div
           ref={stageRef}
           onClick={() => onSelect(null)}
-          className="relative w-full max-w-[380px] h-[540px] flex flex-col items-center overflow-hidden rounded-3xl cursor-default"
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            if (!isDragOver) setIsDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setIsDragOver(false);
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            let productId = '';
+            try {
+              const raw = e.dataTransfer.getData('application/json');
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                productId = parsed.productId || '';
+              }
+            } catch {}
+            if (!productId) {
+              productId = e.dataTransfer.getData('text/plain') || '';
+            }
+
+            if (productId && stageRef.current && onDropItem) {
+              const rect = stageRef.current.getBoundingClientRect();
+              const dropX = Math.round(e.clientX - rect.left - rect.width / 2);
+              const dropY = Math.round(e.clientY - rect.top - rect.height / 2);
+              onDropItem(productId, dropX, dropY);
+            }
+          }}
+          className={`relative w-full h-[580px] sm:h-[620px] flex items-center justify-center overflow-hidden rounded-3xl cursor-default transition-all duration-200 ${
+            isDragOver
+              ? 'ring-3 ring-[#5D1C34] bg-[#5D1C34]/[0.04] border-2 border-dashed border-[#5D1C34]'
+              : 'border border-neutral-200/40'
+          }`}
         >
+          {/* Visual Drop Overlay when dragging from wardrobe */}
+          {isDragOver && (
+            <div className="absolute inset-0 z-50 bg-[#5D1C34]/10 backdrop-blur-2xs flex flex-col items-center justify-center pointer-events-none animate-in fade-in duration-150">
+              <div className="px-5 py-3 rounded-2xl bg-white/95 shadow-2xl border-2 border-[#5D1C34] flex items-center gap-2.5 text-[#5D1C34] font-bold text-sm">
+                <Sparkles className="w-5 h-5 text-amber-500 animate-spin" />
+                <span>Thả trang phục vào đây để ướm thử!</span>
+              </div>
+            </div>
+          )}
+
           {/* Mannequin Structure (Background Layer) */}
           {showMannequin && (
-            <div className="absolute inset-0 flex flex-col items-center pointer-events-none transition-opacity duration-300">
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-opacity duration-300">
               {/* 1. Mannequin Finial Top */}
-              <div className="w-6 h-6 rounded-t-full bg-gradient-to-b from-[#38333D] via-[#221F26] to-[#141217] shadow-md z-1 border-t border-white/20 mt-1" />
+              <div className="w-6 h-6 rounded-t-full bg-gradient-to-b from-[#38333D] via-[#221F26] to-[#141217] shadow-md z-1 border-t border-white/20 mt-2" />
               <div className="w-8 h-3 rounded-xs bg-[#1F1C22] z-1 border-x border-white/10" />
 
               {/* 2. Mannequin Neck */}
@@ -278,108 +491,32 @@ export function MannequinDressForm({
           )}
 
           {/* Empty State Guide */}
-          {!hasAnyItem && (
+          {!hasAnyItem && !isDragOver && (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center pointer-events-none z-10">
-              <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-xs border border-dashed border-[#A67D44]/40 shadow-xs max-w-[260px]">
-                <div className="w-8 h-8 rounded-full bg-[#5D1C34]/10 text-[#5D1C34] flex items-center justify-center mx-auto mb-2">
+              <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-xs border border-dashed border-[#A67D44]/40 shadow-xs max-w-[280px]">
+                <div className="w-9 h-9 rounded-full bg-[#5D1C34]/10 text-[#5D1C34] flex items-center justify-center mx-auto mb-2">
                   <Move className="w-4 h-4" />
                 </div>
-                <h4 className="text-xs font-bold text-[#5D1C34]">Phối Đồ Kéo Thả</h4>
-                <p className="text-[10px] text-neutral-500 mt-1">
-                  Chạm vào trang phục trong tủ đồ để ướm thử. Bạn có thể tự do kéo, dời và phóng to thu nhỏ!
+                <h4 className="text-xs font-bold text-[#5D1C34]">Kéo & Thả Trang Phục</h4>
+                <p className="text-[10px] text-neutral-500 mt-1 leading-relaxed">
+                  Kéo trực tiếp ảnh từ Tủ đồ vào đây hoặc bấm vào để ướm thử. Bạn có thể tự do di chuyển khắp toàn bộ khung!
                 </p>
               </div>
             </div>
           )}
 
-          {/* Freeform Draggable Items */}
-          {placedItems.map((item) => {
-            const isSelected = selectedId === item.instanceId;
-            const imageUrl = getProductImage(item.rackItem.product);
-
-            return (
-              <motion.div
-                key={item.instanceId}
-                drag
-                dragConstraints={stageRef}
-                dragMomentum={false}
-                dragElastic={0.06}
-                initial={false}
-                animate={{
-                  x: item.x,
-                  y: item.y,
-                  scale: item.scale,
-                  rotate: item.rotation || 0,
-                }}
-                transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-                style={{
-                  zIndex: item.zIndex,
-                  touchAction: 'none',
-                }}
-                onDragStart={() => onSelect(item.instanceId)}
-                onDragEnd={(_, info) => {
-                  onUpdateTransform(item.instanceId, {
-                    x: Math.round(item.x + info.offset.x),
-                    y: Math.round(item.y + info.offset.y),
-                  });
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(item.instanceId);
-                }}
-                onWheel={(e) => {
-                  e.stopPropagation();
-                  const delta = e.deltaY < 0 ? 0.05 : -0.05;
-                  const newScale = Math.min(2.5, Math.max(0.5, Number((item.scale + delta).toFixed(2))));
-                  onUpdateTransform(item.instanceId, { scale: newScale });
-                }}
-                className={`absolute left-[calc(50%-150px)] top-[calc(50%-170px)] w-[300px] h-[340px] cursor-grab active:cursor-grabbing select-none group flex items-center justify-center transition-shadow ${
-                  isSelected
-                    ? 'ring-2 ring-[#5D1C34] ring-offset-2 ring-offset-[#F6EFEB] rounded-2xl shadow-xl'
-                    : 'hover:ring-1 hover:ring-[#5D1C34]/40 rounded-2xl'
-                }`}
-              >
-                {/* Item Image */}
-                <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
-                  <Image
-                    src={imageUrl}
-                    alt={item.rackItem.product.name}
-                    fill
-                    unoptimized
-                    className="object-contain object-center filter drop-shadow-[0_12px_26px_rgba(0,0,0,0.28)]"
-                  />
-                </div>
-
-                {/* Corner Controls on Selected Item */}
-                {isSelected && (
-                  <>
-                    {/* Quick Remove Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRemoveItem(item.instanceId);
-                      }}
-                      className="absolute -top-3 -right-3 z-40 w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer"
-                      title="Gỡ món đồ này"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-
-                    {/* Layer indicator pill */}
-                    <div className="absolute -top-3 -left-3 z-40 px-2 py-0.5 rounded-full bg-[#5D1C34] text-white text-[10px] font-bold shadow-md">
-                      Lớp {item.zIndex}
-                    </div>
-
-                    {/* Scale % pill */}
-                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-40 px-2 py-0.5 rounded-full bg-neutral-900/90 text-white text-[10px] font-mono font-bold shadow-md">
-                      {Math.round(item.scale * 100)}%
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            );
-          })}
+          {/* Draggable Items using Butter-Smooth Direct Pointer Capture */}
+          {placedItems.map((item) => (
+            <DraggableCanvasItem
+              key={item.instanceId}
+              item={item}
+              isSelected={selectedId === item.instanceId}
+              containerRef={stageRef}
+              onSelect={onSelect}
+              onUpdateTransform={onUpdateTransform}
+              onRemoveItem={onRemoveItem}
+            />
+          ))}
         </div>
       </div>
 
@@ -444,7 +581,7 @@ export function MannequinDressForm({
         ) : (
           <div className="py-2 text-center">
             <p className="text-xs text-neutral-500">
-              Hãy bấm vào bất kỳ món đồ nào bên <span className="text-[#5D1C34] font-bold">Tủ Đồ</span> để đưa lên ma-nơ-canh
+              Kéo hoặc bấm bất kỳ món đồ nào bên <span className="text-[#5D1C34] font-bold">Tủ Đồ</span> để đưa vào studio
             </p>
           </div>
         )}
