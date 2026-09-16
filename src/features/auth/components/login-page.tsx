@@ -11,10 +11,20 @@ function LoginFormContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isLoggedIn, currentUser, status } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl');
+
+  React.useEffect(() => {
+    if (status !== 'loading' && isLoggedIn) {
+      if (currentUser.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace(callbackUrl || '/products');
+      }
+    }
+  }, [isLoggedIn, currentUser.role, router, status, callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,10 +43,11 @@ function LoginFormContent() {
         setError('Email hoặc mật khẩu không chính xác');
       } else {
         const role = res?.user?.role;
-        if (callbackUrl) {
+        if (role === 'ADMIN') {
+          const targetUrl = callbackUrl && callbackUrl.startsWith('/admin') ? callbackUrl : '/admin/dashboard';
+          router.push(targetUrl);
+        } else if (callbackUrl) {
           router.push(callbackUrl);
-        } else if (role === 'ADMIN') {
-          router.push('/admin/dashboard');
         } else {
           router.push('/products');
         }

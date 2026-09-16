@@ -33,7 +33,6 @@ import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
-  ExternalLink,
   Layers,
   LayoutDashboard,
   LogOut,
@@ -1126,15 +1125,6 @@ function AdminDashboardContent() {
             </div>
 
             <div className="flex items-center gap-3 md:gap-4">
-              <Link
-                href="/"
-                target="_blank"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[13px] font-medium text-neutral-600 hover:text-brand-navy hover:bg-neutral-100 transition-colors border border-neutral-200/80"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Xem cửa hàng</span>
-              </Link>
-
               <button
                 onClick={() => {
                   setIsLoading(true);

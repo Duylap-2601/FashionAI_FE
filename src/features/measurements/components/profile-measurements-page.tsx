@@ -21,6 +21,7 @@ export default function Measurements() {
   const userName = profile?.name || authUser?.name || '';
   const userEmail = profile?.email || authUser?.email || '';
   const userTier = profile?.tier || authUser?.tier || 'FREE';
+  const userRole = authUser?.role;
   const userAvatar = authUser?.image || authUser?.avatarUrl || null;
 
   return (
@@ -44,6 +45,7 @@ export default function Measurements() {
             userName={userName}
             userEmail={userEmail}
             userTier={userTier}
+            userRole={userRole}
             userAvatar={userAvatar}
           />
 

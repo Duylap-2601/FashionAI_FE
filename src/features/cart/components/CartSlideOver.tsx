@@ -45,12 +45,13 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
             <div className="flex flex-col items-center justify-center h-full p-6 text-center">
               <ShoppingBag className="w-16 h-16 text-neutral-300 mb-4" strokeWidth={1} />
               <p className="text-body-lg text-brand-navy font-semibold mb-2">Giỏ hàng của bạn đang trống</p>
-              <button
+              <Link
+                href="/products"
                 onClick={onClose}
-                className="mt-6 px-6 py-3 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors"
+                className="mt-6 inline-flex items-center justify-center px-6 py-3 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors"
               >
                 Khám phá sản phẩm &rarr;
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="flex flex-col">

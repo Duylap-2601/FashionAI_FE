@@ -464,12 +464,28 @@ export function AppLayout({
   contentClassName = '',
 }: AppLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { currentUser, status } = useAuth();
   const isChat = pathname === '/chat';
   const { isCartOpen, setIsCartOpen, totalItems } = useCart();
   const shouldShowFloatingChat = showFloatingChat ?? !isChat;
   const shouldShowFooter = showFooter ?? (footerVariant !== 'none' && !isChat);
   const resolvedFooterVariant = footerVariant === 'none' ? 'simple' : footerVariant;
   const contentPadding = isChat || !showBottomTab ? 'pb-0' : 'pb-[64px] md:pb-0';
+
+  useEffect(() => {
+    if (status !== 'loading' && currentUser.role === 'admin') {
+      router.replace('/admin/dashboard');
+    }
+  }, [currentUser.role, router, status]);
+
+  if (status !== 'loading' && currentUser.role === 'admin') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-100">
+        <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-sans text-neutral-900 selection:bg-brand-navy selection:text-white">

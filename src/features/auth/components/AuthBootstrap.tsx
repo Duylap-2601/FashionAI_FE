@@ -38,7 +38,12 @@ export function AuthBootstrap() {
 
         const session = toAuthSession({ ...payload, user });
         if (!session) throw new Error('Invalid refresh payload');
-        if (isMounted) useAuthStore.getState().setSession(session);
+        if (isMounted) {
+          useAuthStore.getState().setSession(session);
+          if (session.user?.role === 'ADMIN' && !pathname.startsWith('/admin')) {
+            router.replace('/admin/dashboard');
+          }
+        }
       } catch {
         if (isMounted) {
           clearInvalidSession(queryClient);

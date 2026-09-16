@@ -19,6 +19,7 @@ export function Sidebar({
   userName,
   userEmail,
   userTier,
+  userRole,
   userAvatar,
 }: {
   activeTab: Tab;
@@ -26,6 +27,7 @@ export function Sidebar({
   userName: string;
   userEmail: string;
   userTier: string;
+  userRole?: string;
   userAvatar?: string | null;
 }) {
   const { quota } = useQuota();
@@ -45,25 +47,30 @@ export function Sidebar({
       .toUpperCase() || 'US';
   };
 
-  const getTierLabel = (tier: string) => {
+  const getTierLabel = (tier: string, role?: string) => {
+    // Ưu tiên hiển thị role nếu là admin
+    if (role?.toUpperCase() === 'ADMIN') {
+      return 'Administrator';
+    }
     const t = tier?.toLowerCase();
     switch (t) {
-      case 'admin': return 'Administrator';
       case 'vip': return 'VIP Member';
       case 'member': return 'Gold Member';
       default: return 'Free Account';
     }
   };
 
-  const getTierBadgeStyle = (tier: string) => {
+  const getTierBadgeStyle = (tier: string, role?: string) => {
+    // Ưu tiên style cho admin
+    if (role?.toUpperCase() === 'ADMIN') {
+      return 'bg-brand-navy/10 text-brand-navy border border-brand-navy/20';
+    }
     const t = tier?.toLowerCase();
     switch (t) {
       case 'vip':
         return 'bg-brand-gold/20 text-amber-700 border border-brand-gold/40';
       case 'member':
         return 'bg-brand-sage/20 text-brand-sage border border-brand-sage/40';
-      case 'admin':
-        return 'bg-brand-navy/10 text-brand-navy border border-brand-navy/20';
       default:
         return 'bg-neutral-100 text-neutral-500 border border-neutral-200';
     }
@@ -86,8 +93,8 @@ export function Sidebar({
         </div>
         <h2 className="text-body-md font-semibold text-neutral-900">{userName}</h2>
         <p className="text-label-sm text-neutral-500 mt-0.5">{userEmail}</p>
-        <div className={`mt-3 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase ${getTierBadgeStyle(userTier)}`}>
-          {getTierLabel(userTier)}
+        <div className={`mt-3 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase ${getTierBadgeStyle(userTier, userRole)}`}>
+          {getTierLabel(userTier, userRole)}
         </div>
       </div>
 
