@@ -112,16 +112,16 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
       ...(currentUser.role !== 'guest' ? [{ label: 'Lịch sử', href: '/profile/history' }] : []),
     ];
 
-  const getTierColor = (tier?: UserTier) => {
-    switch (tier) {
+  const getTierColor = (tier?: string) => {
+    switch (tier?.toLowerCase()) {
       case 'vip': return 'text-brand-gold';
       case 'member': return 'text-[#5D1C34]';
       default: return 'text-neutral-500';
     }
   };
 
-  const getTierLabel = (tier?: UserTier) => {
-    switch (tier) {
+  const getTierLabel = (tier?: string) => {
+    switch (tier?.toLowerCase()) {
       case 'vip': return 'VIP';
       case 'member': return 'Member';
       default: return 'Free';

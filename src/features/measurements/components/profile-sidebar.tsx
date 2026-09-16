@@ -9,6 +9,7 @@ import {
   Shirt,
   User
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 
@@ -18,12 +19,14 @@ export function Sidebar({
   userName,
   userEmail,
   userTier,
+  userAvatar,
 }: {
   activeTab: Tab;
   setActiveTab: (t: Tab) => void;
   userName: string;
   userEmail: string;
   userTier: string;
+  userAvatar?: string | null;
 }) {
   const { quota } = useQuota();
 
@@ -43,11 +46,26 @@ export function Sidebar({
   };
 
   const getTierLabel = (tier: string) => {
-    switch (tier) {
+    const t = tier?.toLowerCase();
+    switch (t) {
       case 'admin': return 'Administrator';
       case 'vip': return 'VIP Member';
       case 'member': return 'Gold Member';
       default: return 'Free Account';
+    }
+  };
+
+  const getTierBadgeStyle = (tier: string) => {
+    const t = tier?.toLowerCase();
+    switch (t) {
+      case 'vip':
+        return 'bg-brand-gold/20 text-amber-700 border border-brand-gold/40';
+      case 'member':
+        return 'bg-brand-sage/20 text-brand-sage border border-brand-sage/40';
+      case 'admin':
+        return 'bg-brand-navy/10 text-brand-navy border border-brand-navy/20';
+      default:
+        return 'bg-neutral-100 text-neutral-500 border border-neutral-200';
     }
   };
 
@@ -58,19 +76,32 @@ export function Sidebar({
       {/* Avatar card */}
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6 flex flex-col items-center text-center">
         <div className="relative mb-3">
-          <div className="w-16 h-16 bg-brand-navy/10 text-brand-navy rounded-full flex items-center justify-center text-heading-h3 font-bold">
-            {getInitials(userName)}
+          <div className="w-16 h-16 bg-brand-navy/10 text-brand-navy rounded-full flex items-center justify-center text-heading-h3 font-bold overflow-hidden">
+            {userAvatar ? (
+              <Image src={userAvatar} alt={userName} width={64} height={64} unoptimized className="w-full h-full object-cover" />
+            ) : (
+              getInitials(userName)
+            )}
           </div>
         </div>
         <h2 className="text-body-md font-semibold text-neutral-900">{userName}</h2>
         <p className="text-label-sm text-neutral-500 mt-0.5">{userEmail}</p>
-        <div className="mt-3 bg-brand-gold/10 text-brand-gold px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase">
+        <div className={`mt-3 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase ${getTierBadgeStyle(userTier)}`}>
           {getTierLabel(userTier)}
         </div>
       </div>
 
       {/* Nav */}
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-2 flex flex-col gap-0.5">
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-body-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
+        >
+          <User className="w-4 h-4" /> Tổng quan hồ sơ
+        </Link>
+
+        <div className="h-px bg-neutral-100 my-1" />
+
         {navItems.map(item => (
           <button
             key={item.id}

@@ -39,7 +39,7 @@ const bottomTabs: BottomTabItem[] = [
   },
   {
     label: 'Profile',
-    href: '/profile/measurements',
+    href: '/profile',
     icon: UserIcon,
     isActive: (pathname) => pathname.startsWith('/profile'),
   },
