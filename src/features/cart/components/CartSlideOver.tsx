@@ -58,14 +58,28 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
               {items.map(item => (
                 <div key={item.id} className="p-4 border-b border-neutral-100 relative group">
                   <div className="flex gap-4">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-[72px] h-[96px] object-cover rounded-md bg-neutral-100"
-                    />
+                    <Link
+                      href={`/products/${item.productId || item.id}`}
+                      onClick={onClose}
+                      className="shrink-0 hover:opacity-85 transition-opacity rounded-md overflow-hidden"
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-[72px] h-[96px] object-cover rounded-md bg-neutral-100 cursor-pointer"
+                      />
+                    </Link>
                     <div className="flex-1 flex flex-col justify-between py-1">
                       <div className="pr-8">
-                        <h3 className="text-body-sm font-medium text-brand-navy line-clamp-1 mb-1">{item.name}</h3>
+                        <h3 className="text-body-sm font-medium text-brand-navy line-clamp-1 mb-1">
+                          <Link
+                            href={`/products/${item.productId || item.id}`}
+                            onClick={onClose}
+                            className="hover:underline"
+                          >
+                            {item.name}
+                          </Link>
+                        </h3>
                         <p className="text-[13px] text-neutral-500 mb-3">{item.variant}</p>
                       </div>
 

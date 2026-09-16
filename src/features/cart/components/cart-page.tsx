@@ -70,16 +70,26 @@ export default function CartPage() {
           <div className="lg:col-span-8 bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden divide-y divide-neutral-100">
             {items.map((item) => (
               <div key={item.id} className="p-5 md:p-6 flex flex-col sm:flex-row gap-5 relative group">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full sm:w-[100px] h-[120px] object-cover rounded-xl bg-neutral-100 border border-neutral-200 shrink-0"
-                />
+                <Link
+                  href={`/products/${item.productId || item.id}`}
+                  className="w-full sm:w-[100px] h-[120px] rounded-xl overflow-hidden shrink-0 hover:opacity-85 transition-opacity"
+                >
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover bg-neutral-100 border border-neutral-200 cursor-pointer"
+                  />
+                </Link>
 
                 <div className="flex-1 flex flex-col justify-between">
                   <div className="pr-8">
                     <h3 className="text-body-md font-bold text-brand-navy line-clamp-1 mb-1">
-                      {item.name}
+                      <Link
+                        href={`/products/${item.productId || item.id}`}
+                        className="hover:underline"
+                      >
+                        {item.name}
+                      </Link>
                     </h3>
                     <p className="text-label-sm text-neutral-500 mb-3">{item.variant}</p>
                   </div>

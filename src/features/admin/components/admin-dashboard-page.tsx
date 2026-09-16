@@ -47,12 +47,15 @@ import {
   Users
 } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
+import Image from 'next/image';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 function AdminDashboardContent() {
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
+  const adminName = currentUser.name && currentUser.name !== 'Khách' ? currentUser.name : 'Admin FashionAI';
+  const adminInitial = adminName.charAt(0).toUpperCase() || 'A';
 
   const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1146,11 +1149,15 @@ function AdminDashboardContent() {
 
               {/* Admin User Info */}
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                  A
+                <div className="w-8 h-8 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-xs shadow-xs overflow-hidden">
+                  {currentUser.avatar ? (
+                    <Image src={currentUser.avatar} alt={adminName} width={32} height={32} unoptimized className="w-full h-full object-cover" />
+                  ) : (
+                    adminInitial
+                  )}
                 </div>
                 <div className="hidden md:flex flex-col text-left">
-                  <span className="text-[13px] font-bold text-neutral-800 leading-tight">Admin FashionAI</span>
+                  <span className="text-[13px] font-bold text-neutral-800 leading-tight">{adminName}</span>
                   <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider">Quản trị viên</span>
                 </div>
               </div>
