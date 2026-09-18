@@ -21,32 +21,41 @@ export function AdminWebhookFailuresPanel({ failures, onResolve }: AdminWebhookF
       </div>
 
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-neutral-50 z-20 shadow-2xs">
-              <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
-                <th className="px-6 py-3 bg-neutral-50">Thời gian</th>
-                <th className="px-4 py-3 bg-neutral-50">Nguồn</th>
-                <th className="px-4 py-3 bg-neutral-50">Lý do</th>
-                <th className="px-4 py-3 bg-neutral-50">Mã đơn (nếu có)</th>
-                <th className="px-4 py-3 bg-neutral-50">Chi tiết</th>
-                <th className="px-6 py-3 bg-neutral-50"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 text-body-sm">
+        {/* Webhook Failures Table: Fixed Header + Scrollable Data Body */}
+        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
+          <div className="min-w-[920px] flex-1 flex flex-col min-h-0">
+            {/* Fixed Header */}
+            <div className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase shrink-0 select-none shadow-2xs">
+              <div className="grid grid-cols-[170px_110px_160px_120px_minmax(200px,1fr)_160px] items-center">
+                <div className="px-6 py-3">Thời gian</div>
+                <div className="px-4 py-3">Nguồn</div>
+                <div className="px-4 py-3">Lý do</div>
+                <div className="px-4 py-3">Mã đơn (nếu có)</div>
+                <div className="px-4 py-3">Chi tiết</div>
+                <div className="px-6 py-3"></div>
+              </div>
+            </div>
+
+            {/* Scrollable Data Body */}
+            <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
               {failures.map(f => (
-                <tr key={f.id} className={f.resolved ? 'opacity-50' : 'hover:bg-neutral-50'}>
-                  <td className="px-6 py-3.5 text-neutral-500 whitespace-nowrap">{new Date(f.createdAt).toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-3.5 font-medium text-neutral-700">{f.provider}</td>
-                  <td className="px-4 py-3.5">
+                <div
+                  key={f.id}
+                  className={`grid grid-cols-[170px_110px_160px_120px_minmax(200px,1fr)_160px] items-center ${
+                    f.resolved ? 'opacity-50' : 'hover:bg-neutral-50'
+                  } transition-colors`}
+                >
+                  <div className="px-6 py-3.5 text-neutral-500 whitespace-nowrap truncate">{new Date(f.createdAt).toLocaleString('vi-VN')}</div>
+                  <div className="px-4 py-3.5 font-medium text-neutral-700 truncate">{f.provider}</div>
+                  <div className="px-4 py-3.5">
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-semibold bg-amber-50 text-amber-700">
                       <AlertTriangle className="w-3 h-3" />
                       {REASON_LABEL[f.reason] || f.reason}
                     </span>
-                  </td>
-                  <td className="px-4 py-3.5 font-mono text-neutral-700">{f.orderCode ? `#${f.orderCode}` : '—'}</td>
-                  <td className="px-4 py-3.5 text-neutral-500 max-w-[320px] truncate" title={f.message}>{f.message}</td>
-                  <td className="px-6 py-3.5">
+                  </div>
+                  <div className="px-4 py-3.5 font-mono text-neutral-700 truncate">{f.orderCode ? `#${f.orderCode}` : '—'}</div>
+                  <div className="px-4 py-3.5 text-neutral-500 truncate" title={f.message}>{f.message}</div>
+                  <div className="px-6 py-3.5">
                     {f.resolved ? (
                       <span className="inline-flex items-center gap-1 text-neutral-400">
                         <CheckCircle2 className="w-4 h-4" /> Đã xử lý
@@ -59,16 +68,15 @@ export function AdminWebhookFailuresPanel({ failures, onResolve }: AdminWebhookF
                         Đánh dấu đã xử lý
                       </button>
                     )}
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
+
               {failures.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-neutral-400">Chưa có giao dịch nào bị lỗi</td>
-                </tr>
+                <div className="py-16 text-center text-neutral-400">Chưa có giao dịch nào bị lỗi</div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>

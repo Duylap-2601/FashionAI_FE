@@ -127,62 +127,81 @@ export function AdminProductsPanel({
           )}
         </div>
 
-        {/* Product Table */}
-        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-neutral-50 z-20 shadow-2xs">
-              <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
-                <th className="px-6 py-3 bg-neutral-50">Sản phẩm</th>
-                <th className="px-4 py-3 bg-neutral-50">Danh mục</th>
-                <th className="px-4 py-3 text-right bg-neutral-50">Giá bán</th>
-                <th className="px-4 py-3 text-right bg-neutral-50">Tồn kho</th>
-                <th className="px-4 py-3 bg-neutral-50">Trạng thái</th>
-                <th className="px-6 py-3 bg-neutral-50">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 text-body-sm">
+        {/* Product Table: Header is fixed, scrollbar is strictly contained within the data body */}
+        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
+          <div className="min-w-[880px] flex-1 flex flex-col min-h-0">
+            {/* Fixed Header */}
+            <div className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase shrink-0 select-none shadow-2xs">
+              <div className="grid grid-cols-[minmax(240px,1fr)_140px_140px_120px_130px_110px] items-center">
+                <div className="px-6 py-3">Sản phẩm</div>
+                <div className="px-4 py-3">Danh mục</div>
+                <div className="px-4 py-3 text-right">Giá bán</div>
+                <div className="px-4 py-3 text-right">Tồn kho</div>
+                <div className="px-4 py-3">Trạng thái</div>
+                <div className="px-6 py-3">Thao tác</div>
+              </div>
+            </div>
+
+            {/* Scrollable Data Body - Scrollbar starts below header and stays strictly in data area */}
+            <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
               {products.map((p) => (
-                <tr key={p.id} className="hover:bg-neutral-50/80 transition-colors">
-                  <td className="px-6 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="relative shrink-0">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200">
-                          <Image
-                            src={p.image}
-                            alt={p.name}
-                            width={48}
-                            height={48}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
-                            }}
-                          />
-                        </div>
-                        {p.images && p.images.length > 1 && (
-                          <span
-                            title={`${p.images.length} hình ảnh`}
-                            className="absolute -bottom-1 -right-1.5 bg-brand-navy text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[20px] text-center rounded-full border-2 border-white shadow-xs z-1 leading-none select-none"
-                          >
-                            +{p.images.length}
-                          </span>
-                        )}
+                <div
+                  key={p.id}
+                  className="grid grid-cols-[minmax(240px,1fr)_140px_140px_120px_130px_110px] items-center hover:bg-neutral-50/80 transition-colors"
+                >
+                  {/* Sản phẩm */}
+                  <div className="px-6 py-3.5 flex items-center gap-3 min-w-0">
+                    <div className="relative shrink-0">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200">
+                        <Image
+                          src={p.image}
+                          alt={p.name}
+                          width={48}
+                          height={48}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                          }}
+                        />
                       </div>
-                      <span className="font-semibold text-neutral-900 line-clamp-1">{p.name}</span>
+                      {p.images && p.images.length > 1 && (
+                        <span
+                          title={`${p.images.length} hình ảnh`}
+                          className="absolute -bottom-1 -right-1.5 bg-brand-navy text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[20px] text-center rounded-full border-2 border-white shadow-xs z-1 leading-none select-none"
+                        >
+                          +{p.images.length}
+                        </span>
+                      )}
                     </div>
-                  </td>
-                  <td className="px-4 py-3.5 text-neutral-500">{CATEGORY_LABEL[p.category] || p.category}</td>
-                  <td className="px-4 py-3.5 text-right font-semibold text-brand-navy">{fmt(p.price)}</td>
-                  <td className="px-4 py-3.5 text-right font-medium text-neutral-700">
+                    <span className="font-semibold text-neutral-900 line-clamp-1 truncate">{p.name}</span>
+                  </div>
+
+                  {/* Danh mục */}
+                  <div className="px-4 py-3.5 text-neutral-500 truncate">
+                    {CATEGORY_LABEL[p.category] || p.category}
+                  </div>
+
+                  {/* Giá bán */}
+                  <div className="px-4 py-3.5 text-right font-semibold text-brand-navy">
+                    {fmt(p.price)}
+                  </div>
+
+                  {/* Tồn kho */}
+                  <div className="px-4 py-3.5 text-right font-medium text-neutral-700">
                     {p.stock ?? 0}
                     {p.stock === 0 && <span className="ml-1 text-red-500 font-semibold">(Hết hàng)</span>}
                     {p.stock !== undefined && p.stock > 0 && p.stock < 10 && <span className="ml-1 text-amber-600 font-semibold">(Sắp hết)</span>}
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className={`px-2 py-0.5 rounded-full text-label-sm font-semibold ${PRODUCT_STATUS_CFG[p.status]?.cls || ''}`}>
+                  </div>
+
+                  {/* Trạng thái */}
+                  <div className="px-4 py-3.5">
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-label-sm font-semibold ${PRODUCT_STATUS_CFG[p.status]?.cls || ''}`}>
                       {PRODUCT_STATUS_CFG[p.status]?.label || p.status}
                     </span>
-                  </td>
-                  <td className="px-6 py-3.5">
+                  </div>
+
+                  {/* Thao tác */}
+                  <div className="px-6 py-3.5">
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => openProductEditor(p)}
@@ -199,18 +218,17 @@ export function AdminProductsPanel({
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
+
               {products.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-neutral-400">
-                    {isFiltered ? 'Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại' : 'Chưa có sản phẩm nào'}
-                  </td>
-                </tr>
+                <div className="py-16 text-center text-neutral-400">
+                  {isFiltered ? 'Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại' : 'Chưa có sản phẩm nào'}
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
         {/* Pagination Controls */}

@@ -298,53 +298,55 @@ export function AdminCollectionManager() {
         </div>
       </div>
 
-      {/* Table list */}
+      {/* Table list: Fixed Header + Scrollable Data Body */}
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-xs flex flex-col flex-1 min-h-0">
-        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-neutral-50 z-20 shadow-2xs">
-              <tr className="bg-neutral-50 border-b border-neutral-200 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                <th className="py-3.5 px-4 bg-neutral-50">Ảnh bìa</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Tên bộ sưu tập</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Thứ tự</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Mùa / Season</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Sản phẩm thuộc BST</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Trạng thái Landing Page</th>
-                <th className="py-3.5 px-4 text-right bg-neutral-50">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 text-body-sm">
+        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
+          <div className="min-w-[1050px] flex-1 flex flex-col min-h-0">
+            {/* Fixed Header */}
+            <div className="bg-neutral-50 border-b border-neutral-200 text-[11px] font-bold uppercase tracking-wider text-neutral-500 shrink-0 select-none shadow-2xs">
+              <div className="grid grid-cols-[100px_minmax(220px,1fr)_90px_130px_170px_200px_140px] items-center">
+                <div className="py-3.5 px-4">Ảnh bìa</div>
+                <div className="py-3.5 px-4">Tên bộ sưu tập</div>
+                <div className="py-3.5 px-4">Thứ tự</div>
+                <div className="py-3.5 px-4">Mùa / Season</div>
+                <div className="py-3.5 px-4">Sản phẩm thuộc BST</div>
+                <div className="py-3.5 px-4">Trạng thái Landing Page</div>
+                <div className="py-3.5 px-4 text-right">Thao tác</div>
+              </div>
+            </div>
+
+            {/* Scrollable Data Body */}
+            <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-neutral-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin text-[#5D1C34]" />
-                      <span>Đang tải danh sách bộ sưu tập...</span>
-                    </div>
-                  </td>
-                </tr>
+                <div className="py-16 text-center text-neutral-400">
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#5D1C34]" />
+                    <span>Đang tải danh sách bộ sưu tập...</span>
+                  </div>
+                </div>
               ) : paginatedCollections.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-neutral-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Layers className="w-8 h-8 text-neutral-300" />
-                      <p className="text-body-sm font-medium">
-                        {isFiltered ? 'Không tìm thấy bộ sưu tập nào phù hợp với bộ lọc' : 'Chưa có bộ sưu tập nào'}
-                      </p>
-                      <button
-                        onClick={handleOpenNew}
-                        className="mt-2 text-xs text-[#5D1C34] hover:underline font-semibold cursor-pointer"
-                      >
-                        + Tạo bộ sưu tập đầu tiên
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <div className="py-16 text-center text-neutral-400">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Layers className="w-8 h-8 text-neutral-300" />
+                    <p className="text-body-sm font-medium">
+                      {isFiltered ? 'Không tìm thấy bộ sưu tập nào phù hợp với bộ lọc' : 'Chưa có bộ sưu tập nào'}
+                    </p>
+                    <button
+                      onClick={handleOpenNew}
+                      className="mt-2 text-xs text-[#5D1C34] hover:underline font-semibold cursor-pointer"
+                    >
+                      + Tạo bộ sưu tập đầu tiên
+                    </button>
+                  </div>
+                </div>
               ) : (
                 paginatedCollections.map((col) => (
-                  <tr key={col.id} className="hover:bg-neutral-50/60 transition-colors">
+                  <div
+                    key={col.id}
+                    className="grid grid-cols-[100px_minmax(220px,1fr)_90px_130px_170px_200px_140px] items-center hover:bg-neutral-50/60 transition-colors"
+                  >
                     {/* Cover Thumbnail */}
-                    <td className="py-3 px-4">
+                    <div className="py-3 px-4">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 relative shrink-0">
                         {col.coverImages?.[0] ? (
                           <img
@@ -369,39 +371,39 @@ export function AdminCollectionManager() {
                           </div>
                         )}
                       </div>
-                    </td>
+                    </div>
 
                     {/* Name & Tagline */}
-                    <td className="py-3 px-4 max-w-[260px]">
-                      <div className="font-semibold text-neutral-900 text-sm line-clamp-1">
+                    <div className="py-3 px-4 min-w-0">
+                      <div className="font-semibold text-neutral-900 text-sm line-clamp-1 truncate">
                         {col.name}
                       </div>
                       {col.tagline && (
-                        <div className="text-xs text-neutral-500 line-clamp-1 mt-0.5">
+                        <div className="text-xs text-neutral-500 line-clamp-1 mt-0.5 truncate">
                           {col.tagline}
                         </div>
                       )}
-                      <div className="text-[10px] text-neutral-400 mt-1 font-mono">
+                      <div className="text-[10px] text-neutral-400 mt-1 font-mono truncate">
                         slug: /{col.slug}
                       </div>
-                    </td>
+                    </div>
 
                     {/* Display Order */}
-                    <td className="py-3 px-4">
+                    <div className="py-3 px-4">
                       <span className="px-2 py-0.5 bg-neutral-100 text-neutral-700 text-xs font-mono font-semibold rounded">
                         #{col.displayOrder ?? 0}
                       </span>
-                    </td>
+                    </div>
 
                     {/* Season */}
-                    <td className="py-3 px-4">
+                    <div className="py-3 px-4">
                       <span className="px-2.5 py-1 bg-neutral-100 text-neutral-700 text-xs font-semibold rounded-md">
                         {col.season || '2026'}
                       </span>
-                    </td>
+                    </div>
 
                     {/* Products count & manage button */}
-                    <td className="py-3 px-4">
+                    <div className="py-3 px-4">
                       <button
                         type="button"
                         onClick={() => setManagingProductsCollection(col)}
@@ -411,10 +413,10 @@ export function AdminCollectionManager() {
                         <Package className="w-3.5 h-3.5" />
                         <span>{col.itemCount ?? col._count?.products ?? 0} sản phẩm</span>
                       </button>
-                    </td>
+                    </div>
 
                     {/* Publish Status Toggle */}
-                    <td className="py-3 px-4">
+                    <div className="py-3 px-4">
                       <button
                         onClick={() => handleTogglePublish(col.id, col.isPublished)}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${col.isPublished
@@ -435,10 +437,10 @@ export function AdminCollectionManager() {
                           </>
                         )}
                       </button>
-                    </td>
+                    </div>
 
                     {/* Actions */}
-                    <td className="py-3 px-4 text-right">
+                    <div className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setManagingProductsCollection(col)}
@@ -471,12 +473,12 @@ export function AdminCollectionManager() {
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
         {/* Pagination */}

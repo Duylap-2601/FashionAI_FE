@@ -96,72 +96,78 @@ export function AdminUsersPanel({
           )}
         </div>
 
-        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-neutral-50 z-20 shadow-2xs">
-              <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
-                <th className="px-6 py-3 bg-neutral-50">Thành viên</th>
-                <th className="px-4 py-3 bg-neutral-50">Email</th>
-                <th className="px-4 py-3 bg-neutral-50">Vai trò</th>
-                <th className="px-4 py-3 bg-neutral-50">Tier</th>
-                <th className="px-4 py-3 text-right bg-neutral-50">Try-On</th>
-                <th className="px-4 py-3 bg-neutral-50">Trạng thái</th>
-                <th className="px-6 py-3 bg-neutral-50"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 text-body-sm">
+        {/* Users Table: Fixed Header + Scrollable Data Body */}
+        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
+          <div className="min-w-[880px] flex-1 flex flex-col min-h-0">
+            {/* Fixed Header */}
+            <div className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase shrink-0 select-none shadow-2xs">
+              <div className="grid grid-cols-[minmax(180px,1fr)_minmax(180px,1.2fr)_110px_110px_110px_140px_100px] items-center">
+                <div className="px-6 py-3">Thành viên</div>
+                <div className="px-4 py-3">Email</div>
+                <div className="px-4 py-3">Vai trò</div>
+                <div className="px-4 py-3">Tier</div>
+                <div className="px-4 py-3 text-right">Try-On</div>
+                <div className="px-4 py-3">Trạng thái</div>
+                <div className="px-6 py-3"></div>
+              </div>
+            </div>
+
+            {/* Scrollable Data Body */}
+            <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
               {users.map(u => (
-                <tr key={u.id} className="hover:bg-neutral-50">
-                  <td className="px-6 py-3.5">
+                <div
+                  key={u.id}
+                  className="grid grid-cols-[minmax(180px,1fr)_minmax(180px,1.2fr)_110px_110px_110px_140px_100px] items-center hover:bg-neutral-50 transition-colors"
+                >
+                  <div className="px-6 py-3.5 min-w-0">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-brand-navy/10 text-brand-navy flex items-center justify-center font-bold font-sans">
+                      <div className="w-8 h-8 rounded-full bg-brand-navy/10 text-brand-navy flex items-center justify-center font-bold font-sans shrink-0">
                         {u.name.charAt(0)}
                       </div>
-                      <span className="font-semibold text-neutral-950">{u.name}</span>
+                      <span className="font-semibold text-neutral-950 truncate">{u.name}</span>
                     </div>
-                  </td>
-                  <td className="px-4 py-3.5 text-neutral-600">{u.email}</td>
-                  <td className="px-4 py-3.5">
+                  </div>
+                  <div className="px-4 py-3.5 text-neutral-600 truncate">{u.email}</div>
+                  <div className="px-4 py-3.5">
                     <span className={`px-2 py-0.5 rounded-full text-label-sm font-semibold ${
                       u.role === 'ADMIN' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-neutral-100 text-neutral-600'
                     }`}>
                       {u.role}
                     </span>
-                  </td>
-                  <td className="px-4 py-3.5">
+                  </div>
+                  <div className="px-4 py-3.5">
                     <span className={`px-2 py-0.5 rounded-full text-label-sm font-bold capitalize ${
                       u.tier === 'VIP' ? 'bg-amber-100 text-amber-700' : u.tier === 'MEMBER' ? 'bg-purple-100 text-purple-700' : 'bg-neutral-100 text-neutral-700'
                     }`}>
                       {u.tier}
                     </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-right font-medium text-neutral-700">{u.tryOns} lượt</td>
-                  <td className="px-4 py-3.5">
+                  </div>
+                  <div className="px-4 py-3.5 text-right font-medium text-neutral-700">{u.tryOns} lượt</div>
+                  <div className="px-4 py-3.5">
                     <span className={`px-2 py-0.5 rounded-full text-label-sm font-semibold ${
                       u.isVerified ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
                     }`}>
                       {u.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
                     </span>
-                  </td>
-                  <td className="px-6 py-3.5">
+                  </div>
+                  <div className="px-6 py-3.5 text-right">
                     <button
                       onClick={() => setSelectedUser(u)}
                       className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
                     >
                       Quản lý
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
+
               {users.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-neutral-400">
-                    {isFiltered ? 'Không tìm thấy người dùng phù hợp với bộ lọc' : 'Chưa có người dùng nào'}
-                  </td>
-                </tr>
+                <div className="py-16 text-center text-neutral-400">
+                  {isFiltered ? 'Không tìm thấy người dùng phù hợp với bộ lọc' : 'Chưa có người dùng nào'}
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
         {/* Pagination */}
