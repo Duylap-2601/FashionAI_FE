@@ -69,6 +69,9 @@ export function HeroBanner({ collections }: HeroBannerProps) {
                 priority
                 sizes="25vw"
                 className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = fallbackBanner;
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
               <div className="absolute bottom-4 left-4 right-4 text-[11px] uppercase tracking-widest text-white/80 font-medium">
@@ -85,6 +88,9 @@ export function HeroBanner({ collections }: HeroBannerProps) {
                 priority
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover object-top group-hover:scale-103 transition-transform duration-700 ease-out"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = fallbackBanner;
+                }}
               />
               {/* Vignette & Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
@@ -136,6 +142,9 @@ export function HeroBanner({ collections }: HeroBannerProps) {
                 priority
                 sizes="25vw"
                 className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = fallbackBanner;
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
               <div className="absolute bottom-4 left-4 right-4 text-[11px] uppercase tracking-widest text-white/80 font-medium text-right">
