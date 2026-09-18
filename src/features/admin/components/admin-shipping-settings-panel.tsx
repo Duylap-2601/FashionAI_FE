@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 function unwrapData<T>(value: unknown): T | null {
   if (!value || typeof value !== 'object') return null;
   const record = value as { data?: unknown };
-  const maybeEnvelope = record.data;
+  const maybeEnvelope = 'data' in record ? record.data : value;
   if (maybeEnvelope && typeof maybeEnvelope === 'object' && 'data' in maybeEnvelope) {
     return (maybeEnvelope as { data: T }).data;
   }
