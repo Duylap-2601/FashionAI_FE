@@ -2,6 +2,7 @@
 
 import type { CollectionCarouselProps } from '@/features/home/types/collection-carousel';
 import { ArrowUpRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
 export function CollectionCarousel({
@@ -94,11 +95,15 @@ export function CollectionCarousel({
                   onClick={() => onSelectCollection?.(col)}
                 >
                   {/* Background Image */}
-                  <img
-                    src={col.thumbnail || col.coverImages?.[0]}
+                  <Image
+                    src={col.thumbnail || col.coverImages?.[0] || '/images/731163514_999523332788054_1114320478812927640_n.png'}
                     alt={col.name}
-                    className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                    loading="lazy"
+                    fill
+                    sizes="(max-width: 640px) 82vw, (max-width: 768px) 320px, 360px"
+                    className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                    }}
                   />
 
                   {/* Dark Gradients */}

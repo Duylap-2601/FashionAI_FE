@@ -2,6 +2,7 @@
 
 import { useCart } from '@/features/cart/store/cartStore';
 import { ArrowRight, ChevronLeft, Minus, Plus, RotateCcw, ShieldCheck, ShoppingBag, Trash2, Truck } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function CartPage() {
@@ -72,12 +73,17 @@ export default function CartPage() {
               <div key={item.id} className="p-5 md:p-6 flex flex-col sm:flex-row gap-5 relative group">
                 <Link
                   href={`/products/${item.productId || item.id}`}
-                  className="w-full sm:w-[100px] h-[120px] rounded-xl overflow-hidden shrink-0 hover:opacity-85 transition-opacity"
+                  className="w-full sm:w-[100px] h-[120px] rounded-xl overflow-hidden shrink-0 hover:opacity-85 transition-opacity relative"
                 >
-                  <img
+                  <Image
                     src={item.image}
                     alt={item.name}
-                    className="w-full h-full object-cover bg-neutral-100 border border-neutral-200 cursor-pointer"
+                    fill
+                    sizes="100px"
+                    className="object-cover bg-neutral-100 border border-neutral-200 cursor-pointer"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                    }}
                   />
                 </Link>
 

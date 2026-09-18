@@ -3,6 +3,7 @@
 import type { HeroBannerProps } from '@/features/home/types/hero-banner';
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -33,10 +34,11 @@ export function HeroBanner({ collections }: HeroBannerProps) {
 
   if (!activeCollection) return null;
 
+  const fallbackBanner = '/images/731163514_999523332788054_1114320478812927640_n.png';
   const coverImages = activeCollection.coverImages || [];
-  const leftImg = coverImages[0] || activeCollection.thumbnail;
-  const centerImg = coverImages[1] || coverImages[0] || activeCollection.thumbnail;
-  const rightImg = coverImages[2] || coverImages[0] || activeCollection.thumbnail;
+  const leftImg = coverImages[0] || activeCollection.thumbnail || fallbackBanner;
+  const centerImg = coverImages[1] || coverImages[0] || activeCollection.thumbnail || fallbackBanner;
+  const rightImg = coverImages[2] || coverImages[0] || activeCollection.thumbnail || fallbackBanner;
 
   return (
     <section
@@ -60,11 +62,13 @@ export function HeroBanner({ collections }: HeroBannerProps) {
           >
             {/* Left Panel (Hidden on mobile or smaller portrait) */}
             <div className="hidden md:block md:col-span-3 h-[480px] lg:h-[580px] rounded-2xl overflow-hidden shadow-2xl relative group">
-              <img
+              <Image
                 src={leftImg}
                 alt={`${activeCollection.name} Look 1`}
-                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                loading="eager"
+                fill
+                priority
+                sizes="25vw"
+                className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
               <div className="absolute bottom-4 left-4 right-4 text-[11px] uppercase tracking-widest text-white/80 font-medium">
@@ -74,11 +78,13 @@ export function HeroBanner({ collections }: HeroBannerProps) {
 
             {/* Center Main Hero Panel (Full width on mobile, 6 cols on desktop) */}
             <div className="col-span-1 md:col-span-6 h-[440px] min-[420px]:h-[500px] md:h-[520px] lg:h-[620px] rounded-2xl overflow-hidden shadow-2xl relative group flex flex-col justify-end p-5 sm:p-6 md:p-10">
-              <img
+              <Image
                 src={centerImg}
                 alt={`${activeCollection.name} Center`}
-                className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-103 transition-transform duration-700 ease-out"
-                loading="eager"
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover object-top group-hover:scale-103 transition-transform duration-700 ease-out"
               />
               {/* Vignette & Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
@@ -123,11 +129,13 @@ export function HeroBanner({ collections }: HeroBannerProps) {
 
             {/* Right Panel (Hidden on mobile) */}
             <div className="hidden md:block md:col-span-3 h-[480px] lg:h-[580px] rounded-2xl overflow-hidden shadow-2xl relative group">
-              <img
+              <Image
                 src={rightImg}
                 alt={`${activeCollection.name} Look 2`}
-                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                loading="eager"
+                fill
+                priority
+                sizes="25vw"
+                className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
               <div className="absolute bottom-4 left-4 right-4 text-[11px] uppercase tracking-widest text-white/80 font-medium text-right">

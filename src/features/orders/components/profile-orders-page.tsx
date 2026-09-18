@@ -17,6 +17,7 @@ import {
   Star
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
@@ -166,11 +167,16 @@ function OrderCard({
       <div className="px-5 py-4 flex items-center gap-3">
         <div className="flex -space-x-3">
           {order.items.slice(0, 3).map(item => (
-            <img
+            <Image
               key={item.id}
               src={getProductImage(item)}
               alt={item.product?.name || 'Sản phẩm'}
+              width={48}
+              height={56}
               className="w-12 h-14 rounded-lg object-cover border-2 border-white shadow-sm"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+              }}
             />
           ))}
           {order.items.length > 3 && (
@@ -259,7 +265,17 @@ function OrderCard({
                 <div className="flex flex-col gap-3">
                   {order.items.map(item => (
                     <div key={item.id} className="flex items-center gap-4">
-                      <img src={getProductImage(item)} alt={item.product?.name || 'Sản phẩm'} className="w-14 h-18 rounded-lg object-cover border border-neutral-100 shrink-0" style={{ height: 72 }} />
+                      <Image
+                        src={getProductImage(item)}
+                        alt={item.product?.name || 'Sản phẩm'}
+                        width={56}
+                        height={72}
+                        className="w-14 h-18 rounded-lg object-cover border border-neutral-100 shrink-0"
+                        style={{ height: 72 }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                        }}
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-body-sm font-semibold text-neutral-900 truncate">{item.product?.name || 'Sản phẩm công sở'}</p>
                         <p className="text-label-sm text-neutral-500 mt-0.5">Màu: {item.color || 'Mặc định'} · May đo</p>

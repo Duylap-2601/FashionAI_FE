@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   User
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -237,15 +238,21 @@ export default function OrderDetailPage() {
 
             <div className="flex flex-col divide-y divide-neutral-100">
               {order.items.map((item, index) => {
-                const img = item.product?.images?.[0] || '/images/726470431_1311184104081177_6052756217829444481_n.png';
+                const rawImg = item.product?.images?.[0];
+                const img = (typeof rawImg === 'object' && rawImg !== null ? (rawImg as { url?: string; imageUrl?: string }).url || (rawImg as { url?: string; imageUrl?: string }).imageUrl : rawImg) || '/images/726470431_1311184104081177_6052756217829444481_n.png';
                 const name = item.productNameSnapshot || item.product?.name || `Trang phục #${item.productId}`;
 
                 return (
                   <div key={item.id || index} className="py-4 flex gap-4 items-center">
-                    <img
+                    <Image
                       src={img}
                       alt={name}
+                      width={64}
+                      height={80}
                       className="w-16 h-20 object-cover rounded-xl bg-neutral-100 border border-neutral-200 shrink-0"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/726470431_1311184104081177_6052756217829444481_n.png';
+                      }}
                     />
                     <div className="flex-1 min-w-0">
                       <Link href={`/products/${item.productId}`} className="text-body-md font-bold text-brand-navy hover:underline line-clamp-1">

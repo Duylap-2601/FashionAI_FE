@@ -22,7 +22,7 @@ export function RelatedProducts({ products, onAddToCart }: RelatedProductsProps)
               className="group flex flex-col bg-white border border-neutral-100 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow"
             >
               <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
-                <Image src={product.image} alt={product.name} fill sizes="(max-width: 768px) 50vw, 25vw" unoptimized className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                <Image src={product.image} alt={product.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                 <button
                   type="button"
                   onClick={(e) => {

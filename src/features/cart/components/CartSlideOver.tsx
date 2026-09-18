@@ -1,6 +1,7 @@
 import { useCart } from '@/features/cart/store/cartStore';
 import type { CartSlideOverProps } from '@/features/cart/types/cart-slide-over';
 import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
@@ -63,10 +64,15 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
                       onClick={onClose}
                       className="shrink-0 hover:opacity-85 transition-opacity rounded-md overflow-hidden"
                     >
-                      <img
+                      <Image
                         src={item.image}
                         alt={item.name}
+                        width={72}
+                        height={96}
                         className="w-[72px] h-[96px] object-cover rounded-md bg-neutral-100 cursor-pointer"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                        }}
                       />
                     </Link>
                     <div className="flex-1 flex flex-col justify-between py-1">

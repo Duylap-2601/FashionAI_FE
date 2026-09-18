@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight, Camera, CheckCircle2, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export function AiTryOnFeatureBanner() {
@@ -72,10 +73,12 @@ export function AiTryOnFeatureBanner() {
             {/* Right: Visual Before/After Demo Preview */}
             <div className="lg:col-span-5 flex justify-center">
               <div className="relative w-full max-w-[380px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/15">
-                <img
+                <Image
                   src="https://images.unsplash.com/photo-1616065297556-f05bc00c9a3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=85"
                   alt="AI Virtual Try On Result"
-                  className="w-full h-full object-cover object-top"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 380px"
+                  className="object-cover object-top"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
