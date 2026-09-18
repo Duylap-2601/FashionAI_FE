@@ -2,13 +2,15 @@
 
 import { QUICK_REPLIES } from '@/features/chat/constants/floating-chat';
 import { useChat } from '@/features/chat/hooks/useChat';
-import { ChevronDown, MessageCircle, RotateCcw, Send, Sparkles, Square, X } from 'lucide-react';
+import { Check, ChevronDown, Copy, MessageCircle, RotateCcw, Send, Sparkles, Square, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FormattedChatText } from './FormattedChatText';
 
 export function FloatingChat() {
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(1);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -49,6 +51,16 @@ export function FloatingChat() {
     createSession();
   }, [createSession]);
 
+  const handleCopy = useCallback(async (msgId: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(msgId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.warn('Failed to copy', err);
+    }
+  }, []);
+
   return (
     <div className="fixed bottom-[88px] md:bottom-6 right-4 md:right-6 z-[60] flex flex-col items-end gap-3">
 
@@ -60,8 +72,8 @@ export function FloatingChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="w-[calc(100vw-32px)] sm:w-[380px] bg-white rounded-2xl shadow-xl border border-neutral-200 flex flex-col overflow-hidden"
-            style={{ height: 'min(520px, calc(100dvh - 180px))' }}
+            className="w-[calc(100vw-32px)] sm:w-[410px] bg-white rounded-2xl shadow-2xl border border-neutral-200/90 flex flex-col overflow-hidden"
+            style={{ height: 'min(550px, calc(100dvh - 140px))' }}
           >
             {/* Header */}
             <div className="bg-brand-navy px-4 py-3.5 flex items-center gap-3 shrink-0">
@@ -93,74 +105,99 @@ export function FloatingChat() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-neutral-50">
+            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3.5 bg-neutral-50/70">
               {isLoadingSession ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-neutral-400">
                   <div className="w-6 h-6 border-2 border-brand-navy border-t-transparent rounded-full animate-spin" />
                   <span className="text-body-sm font-medium">Đang tải cuộc trò chuyện...</span>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full gap-3 text-neutral-400">
-                  <div className="w-10 h-10 bg-brand-navy/10 rounded-full flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-brand-gold" />
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-neutral-400 py-6 my-auto">
+                  <div className="w-12 h-12 bg-brand-navy/10 rounded-2xl flex items-center justify-center shadow-xs">
+                    <Sparkles className="w-6 h-6 text-brand-navy" />
                   </div>
-                  <p className="text-body-sm text-center text-neutral-500 px-4">
-                    Xin chào! Tôi là **StAle. Assistant** 👋\nTôi có thể giúp bạn về thử đồ ảo, chọn size, đơn hàng và nhiều hơn nữa. Bạn cần hỗ trợ gì?
-                  </p>
+                  <div className="text-center px-4 space-y-1.5 max-w-xs">
+                    <p className="text-body-sm font-semibold text-neutral-900">
+                      Xin chào! Tôi là <span className="text-brand-navy font-bold">StAle. Assistant</span> 👋
+                    </p>
+                    <p className="text-xs text-neutral-500 leading-relaxed">
+                      Tôi có thể giúp bạn thử đồ ảo, tư vấn chọn size vừa vặn, gợi ý phối đồ và giải đáp đơn hàng.
+                    </p>
+                  </div>
                 </div>
               ) : (
-                messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}
-                  >
-                    {msg.role === 'assistant' && (
-                      <div className="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0 mb-0.5">
-                        <Sparkles className="w-3.5 h-3.5 text-brand-gold" />
-                      </div>
-                    )}
+                messages.map((msg) => {
+                  const isUser = msg.role === 'user';
+                  return (
                     <div
-                      className={`flex flex-col gap-1 max-w-[78%] ${msg.role === 'user' ? 'items-end' : ''
-                        }`}
+                      key={msg.id}
+                      className={`group flex items-start gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}
                     >
+                      {!isUser && (
+                        <div className="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0 mt-0.5 shadow-xs ring-1 ring-brand-gold/30">
+                          <Sparkles className="w-3.5 h-3.5 text-brand-gold" />
+                        </div>
+                      )}
                       <div
-                        className={`px-3.5 py-2.5 rounded-2xl text-body-sm shadow-sm ${msg.role === 'user'
-                            ? 'bg-brand-navy text-white rounded-br-sm'
-                            : 'bg-white border border-neutral-200 rounded-bl-sm'
-                          } ${msg.streaming ? 'relative' : ''}`}
+                        className={`flex flex-col gap-1 ${
+                          isUser ? 'max-w-[85%] items-end' : 'max-w-[88%] items-start'
+                        }`}
                       >
-                        {msg.content || (msg.streaming && '...')}
-                        {msg.streaming && (
-                          <span className="animate-pulse">▌</span>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-neutral-400 ml-1 mr-1">
-                        {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
-                      </span>
-                    </div>
-                    {msg.role === 'user' && (
-                      <div className="w-7 h-7 rounded-full bg-brand-navy/10 flex items-center justify-center shrink-0 mb-0.5" />
-                    )}
-                  </div>
-                ))
-              )}
+                        <div
+                          className={`px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl text-body-sm shadow-xs transition-all ${
+                            isUser
+                              ? 'bg-brand-navy text-white rounded-tr-xs font-normal'
+                              : 'bg-white border border-neutral-200/85 text-neutral-800 rounded-tl-xs'
+                          }`}
+                        >
+                          {isUser ? (
+                            <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                          ) : (
+                            <div className="min-w-0">
+                              {msg.content ? (
+                                <FormattedChatText text={msg.content} isStreaming={msg.streaming} />
+                              ) : msg.streaming ? (
+                                <div className="flex items-center gap-1.5 py-1 text-neutral-500">
+                                  <span className="text-body-sm font-medium">Đang suy nghĩ</span>
+                                  <span className="inline-flex gap-1 items-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-bounce" style={{ animationDelay: '0ms' }} />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-bounce" style={{ animationDelay: '150ms' }} />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-bounce" style={{ animationDelay: '300ms' }} />
+                                  </span>
+                                </div>
+                              ) : null}
 
-              {/* Typing indicator for streaming */}
-              {isStreaming && messages.length > 0 && messages[messages.length - 1]?.streaming && (
-                <div className="flex items-end gap-2">
-                  <div className="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
-                    <Sparkles className="w-3.5 h-3.5 text-brand-gold" />
-                  </div>
-                  <div className="px-3.5 py-3 bg-white border border-neutral-200 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1">
-                    {[0, 1, 2].map(i => (
-                      <span
-                        key={i}
-                        className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce"
-                        style={{ animationDelay: `${i * 0.15}s` }}
-                      />
-                    ))}
-                  </div>
-                </div>
+                              {msg.streaming && msg.content && (
+                                <span className="inline-block w-1.5 h-3.5 ml-1 bg-brand-gold animate-pulse rounded-full align-middle" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 px-1 text-[10px] text-neutral-400 font-medium">
+                          {msg.createdAt && (
+                            <span>
+                              {new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                          {!isUser && !msg.streaming && msg.content && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(msg.id, msg.content)}
+                              title="Sao chép"
+                              className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-brand-navy transition-opacity cursor-pointer"
+                            >
+                              {copiedId === msg.id ? (
+                                <Check className="w-3 h-3 text-green-600" />
+                              ) : (
+                                <Copy className="w-3 h-3 text-neutral-400 hover:text-neutral-600" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
               )}
 
               {error && (

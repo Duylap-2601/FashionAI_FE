@@ -5,14 +5,14 @@ import { fetchAdminReviewsResponse, fetchProductReviewsResponse } from '@/featur
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { StarRating } from '@/features/reviews/components/StarRating';
 import { useAdminDeleteReview } from '@/features/reviews/hooks/useReviews';
+import { AdminPagination } from '@/features/admin/components/admin-pagination';
 import type { Review } from '@/features/reviews/types/reviews';
 import { useQuery } from '@tanstack/react-query';
 import {
-  CheckCircle2,
   CornerDownRight,
-  ExternalLink,
   Loader2,
   MessageSquare,
+  RotateCcw,
   Search,
   ShieldAlert,
   Trash2
@@ -34,6 +34,8 @@ export function AdminReviewTable() {
   const [selectedProductId, setSelectedProductId] = useState<string>('all');
   const [selectedRating, setSelectedRating] = useState<number | 'all'>('all');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [deletingReview, setDeletingReview] = useState<Review | null>(null);
 
   const { products, isLoading: isProductsLoading } = useProductCatalog();
@@ -104,6 +106,26 @@ export function AdminReviewTable() {
     return true;
   });
 
+  const isFiltered = Boolean(
+    searchKeyword.trim() ||
+    selectedProductId !== 'all' ||
+    selectedRating !== 'all'
+  );
+
+  const totalItems = filteredReviews.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const paginatedReviews = filteredReviews.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const resetFilters = () => {
+    setSearchKeyword('');
+    setSelectedProductId('all');
+    setSelectedRating('all');
+    setCurrentPage(1);
+  };
+
   const handleDeleteConfirm = async () => {
     if (!deletingReview) return;
     try {
@@ -141,7 +163,10 @@ export function AdminReviewTable() {
             <input
               type="text"
               value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
+              onChange={(e) => {
+                setSearchKeyword(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Tìm khách hàng, nội dung..."
               className="w-full pl-9 pr-4 py-2 border border-neutral-300 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy"
             />
@@ -150,7 +175,10 @@ export function AdminReviewTable() {
           {/* Lọc theo sản phẩm */}
           <select
             value={selectedProductId}
-            onChange={(e) => setSelectedProductId(e.target.value)}
+            onChange={(e) => {
+              setSelectedProductId(e.target.value);
+              setCurrentPage(1);
+            }}
             className="px-3 py-2 border border-neutral-300 rounded-xl text-body-sm bg-white focus:outline-none focus:border-brand-navy cursor-pointer max-w-[200px] truncate"
           >
             <option value="all">Tất cả sản phẩm</option>
@@ -164,9 +192,10 @@ export function AdminReviewTable() {
           {/* Lọc theo mức sao */}
           <select
             value={selectedRating}
-            onChange={(e) =>
-              setSelectedRating(e.target.value === 'all' ? 'all' : Number(e.target.value))
-            }
+            onChange={(e) => {
+              setSelectedRating(e.target.value === 'all' ? 'all' : Number(e.target.value));
+              setCurrentPage(1);
+            }}
             className="px-3 py-2 border border-neutral-300 rounded-xl text-body-sm bg-white focus:outline-none focus:border-brand-navy cursor-pointer"
           >
             <option value="all">Tất cả sao</option>
@@ -176,6 +205,18 @@ export function AdminReviewTable() {
             <option value="2">2 sao ⭐⭐ (Cảnh báo)</option>
             <option value="1">1 sao ⭐ (Tiêu cực)</option>
           </select>
+
+          {/* Reset button */}
+          {isFiltered && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-neutral-200 hover:border-red-200 transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Đặt lại</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -202,14 +243,14 @@ export function AdminReviewTable() {
                   </div>
                 </td>
               </tr>
-            ) : filteredReviews.length === 0 ? (
+            ) : paginatedReviews.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-12 text-center text-neutral-400">
-                  Không tìm thấy đánh giá nào phù hợp với bộ lọc.
+                  {isFiltered ? 'Không tìm thấy đánh giá nào phù hợp với bộ lọc' : 'Chưa có đánh giá nào'}
                 </td>
               </tr>
             ) : (
-              filteredReviews.map((r) => {
+              paginatedReviews.map((r) => {
                 const userName = r.user?.name || 'Khách hàng';
                 const initial = (userName.trim()[0] || 'K').toUpperCase();
                 const formattedDate = r.createdAt
@@ -218,7 +259,7 @@ export function AdminReviewTable() {
                     month: '2-digit',
                     year: 'numeric',
                   })
-                  : '';
+                  : 'Gần đây';
 
                 return (
                   <tr key={r.id} className="hover:bg-neutral-50/70 transition-colors">
@@ -229,41 +270,44 @@ export function AdminReviewTable() {
                           <img
                             src={r.user.avatarUrl}
                             alt={userName}
-                            className="w-9 h-9 rounded-full object-cover border border-neutral-200"
+                            className="w-8 h-8 rounded-full object-cover border border-neutral-200"
                           />
                         ) : (
-                          <div className="w-9 h-9 rounded-full bg-brand-navy/10 text-brand-navy flex items-center justify-center font-bold text-body-sm">
+                          <div className="w-8 h-8 rounded-full bg-brand-navy/10 text-brand-navy flex items-center justify-center font-bold text-[13px] shrink-0">
                             {initial}
                           </div>
                         )}
-                        <div>
-                          <div className="font-semibold text-brand-navy">{userName}</div>
-                          <div className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" /> Đã mua hàng
-                          </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-neutral-900 text-[13px]">
+                            {userName}
+                          </span>
+                          <span className="text-[11px] text-neutral-400 font-mono">
+                            ID: {r.userId.substring(0, 8)}
+                          </span>
                         </div>
                       </div>
                     </td>
 
                     {/* Cột Sản phẩm */}
-                    <td className="py-4 px-6 max-w-[200px]">
-                      <div className="flex items-center gap-2.5">
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
                         {r.product?.image && (
-                          <img
-                            src={r.product.image}
-                            alt=""
-                            className="w-8 h-8 rounded-lg object-cover border border-neutral-200 shrink-0"
-                          />
+                          <div className="w-9 h-9 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
+                            <img
+                              src={r.product.image}
+                              alt={r.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         )}
-                        <Link
-                          href={`/products/${r.productId}`}
-                          target="_blank"
-                          className="font-medium text-neutral-800 hover:text-brand-navy hover:underline truncate flex items-center gap-1"
-                          title={r.product?.name || r.productId}
-                        >
-                          <span className="truncate">{r.product?.name || r.productId}</span>
-                          <ExternalLink className="w-3 h-3 opacity-50 shrink-0" />
-                        </Link>
+                        <div className="flex flex-col max-w-[200px]">
+                          <span className="font-medium text-neutral-900 text-[13px] truncate">
+                            {r.product?.name || 'Sản phẩm #' + r.productId}
+                          </span>
+                          <span className="text-[11px] text-neutral-400 font-mono truncate">
+                            ID: {r.productId}
+                          </span>
+                        </div>
                       </div>
                     </td>
 
@@ -339,6 +383,24 @@ export function AdminReviewTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalItems > 0 && (
+        <div className="shrink-0 border-t border-neutral-100">
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+            disabled={isReviewsLoading}
+          />
+        </div>
+      )}
 
       {/* Modal xác nhận xóa của Admin */}
       {deletingReview && (

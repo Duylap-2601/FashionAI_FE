@@ -2,38 +2,116 @@
 
 import { fmt } from '@/features/admin/services/format';
 import type { AdminShipmentsPanelProps } from '@/features/admin/types/admin-shipments-panel';
-import { RefreshCw, Search, XCircle } from 'lucide-react';
+import { AdminPagination } from '@/features/admin/components/admin-pagination';
+import { RefreshCw, RotateCcw, Search, XCircle } from 'lucide-react';
 
 const STATUS_OPTIONS = ['READY_TO_PICK', 'CREATED', 'PICKING', 'PICKED', 'SHIPPING', 'IN_TRANSIT', 'DELIVERING', 'DELIVERED', 'DELIVERY_FAILED', 'RETURNING', 'RETURNED', 'CANCELLED', 'FAILED'];
 
-export function AdminShipmentsPanel({ shipments, filters, setFilters, onView, onSync, onCancel, onOpenOrder }: AdminShipmentsPanelProps) {
+export function AdminShipmentsPanel({
+  shipments,
+  filters,
+  setFilters,
+  onView,
+  onSync,
+  onCancel,
+  onOpenOrder,
+  currentPage = 1,
+  totalPages = 1,
+  totalItems = shipments.length,
+  pageSize = 10,
+  onPageChange,
+  onPageSizeChange,
+  isFetching = false,
+}: AdminShipmentsPanelProps) {
   const updateFilter = (key: keyof typeof filters, value: string | boolean) => {
     setFilters(prev => ({ ...prev, [key]: value || undefined }));
   };
 
+  const isFiltered = Boolean(
+    filters.providerOrderCode ||
+    filters.orderCode ||
+    filters.status ||
+    filters.customer ||
+    filters.phone ||
+    filters.rawStatus ||
+    filters.issueOnly ||
+    filters.staleOnly
+  );
+
+  const resetFilters = () => {
+    setFilters({});
+  };
+
   return (
     <div className="flex flex-col gap-6 flex-1 min-h-0">
-      <div className="shrink-0">
-        <h1 className="text-heading-h2 font-bold text-neutral-900">Quản lý Vận đơn</h1>
-        <p className="text-body-sm text-neutral-500 mt-1">Theo dõi GHN, đồng bộ trạng thái và xử lý ngoại lệ giao hàng</p>
+      <div className="shrink-0 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-heading-h2 font-bold text-neutral-900">Quản lý Vận đơn</h1>
+          <p className="text-body-sm text-neutral-500 mt-1">Theo dõi GHN, đồng bộ trạng thái và xử lý ngoại lệ giao hàng</p>
+        </div>
+        {isFiltered && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-neutral-200 hover:border-red-200 transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Đặt lại bộ lọc</span>
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 grid grid-cols-1 md:grid-cols-4 gap-3 shrink-0">
         <div className="relative md:col-span-2">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <input value={filters.providerOrderCode || ''} onChange={e => updateFilter('providerOrderCode', e.target.value)} placeholder="Tìm mã GHN" className="w-full h-10 pl-9 pr-3 rounded-lg border border-neutral-300 text-body-sm" />
+          <input
+            value={filters.providerOrderCode || ''}
+            onChange={e => updateFilter('providerOrderCode', e.target.value)}
+            placeholder="Tìm mã GHN"
+            className="w-full h-10 pl-9 pr-3 rounded-lg border border-neutral-300 text-body-sm focus:outline-none focus:border-brand-navy"
+          />
         </div>
-        <input value={filters.orderCode || ''} onChange={e => updateFilter('orderCode', e.target.value)} placeholder="Mã đơn nội bộ" className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm" />
-        <select value={filters.status || ''} onChange={e => updateFilter('status', e.target.value)} className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm">
+        <input
+          value={filters.orderCode || ''}
+          onChange={e => updateFilter('orderCode', e.target.value)}
+          placeholder="Mã đơn nội bộ"
+          className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm focus:outline-none focus:border-brand-navy"
+        />
+        <select
+          value={filters.status || ''}
+          onChange={e => updateFilter('status', e.target.value)}
+          className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm focus:outline-none focus:border-brand-navy cursor-pointer"
+        >
           <option value="">Tất cả trạng thái</option>
           {STATUS_OPTIONS.map(status => <option key={status} value={status}>{status}</option>)}
         </select>
-        <input value={filters.customer || ''} onChange={e => updateFilter('customer', e.target.value)} placeholder="Khách hàng / email" className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm" />
-        <input value={filters.phone || ''} onChange={e => updateFilter('phone', e.target.value)} placeholder="Số điện thoại" className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm" />
-        <input value={filters.rawStatus || ''} onChange={e => updateFilter('rawStatus', e.target.value)} placeholder="Raw GHN status" className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm" />
+        <input
+          value={filters.customer || ''}
+          onChange={e => updateFilter('customer', e.target.value)}
+          placeholder="Khách hàng / email"
+          className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm focus:outline-none focus:border-brand-navy"
+        />
+        <input
+          value={filters.phone || ''}
+          onChange={e => updateFilter('phone', e.target.value)}
+          placeholder="Số điện thoại"
+          className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm focus:outline-none focus:border-brand-navy"
+        />
+        <input
+          value={filters.rawStatus || ''}
+          onChange={e => updateFilter('rawStatus', e.target.value)}
+          placeholder="Raw GHN status"
+          className="h-10 px-3 rounded-lg border border-neutral-300 text-body-sm focus:outline-none focus:border-brand-navy"
+        />
         <div className="flex items-center gap-4 text-body-sm text-neutral-700">
-          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={Boolean(filters.issueOnly)} onChange={e => updateFilter('issueOnly', e.target.checked)} /> Có sự cố</label>
-          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={Boolean(filters.staleOnly)} onChange={e => updateFilter('staleOnly', e.target.checked)} /> Chưa sync lâu</label>
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={Boolean(filters.issueOnly)} onChange={e => updateFilter('issueOnly', e.target.checked)} />
+            Có sự cố
+          </label>
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={Boolean(filters.staleOnly)} onChange={e => updateFilter('staleOnly', e.target.checked)} />
+            Chưa sync lâu
+          </label>
         </div>
       </div>
 
@@ -77,10 +155,31 @@ export function AdminShipmentsPanel({ shipments, filters, setFilters, onView, on
                   </td>
                 </tr>
               ))}
-              {shipments.length === 0 && <tr><td colSpan={11} className="px-6 py-10 text-center text-neutral-400">Chưa có vận đơn nào</td></tr>}
+              {shipments.length === 0 && (
+                <tr>
+                  <td colSpan={11} className="px-6 py-12 text-center text-neutral-400">
+                    {isFiltered ? 'Không tìm thấy vận đơn nào phù hợp với bộ lọc' : 'Chưa có vận đơn nào'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages !== undefined && onPageChange && (
+          <div className="shrink-0">
+            <AdminPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={onPageChange}
+              onPageSizeChange={onPageSizeChange}
+              disabled={isFetching}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
