@@ -300,9 +300,9 @@ export function AdminCollectionManager() {
 
       {/* Table list */}
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-xs flex flex-col flex-1 min-h-0">
-        <div className="overflow-auto flex-1 min-h-0">
+        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar">
           <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
+            <thead className="sticky top-0 bg-neutral-50 z-20 shadow-2xs">
               <tr className="bg-neutral-50 border-b border-neutral-200 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
                 <th className="py-3.5 px-4 bg-neutral-50">Ảnh bìa</th>
                 <th className="py-3.5 px-4 bg-neutral-50">Tên bộ sưu tập</th>

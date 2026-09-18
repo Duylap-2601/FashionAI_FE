@@ -133,7 +133,7 @@ export function FloatingChat() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3.5 bg-neutral-50/70">
+            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3.5 bg-neutral-50/70 custom-scrollbar">
               {isLoadingSession ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-neutral-400">
                   <div className="w-6 h-6 border-2 border-brand-navy border-t-transparent rounded-full animate-spin" />

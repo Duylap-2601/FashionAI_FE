@@ -128,9 +128,9 @@ export function AdminProductsPanel({
         </div>
 
         {/* Product Table */}
-        <div className="overflow-auto flex-1 min-h-0">
+        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar">
           <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
+            <thead className="sticky top-0 bg-neutral-50 z-20 shadow-2xs">
               <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
                 <th className="px-6 py-3 bg-neutral-50">Sản phẩm</th>
                 <th className="px-4 py-3 bg-neutral-50">Danh mục</th>
@@ -161,7 +161,7 @@ export function AdminProductsPanel({
                         {p.images && p.images.length > 1 && (
                           <span
                             title={`${p.images.length} hình ảnh`}
-                            className="absolute -bottom-1 -right-1.5 bg-brand-navy text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[20px] text-center rounded-full border-2 border-white shadow-xs z-10 leading-none select-none"
+                            className="absolute -bottom-1 -right-1.5 bg-brand-navy text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[20px] text-center rounded-full border-2 border-white shadow-xs z-1 leading-none select-none"
                           >
                             +{p.images.length}
                           </span>

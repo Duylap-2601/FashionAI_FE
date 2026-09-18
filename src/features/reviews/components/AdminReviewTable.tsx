@@ -221,9 +221,9 @@ export function AdminReviewTable() {
       </div>
 
       {/* Bảng danh sách Reviews */}
-      <div className="overflow-auto flex-1 min-h-0">
+      <div className="overflow-auto flex-1 min-h-0 custom-scrollbar">
         <table className="w-full text-left text-body-sm border-collapse">
-          <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs text-[12px] font-bold text-neutral-500 uppercase tracking-wider">
+          <thead className="sticky top-0 bg-neutral-50 z-20 shadow-2xs text-[12px] font-bold text-neutral-500 uppercase tracking-wider">
             <tr className="bg-neutral-50 border-b border-neutral-200">
               <th className="py-3.5 px-6 bg-neutral-50">Khách hàng</th>
               <th className="py-3.5 px-6 bg-neutral-50">Sản phẩm</th>

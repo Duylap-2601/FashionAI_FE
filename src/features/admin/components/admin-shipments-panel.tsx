@@ -116,9 +116,9 @@ export function AdminShipmentsPanel({
       </div>
 
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="overflow-auto flex-1 min-h-0">
+        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar">
           <table className="w-full text-left min-w-[1180px] border-collapse">
-            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
+            <thead className="sticky top-0 bg-neutral-50 z-20 shadow-2xs">
               <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
                 <th className="px-5 py-3 bg-neutral-50">Mã GHN</th>
                 <th className="px-4 py-3 bg-neutral-50">Mã đơn</th>

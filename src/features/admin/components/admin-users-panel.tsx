@@ -96,9 +96,9 @@ export function AdminUsersPanel({
           )}
         </div>
 
-        <div className="overflow-auto flex-1 min-h-0">
+        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar">
           <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
+            <thead className="sticky top-0 bg-neutral-50 z-20 shadow-2xs">
               <tr className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase">
                 <th className="px-6 py-3 bg-neutral-50">Thành viên</th>
                 <th className="px-4 py-3 bg-neutral-50">Email</th>
