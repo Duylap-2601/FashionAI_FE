@@ -1,6 +1,7 @@
 import { useCart } from '@/features/cart/store/cartStore';
 import type { CartSlideOverProps } from '@/features/cart/types/cart-slide-over';
 import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
@@ -45,26 +46,46 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
             <div className="flex flex-col items-center justify-center h-full p-6 text-center">
               <ShoppingBag className="w-16 h-16 text-neutral-300 mb-4" strokeWidth={1} />
               <p className="text-body-lg text-brand-navy font-semibold mb-2">Giỏ hàng của bạn đang trống</p>
-              <button
+              <Link
+                href="/products"
                 onClick={onClose}
-                className="mt-6 px-6 py-3 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors"
+                className="mt-6 inline-flex items-center justify-center px-6 py-3 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors"
               >
                 Khám phá sản phẩm &rarr;
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="flex flex-col">
               {items.map(item => (
                 <div key={item.id} className="p-4 border-b border-neutral-100 relative group">
                   <div className="flex gap-4">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-[72px] h-[96px] object-cover rounded-md bg-neutral-100"
-                    />
+                    <Link
+                      href={`/products/${item.productId || item.id}`}
+                      onClick={onClose}
+                      className="shrink-0 hover:opacity-85 transition-opacity rounded-md overflow-hidden"
+                    >
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        width={72}
+                        height={96}
+                        className="w-[72px] h-[96px] object-cover rounded-md bg-neutral-100 cursor-pointer"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                        }}
+                      />
+                    </Link>
                     <div className="flex-1 flex flex-col justify-between py-1">
                       <div className="pr-8">
-                        <h3 className="text-body-sm font-medium text-brand-navy line-clamp-1 mb-1">{item.name}</h3>
+                        <h3 className="text-body-sm font-medium text-brand-navy line-clamp-1 mb-1">
+                          <Link
+                            href={`/products/${item.productId || item.id}`}
+                            onClick={onClose}
+                            className="hover:underline"
+                          >
+                            {item.name}
+                          </Link>
+                        </h3>
                         <p className="text-[13px] text-neutral-500 mb-3">{item.variant}</p>
                       </div>
 

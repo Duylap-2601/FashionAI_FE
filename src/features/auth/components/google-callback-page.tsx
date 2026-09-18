@@ -43,7 +43,11 @@ function GoogleCallbackContent() {
 
         useAuthStore.getState().setSession(session);
         invalidateSessionCache();
-        router.replace('/products');
+        if (session.user?.role === 'ADMIN') {
+          router.replace('/admin/dashboard');
+        } else {
+          router.replace('/products');
+        }
       } catch {
         setError('Dữ liệu đăng nhập Google không hợp lệ. Vui lòng thử lại.');
       }

@@ -3,6 +3,7 @@
 import type { CheckoutSummaryProps } from '@/features/checkout/types/checkout-summary';
 import { PaymentMethodSelector } from '@/features/checkout/components/payment-method-selector';
 import { Sparkles } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export function CheckoutSummary({
@@ -28,7 +29,16 @@ export function CheckoutSummary({
           {items.map(item => (
             <div key={item.id} className="flex gap-4 items-center">
               <div className="relative">
-                <img src={item.image} alt={item.name} className="w-[64px] h-[64px] object-cover rounded-lg bg-neutral-100" />
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  width={64}
+                  height={64}
+                  className="w-[64px] h-[64px] object-cover rounded-lg bg-neutral-100"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                  }}
+                />
                 <div className="absolute -top-2 -right-2 w-5 h-5 bg-neutral-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-white">
                   {item.quantity}
                 </div>

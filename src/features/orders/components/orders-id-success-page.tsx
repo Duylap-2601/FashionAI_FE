@@ -3,6 +3,7 @@
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import { Check, Star } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
@@ -98,10 +99,12 @@ export default function OrderSuccessPage() {
                 className="group flex flex-col bg-white border border-neutral-100 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
-                  <img
+                  <Image
                     src={`https://images.unsplash.com/photo-1594938298603-c8148c4dae35?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw${i}fHxwZXJzb24lMjBzdWl0fGVufDF8fHx8MTc4MTE1MjY4OHww&ixlib=rb-4.1.0&q=80&w=400`}
                     alt="Product"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 640px) 50vw, 200px"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded text-[10px] font-bold text-brand-navy tracking-wider shadow-sm flex items-center gap-1">
                     <Star className="w-3 h-3 fill-[#F59E0B] text-[#F59E0B]" /> Gợi ý phối hợp

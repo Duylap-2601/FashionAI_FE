@@ -47,7 +47,11 @@ function MobileAuthCallbackContent() {
 
         useAuthStore.getState().setSession(session);
         invalidateSessionCache();
-        router.replace('/products');
+        if (session.user?.role === 'ADMIN') {
+          router.replace('/admin/dashboard');
+        } else {
+          router.replace('/products');
+        }
       } catch (err: unknown) {
         setError(readErrorMessage(err) || 'Đã xảy ra lỗi. Vui lòng thử lại.');
       }

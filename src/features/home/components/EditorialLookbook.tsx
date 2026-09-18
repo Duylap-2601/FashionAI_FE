@@ -3,6 +3,7 @@
 import { DEFAULT_LOOKBOOK_IMAGES } from '@/features/home/constants/editorial-lookbook';
 import type { EditorialLookbookProps } from '@/features/home/types/editorial-lookbook';
 import { ArrowUpRight, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export function EditorialLookbook({ images, collection }: EditorialLookbookProps) {
@@ -43,11 +44,12 @@ export function EditorialLookbook({ images, collection }: EditorialLookbookProps
               key={i}
               className="group relative rounded-2xl overflow-hidden aspect-[9/14] bg-neutral-800 shadow-2xl flex flex-col justify-end p-6 sm:p-8 border border-white/10 cursor-pointer"
             >
-              <img
+              <Image
                 src={look.url}
                 alt={look.category}
-                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-106 transition-transform duration-700 ease-out"
-                loading="lazy"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover object-center group-hover:scale-106 transition-transform duration-700 ease-out"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
 

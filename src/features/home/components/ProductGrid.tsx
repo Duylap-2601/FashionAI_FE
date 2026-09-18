@@ -6,6 +6,7 @@ import { GARMENT_TYPE_TABS } from '@/features/products/constants/product-filters
 import { matchesGarmentType } from '@/features/products/services/product-filters';
 import type { Product } from '@/features/products/types/products';
 import { ChevronRight, Eye, ShoppingBag, Sparkles, Star } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
@@ -22,7 +23,6 @@ export function ProductGrid({
   const router = useRouter();
   const { addToCart } = useCart();
   const [selectedTabKey, setSelectedTabKey] = useState<string>('ALL');
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const selectedTab = GARMENT_TYPE_TABS.find((t) => t.key === selectedTabKey) || GARMENT_TYPE_TABS[0];
 
@@ -116,26 +116,40 @@ export function ProductGrid({
           <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-4 md:gap-5">
             {filteredProducts.map((product) => {
               const hasSecondImage = product.gallery && product.gallery.length > 1;
-              const isHovered = hoveredId === product.id;
-              const displayImage = isHovered && hasSecondImage ? product.gallery[1] : product.image;
               const isOutOfStock = product.stock === 0;
 
               return (
                 <div
                   key={product.id}
                   className="group flex flex-col bg-white rounded-xl overflow-hidden border border-neutral-200/80 hover:border-neutral-300 hover:shadow-xl transition-all duration-300 relative"
-                  onMouseEnter={() => setHoveredId(product.id)}
-                  onMouseLeave={() => setHoveredId(null)}
                 >
                   {/* Image Container */}
                   <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
-                    <Link href={`/products/${product.id}`} className="block w-full h-full">
-                      <img
-                        src={displayImage}
+                    <Link href={`/products/${product.id}`} className="block w-full h-full relative">
+                      <Image
+                        src={product.image}
                         alt={product.name}
-                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
+                        fill
+                        sizes="(max-width: 420px) 100vw, (max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                        className={`object-cover object-top transition-all duration-500 group-hover:scale-105 ${
+                          hasSecondImage ? 'group-hover:opacity-0' : ''
+                        }`}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                        }}
                       />
+                      {hasSecondImage && (
+                        <Image
+                          src={product.gallery[1]}
+                          alt={`${product.name} alternate view`}
+                          fill
+                          sizes="(max-width: 420px) 100vw, (max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                          className="object-cover object-top transition-all duration-500 opacity-0 group-hover:opacity-100 group-hover:scale-105"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                          }}
+                        />
+                      )}
                     </Link>
 
                     {/* Stock / Sale Badges */}

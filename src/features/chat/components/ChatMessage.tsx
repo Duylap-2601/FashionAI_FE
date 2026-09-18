@@ -6,10 +6,11 @@ import Link from 'next/link';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
+import { FormattedChatText } from './FormattedChatText';
+
 export function ChatMessage({ message, onRetry }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
-  const isAssistant = message.role === 'assistant';
 
   const handleCopy = async () => {
     try {
@@ -92,9 +93,9 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
           {isUser ? (
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           ) : (
-            <div className="prose-sm max-w-none break-words">
+            <div className="min-w-0 break-words">
               {message.content ? (
-                <FormattedChatText text={message.content} />
+                <FormattedChatText text={message.content} isStreaming={message.streaming} />
               ) : message.streaming ? (
                 <div className="flex items-center gap-1.5 py-1 text-neutral-500">
                   <span className="text-body-sm">Đang suy nghĩ</span>
@@ -124,7 +125,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
                 type="button"
                 onClick={handleCopy}
                 title="Sao chép câu trả lời"
-                className="p-1 hover:text-brand-navy hover:bg-neutral-200/60 rounded-md transition-colors"
+                className="p-1 hover:text-brand-navy hover:bg-neutral-200/60 rounded-md transition-colors cursor-pointer"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
@@ -134,7 +135,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
                   type="button"
                   onClick={() => onRetry(message)}
                   title="Thử lại"
-                  className="flex items-center gap-1 p-1 text-red-600 hover:bg-red-100 rounded-md transition-colors font-semibold"
+                  className="flex items-center gap-1 p-1 text-red-600 hover:bg-red-100 rounded-md transition-colors font-semibold cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Thử lại</span>
@@ -146,136 +147,4 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
       </div>
     </div>
   );
-}
-
-/**
- * Lightweight Markdown / Formatted Text Renderer
- */
-function FormattedChatText({ text }: { text: string }) {
-  // Split into paragraphs / lines
-  const lines = text.split('\n');
-
-  return (
-    <div className="space-y-2">
-      {lines.map((line, lineIdx) => {
-        const trimmed = line.trim();
-        if (!trimmed) {
-          return <div key={lineIdx} className="h-1.5" />;
-        }
-
-        // Bullet list item (- or *)
-        if (line.match(/^[\-\*]\s+/)) {
-          const content = line.replace(/^[\-\*]\s+/, '');
-          return (
-            <div key={lineIdx} className="flex items-start gap-2 pl-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-navy shrink-0 mt-2" />
-              <div className="flex-1">
-                <InlineFormatter text={content} />
-              </div>
-            </div>
-          );
-        }
-
-        // Numbered list (1. 2. 3.)
-        const numMatch = line.match(/^(\d+)\.\s+(.*)$/);
-        if (numMatch) {
-          return (
-            <div key={lineIdx} className="flex items-start gap-2 pl-1">
-              <span className="font-bold text-[#5D1C34] shrink-0 text-label-sm">{numMatch[1]}.</span>
-              <div className="flex-1">
-                <InlineFormatter text={numMatch[2]} />
-              </div>
-            </div>
-          );
-        }
-
-        // Quote line (> ...)
-        if (line.startsWith('>')) {
-          return (
-            <div key={lineIdx} className="border-l-2 border-brand-gold pl-3 py-0.5 text-neutral-600 italic bg-amber-50/50 rounded-r-md">
-              <InlineFormatter text={line.slice(1).trim()} />
-            </div>
-          );
-        }
-
-        return (
-          <p key={lineIdx} className="m-0">
-            <InlineFormatter text={line} />
-          </p>
-        );
-      })}
-    </div>
-  );
-}
-
-/**
- * Handles inline formatting: **bold**, *italic*, `code`
- */
-function InlineFormatter({ text }: { text: string }) {
-  // Regex to split by bold (**), italic (*), code (`)
-  const parts: React.ReactNode[] = [];
-  let remaining = text;
-  let keyIdx = 0;
-
-  while (remaining.length > 0) {
-    // Check bold **...**
-    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
-    // Check code `...`
-    const codeMatch = remaining.match(/`([^`]+)`/);
-    // Check italic *...* (single asterisk)
-    const italicMatch = remaining.match(/(?<!\*)\*([^*]+)\*(?!\*)/);
-
-    // Find closest match
-    type MatchCandidate = { type: 'bold' | 'code' | 'italic'; index: number; full: string; inner: string };
-    const candidates: MatchCandidate[] = [];
-
-    if (boldMatch && boldMatch.index !== undefined) {
-      candidates.push({ type: 'bold', index: boldMatch.index, full: boldMatch[0], inner: boldMatch[1] });
-    }
-    if (codeMatch && codeMatch.index !== undefined) {
-      candidates.push({ type: 'code', index: codeMatch.index, full: codeMatch[0], inner: codeMatch[1] });
-    }
-    if (italicMatch && italicMatch.index !== undefined) {
-      candidates.push({ type: 'italic', index: italicMatch.index, full: italicMatch[0], inner: italicMatch[1] });
-    }
-
-    if (candidates.length === 0) {
-      parts.push(remaining);
-      break;
-    }
-
-    // Sort by earliest match
-    candidates.sort((a, b) => a.index - b.index);
-    const best = candidates[0];
-
-    // Push text before match
-    if (best.index > 0) {
-      parts.push(remaining.substring(0, best.index));
-    }
-
-    // Render formatted component
-    if (best.type === 'bold') {
-      parts.push(
-        <strong key={`b_${keyIdx++}`} className="font-bold text-neutral-950">
-          {best.inner}
-        </strong>
-      );
-    } else if (best.type === 'code') {
-      parts.push(
-        <code key={`c_${keyIdx++}`} className="px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-900 font-mono text-[12px] border border-neutral-200">
-          {best.inner}
-        </code>
-      );
-    } else if (best.type === 'italic') {
-      parts.push(
-        <em key={`i_${keyIdx++}`} className="italic text-neutral-700">
-          {best.inner}
-        </em>
-      );
-    }
-
-    remaining = remaining.substring(best.index + best.full.length);
-  }
-
-  return <>{parts}</>;
 }

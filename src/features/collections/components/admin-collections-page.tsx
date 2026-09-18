@@ -19,14 +19,6 @@ export default function AdminCollectionsPage() {
               <ArrowLeft className="w-4 h-4" />
               <span>Quay lại Admin Dashboard</span>
             </Link>
-
-            <Link
-              href="/"
-              target="_blank"
-              className="text-body-sm font-semibold text-[#5D1C34] hover:underline"
-            >
-              Xem Landing Page &rarr;
-            </Link>
           </div>
 
           <AdminCollectionManager />

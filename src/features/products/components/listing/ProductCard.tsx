@@ -22,7 +22,6 @@ export function ProductCard({ product, pinned, onToggleRack, onAddToCart }: Prod
           alt={product.name}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
-          unoptimized
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
           }}

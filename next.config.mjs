@@ -13,11 +13,20 @@ const BACKEND_PROXY_PREFIX = '/api/backend';
 const nextConfig = {
   images: {
     remotePatterns: [
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: '*.cloudinary.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'storage.googleapis.com' },
       { protocol: 'https', hostname: 'fal.storage' },
-      { protocol: 'https', hostname: 'fal.media' }
+      { protocol: 'https', hostname: 'fal.media' },
+      { protocol: 'https', hostname: 'raw.githubusercontent.com' },
+      { protocol: 'https', hostname: '*.googleusercontent.com' },
+      { protocol: 'https', hostname: '**' },
     ],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 2592000,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   eslint: {
     dirs: ['src'],

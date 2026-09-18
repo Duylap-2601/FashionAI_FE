@@ -22,6 +22,9 @@ import { cancelAdminShipment, confirmManualPayment, createProduct, createShipmen
 import { fetchAdminOrders, fetchAdminProducts, fetchAdminShipmentDetail, fetchAdminShipments, fetchAdminStats, fetchAdminUsers, fetchWebhookFailures } from '@/features/admin/services/queries';
 import type { AdminOrder, AdminPage, AdminProduct, AdminProductImage, AdminShipment, AdminShipmentDetail, AdminStats, AdminUser, AdminWebhookFailure, GarmentCategory, ProductStatus, UserRole, UserTier } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminShipmentFilters } from '@/features/admin/types/admin-shipments-panel';
+import type { AdminProductFilters } from '@/features/admin/types/admin-products-panel';
+import type { AdminOrderFilters } from '@/features/admin/types/admin-orders-panel';
+import type { AdminUserFilters } from '@/features/admin/types/admin-users-panel';
 import { AdminGuard } from '@/features/auth/components/AdminGuard';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AdminCollectionManager } from '@/features/collections/components/AdminCollectionManager';
@@ -33,7 +36,6 @@ import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
-  ExternalLink,
   Layers,
   LayoutDashboard,
   LogOut,
@@ -48,22 +50,82 @@ import {
   Users
 } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
+import Image from 'next/image';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-export default function AdminDashboard() {
-  const { logout } = useAuth();
+interface ApiPaginatedResponse<T = unknown> {
+  items?: T[];
+  total?: number;
+  meta?: { total?: number; totalPages?: number; page?: number };
+  __meta?: { total?: number; totalPages?: number; page?: number };
+  pagination?: { total?: number; totalPages?: number; page?: number };
+}
+
+function AdminDashboardContent() {
+  const { logout, currentUser } = useAuth();
+  const adminName = currentUser.name && currentUser.name !== 'Khách' ? currentUser.name : 'Admin FashionAI';
+  const adminInitial = adminName.charAt(0).toUpperCase() || 'A';
 
   const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [productFilters, setProductFilters] = useState<AdminProductFilters>({
+    category: '',
+    status: '',
+    stock: '',
+    search: '',
+  });
+  const [productPagination, setProductPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 1,
+  });
+  const [isProductsFetching, setIsProductsFetching] = useState(false);
+
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [userFilters, setUserFilters] = useState<AdminUserFilters>({
+    search: '',
+    tier: '',
+    role: '',
+    isVerified: '',
+  });
+  const [userPagination, setUserPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 1,
+  });
+  const [isUsersFetching, setIsUsersFetching] = useState(false);
+
   const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [orderFilters, setOrderFilters] = useState<AdminOrderFilters>({
+    search: '',
+    status: '',
+    paymentStatus: '',
+  });
+  const [orderPagination, setOrderPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 1,
+  });
+  const [isOrdersFetching, setIsOrdersFetching] = useState(false);
+
   const [shipments, setShipments] = useState<AdminShipment[]>([]);
   const [shipmentFilters, setShipmentFilters] = useState<AdminShipmentFilters>({});
+  const [shipmentPagination, setShipmentPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 1,
+  });
+  const [isShipmentsFetching, setIsShipmentsFetching] = useState(false);
+
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [webhookFailures, setWebhookFailures] = useState<AdminWebhookFailure[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -262,11 +324,23 @@ export default function AdminDashboard() {
     setEditingProduct(prev => ({ ...prev, colors: (prev?.colors || []).filter((_, i) => i !== index) }));
   }, []);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (
+    page = productPagination.page,
+    limit = productPagination.pageSize,
+    filters = productFilters
+  ) => {
+    setIsProductsFetching(true);
     try {
-      const res = await fetchAdminProducts({ params: { limit: 100 } });
-      const list = (Array.isArray(res) ? res : res && typeof res === 'object' && 'items' in res ? res.items : []) as AdminProductDto[];
-      setProducts(list.map((p) => {
+      const params: Record<string, string | number> = { page, limit };
+      if (filters.search) params.search = filters.search;
+      if (filters.category && filters.category !== 'ALL') params.category = filters.category;
+      if (filters.status && filters.status !== 'ALL') params.status = filters.status;
+      if (filters.stock && filters.stock !== 'all') params.stock = filters.stock;
+
+      const res = await fetchAdminProducts({ params });
+      const resObj = res as ApiPaginatedResponse<AdminProductDto> | undefined;
+      const rawList = (Array.isArray(res) ? res : resObj?.items || []) as AdminProductDto[];
+      const mappedList: AdminProduct[] = rawList.map((p) => {
         const rawImages: AdminImageDto[] = Array.isArray(p.images) ? p.images : [];
         const normalizedImages: AdminProductImage[] = rawImages.map((img: AdminImageDto, idx: number) => {
           if (typeof img === 'string') {
@@ -296,18 +370,74 @@ export default function AdminDashboard() {
           color: p.color,
           colors: Array.isArray(p.colors) ? p.colors : undefined,
         };
-      }));
+      });
+
+      const meta = resObj?.__meta || resObj?.meta || resObj?.pagination;
+      const serverTotal = typeof meta?.total === 'number' ? meta.total : typeof resObj?.total === 'number' ? resObj.total : undefined;
+
+      if (serverTotal !== undefined) {
+        setProducts(mappedList);
+        setProductPagination(prev => ({
+          ...prev,
+          page,
+          pageSize: limit,
+          total: serverTotal,
+          totalPages: typeof meta?.totalPages === 'number' ? meta.totalPages : Math.ceil(serverTotal / limit) || 1,
+        }));
+      } else {
+        let filtered = mappedList;
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
+        }
+        if (filters.category && filters.category !== 'ALL') {
+          filtered = filtered.filter(p => p.category === filters.category);
+        }
+        if (filters.status && filters.status !== 'ALL') {
+          filtered = filtered.filter(p => p.status === filters.status);
+        }
+        if (filters.stock === 'out_of_stock') {
+          filtered = filtered.filter(p => (p.stock ?? 0) === 0);
+        } else if (filters.stock === 'low_stock') {
+          filtered = filtered.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) < 10);
+        }
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        const pageItems = filtered.slice((page - 1) * limit, page * limit);
+        setProducts(pageItems);
+        setProductPagination(prev => ({
+          ...prev,
+          page,
+          pageSize: limit,
+          total,
+          totalPages,
+        }));
+      }
     } catch (e) {
       console.error('Backend API products fetch failed:', e);
       toast.error('Không thể tải danh sách sản phẩm');
+    } finally {
+      setIsProductsFetching(false);
     }
-  }, []);
+  }, [productPagination.page, productPagination.pageSize, productFilters]);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (
+    page = orderPagination.page,
+    limit = orderPagination.pageSize,
+    filters = orderFilters
+  ) => {
+    setIsOrdersFetching(true);
     try {
-      const res = await fetchAdminOrders({ params: { limit: 100 } });
-      const list = (Array.isArray(res) ? res : res && typeof res === 'object' && 'items' in res ? res.items : []) as AdminOrderDto[];
-      setOrders(list.map((o) => {
+      const params: Record<string, string | number> = { page, limit };
+      if (filters.search) params.search = filters.search;
+      if (filters.status && filters.status !== 'ALL') params.status = filters.status;
+      if (filters.paymentStatus && filters.paymentStatus !== 'ALL') params.paymentStatus = filters.paymentStatus;
+
+      const res = await fetchAdminOrders({ params });
+      const resObj = res as ApiPaginatedResponse<AdminOrderDto> | undefined;
+      const rawList = (Array.isArray(res) ? res : resObj?.items || []) as AdminOrderDto[];
+      const mappedList: AdminOrder[] = rawList.map((o) => {
         const ship = o.shippingInfo;
         return {
           id: o.id,
@@ -326,34 +456,127 @@ export default function AdminDashboard() {
           phone: ship?.phone,
           shipment: o.shipment || null,
         };
-      }));
+      });
+
+      const meta = resObj?.__meta || resObj?.meta || resObj?.pagination;
+      const serverTotal = typeof meta?.total === 'number' ? meta.total : typeof resObj?.total === 'number' ? resObj.total : undefined;
+
+      if (serverTotal !== undefined) {
+        setOrders(mappedList);
+        setOrderPagination(prev => ({
+          ...prev,
+          page,
+          pageSize: limit,
+          total: serverTotal,
+          totalPages: typeof meta?.totalPages === 'number' ? meta.totalPages : Math.ceil(serverTotal / limit) || 1,
+        }));
+      } else {
+        let filtered = mappedList;
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          filtered = filtered.filter(o =>
+            o.code.toLowerCase().includes(q) ||
+            o.customer.toLowerCase().includes(q) ||
+            o.email.toLowerCase().includes(q) ||
+            (o.phone && o.phone.includes(q))
+          );
+        }
+        if (filters.status && filters.status !== 'ALL') {
+          filtered = filtered.filter(o => o.status === filters.status);
+        }
+        if (filters.paymentStatus && filters.paymentStatus !== 'ALL') {
+          filtered = filtered.filter(o => o.paymentStatus === filters.paymentStatus);
+        }
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        const pageItems = filtered.slice((page - 1) * limit, page * limit);
+        setOrders(pageItems);
+        setOrderPagination(prev => ({
+          ...prev,
+          page,
+          pageSize: limit,
+          total,
+          totalPages,
+        }));
+      }
     } catch (e) {
       console.error('Backend API orders fetch failed:', e);
       toast.error('Không thể tải danh sách đơn hàng');
+    } finally {
+      setIsOrdersFetching(false);
     }
-  }, []);
+  }, [orderPagination.page, orderPagination.pageSize, orderFilters]);
 
-  const fetchShipments = useCallback(async () => {
+  const fetchShipments = useCallback(async (
+    page = shipmentPagination.page,
+    limit = shipmentPagination.pageSize,
+    filters = shipmentFilters
+  ) => {
+    setIsShipmentsFetching(true);
     try {
-      const params = Object.fromEntries(
-        Object.entries(shipmentFilters)
-          .filter(([, value]) => value !== undefined && value !== '')
-          .map(([key, value]) => [key, typeof value === 'boolean' ? String(value) : value]),
-      );
-      const res = await fetchAdminShipments({ params: { limit: 100, ...params } });
-      const list = (Array.isArray(res) ? res : res && typeof res === 'object' && 'items' in res ? res.items : []) as AdminShipmentDto[];
-      setShipments(list);
+      const params: Record<string, string | number> = {
+        page,
+        limit,
+        ...Object.fromEntries(
+          Object.entries(filters)
+            .filter(([, value]) => value !== undefined && value !== '')
+            .map(([key, value]) => [key, typeof value === 'boolean' ? String(value) : value]),
+        ),
+      };
+      const res = await fetchAdminShipments({ params });
+      const resObj = res as ApiPaginatedResponse<AdminShipmentDto> | undefined;
+      const rawList = (Array.isArray(res) ? res : resObj?.items || []) as AdminShipmentDto[];
+
+      const meta = resObj?.__meta || resObj?.meta || resObj?.pagination;
+      const serverTotal = typeof meta?.total === 'number' ? meta.total : typeof resObj?.total === 'number' ? resObj.total : undefined;
+
+      if (serverTotal !== undefined) {
+        setShipments(rawList);
+        setShipmentPagination(prev => ({
+          ...prev,
+          page,
+          pageSize: limit,
+          total: serverTotal,
+          totalPages: typeof meta?.totalPages === 'number' ? meta.totalPages : Math.ceil(serverTotal / limit) || 1,
+        }));
+      } else {
+        const total = rawList.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        const pageItems = rawList.slice((page - 1) * limit, page * limit);
+        setShipments(pageItems);
+        setShipmentPagination(prev => ({
+          ...prev,
+          page,
+          pageSize: limit,
+          total,
+          totalPages,
+        }));
+      }
     } catch (e) {
       console.error('Backend API shipments fetch failed:', e);
       toast.error('Không thể tải danh sách vận đơn');
+    } finally {
+      setIsShipmentsFetching(false);
     }
-  }, [shipmentFilters]);
+  }, [shipmentPagination.page, shipmentPagination.pageSize, shipmentFilters]);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (
+    page = userPagination.page,
+    limit = userPagination.pageSize,
+    filters = userFilters
+  ) => {
+    setIsUsersFetching(true);
     try {
-      const res = await fetchAdminUsers({ params: { limit: 100 } });
-      const list = (Array.isArray(res) ? res : res && typeof res === 'object' && 'items' in res ? res.items : []) as AdminUserDto[];
-      setUsers(list.map((u) => ({
+      const params: Record<string, string | number> = { page, limit };
+      if (filters.search) params.search = filters.search;
+      if (filters.tier && filters.tier !== 'ALL') params.tier = filters.tier;
+      if (filters.role && filters.role !== 'ALL') params.role = filters.role;
+
+      const res = await fetchAdminUsers({ params });
+      const resObj = res as ApiPaginatedResponse<AdminUserDto> | undefined;
+      const rawList = (Array.isArray(res) ? res : resObj?.items || []) as AdminUserDto[];
+      const mappedList: AdminUser[] = rawList.map((u) => ({
         id: u.id,
         name: u.name || 'Người dùng',
         email: u.email,
@@ -364,12 +587,152 @@ export default function AdminDashboard() {
         tryOns: u.tryOns || 0,
         orders: u.orders || 0,
         spent: Number(u.spent || 0),
-      })));
+      }));
+
+      const meta = resObj?.__meta || resObj?.meta || resObj?.pagination;
+      const serverTotal = typeof meta?.total === 'number' ? meta.total : typeof resObj?.total === 'number' ? resObj.total : undefined;
+
+      if (serverTotal !== undefined) {
+        setUsers(mappedList);
+        setUserPagination(prev => ({
+          ...prev,
+          page,
+          pageSize: limit,
+          total: serverTotal,
+          totalPages: typeof meta?.totalPages === 'number' ? meta.totalPages : Math.ceil(serverTotal / limit) || 1,
+        }));
+      } else {
+        let filtered = mappedList;
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          filtered = filtered.filter(u =>
+            u.name.toLowerCase().includes(q) ||
+            u.email.toLowerCase().includes(q)
+          );
+        }
+        if (filters.tier && filters.tier !== 'ALL') {
+          filtered = filtered.filter(u => u.tier === filters.tier);
+        }
+        if (filters.role && filters.role !== 'ALL') {
+          filtered = filtered.filter(u => u.role === filters.role);
+        }
+        if (filters.isVerified === 'VERIFIED') {
+          filtered = filtered.filter(u => u.isVerified);
+        } else if (filters.isVerified === 'UNVERIFIED') {
+          filtered = filtered.filter(u => !u.isVerified);
+        }
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        const pageItems = filtered.slice((page - 1) * limit, page * limit);
+        setUsers(pageItems);
+        setUserPagination(prev => ({
+          ...prev,
+          page,
+          pageSize: limit,
+          total,
+          totalPages,
+        }));
+      }
     } catch (e) {
       console.error('Backend API users fetch failed:', e);
       toast.error('Không thể tải danh sách người dùng');
+    } finally {
+      setIsUsersFetching(false);
     }
-  }, []);
+  }, [userPagination.page, userPagination.pageSize, userFilters]);
+
+  // ─── Products Pagination & Filter Handlers ───
+  const handleProductFilterChange = useCallback((patch: Partial<AdminProductFilters>) => {
+    setProductFilters(prev => {
+      const next = { ...prev, ...patch };
+      setProductPagination(p => ({ ...p, page: 1 }));
+      fetchProducts(1, productPagination.pageSize, next);
+      return next;
+    });
+  }, [fetchProducts, productPagination.pageSize]);
+
+  const handleResetProductFilters = useCallback(() => {
+    const empty: AdminProductFilters = { category: '', status: '', stock: '', search: '' };
+    setProductFilters(empty);
+    setProductPagination(p => ({ ...p, page: 1 }));
+    fetchProducts(1, productPagination.pageSize, empty);
+  }, [fetchProducts, productPagination.pageSize]);
+
+  const handleProductPageChange = useCallback((page: number) => {
+    setProductPagination(prev => ({ ...prev, page }));
+    fetchProducts(page, productPagination.pageSize, productFilters);
+  }, [fetchProducts, productPagination.pageSize, productFilters]);
+
+  const handleProductPageSizeChange = useCallback((size: number) => {
+    setProductPagination(prev => ({ ...prev, page: 1, pageSize: size }));
+    fetchProducts(1, size, productFilters);
+  }, [fetchProducts, productFilters]);
+
+  // ─── Orders Pagination & Filter Handlers ───
+  const handleOrderFilterChange = useCallback((patch: Partial<AdminOrderFilters>) => {
+    setOrderFilters(prev => {
+      const next = { ...prev, ...patch };
+      setOrderPagination(p => ({ ...p, page: 1 }));
+      fetchOrders(1, orderPagination.pageSize, next);
+      return next;
+    });
+  }, [fetchOrders, orderPagination.pageSize]);
+
+  const handleResetOrderFilters = useCallback(() => {
+    const empty: AdminOrderFilters = { search: '', status: '', paymentStatus: '' };
+    setOrderFilters(empty);
+    setOrderPagination(p => ({ ...p, page: 1 }));
+    fetchOrders(1, orderPagination.pageSize, empty);
+  }, [fetchOrders, orderPagination.pageSize]);
+
+  const handleOrderPageChange = useCallback((page: number) => {
+    setOrderPagination(prev => ({ ...prev, page }));
+    fetchOrders(page, orderPagination.pageSize, orderFilters);
+  }, [fetchOrders, orderPagination.pageSize, orderFilters]);
+
+  const handleOrderPageSizeChange = useCallback((size: number) => {
+    setOrderPagination(prev => ({ ...prev, page: 1, pageSize: size }));
+    fetchOrders(1, size, orderFilters);
+  }, [fetchOrders, orderFilters]);
+
+  // ─── Users Pagination & Filter Handlers ───
+  const handleUserFilterChange = useCallback((patch: Partial<AdminUserFilters>) => {
+    setUserFilters(prev => {
+      const next = { ...prev, ...patch };
+      setUserPagination(p => ({ ...p, page: 1 }));
+      fetchUsers(1, userPagination.pageSize, next);
+      return next;
+    });
+  }, [fetchUsers, userPagination.pageSize]);
+
+  const handleResetUserFilters = useCallback(() => {
+    const empty: AdminUserFilters = { search: '', tier: '', role: '', isVerified: '' };
+    setUserFilters(empty);
+    setUserPagination(p => ({ ...p, page: 1 }));
+    fetchUsers(1, userPagination.pageSize, empty);
+  }, [fetchUsers, userPagination.pageSize]);
+
+  const handleUserPageChange = useCallback((page: number) => {
+    setUserPagination(prev => ({ ...prev, page }));
+    fetchUsers(page, userPagination.pageSize, userFilters);
+  }, [fetchUsers, userPagination.pageSize, userFilters]);
+
+  const handleUserPageSizeChange = useCallback((size: number) => {
+    setUserPagination(prev => ({ ...prev, page: 1, pageSize: size }));
+    fetchUsers(1, size, userFilters);
+  }, [fetchUsers, userFilters]);
+
+  // ─── Shipments Pagination Handlers ───
+  const handleShipmentPageChange = useCallback((page: number) => {
+    setShipmentPagination(prev => ({ ...prev, page }));
+    fetchShipments(page, shipmentPagination.pageSize, shipmentFilters);
+  }, [fetchShipments, shipmentPagination.pageSize, shipmentFilters]);
+
+  const handleShipmentPageSizeChange = useCallback((size: number) => {
+    setShipmentPagination(prev => ({ ...prev, page: 1, pageSize: size }));
+    fetchShipments(1, size, shipmentFilters);
+  }, [fetchShipments, shipmentFilters]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -1033,16 +1396,15 @@ export default function AdminDashboard() {
   const vipUsers = users.filter(u => u.tier === 'VIP').length;
 
   return (
-    <AdminGuard>
-      <div className="flex bg-neutral-100 h-screen overflow-hidden text-neutral-800 font-sans">
+    <div className="flex bg-neutral-100 h-screen overflow-hidden text-neutral-800 font-sans">
 
-        {/* MOBILE OVERLAY */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+      {/* MOBILE OVERLAY */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
         {/* SIDEBAR */}
         <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[240px] shrink-0 bg-brand-navy flex flex-col h-screen lg:h-full transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
@@ -1127,15 +1489,6 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex items-center gap-3 md:gap-4">
-              <Link
-                href="/"
-                target="_blank"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[13px] font-medium text-neutral-600 hover:text-brand-navy hover:bg-neutral-100 transition-colors border border-neutral-200/80"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Xem cửa hàng</span>
-              </Link>
-
               <button
                 onClick={() => {
                   setIsLoading(true);
@@ -1157,11 +1510,15 @@ export default function AdminDashboard() {
 
               {/* Admin User Info */}
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                  A
+                <div className="w-8 h-8 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-xs shadow-xs overflow-hidden">
+                  {currentUser.avatar ? (
+                    <Image src={currentUser.avatar} alt={adminName} width={32} height={32} unoptimized className="w-full h-full object-cover" />
+                  ) : (
+                    adminInitial
+                  )}
                 </div>
                 <div className="hidden md:flex flex-col text-left">
-                  <span className="text-[13px] font-bold text-neutral-800 leading-tight">Admin FashionAI</span>
+                  <span className="text-[13px] font-bold text-neutral-800 leading-tight">{adminName}</span>
                   <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider">Quản trị viên</span>
                 </div>
               </div>
@@ -1208,17 +1565,53 @@ export default function AdminDashboard() {
                 setSearchQuery={setSearchQuery}
                 products={products}
                 handleDeleteProduct={handleDeleteProduct}
+                filters={productFilters}
+                onFilterChange={handleProductFilterChange}
+                onResetFilters={handleResetProductFilters}
+                currentPage={productPagination.page}
+                totalPages={productPagination.totalPages}
+                totalItems={productPagination.total}
+                pageSize={productPagination.pageSize}
+                onPageChange={handleProductPageChange}
+                onPageSizeChange={handleProductPageSizeChange}
+                isFetching={isProductsFetching}
               />
             )}
 
             {/* ─── TAB: USERS ─────────────────────────────────────────────────────── */}
             {activeTab === 'users' && (
-              <AdminUsersPanel users={users} setSelectedUser={setSelectedUser} />
+              <AdminUsersPanel
+                users={users}
+                setSelectedUser={setSelectedUser}
+                filters={userFilters}
+                onFilterChange={handleUserFilterChange}
+                onResetFilters={handleResetUserFilters}
+                currentPage={userPagination.page}
+                totalPages={userPagination.totalPages}
+                totalItems={userPagination.total}
+                pageSize={userPagination.pageSize}
+                onPageChange={handleUserPageChange}
+                onPageSizeChange={handleUserPageSizeChange}
+                isFetching={isUsersFetching}
+              />
             )}
 
             {/* ─── TAB: ORDERS ────────────────────────────────────────────────────── */}
             {activeTab === 'orders' && (
-              <AdminOrdersPanel orders={orders} setSelectedOrder={setSelectedOrder} />
+              <AdminOrdersPanel
+                orders={orders}
+                setSelectedOrder={setSelectedOrder}
+                filters={orderFilters}
+                onFilterChange={handleOrderFilterChange}
+                onResetFilters={handleResetOrderFilters}
+                currentPage={orderPagination.page}
+                totalPages={orderPagination.totalPages}
+                totalItems={orderPagination.total}
+                pageSize={orderPagination.pageSize}
+                onPageChange={handleOrderPageChange}
+                onPageSizeChange={handleOrderPageSizeChange}
+                isFetching={isOrdersFetching}
+              />
             )}
 
             {/* ─── TAB: SHIPMENTS ─────────────────────────────────────────────────── */}
@@ -1231,6 +1624,13 @@ export default function AdminDashboard() {
                 onSync={handleSyncShipment}
                 onCancel={handleCancelShipment}
                 onOpenOrder={handleOpenOrderFromShipment}
+                currentPage={shipmentPagination.page}
+                totalPages={shipmentPagination.totalPages}
+                totalItems={shipmentPagination.total}
+                pageSize={shipmentPagination.pageSize}
+                onPageChange={handleShipmentPageChange}
+                onPageSizeChange={handleShipmentPageSizeChange}
+                isFetching={isShipmentsFetching}
               />
             )}
 
@@ -1304,7 +1704,14 @@ export default function AdminDashboard() {
           </AnimatePresence>
 
         </div>
-      </div>
+    </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <AdminGuard>
+      <AdminDashboardContent />
     </AdminGuard>
   );
 }

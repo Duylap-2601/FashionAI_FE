@@ -223,7 +223,6 @@ export default function ProductImageViewer({
           alt={productName}
           fill
           sizes="(max-width: 768px) 100vw, 55vw"
-          unoptimized
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = fallbackImage;
           }}
@@ -288,7 +287,6 @@ export default function ProductImageViewer({
                 alt={`Ảnh chi tiết ${idx + 1}`}
                 fill
                 sizes="82px"
-                unoptimized
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = fallbackImage;
                 }}
@@ -394,7 +392,6 @@ export default function ProductImageViewer({
                 alt={productName}
                 fill
                 sizes="90vw"
-                unoptimized
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = fallbackImage;
                 }}
@@ -479,7 +476,6 @@ export default function ProductImageViewer({
                     alt={`Thumb ${idx + 1}`}
                     fill
                     sizes="56px"
-                    unoptimized
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = fallbackImage;
                     }}

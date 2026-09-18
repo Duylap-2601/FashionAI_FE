@@ -21,4 +21,11 @@ export interface AdminShipmentsPanelProps {
   onSync: (id: string) => Promise<void>;
   onCancel: (shipment: AdminShipment) => Promise<void>;
   onOpenOrder: (orderCode: number) => void;
+  currentPage?: number;
+  totalPages?: number;
+  totalItems?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+  isFetching?: boolean;
 }

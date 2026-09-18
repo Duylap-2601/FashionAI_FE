@@ -24,13 +24,14 @@ import {
   Layers,
   Loader2, Package,
   Pencil,
-  Plus, Search,
+  Plus, RotateCcw, Search,
   Trash2,
   Upload,
   X
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { AdminPagination } from '@/features/admin/components/admin-pagination';
 
 export function AdminCollectionManager() {
   const { collections: apiCollections, isLoading, isError, refetch } = useAdminAllCollections();
@@ -40,6 +41,9 @@ export function AdminCollectionManager() {
 
   const [collections, setCollections] = useState<Collection[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [editingCollection, setEditingCollection] = useState<Partial<Collection> | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -194,11 +198,32 @@ export function AdminCollectionManager() {
     }
   };
 
-  const filteredCollections = collections.filter((col) =>
-    col.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    col.season?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    col.slug?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCollections = collections.filter((col) => {
+    if (statusFilter === 'published' && !col.isPublished) return false;
+    if (statusFilter === 'draft' && col.isPublished) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = col.name?.toLowerCase().includes(q);
+      const matchSeason = col.season?.toLowerCase().includes(q);
+      const matchSlug = col.slug?.toLowerCase().includes(q);
+      if (!matchName && !matchSeason && !matchSlug) return false;
+    }
+    return true;
+  });
+
+  const isFiltered = Boolean(searchQuery.trim() || statusFilter !== 'all');
+  const totalItems = filteredCollections.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const paginatedCollections = filteredCollections.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setCurrentPage(1);
+  };
 
   return (
     <div className="flex flex-col gap-6 flex-1 min-h-0">
@@ -227,97 +252,158 @@ export function AdminCollectionManager() {
 
       {/* Search Filter & Status Summary */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm bộ sưu tập theo tên, mùa, slug..."
-            className="w-full h-10 pl-10 pr-4 text-body-sm bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#5D1C34]"
-          />
+        <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
+          <div className="relative flex-1 min-w-[240px] max-w-md">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Tìm kiếm bộ sưu tập theo tên, mùa, slug..."
+              className="w-full h-10 pl-10 pr-4 text-body-sm bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#5D1C34]"
+            />
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as 'all' | 'published' | 'draft');
+              setCurrentPage(1);
+            }}
+            className="h-10 px-3 border border-neutral-200 rounded-xl bg-white text-body-sm text-neutral-700 focus:outline-none focus:border-[#5D1C34] cursor-pointer"
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="published">Đang hiển thị (Live)</option>
+            <option value="draft">Bản nháp (Ẩn)</option>
+          </select>
+
+          {isFiltered && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1.5 px-3 h-10 text-xs font-semibold text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-neutral-200 hover:border-red-200 transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Đặt lại</span>
+            </button>
+          )}
         </div>
-        <div className="text-body-sm text-neutral-500 font-medium">
+
+        <div className="text-body-sm text-neutral-500 font-medium shrink-0">
           Tổng: <span className="font-bold text-neutral-900">{collections.length}</span> bộ sưu tập
           {' '}(<span className="text-emerald-600 font-semibold">{collections.filter((c) => c.isPublished).length}</span> đang hiển thị)
         </div>
       </div>
 
-      {/* Table list */}
+      {/* Table list: Fixed Header + Scrollable Data Body */}
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-xs flex flex-col flex-1 min-h-0">
-        <div className="overflow-auto flex-1 min-h-0">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-neutral-50 z-10 shadow-2xs">
-              <tr className="bg-neutral-50 border-b border-neutral-200 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                <th className="py-3.5 px-4 bg-neutral-50">Ảnh bìa</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Tên bộ sưu tập</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Thứ tự</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Mùa / Season</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Sản phẩm thuộc BST</th>
-                <th className="py-3.5 px-4 bg-neutral-50">Trạng thái Landing Page</th>
-                <th className="py-3.5 px-4 text-right bg-neutral-50">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 text-body-sm">
-              {isLoading && collections.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-10 text-neutral-400">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#5D1C34]" />
-                    Đang tải dữ liệu bộ sưu tập từ máy chủ...
-                  </td>
-                </tr>
-              ) : filteredCollections.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-10 text-neutral-400">
-                    Chưa có bộ sưu tập nào hoặc không tìm thấy kết quả phù hợp.
-                  </td>
-                </tr>
+        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
+          <div className="min-w-[1050px] flex-1 flex flex-col min-h-0">
+            {/* Fixed Header */}
+            <div className="bg-neutral-50 border-b border-neutral-200 text-[11px] font-bold uppercase tracking-wider text-neutral-500 shrink-0 select-none shadow-2xs">
+              <div className="grid grid-cols-[100px_minmax(220px,1fr)_90px_130px_170px_200px_140px] items-center">
+                <div className="py-3.5 px-4">Ảnh bìa</div>
+                <div className="py-3.5 px-4">Tên bộ sưu tập</div>
+                <div className="py-3.5 px-4">Thứ tự</div>
+                <div className="py-3.5 px-4">Mùa / Season</div>
+                <div className="py-3.5 px-4">Sản phẩm thuộc BST</div>
+                <div className="py-3.5 px-4">Trạng thái Landing Page</div>
+                <div className="py-3.5 px-4 text-right">Thao tác</div>
+              </div>
+            </div>
+
+            {/* Scrollable Data Body */}
+            <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
+              {isLoading ? (
+                <div className="py-16 text-center text-neutral-400">
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#5D1C34]" />
+                    <span>Đang tải danh sách bộ sưu tập...</span>
+                  </div>
+                </div>
+              ) : paginatedCollections.length === 0 ? (
+                <div className="py-16 text-center text-neutral-400">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Layers className="w-8 h-8 text-neutral-300" />
+                    <p className="text-body-sm font-medium">
+                      {isFiltered ? 'Không tìm thấy bộ sưu tập nào phù hợp với bộ lọc' : 'Chưa có bộ sưu tập nào'}
+                    </p>
+                    <button
+                      onClick={handleOpenNew}
+                      className="mt-2 text-xs text-[#5D1C34] hover:underline font-semibold cursor-pointer"
+                    >
+                      + Tạo bộ sưu tập đầu tiên
+                    </button>
+                  </div>
+                </div>
               ) : (
-                filteredCollections.map((col) => (
-                  <tr key={col.id} className="hover:bg-neutral-50/70 transition-colors">
+                paginatedCollections.map((col) => (
+                  <div
+                    key={col.id}
+                    className="grid grid-cols-[100px_minmax(220px,1fr)_90px_130px_170px_200px_140px] items-center hover:bg-neutral-50/60 transition-colors"
+                  >
                     {/* Cover Thumbnail */}
-                    <td className="py-3 px-4">
-                      <div className="w-14 h-18 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 shadow-2xs shrink-0">
-                        <img
-                          src={col.thumbnail || col.coverImages?.[0] || '/images/placeholder.png'}
-                          alt={col.name}
-                          className="w-full h-full object-cover object-center"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
+                    <div className="py-3 px-4">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 relative shrink-0">
+                        {col.coverImages?.[0] ? (
+                          <img
+                            src={col.coverImages[0]}
+                            alt={col.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : col.thumbnail ? (
+                          <img
+                            src={col.thumbnail}
+                            alt={col.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                            <ImageIcon className="w-6 h-6" />
+                          </div>
+                        )}
+                        {col.coverImages && col.coverImages.length > 1 && (
+                          <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] font-bold px-1 rounded-sm">
+                            +{col.coverImages.length - 1}
+                          </div>
+                        )}
                       </div>
-                    </td>
+                    </div>
 
                     {/* Name & Tagline */}
-                    <td className="py-3 px-4 max-w-xs">
-                      <div className="font-bold text-neutral-900">{col.name}</div>
+                    <div className="py-3 px-4 min-w-0">
+                      <div className="font-semibold text-neutral-900 text-sm line-clamp-1 truncate">
+                        {col.name}
+                      </div>
                       {col.tagline && (
-                        <div className="text-xs text-neutral-500 truncate max-w-xs mt-0.5">
+                        <div className="text-xs text-neutral-500 line-clamp-1 mt-0.5 truncate">
                           {col.tagline}
                         </div>
                       )}
-                      <div className="text-[10px] text-neutral-400 mt-1 font-mono">
+                      <div className="text-[10px] text-neutral-400 mt-1 font-mono truncate">
                         slug: /{col.slug}
                       </div>
-                    </td>
+                    </div>
 
                     {/* Display Order */}
-                    <td className="py-3 px-4">
+                    <div className="py-3 px-4">
                       <span className="px-2 py-0.5 bg-neutral-100 text-neutral-700 text-xs font-mono font-semibold rounded">
                         #{col.displayOrder ?? 0}
                       </span>
-                    </td>
+                    </div>
 
                     {/* Season */}
-                    <td className="py-3 px-4">
+                    <div className="py-3 px-4">
                       <span className="px-2.5 py-1 bg-neutral-100 text-neutral-700 text-xs font-semibold rounded-md">
                         {col.season || '2026'}
                       </span>
-                    </td>
+                    </div>
 
                     {/* Products count & manage button */}
-                    <td className="py-3 px-4">
+                    <div className="py-3 px-4">
                       <button
                         type="button"
                         onClick={() => setManagingProductsCollection(col)}
@@ -327,10 +413,10 @@ export function AdminCollectionManager() {
                         <Package className="w-3.5 h-3.5" />
                         <span>{col.itemCount ?? col._count?.products ?? 0} sản phẩm</span>
                       </button>
-                    </td>
+                    </div>
 
                     {/* Publish Status Toggle */}
-                    <td className="py-3 px-4">
+                    <div className="py-3 px-4">
                       <button
                         onClick={() => handleTogglePublish(col.id, col.isPublished)}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${col.isPublished
@@ -351,10 +437,10 @@ export function AdminCollectionManager() {
                           </>
                         )}
                       </button>
-                    </td>
+                    </div>
 
                     {/* Actions */}
-                    <td className="py-3 px-4 text-right">
+                    <div className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setManagingProductsCollection(col)}
@@ -387,13 +473,31 @@ export function AdminCollectionManager() {
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
+
+        {/* Pagination */}
+        {totalItems > 0 && (
+          <div className="shrink-0 border-t border-neutral-100">
+            <AdminPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+              disabled={isLoading}
+            />
+          </div>
+        )}
       </div>
 
       {/* Modal Create / Edit Collection */}
