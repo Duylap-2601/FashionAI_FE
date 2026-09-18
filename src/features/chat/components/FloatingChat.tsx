@@ -11,6 +11,7 @@ export function FloatingChat() {
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(1);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,6 +30,33 @@ export function FloatingChat() {
       setUnread(0);
       setTimeout(() => inputRef.current?.focus(), 300);
     }
+  }, [open]);
+
+  // Click outside to collapse chat window & Escape key handler
+  useEffect(() => {
+    if (!open) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    const handleKeyDownEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDownEsc);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDownEsc);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -62,7 +90,7 @@ export function FloatingChat() {
   }, []);
 
   return (
-    <div className="fixed bottom-[88px] md:bottom-6 right-4 md:right-6 z-[60] flex flex-col items-end gap-3">
+    <div ref={containerRef} className="fixed bottom-[88px] md:bottom-6 right-4 md:right-6 z-[60] flex flex-col items-end gap-3">
 
       {/* Chat panel */}
       <AnimatePresence>

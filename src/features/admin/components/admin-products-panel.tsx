@@ -145,19 +145,24 @@ export function AdminProductsPanel({
                 <tr key={p.id} className="hover:bg-neutral-50/80 transition-colors">
                   <td className="px-6 py-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="relative shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-100">
-                        <Image
-                          src={p.image}
-                          alt={p.name}
-                          width={40}
-                          height={40}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
-                          }}
-                        />
+                      <div className="relative shrink-0">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200">
+                          <Image
+                            src={p.image}
+                            alt={p.name}
+                            width={48}
+                            height={48}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
+                            }}
+                          />
+                        </div>
                         {p.images && p.images.length > 1 && (
-                          <span className="absolute -bottom-1 -right-1 bg-brand-navy text-white text-[9px] font-bold px-1 rounded-full border border-white shadow-2xs">
+                          <span
+                            title={`${p.images.length} hình ảnh`}
+                            className="absolute -bottom-1 -right-1.5 bg-brand-navy text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[20px] text-center rounded-full border-2 border-white shadow-xs z-10 leading-none select-none"
+                          >
                             +{p.images.length}
                           </span>
                         )}
