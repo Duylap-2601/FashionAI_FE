@@ -1410,7 +1410,7 @@ function AdminDashboardContent() {
         <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[240px] shrink-0 bg-brand-navy flex flex-col h-screen lg:h-full transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           <div className="px-6 pt-7 pb-6 border-b border-white/10 flex flex-col gap-1 shrink-0">
             <span className="text-white font-bold text-heading-h3 tracking-wide">FashionAI</span>
-            <span className="inline-flex items-center self-start px-2 py-0.5 bg-brand-gold text-white text-[9px] font-bold tracking-widest rounded-full uppercase">
+            <span className="inline-flex items-center self-start px-2 py-0.5 bg-brand-gold text-brand-navy text-[9px] font-bold tracking-widest rounded-full uppercase">
               Admin Panel
             </span>
           </div>
@@ -1519,7 +1519,7 @@ function AdminDashboardContent() {
                 </div>
                 <div className="hidden md:flex flex-col text-left">
                   <span className="text-[13px] font-bold text-neutral-800 leading-tight">{adminName}</span>
-                  <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider">Quản trị viên</span>
+                  <span className="text-[10px] font-bold text-brand-navy uppercase tracking-wider">Quản trị viên</span>
                 </div>
               </div>
             </div>

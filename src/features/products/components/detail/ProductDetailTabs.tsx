@@ -94,7 +94,7 @@ export function ProductDetailTabs({ product, activeTab, isComboSuit, onTabChange
                     ['03', 'Giao hàng hoàn hảo', 'Trang phục vừa vặn chuẩn chỉnh được hoàn thiện và giao trong 3-5 ngày.'],
                   ].map(([step, title, desc]) => (
                     <div key={step} className="p-4 bg-white rounded-xl border border-neutral-100 shadow-2xs">
-                      <div className="text-brand-gold font-bold text-[18px] mb-1">{step}</div>
+                      <div className="text-brand-navy font-bold text-[18px] mb-1">{step}</div>
                       <div className="font-semibold text-brand-navy mb-1">{title}</div>
                       <p className="text-[12px] text-neutral-500">{desc}</p>
                     </div>

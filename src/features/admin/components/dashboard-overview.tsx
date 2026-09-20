@@ -92,7 +92,7 @@ export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pe
           <div className="flex flex-col">
             <span className="text-[26px] font-bold text-neutral-900">{totalUsers.toLocaleString('vi-VN')}</span>
             <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
-              <span className="text-brand-gold font-semibold">{memberUsers + vipUsers} hội viên VIP/Member</span>
+              <span className="text-brand-navy font-semibold">{memberUsers + vipUsers} hội viên VIP/Member</span>
               <span className="text-neutral-400">{users.filter(u => u.isVerified).length} đã xác thực</span>
             </div>
           </div>

@@ -307,7 +307,7 @@ export function FloatingChat() {
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -top-1 -right-1 w-5 h-5 bg-brand-gold rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white"
+            className="absolute -top-1 -right-1 w-5 h-5 bg-brand-gold rounded-full flex items-center justify-center text-[10px] font-bold text-brand-navy border-2 border-white"
           >
             {unread}
           </motion.span>

@@ -286,7 +286,7 @@ export default function TryOnHistoryPage() {
                   {/* Cache Badge */}
                   {item.isCacheHit && (
                     <div
-                      className="absolute top-3 right-3 z-20 bg-brand-gold/90 backdrop-blur text-white w-7 h-7 rounded-full flex items-center justify-center shadow-sm"
+                      className="absolute top-3 right-3 z-20 bg-brand-gold/90 backdrop-blur text-brand-navy w-7 h-7 rounded-full flex items-center justify-center shadow-sm"
                       title="Kết quả được tối ưu tốc độ (Cache)"
                     >
                       <Zap className="w-4 h-4" />

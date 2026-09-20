@@ -62,7 +62,7 @@ export function ProductGrid({
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
             {badge && (
-              <span className="text-[11px] font-bold text-brand-gold uppercase tracking-[0.18em] block mb-2">
+              <span className="text-[11px] font-bold text-brand-navy uppercase tracking-[0.18em] block mb-2">
                 {badge}
               </span>
             )}

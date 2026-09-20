@@ -133,7 +133,7 @@ export function AdminQuotaPanel({ users, stats }: AdminQuotaPanelProps) {
                   return (
                     <div key={u.id} className="px-6 py-3.5 flex items-center gap-4">
                       {/* Rank */}
-                      <span className={`w-6 text-center text-label-xs font-bold shrink-0 ${idx < 3 ? 'text-brand-gold' : 'text-neutral-400'}`}>
+                      <span className={`w-6 text-center text-label-xs font-bold shrink-0 ${idx < 3 ? 'text-brand-navy' : 'text-neutral-400'}`}>
                         {idx + 1}
                       </span>
                       {/* Avatar */}

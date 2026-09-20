@@ -183,7 +183,7 @@ export function AdminLiveTryOnSettingsPanel() {
               <div key={tier} className="rounded-2xl border border-neutral-200 bg-[#F9F7F5] p-4">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">Tier</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy">Tier</p>
                     <h3 className="text-heading-h4 font-bold text-brand-navy">{tier}</h3>
                   </div>
                   <label className="flex items-center gap-2 text-label-sm font-bold text-neutral-700">

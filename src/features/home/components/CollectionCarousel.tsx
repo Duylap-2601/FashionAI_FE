@@ -49,7 +49,7 @@ export function CollectionCarousel({
       <div className="max-w-[1440px] mx-auto px-4 md:px-8">
         {/* Header with Title */}
         <div className="mb-8">
-          <span className="text-[11px] font-bold text-brand-gold uppercase tracking-[0.18em] block mb-2">
+          <span className="text-[11px] font-bold text-brand-navy uppercase tracking-[0.18em] block mb-2">
             Bộ sưu tập độc quyền
           </span>
           <h2 className="text-[28px] md:text-[36px] font-bold text-neutral-900 tracking-tight">
