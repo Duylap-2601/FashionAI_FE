@@ -190,7 +190,7 @@ export function AdminProductsPanel({
                   <div className="px-4 py-3.5 text-right font-medium text-neutral-700">
                     {p.stock ?? 0}
                     {p.stock === 0 && <span className="ml-1 text-red-500 font-semibold">(Hết hàng)</span>}
-                    {p.stock !== undefined && p.stock > 0 && p.stock < 10 && <span className="ml-1 text-amber-600 font-semibold">(Sắp hết)</span>}
+                    {p.stock !== undefined && p.stock > 0 && p.stock < 10 && <span className="ml-1 text-brand-navy font-semibold">(Sắp hết)</span>}
                   </div>
 
                   {/* Trạng thái */}

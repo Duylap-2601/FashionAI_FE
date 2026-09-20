@@ -5,8 +5,8 @@ export function QuotaBadge({ count, limit }: { count: number; limit: number | nu
   const isUnlimited = !Number.isFinite(count) || limit === null;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label-sm font-semibold ${count > 0 || isUnlimited ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${count > 0 || isUnlimited ? 'bg-amber-500' : 'bg-red-500'}`} />
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label-sm font-semibold ${count > 0 || isUnlimited ? 'bg-brand-navy/8 text-brand-navy border border-brand-navy/20' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${count > 0 || isUnlimited ? 'bg-brand-navy' : 'bg-red-500'}`} />
       {isUnlimited ? 'Không giới hạn lượt thử' : count > 0 ? `Còn ${count} / ${limit} lượt hôm nay` : 'Hết lượt hôm nay'}
     </span>
   );
@@ -36,12 +36,12 @@ export function TryOnHeader({ remainingQuota, limitQuota, isBlocked }: { remaini
 
 export function SubscriptionNotice({ isSubscriptionExpired }: { isSubscriptionExpired: boolean }) {
   return (
-    <div className="p-4 md:p-5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 shadow-xs">
+    <div className="p-4 md:p-5 bg-brand-navy/5 border border-brand-navy/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 shadow-xs">
       <div className="flex items-start gap-3.5">
-        <div className="p-2.5 bg-amber-100 rounded-xl text-amber-800 shrink-0 mt-0.5"><Crown className="w-5 h-5" /></div>
+        <div className="p-2.5 bg-brand-navy/10 rounded-xl text-brand-navy shrink-0 mt-0.5"><Crown className="w-5 h-5" /></div>
         <div>
-          <h3 className="text-body-md font-bold text-amber-950">{isSubscriptionExpired ? 'Gói cước của bạn đã hết hạn' : 'Tính năng Thử đồ AI yêu cầu gói trả tiền (MEMBER hoặc VIP)'}</h3>
-          <p className="text-body-sm text-amber-800 mt-0.5 leading-relaxed">{isSubscriptionExpired ? 'Vui lòng gia hạn gói để tiếp tục trải nghiệm tính năng thử đồ 3D / AI cá nhân hóa.' : 'Tài khoản FREE hiện không hỗ trợ tính năng Try-On. Hãy nâng cấp ngay để nhận 5 – 10 lượt thử trang phục mỗi ngày!'}</p>
+          <h3 className="text-body-md font-bold text-brand-navy">{isSubscriptionExpired ? 'Gói cước của bạn đã hết hạn' : 'Tính năng Thử đồ AI yêu cầu gói trả tiền (MEMBER hoặc VIP)'}</h3>
+          <p className="text-body-sm text-neutral-700 mt-0.5 leading-relaxed">{isSubscriptionExpired ? 'Vui lòng gia hạn gói để tiếp tục trải nghiệm tính năng thử đồ 3D / AI cá nhân hóa.' : 'Tài khoản FREE hiện không hỗ trợ tính năng Try-On. Hãy nâng cấp ngay để nhận 5 – 10 lượt thử trang phục mỗi ngày!'}</p>
         </div>
       </div>
       <Link

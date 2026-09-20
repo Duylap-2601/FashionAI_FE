@@ -363,21 +363,21 @@ export default function CheckoutPage() {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[60%_1fr] gap-12 items-start">
           <div className="flex flex-col gap-10">
             {!canOrder && completeness && (
-              <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl animate-in fade-in duration-300">
+              <div className="p-5 bg-brand-navy/5 border border-brand-navy/20 rounded-2xl animate-in fade-in duration-300">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-amber-100 rounded-xl text-amber-700 shrink-0 mt-0.5">
+                  <div className="p-2 bg-brand-navy/10 rounded-xl text-brand-navy shrink-0 mt-0.5">
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-body-md font-bold text-amber-900 mb-1">
+                    <h3 className="text-body-md font-bold text-brand-navy mb-1">
                       Cần bổ sung số đo cơ thể để hoàn tất đơn may đo
                     </h3>
-                    <p className="text-[13px] text-amber-700 mb-3 leading-relaxed">
+                    <p className="text-[13px] text-neutral-700 mb-3 leading-relaxed">
                       Sản phẩm bạn chọn là hình thức may đo riêng. Tài khoản của bạn hiện còn thiếu một số thông số bắt buộc:
                     </p>
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {completeness.byCategory.flatMap(c => c.missing || []).map((m, idx) => (
-                        <span key={idx} className="px-2.5 py-1 bg-amber-100/80 text-amber-800 rounded-lg text-[12px] font-semibold border border-amber-200">
+                        <span key={idx} className="px-2.5 py-1 bg-brand-navy/10 text-brand-navy rounded-lg text-[12px] font-semibold border border-brand-navy/20">
                           {m.label}
                         </span>
                       ))}

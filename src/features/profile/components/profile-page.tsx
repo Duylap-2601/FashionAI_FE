@@ -162,7 +162,7 @@ function readErrorMessage(error: unknown): string | string[] | undefined {
 function TierBadge({ tier }: { tier: string }) {
   const t = tier?.toUpperCase();
   if (t === 'VIP') return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-bold bg-brand-gold/20 text-amber-700 border border-brand-gold/40">
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-bold bg-brand-navy/10 text-brand-navy border border-brand-navy/25">
       <Crown className="w-3 h-3" /> VIP
     </span>
   );

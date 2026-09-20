@@ -68,7 +68,7 @@ export function Sidebar({
     const t = tier?.toLowerCase();
     switch (t) {
       case 'vip':
-        return 'bg-brand-gold/20 text-amber-700 border border-brand-gold/40';
+        return 'bg-brand-navy/10 text-brand-navy border border-brand-navy/25';
       case 'member':
         return 'bg-brand-sage/20 text-brand-sage border border-brand-sage/40';
       default:

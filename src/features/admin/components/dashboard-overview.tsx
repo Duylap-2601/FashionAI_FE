@@ -54,7 +54,7 @@ export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pe
           <div className="flex flex-col">
             <span className="text-[26px] font-bold text-neutral-900">{totalOrders.toLocaleString('vi-VN')}</span>
             <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
-              <span>{pendingOrders > 0 ? <strong className="text-amber-600 font-bold">{pendingOrders} đơn chờ duyệt</strong> : '0 đơn chờ duyệt'}</span>
+              <span>{pendingOrders > 0 ? <strong className="text-brand-navy font-bold">{pendingOrders} đơn chờ duyệt</strong> : '0 đơn chờ duyệt'}</span>
               <span className="text-neutral-600 font-medium">{deliveredOrders} đã giao</span>
             </div>
           </div>

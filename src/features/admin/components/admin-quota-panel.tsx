@@ -18,7 +18,7 @@ export function AdminQuotaPanel({ users, stats }: AdminQuotaPanelProps) {
       const TIER_QUOTA: Record<UserTier, { tryon: number | null; label: string; color: string; bg: string; badge: string }> = {
         FREE: { tryon: null, label: 'Free', color: 'text-neutral-500', bg: 'bg-neutral-100', badge: 'bg-neutral-200 text-neutral-700' },
         MEMBER: { tryon: 10, label: 'Member', color: 'text-blue-600', bg: 'bg-blue-50', badge: 'bg-blue-100 text-blue-700' },
-        VIP: { tryon: 30, label: 'VIP', color: 'text-brand-gold', bg: 'bg-amber-50', badge: 'bg-amber-100 text-amber-700' },
+        VIP: { tryon: 30, label: 'VIP', color: 'text-brand-navy', bg: 'bg-brand-navy/10', badge: 'bg-brand-navy/10 text-brand-navy' },
       };
 
       const freeUsers = users.filter(u => u.tier === 'FREE');
@@ -45,10 +45,10 @@ export function AdminQuotaPanel({ users, stats }: AdminQuotaPanelProps) {
           {/* ── Stats overview ───────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {([
-              { label: 'Try-on hôm nay', value: totalTryOnToday, icon: Sparkles, color: 'text-brand-gold', bg: 'bg-amber-50' },
+              { label: 'Try-on hôm nay', value: totalTryOnToday, icon: Sparkles, color: 'text-brand-navy', bg: 'bg-brand-navy/10' },
               { label: 'Tổng try-on mọi thời gian', value: totalTryOnAll, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
               { label: 'Tài khoản MEMBER', value: memberUsers.length, icon: Crown, color: 'text-blue-600', bg: 'bg-blue-50' },
-              { label: 'Tài khoản VIP', value: vipUsers.length, icon: ShieldCheck, color: 'text-brand-gold', bg: 'bg-amber-50' },
+              { label: 'Tài khoản VIP', value: vipUsers.length, icon: ShieldCheck, color: 'text-brand-navy', bg: 'bg-brand-navy/10' },
             ] as const).map(card => {
               const CardIcon = card.icon;
               return (
@@ -116,7 +116,7 @@ export function AdminQuotaPanel({ users, stats }: AdminQuotaPanelProps) {
           {/* ── Top users by try-on usage ────────────────────────────── */}
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-xs overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-100 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-brand-gold" />
+              <Sparkles className="w-4 h-4 text-brand-navy" />
               <h2 className="text-body-sm font-bold text-neutral-800">Top người dùng Try-On nhiều nhất</h2>
               <span className="ml-auto text-label-xs text-neutral-400 italic">Tổng lịch sử</span>
             </div>

@@ -97,8 +97,8 @@ export function HeroBanner({ collections }: HeroBannerProps) {
 
               {/* Center Content Overlay */}
               <div className="relative z-10 flex flex-col items-center text-center max-w-[520px] mx-auto">
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-brand-gold text-[11px] font-bold tracking-widest uppercase mb-4 shadow-sm">
-                  <Sparkles className="w-3 h-3 fill-brand-gold" />
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-white/60 text-[#5D1C34] text-[11px] font-bold tracking-widest uppercase mb-4 shadow-sm">
+                  <Sparkles className="w-3 h-3 text-[#5D1C34] fill-[#5D1C34]" />
                   {activeCollection.season || 'BỘ SƯU TẬP 2026'}
                 </span>
 

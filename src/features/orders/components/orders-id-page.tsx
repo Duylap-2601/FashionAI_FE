@@ -328,10 +328,10 @@ export default function OrderDetailPage() {
               </h3>
 
               {order.status === 'PENDING' && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-                  <p className="text-label-sm text-amber-700 mb-1">Nội dung chuyển khoản</p>
-                  <p className="text-body-lg font-bold text-amber-900 font-mono">FAI{order.orderCode}</p>
-                  <p className="text-label-sm text-amber-700 mt-2">
+                <div className="bg-brand-navy/5 border border-brand-navy/20 rounded-xl p-4 mb-4">
+                  <p className="text-label-sm text-neutral-600 mb-1">Nội dung chuyển khoản</p>
+                  <p className="text-body-lg font-bold text-brand-navy font-mono">FAI{order.orderCode}</p>
+                  <p className="text-label-sm text-neutral-600 mt-2">
                     Nếu đã chuyển khoản nhưng đơn chưa cập nhật, vui lòng kiểm tra đã ghi đúng mã này trong nội dung chuyển khoản chưa.
                   </p>
                 </div>

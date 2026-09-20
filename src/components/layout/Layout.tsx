@@ -114,8 +114,8 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
 
   const getTierColor = (tier?: string) => {
     switch (tier?.toLowerCase()) {
-      case 'vip': return 'text-brand-gold';
-      case 'member': return 'text-[#5D1C34]';
+      case 'vip': return 'text-[#5D1C34] font-bold';
+      case 'member': return 'text-[#5D1C34] font-medium';
       default: return 'text-neutral-500';
     }
   };
@@ -149,13 +149,6 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
 
           {/* Right Actions */}
           <div className="ml-auto flex min-w-0 items-center justify-end gap-1.5 md:gap-3 lg:gap-4">
-            {currentUser.role !== 'guest' && currentUser.role !== 'admin' && (
-              <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 rounded-full border border-neutral-200">
-                <Sparkles className="w-3.5 h-3.5 text-[#5D1C34]" />
-                <span className="text-label-sm font-medium text-neutral-700">{currentUser.quota} <span className="text-neutral-500 font-normal">lượt</span></span>
-              </div>
-            )}
-
             <HeaderSearch className="order-2 shrink-0 sm:hidden" />
 
             <form
@@ -374,7 +367,7 @@ function MarketingFooter() {
           </div>
 
           <div className="lg:col-span-3">
-            <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-brand-gold">
+            <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-white">
               BỘ SƯU TẬP & SẢN PHẨM
             </h4>
             <ul className="flex flex-col gap-3 text-body-sm text-neutral-400">
@@ -383,12 +376,12 @@ function MarketingFooter() {
               <li><Link href="/products" className="transition-colors hover:text-white">Suit Nguyên Bộ May Đo</Link></li>
               <li><Link href="/products" className="transition-colors hover:text-white">Áo Sơ Mi Cao Cấp</Link></li>
               <li><Link href="/products" className="transition-colors hover:text-white">Quần Tây & Chân Váy</Link></li>
-              <li><Link href="/try-on" className="font-medium text-brand-gold transition-colors hover:text-white">✦ Phòng Thử Đồ AI Virtual Try-On</Link></li>
+              <li><Link href="/try-on" className="font-medium text-white/90 transition-colors hover:text-white">✦ Phòng Thử Đồ AI Virtual Try-On</Link></li>
             </ul>
           </div>
 
           <div className="lg:col-span-2">
-            <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-brand-gold">
+            <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-white">
               CHÍNH SÁCH
             </h4>
             <ul className="flex flex-col gap-3 text-body-sm text-neutral-400">
@@ -401,7 +394,7 @@ function MarketingFooter() {
           </div>
 
           <div className="lg:col-span-3">
-            <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-brand-gold">
+            <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-white">
               THÔNG TIN LIÊN HỆ
             </h4>
             <div className="flex flex-col gap-3 text-body-sm text-neutral-400">

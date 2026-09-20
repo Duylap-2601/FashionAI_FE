@@ -23,7 +23,7 @@ export function LandingFooter() {
 
           {/* Col 2: Collections & Shop (3 cols) */}
           <div className="lg:col-span-3">
-            <h4 className="text-xs font-bold text-brand-gold uppercase tracking-[0.16em] mb-5">
+            <h4 className="text-xs font-bold text-white uppercase tracking-[0.16em] mb-5">
               BỘ SƯU TẬP & SẢN PHẨM
             </h4>
             <ul className="flex flex-col gap-3 text-body-sm text-neutral-400">
@@ -53,7 +53,7 @@ export function LandingFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/try-on" className="text-[#5D1C34] hover:text-brand-gold font-medium transition-colors">
+                <Link href="/try-on" className="text-white/90 hover:text-white font-medium transition-colors">
                   ✦ Phòng Thử Đồ AI Virtual Try-On
                 </Link>
               </li>
@@ -62,7 +62,7 @@ export function LandingFooter() {
 
           {/* Col 3: Customer Policies (2 cols) */}
           <div className="lg:col-span-2">
-            <h4 className="text-xs font-bold text-brand-gold uppercase tracking-[0.16em] mb-5">
+            <h4 className="text-xs font-bold text-white uppercase tracking-[0.16em] mb-5">
               CHÍNH SÁCH
             </h4>
             <ul className="flex flex-col gap-3 text-body-sm text-neutral-400">
@@ -96,7 +96,7 @@ export function LandingFooter() {
 
           {/* Col 4: Contact & Showrooms (3 cols) */}
           <div className="lg:col-span-3">
-            <h4 className="text-xs font-bold text-brand-gold uppercase tracking-[0.16em] mb-5">
+            <h4 className="text-xs font-bold text-white uppercase tracking-[0.16em] mb-5">
               THÔNG TIN LIÊN HỆ
             </h4>
             <div className="flex flex-col gap-3 text-body-sm text-neutral-400">

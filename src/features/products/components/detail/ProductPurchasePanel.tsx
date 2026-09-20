@@ -67,17 +67,17 @@ function MeasurementSummary({ isMeasurementComplete, measurements, catCompletene
           </div>
         </div>
       ) : (
-        <div className="p-3.5 sm:p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in duration-200">
+        <div className="p-3.5 sm:p-4 bg-brand-navy/5 border border-brand-navy/20 rounded-xl animate-in fade-in duration-200">
           <div className="flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-brand-navy shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-amber-800">Cần bổ sung số đo trước khi đặt may</p>
-              <p className="text-[12px] text-amber-700 mt-1">
+              <p className="text-[13px] font-bold text-brand-navy">Cần bổ sung số đo trước khi đặt may</p>
+              <p className="text-[12px] text-neutral-700 mt-1">
                 Còn thiếu: <strong className="font-semibold">{catCompleteness?.missing?.map(m => m.label).join(', ') || 'số đo bắt buộc'}</strong>.
               </p>
               <Link
                 href="/profile/measurements"
-                className="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1.5 bg-amber-700 text-white rounded-lg text-[12px] font-bold hover:bg-amber-800 transition-colors shadow-2xs"
+                className="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1.5 bg-brand-navy text-white rounded-lg text-[12px] font-bold hover:bg-brand-navy/90 transition-colors shadow-2xs"
               >
                 <Ruler className="w-3.5 h-3.5" /> Bổ sung số đo ngay
               </Link>
