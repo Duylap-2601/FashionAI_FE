@@ -3,15 +3,19 @@
 ## Stack And Commands
 
 Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4, TanStack Query,
-Zustand, Axios, Radix UI, and Lucide. Keep this stack when refactoring.
+Zustand, Axios, Radix UI, Lucide, Motion (Framer), Three.js / React Three Fiber,
+Recharts, Zod, socket.io-client, Capacitor (mobile bridge), and @ducanh2912/next-pwa.
+Keep this stack when refactoring.
 
 ```bash
 npm ci
-npm run dev       # http://localhost:3001
+npm run dev              # http://localhost:3001
 npm run lint
 npm run typecheck
 npm run build
-npm start         # http://localhost:3001
+npm start                # http://localhost:3001
+npm.cmd test             # Node built-in test runner (tests/*.test.cjs)
+npm.cmd run check:architecture   # scripts/check-architecture.cjs
 ```
 
 If PowerShell blocks `.ps1` scripts, use `npm.cmd` / `npx.cmd`.
@@ -20,22 +24,113 @@ If PowerShell blocks `.ps1` scripts, use `npm.cmd` / `npx.cmd`.
 
 ```text
 src/
-├── app/                 # Routes, layouts, metadata, route handlers
+├── app/
+│   ├── (admin)/admin/
+│   │   ├── collections/     # Admin collection management page
+│   │   └── dashboard/       # Admin dashboard page
+│   ├── (auth)/              # login, register, forgot-password, reset-password,
+│   │                        # verify-email, google callback, mobile-auth callback
+│   ├── (main)/              # Authenticated user routes
+│   │   ├── ai-stylist/      # AI stylist page
+│   │   ├── cart/
+│   │   ├── chat/
+│   │   ├── checkout/
+│   │   ├── notifications/
+│   │   ├── orders/
+│   │   ├── payment/
+│   │   ├── products/[id]/
+│   │   ├── profile/         # + history/, measurements/, orders/, reviews/,
+│   │   │                    #   stylist-history/ sub-pages
+│   │   ├── rack/
+│   │   ├── subscription/
+│   │   └── try-on/
+│   ├── api/auth/google/     # Google OAuth route handler
+│   ├── offline/             # PWA offline fallback page
+│   ├── fonts/
+│   ├── globals.css          # Reference stylesheet (do not delete)
+│   ├── layout.tsx           # Root layout
+│   └── page.tsx             # Home page (thin wrapper)
 ├── features/
-│   └── <feature>/
-│       ├── components/  # Page-level and child components
-│       ├── hooks/       # React hooks and state/query orchestration
-│       ├── services/    # queries.ts (GET), mutations.ts (writes)
-│       ├── types/       # Domain types and API DTOs
-│       ├── constants/   # Business configuration, options, defaults
-│       ├── store/       # Feature-specific Zustand store, if needed
-│       ├── schemas/     # Zod validation, if needed
-│       └── context/     # React Context, if needed
-├── components/          # Shared UI, layout, providers, PWA
-├── hooks/               # Hooks not owned by a specific feature
-├── lib/                 # HTTP client, realtime, platform, utilities
+│   ├── admin/               # components/ constants/ services/ types/
+│   │                        # services: queries.ts, mutations.ts, format.ts,
+│   │                        #           api.ts, requests.ts, <panel>.ts (type files)
+│   │                        # components: dashboard-overview, admin-*-panel,
+│   │                        #             admin-*-modal, admin-pagination,
+│   │                        #             admin-live-try-on-settings-panel,
+│   │                        #             admin-shipping-settings-panel,
+│   │                        #             admin-webhook-failures-panel
+│   ├── auth/                # components/ constants/ hooks/ services/ store/ types/
+│   │                        # hooks: useAuth.ts, use-change-password.ts
+│   │                        # store: authStore.ts (Zustand)
+│   │                        # services: session.ts, mutations.ts, queries.ts,
+│   │                        #           auth-events.ts, auth-utils.ts,
+│   │                        #           password-mutations.ts, mutation-keys.ts
+│   │                        # components: AuthBootstrap, AdminGuard, AuthLayout,
+│   │                        #             OnboardingModal, *-page.tsx
+│   ├── cart/                # components/ hooks/ store/ types/
+│   │                        # store: cartStore.ts (Zustand)
+│   ├── chat/                # components/ constants/ hooks/ services/ types/
+│   │                        # services: queries.ts, mutations.ts, chat-utils.ts
+│   ├── checkout/            # components/ constants/ hooks/ services/ types/
+│   ├── collections/         # components/ hooks/ services/ types/
+│   ├── home/                # components/ constants/ types/
+│   ├── measurements/        # components/ constants/ hooks/ services/ types/
+│   ├── notifications/       # components/ constants/ hooks/ services/ store/ types/
+│   │                        # store: notificationStore.ts (Zustand)
+│   ├── orders/              # components/ constants/ hooks/ services/ types/
+│   ├── payments/            # components/ hooks/ services/ types/
+│   ├── products/            # components/ constants/ hooks/ services/ types/
+│   │                        # services: queries.ts, query-keys.ts, product-filters.ts,
+│   │                        #           products-utils.ts, combo-pricing.ts
+│   ├── profile/             # components/ hooks/ services/ types/
+│   ├── rack/                # components/ hooks/ services/ types/
+│   ├── reviews/             # components/ constants/ hooks/ services/ types/
+│   ├── stylist/             # components/ constants/ hooks/ services/ types/
+│   ├── subscription/        # components/ constants/ hooks/ services/ types/
+│   └── try-on/              # components/ constants/ hooks/ services/ types/
+│                            # components: TryOnWorkspace, TryOnResult, TryOnHeader,
+│                            #             UploadZone, GenerateButton, LoadingOverlay,
+│                            #             ComparisonSlider, CatalogModal,
+│                            #             live-try-on-workspace, try-on-page,
+│                            #             profile-history-page
+├── components/
+│   ├── figma/               # ImageWithFallback.tsx
+│   ├── layout/              # Layout.tsx, BottomTabBar.tsx, Breadcrumb.tsx,
+│   │                        # page-frame.tsx
+│   ├── native/              # AppExitModal.tsx, NativeBackButtonHandler.tsx
+│   │                        # (Capacitor mobile bridge)
+│   ├── providers/           # Providers.tsx, RealtimeProvider.tsx
+│   ├── pwa/                 # InstallPrompt.tsx, offline-page.tsx
+│   └── ui/                  # shadcn/Radix primitives + custom: AnimateIn,
+│                            # HangerIcon, Logo, PageTransition, chart.tsx,
+│                            # sidebar.tsx, and full Radix component set
+├── hooks/
+│   └── usePWAInstall.ts
+├── lib/
+│   ├── http.ts              # Axios wrapper (GET/POST/PATCH/DELETE)
+│   ├── api.ts               # Legacy Axios instance (PUT until migrated)
+│   ├── api-interceptors.ts  # Token refresh, single-flight 401 handling
+│   ├── http-types.ts        # Shared HTTP generic types
+│   ├── realtimeSocket.ts    # socket.io-client wrapper + token cache
+│   ├── overlay-manager.ts   # Global overlay/modal orchestration
+│   ├── platform.ts          # Capacitor platform detection
+│   ├── errors.ts            # Typed error helpers
+│   └── utils.ts             # General utilities
 ├── styles/
-└── middleware.ts
+│   ├── index.css            # Root entry: imports fonts, tailwind, theme
+│   ├── fonts.css
+│   ├── tailwind.css
+│   ├── theme.css            # CSS custom properties / design tokens
+│   └── globals.css          # (reference, do not delete)
+├── middleware.ts             # auth_marker cookie guard for protected routes
+└── (project root)
+    ├── scripts/check-architecture.cjs
+    ├── tests/               # Node built-in test runner (*.test.cjs)
+    ├── public/              # PWA icons, manifest, screenshots, images
+    ├── next.config.mjs      # next-pwa, image domains config
+    ├── SRS.md               # Software Requirements Specification
+    ├── FE_MIGRATION_PLAN.md # Migration tracking
+    └── AGENTS.md            # This file
 ```
 
 - Only create directories that contain files; do not create `screen/`.
@@ -45,6 +140,10 @@ src/
   Keep layouts, route handlers, metadata, and route configuration in `app/`.
 - Preserve file names when moving files. New file names use kebab-case; React
   components use PascalCase, and hooks start with `use`.
+- `features/admin/services/` uses per-panel type files (e.g., `admin-orders-panel.ts`)
+  alongside `queries.ts` and `mutations.ts`; follow the same pattern when adding panels.
+- `products/services/` contains utility modules (`product-filters.ts`, `products-utils.ts`,
+  `combo-pricing.ts`) in addition to `queries.ts`; keep them here, not in `lib/`.
 
 ## Business Ownership
 
@@ -113,11 +212,16 @@ src/
 ## Styles And Compatibility
 
 - Root layout uses `src/styles/index.css`; preserve the import order for fonts, Tailwind, and theme.
+- Design tokens (colors, radii, spacing) live in `src/styles/theme.css` as CSS custom properties.
+  Do not hard-code raw color values; reference tokens instead.
 - When rendering images in Next.js UI, use `next/image` (`Image`) instead of `<img>`.
   Use `<img>` only when there is a specific technical constraint and document the reason in review.
 - Check Tailwind source discovery after moving files. Do not delete stylesheets only because
   names look duplicated; `app/globals.css` is an existing reference file.
 - Preserve URLs, API payloads, cookies, storage keys, query keys, socket events, and streaming behavior.
+- Protected routes (middleware): `/try-on`, `/profile`, `/ai-stylist`, `/chat`, `/checkout`,
+  `/admin` — all guarded by the `auth_marker` cookie. Do not add or remove routes here
+  without updating both `middleware.ts` and the relevant feature guard.
 - Preserve checkout/order pricing ownership. Checkout requests should send cart
   items, structured GHN address fields, coupon code, and an optional total for
   backend double-checking; do not send client-resolved `shippingFee` or
@@ -128,6 +232,8 @@ src/
 - Preserve the `/api/backend` proxy and PWA `NetworkOnly` strategy for private APIs.
 - `src/lib/auth.ts` is legacy NextAuth code and is not part of the active auth flow.
   Do not reinstall NextAuth or activate this file during structural refactors.
+- Capacitor native bridge (`src/components/native/`) handles Android back-button and
+  app-exit modal. Keep these components client-only and do not import from SSR paths.
 
 ## Documentation Rules
 
