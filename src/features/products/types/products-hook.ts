@@ -12,7 +12,6 @@ export interface BackendProduct {
   colors?: ({ name: string; hex?: string } | string)[] | null;
   price: string | number;
   originalPrice?: string | number | null;
-  stock?: number | null;
   soldCount?: number | null;
   garmentUrl?: string | null;
   images?: ({ imageUrl?: string; url?: string; isMain?: boolean } | string)[] | null;

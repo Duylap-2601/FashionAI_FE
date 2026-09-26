@@ -71,7 +71,6 @@ export function mapProduct(product: BackendProduct): Product {
     isGuest: false,
     description: product.description || undefined,
     material: product.material || undefined,
-    stock: typeof product.stock === 'number' ? product.stock : 99,
     soldCount: typeof product.soldCount === 'number' ? product.soldCount : undefined,
     rating: product.avgRating != null ? Number(product.avgRating) : undefined,
     reviewCount: typeof product.reviewCount === 'number' ? product.reviewCount : undefined,

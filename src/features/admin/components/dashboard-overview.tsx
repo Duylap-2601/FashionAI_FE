@@ -16,12 +16,12 @@ import {
   XCircle
 } from 'lucide-react';
 
-export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pendingOrders, deliveredOrders, totalProducts, activeProducts, outOfStockCount, totalUsers, memberUsers, vipUsers, users, setActiveTab, shippingOrders, cancelledOrders, setChartDays, setHoveredPoint, chartDays, renderRevenueChart, orders, setSelectedOrder, products, openProductEditor }: DashboardOverviewProps) {
+export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pendingOrders, deliveredOrders, totalProducts, activeProducts, totalUsers, memberUsers, vipUsers, users, setActiveTab, shippingOrders, cancelledOrders, setChartDays, setHoveredPoint, chartDays, renderRevenueChart, orders, setSelectedOrder, products, openProductEditor }: DashboardOverviewProps) {
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-heading-h2 font-bold text-neutral-900">Tổng quan kinh doanh</h1>
-        <p className="text-body-sm text-neutral-500 mt-1">Theo dõi doanh thu, trạng thái đơn hàng, kho sản phẩm và thành viên</p>
+        <p className="text-body-sm text-neutral-500 mt-1">Theo dõi doanh thu, trạng thái đơn hàng, sản phẩm và thành viên</p>
       </div>
 
       {/* Metrics cards */}
@@ -60,10 +60,10 @@ export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pe
           </div>
         </div>
 
-        {/* Card 3: Sản phẩm trong kho */}
+        {/* Card 3: Sản phẩm */}
         <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col justify-between gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-label-sm text-neutral-500 font-medium">Sản phẩm trong kho</span>
+            <span className="text-label-sm text-neutral-500 font-medium">Sản phẩm</span>
             <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
               <Package className="w-4 h-4" />
             </div>
@@ -72,11 +72,6 @@ export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pe
             <span className="text-[26px] font-bold text-neutral-900">{totalProducts.toLocaleString('vi-VN')}</span>
             <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
               <span className="text-green-600 font-medium">{activeProducts} đang bán</span>
-              {outOfStockCount > 0 ? (
-                <span className="text-red-500 font-semibold">{outOfStockCount} hết hàng</span>
-              ) : (
-                <span className="text-neutral-400">Đủ tồn kho</span>
-              )}
             </div>
           </div>
         </div>
@@ -257,12 +252,12 @@ export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pe
           </div>
         </div>
 
-        {/* Right Column: Inventory & Products Status (5 cols) */}
+        {/* Right Column: Products Status (5 cols) */}
         <div className="lg:col-span-5 bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col">
           <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
             <div>
-              <h3 className="text-body-lg font-bold text-neutral-900">Tình trạng kho hàng</h3>
-              <p className="text-body-sm text-neutral-500 mt-0.5">Theo dõi số lượng tồn kho sản phẩm</p>
+              <h3 className="text-body-lg font-bold text-neutral-900">Sản phẩm gần đây</h3>
+              <p className="text-body-sm text-neutral-500 mt-0.5">Danh sách sản phẩm mới cập nhật</p>
             </div>
             <button
               onClick={() => setActiveTab('products')}
@@ -274,9 +269,6 @@ export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pe
 
           <div className="p-4 flex flex-col gap-3 flex-1 overflow-y-auto max-h-[380px]">
             {products.slice(0, 5).map(p => {
-              const stock = p.stock ?? 0;
-              const isOutOfStock = stock === 0;
-              const isLowStock = stock > 0 && stock < 10;
               return (
                 <div
                   key={p.id}
@@ -294,21 +286,11 @@ export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pe
                       <p className="text-label-sm text-neutral-500">{CATEGORY_LABEL[p.category] || p.category} • {fmt(p.price)}</p>
                     </div>
                   </div>
-                  <div className="text-right shrink-0 ml-3">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold ${isOutOfStock
-                        ? 'bg-red-100 text-red-700'
-                        : isLowStock
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-green-100 text-green-700'
-                      }`}>
-                      {isOutOfStock ? 'Hết hàng' : isLowStock ? `Còn ${stock}` : `Kho: ${stock}`}
-                    </span>
-                  </div>
                 </div>
               );
             })}
             {products.length === 0 && (
-              <div className="p-8 text-center text-neutral-400 text-body-sm">Chưa có sản phẩm trong kho</div>
+              <div className="p-8 text-center text-neutral-400 text-body-sm">Chưa có sản phẩm nào</div>
             )}
           </div>
         </div>

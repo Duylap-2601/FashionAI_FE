@@ -17,7 +17,6 @@ export interface Product {
   isGuest: boolean;
   description?: string;
   material?: string;
-  stock?: number;
   soldCount?: number;
   isNew?: boolean;
   rating?: number;

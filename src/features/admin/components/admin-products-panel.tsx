@@ -32,8 +32,7 @@ export function AdminProductsPanel({
   const isFiltered = Boolean(
     (filters.search || searchQuery) ||
     (filters.category && filters.category !== 'ALL') ||
-    (filters.status && filters.status !== 'ALL') ||
-    (filters.stockStatus && filters.stockStatus !== 'all')
+    (filters.status && filters.status !== 'ALL')
   );
 
   return (
@@ -95,20 +94,6 @@ export function AdminProductsPanel({
               <option value="DRAFT">Bản nháp (DRAFT)</option>
               <option value="ARCHIVED">Đã lưu trữ (ARCHIVED)</option>
             </select>
-
-            {/* Stock status filter */}
-            <select
-              value={filters.stock || filters.stockStatus || 'all'}
-              onChange={(e) => {
-                const val = (e.target.value === 'all' ? '' : e.target.value) as 'all' | 'out_of_stock' | 'low_stock' | '';
-                onFilterChange?.({ stock: val, stockStatus: val });
-              }}
-              className="px-3 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm text-neutral-700 focus:outline-none focus:border-brand-navy cursor-pointer"
-            >
-              <option value="all">Tất cả tồn kho</option>
-              <option value="out_of_stock">Hết hàng (0)</option>
-              <option value="low_stock">Sắp hết (&lt; 10)</option>
-            </select>
           </div>
 
           {/* Reset button */}
@@ -132,11 +117,10 @@ export function AdminProductsPanel({
           <div className="min-w-[880px] flex-1 flex flex-col min-h-0">
             {/* Fixed Header */}
             <div className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase shrink-0 select-none shadow-2xs">
-              <div className="grid grid-cols-[minmax(240px,1fr)_140px_140px_120px_130px_110px] items-center">
+              <div className="grid grid-cols-[minmax(240px,1fr)_140px_140px_130px_110px] items-center">
                 <div className="px-6 py-3">Sản phẩm</div>
                 <div className="px-4 py-3">Danh mục</div>
                 <div className="px-4 py-3 text-right">Giá bán</div>
-                <div className="px-4 py-3 text-right">Tồn kho</div>
                 <div className="px-4 py-3">Trạng thái</div>
                 <div className="px-6 py-3">Thao tác</div>
               </div>
@@ -147,7 +131,7 @@ export function AdminProductsPanel({
               {products.map((p) => (
                 <div
                   key={p.id}
-                  className="grid grid-cols-[minmax(240px,1fr)_140px_140px_120px_130px_110px] items-center hover:bg-neutral-50/80 transition-colors"
+                  className="grid grid-cols-[minmax(240px,1fr)_140px_140px_130px_110px] items-center hover:bg-neutral-50/80 transition-colors"
                 >
                   {/* Sản phẩm */}
                   <div className="px-6 py-3.5 flex items-center gap-3 min-w-0">
@@ -184,13 +168,6 @@ export function AdminProductsPanel({
                   {/* Giá bán */}
                   <div className="px-4 py-3.5 text-right font-semibold text-brand-navy">
                     {fmt(p.price)}
-                  </div>
-
-                  {/* Tồn kho */}
-                  <div className="px-4 py-3.5 text-right font-medium text-neutral-700">
-                    {p.stock ?? 0}
-                    {p.stock === 0 && <span className="ml-1 text-red-500 font-semibold">(Hết hàng)</span>}
-                    {p.stock !== undefined && p.stock > 0 && p.stock < 10 && <span className="ml-1 text-brand-navy font-semibold">(Sắp hết)</span>}
                   </div>
 
                   {/* Trạng thái */}

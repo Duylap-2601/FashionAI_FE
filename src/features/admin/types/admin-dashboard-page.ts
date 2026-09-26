@@ -62,7 +62,6 @@ export interface AdminProduct {
   material?: string;
   color?: string;
   colors?: { name: string; hex: string }[];
-  stock?: number;
 }
 
 export interface AdminUser {

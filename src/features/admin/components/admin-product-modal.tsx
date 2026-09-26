@@ -68,28 +68,15 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Giá bán *</label>
-              <input
-                type="number"
-                value={editingProduct.price || ''}
-                onChange={e => setEditingProduct(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
-                placeholder="850000"
-                className="w-full h-10 px-3 rounded-lg border border-neutral-300"
-              />
-            </div>
-            <div>
-              <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Tồn kho *</label>
-              <input
-                type="number"
-                min="0"
-                value={editingProduct.stock ?? 0}
-                onChange={e => setEditingProduct(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
-                placeholder="100"
-                className="w-full h-10 px-3 rounded-lg border border-neutral-300"
-              />
-            </div>
+          <div>
+            <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">Giá bán *</label>
+            <input
+              type="number"
+              value={editingProduct.price || ''}
+              onChange={e => setEditingProduct(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
+              placeholder="850000"
+              className="w-full h-10 px-3 rounded-lg border border-neutral-300"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

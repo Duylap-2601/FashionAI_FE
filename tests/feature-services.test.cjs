@@ -8,7 +8,7 @@ test('product mapping keeps primary image ordering, numeric pricing, and categor
   const product = mapProduct({
     id: 'p1', name: 'Suit', category: 'FULL_BODY', price: '1290000', originalPrice: '1650000',
     images: [{ imageUrl: '/secondary.png' }, { imageUrl: '/primary.png', isMain: true }],
-    colors: ['black'], avgRating: '4.5', stock: 0,
+    colors: ['black'], avgRating: '4.5',
   });
   assert.equal(product.image, '/primary.png');
   assert.equal(product.gallery[1], '/secondary.png');
@@ -16,7 +16,6 @@ test('product mapping keeps primary image ordering, numeric pricing, and categor
   assert.equal(product.originalPrice, 1650000);
   assert.equal(product.garmentCategory, 'FULL_BODY');
   assert.equal(product.rating, 4.5);
-  assert.equal(product.stock, 0);
 });
 
 test('feature query keys preserve list/detail prefixes and partial invalidation shapes', () => {

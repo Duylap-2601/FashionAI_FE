@@ -76,7 +76,6 @@ function AdminDashboardContent() {
   const [productFilters, setProductFilters] = useState<AdminProductFilters>({
     category: '',
     status: '',
-    stock: '',
     search: '',
   });
   const [productPagination, setProductPagination] = useState({
@@ -294,7 +293,7 @@ function AdminDashboardContent() {
       }
       return [];
     });
-    setEditingProduct(product ? product : { stock: 0, status: 'ACTIVE', category: 'UPPER' });
+    setEditingProduct(product ? product : { status: 'ACTIVE', category: 'UPPER' });
   }, []);
 
   const closeProductEditor = useCallback(() => {
@@ -335,7 +334,6 @@ function AdminDashboardContent() {
       if (filters.search) params.search = filters.search;
       if (filters.category && filters.category !== 'ALL') params.category = filters.category;
       if (filters.status && filters.status !== 'ALL') params.status = filters.status;
-      if (filters.stock && filters.stock !== 'all') params.stock = filters.stock;
 
       const res = await fetchAdminProducts({ params });
       const resObj = res as ApiPaginatedResponse<AdminProductDto> | undefined;
@@ -361,7 +359,6 @@ function AdminDashboardContent() {
           category: p.category as GarmentCategory,
           garmentType: p.garmentType,
           price: Number(p.price),
-          stock: p.stock ?? 0,
           status: p.status as ProductStatus,
           image: primaryImg,
           images: normalizedImages,
@@ -395,11 +392,6 @@ function AdminDashboardContent() {
         }
         if (filters.status && filters.status !== 'ALL') {
           filtered = filtered.filter(p => p.status === filters.status);
-        }
-        if (filters.stock === 'out_of_stock') {
-          filtered = filtered.filter(p => (p.stock ?? 0) === 0);
-        } else if (filters.stock === 'low_stock') {
-          filtered = filtered.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) < 10);
         }
 
         const total = filtered.length;
@@ -653,7 +645,7 @@ function AdminDashboardContent() {
   }, [fetchProducts, productPagination.pageSize]);
 
   const handleResetProductFilters = useCallback(() => {
-    const empty: AdminProductFilters = { category: '', status: '', stock: '', search: '' };
+    const empty: AdminProductFilters = { category: '', status: '', search: '' };
     setProductFilters(empty);
     setProductPagination(p => ({ ...p, page: 1 }));
     fetchProducts(1, productPagination.pageSize, empty);
@@ -857,7 +849,6 @@ function AdminDashboardContent() {
     // Bỏ các màu chưa đặt tên; đồng bộ color = phần tử đầu để tương thích ngược.
     const colors = (editingProduct.colors || []).filter(c => c.name.trim());
     const primaryColor = colors[0]?.name;
-    const stock = editingProduct.stock ?? 0;
 
     try {
       if (editingProduct.id) {
@@ -869,7 +860,6 @@ function AdminDashboardContent() {
           garmentType: editingProduct.garmentType ?? null,
           color: primaryColor || undefined,
           colors,
-          stock,
           material: editingProduct.material || undefined,
           description: editingProduct.description || undefined,
           status: editingProduct.status || 'ACTIVE',
@@ -904,7 +894,6 @@ function AdminDashboardContent() {
         const form = new FormData();
         form.append('name', editingProduct.name);
         form.append('price', String(editingProduct.price));
-        form.append('stock', String(stock));
         form.append('category', editingProduct.category);
         form.append('status', editingProduct.status || 'ACTIVE');
         if (editingProduct.material) form.append('material', editingProduct.material);
@@ -1389,7 +1378,6 @@ function AdminDashboardContent() {
 
   const totalProducts = stats?.productCount ?? products.length;
   const activeProducts = products.filter(p => p.status === 'ACTIVE').length;
-  const outOfStockCount = products.filter(p => (p.stock ?? 0) === 0).length;
 
   const totalUsers = stats?.userCount ?? users.length;
   const memberUsers = users.filter(u => u.tier === 'MEMBER').length;
@@ -1538,7 +1526,6 @@ function AdminDashboardContent() {
                 deliveredOrders={deliveredOrders}
                 totalProducts={totalProducts}
                 activeProducts={activeProducts}
-                outOfStockCount={outOfStockCount}
                 totalUsers={totalUsers}
                 memberUsers={memberUsers}
                 vipUsers={vipUsers}

@@ -5,8 +5,6 @@ export interface AdminProductFilters {
   search?: string;
   category?: string;
   status?: string;
-  stock?: 'all' | 'out_of_stock' | 'low_stock' | '';
-  stockStatus?: 'all' | 'out_of_stock' | 'low_stock' | '';
 }
 
 export interface AdminProductsPanelProps {

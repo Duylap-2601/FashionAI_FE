@@ -9,7 +9,6 @@ export interface DashboardOverviewProps {
   deliveredOrders: number;
   totalProducts: number;
   activeProducts: number;
-  outOfStockCount: number;
   totalUsers: number;
   memberUsers: number;
   vipUsers: number;

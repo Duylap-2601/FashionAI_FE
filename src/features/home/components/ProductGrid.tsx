@@ -116,7 +116,6 @@ export function ProductGrid({
           <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-4 md:gap-5">
             {filteredProducts.map((product) => {
               const hasSecondImage = product.gallery && product.gallery.length > 1;
-              const isOutOfStock = product.stock === 0;
 
               return (
                 <div
@@ -152,13 +151,9 @@ export function ProductGrid({
                       )}
                     </Link>
 
-                    {/* Stock / Sale Badges */}
+                    {/* Sale Badges */}
                     <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10 pointer-events-none">
-                      {isOutOfStock ? (
-                        <span className="px-2 py-0.5 bg-neutral-800/90 text-white text-[10px] font-bold uppercase rounded tracking-wide">
-                          Hết hàng
-                        </span>
-                      ) : product.originalPrice && product.numericPrice < product.originalPrice ? (
+                      {product.originalPrice && product.numericPrice < product.originalPrice ? (
                         <span className="px-2 py-0.5 bg-semantic-error text-white text-[10px] font-bold uppercase rounded tracking-wide">
                           -{Math.round(((product.originalPrice - product.numericPrice) / product.originalPrice) * 100)}%
                         </span>
@@ -173,7 +168,6 @@ export function ProductGrid({
                     <div className="absolute inset-x-2 bottom-2.5 flex items-center gap-1.5 opacity-100 translate-y-0 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 transition-all duration-200 z-20">
                       <button
                         onClick={(e) => handleQuickAdd(product, e)}
-                        disabled={isOutOfStock}
                         className="flex-1 h-9 bg-neutral-900/90 hover:bg-neutral-900 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
                         title="Thêm vào giỏ hàng"
                       >
