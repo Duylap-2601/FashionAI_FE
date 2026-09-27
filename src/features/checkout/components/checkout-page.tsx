@@ -2,8 +2,6 @@
 
 import { CheckoutSummary } from '@/features/checkout/components/checkout-summary';
 import { DeliveryOptions } from '@/features/checkout/components/delivery-options';
-import { ShippingAddressForm } from '@/features/checkout/components/shipping-address-form';
-import { useGhnDistricts, useGhnProvinces, useGhnWards } from '@/features/checkout/hooks/useGhnLocations';
 import { useCart } from '@/features/cart/store/cartStore';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
@@ -11,21 +9,23 @@ import { quoteOrder } from '@/features/orders/services/mutations';
 import type { OrderQuote } from '@/features/orders/types/orders';
 import { useCheckout } from '@/features/payments/hooks/usePayments';
 import type { CheckoutResponse } from '@/features/payments/types/payments';
-import { useUserProfile } from '@/features/profile/hooks/use-profile';
+import { AddressForm } from '@/features/profile/components/address-form';
+import { useAddressMutations, useUserAddresses } from '@/features/profile/hooks/use-addresses';
 import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
 import { ChevronRight, ShoppingBag, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems: items, totalPrice, clearCart } = useCart();
-  const { profile } = useUserProfile();
   const { canOrder, completeness } = useMeasurementsCompleteness();
   const { createOrderAsync, isSubmitting } = useCreateOrder();
   const { checkout, isLoading: isCheckoutLoading } = useCheckout();
+  const { data: addresses = [], isLoading: isLoadingAddresses, refetch: refetchAddresses } = useUserAddresses();
+  const { createAddress } = useAddressMutations();
 
   const [paymentMethod, setPaymentMethod] = useState<'bank'>('bank');
   const [coupon, setCoupon] = useState('');
@@ -36,83 +36,23 @@ export default function CheckoutPage() {
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [pendingCheckout, setPendingCheckout] = useState<CheckoutResponse | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
-
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [addressDetail, setAddressDetail] = useState('');
-  const [provinceId, setProvinceId] = useState<number | ''>('');
-  const [districtId, setDistrictId] = useState<number | ''>('');
-  const [wardCode, setWardCode] = useState('');
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
   const [notes, setNotes] = useState('');
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
 
-  const { provinces, isLoading: isLoadingProvinces, isError: isProvincesError } = useGhnProvinces();
-  const { districts, isLoading: isLoadingDistricts, isError: isDistrictsError } = useGhnDistricts(provinceId);
-  const { wards, isLoading: isLoadingWards, isError: isWardsError } = useGhnWards(districtId);
-
-  const currentProvince = useMemo(
-    () => provinces.find((province) => province.id === provinceId) || null,
-    [provinceId, provinces],
-  );
-  const currentDistrict = useMemo(
-    () => districts.find((district) => district.id === districtId) || null,
-    [districtId, districts],
-  );
-  const currentWard = useMemo(
-    () => wards.find((ward) => ward.code === wardCode) || null,
-    [wardCode, wards],
-  );
+  const selectedAddress = addresses.find((address) => address.id === selectedAddressId) ?? null;
 
   useEffect(() => {
-    if (profile?.name) setFullName(profile.name);
-    if (profile?.phone) setPhone(profile.phone);
-    if (profile?.address) setAddressDetail(profile.address);
-  }, [profile]);
-
-  useEffect(() => {
-    if (provinceId || provinces.length === 0) return;
-    const cityLower = profile?.city?.toLowerCase() || '';
-    const matched = cityLower
-      ? provinces.find((province) => cityLower.includes(province.name.toLowerCase()) || province.name.toLowerCase().includes(cityLower))
-      : null;
-    setProvinceId(matched?.id || provinces[0].id);
-  }, [profile?.city, provinceId, provinces]);
-
-  useEffect(() => {
-    setDistrictId('');
-    setWardCode('');
-  }, [provinceId]);
-
-  useEffect(() => {
-    if (districtId || districts.length === 0) return;
-    setDistrictId(districts[0].id);
-  }, [districtId, districts]);
-
-  useEffect(() => {
-    setWardCode('');
-  }, [districtId]);
-
-  useEffect(() => {
-    if (wardCode || wards.length === 0) return;
-    setWardCode(wards[0].code);
-  }, [wardCode, wards]);
-
-  useEffect(() => {
-    if (isProvincesError) toast.error('Không thể tải danh sách Tỉnh/Thành từ GHN. Vui lòng thử lại sau.');
-  }, [isProvincesError]);
-
-  useEffect(() => {
-    if (isDistrictsError) toast.error('Không thể tải danh sách Quận/Huyện từ GHN. Vui lòng thử lại sau.');
-  }, [isDistrictsError]);
-
-  useEffect(() => {
-    if (isWardsError) toast.error('Không thể tải dữ liệu Phường/Xã từ GHN để tính phí giao hàng. Vui lòng thử lại sau.');
-  }, [isWardsError]);
+    if (selectedAddressId || addresses.length === 0) return;
+    setSelectedAddressId((addresses.find((address) => address.isDefault) ?? addresses[0]).id);
+  }, [addresses, selectedAddressId]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadQuote() {
-      if (!currentProvince || !currentDistrict || !currentWard || items.length === 0) {
+      if (!selectedAddress || items.length === 0) {
         setOrderQuote(null);
         setDiscount(0);
         setPricingError(null);
@@ -129,14 +69,9 @@ export default function CheckoutPage() {
             color: item.color,
             price: item.price,
           })),
-          shippingInfo: {
-            name: fullName || 'Customer',
-            phone: phone || '0000000000',
-            address: addressDetail || 'Pending address',
-            ghnProvinceId: currentProvince.id,
-            ghnDistrictId: currentDistrict.id,
-            ghnWardCode: currentWard.code,
-          },
+          shippingAddressId: selectedAddress.id,
+          addressVersion: selectedAddress.version,
+          shippingNote: notes,
           paymentMethod: 'BANK_TRANSFER',
           couponCode: appliedCoupon || undefined,
         });
@@ -159,11 +94,11 @@ export default function CheckoutPage() {
     return () => {
       isMounted = false;
     };
-  }, [addressDetail, appliedCoupon, currentDistrict, currentProvince, currentWard, fullName, items, phone]);
+  }, [appliedCoupon, items, notes, selectedAddress]);
 
   const shippingFee = orderQuote?.shippingFee ?? 0;
   const total = orderQuote?.totalAmount ?? Math.max(0, totalPrice);
-  const isOrderBlocked = isSubmitting || isCheckoutLoading || isPricingLoading || !!pricingError || !orderQuote;
+  const isOrderBlocked = isSubmitting || isCheckoutLoading || isPricingLoading || !!pricingError || (!!selectedAddress && !orderQuote);
 
   const handleApplyCoupon = () => {
     const code = coupon.trim().toUpperCase();
@@ -264,12 +199,15 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!currentProvince || !currentDistrict || !currentWard) {
-      toast.error('Vui lòng chọn Tỉnh/Thành phố, Quận/Huyện và Phường/Xã giao hàng.');
+    if (!selectedAddress) {
+      setShowAddressForm(true);
+      toast.error('Vui lòng chọn hoặc thêm địa chỉ giao hàng.');
       return;
     }
-
-    const fullAddress = `${addressDetail}, ${currentWard.name}, ${currentDistrict.name}, ${currentProvince.name}`;
+    if (!orderQuote) {
+      toast.error('Vui lòng đợi hệ thống tính phí giao hàng trước khi đặt hàng.');
+      return;
+    }
 
     try {
       const order = await createOrderAsync({
@@ -279,15 +217,11 @@ export default function CheckoutPage() {
           color: item.color,
           price: item.price,
         })),
-        shippingInfo: {
-          name: fullName,
-          phone,
-          address: fullAddress,
-          notes,
-          ghnProvinceId: currentProvince.id,
-          ghnDistrictId: currentDistrict.id,
-          ghnWardCode: currentWard.code,
-        },
+        shippingAddressId: selectedAddress.id,
+        addressVersion: selectedAddress.version,
+        shippingNote: notes,
+        quoteToken: orderQuote.quoteToken,
+        idempotencyKey: idempotencyKeyRef.current,
         paymentMethod: 'BANK_TRANSFER',
         couponCode: appliedCoupon || undefined,
         totalAmount: orderQuote.totalAmount,
@@ -393,28 +327,60 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            <ShippingAddressForm
-              fullName={fullName}
-              setFullName={setFullName}
-              phone={phone}
-              setPhone={setPhone}
-              addressDetail={addressDetail}
-              setAddressDetail={setAddressDetail}
-              provinceId={provinceId}
-              setProvinceId={setProvinceId}
-              provinces={provinces}
-              isLoadingProvinces={isLoadingProvinces}
-              districtId={districtId}
-              setDistrictId={setDistrictId}
-              districts={districts}
-              isLoadingDistricts={isLoadingDistricts}
-              wardCode={wardCode}
-              setWardCode={setWardCode}
-              wards={wards}
-              isLoadingWards={isLoadingWards}
-              notes={notes}
-              setNotes={setNotes}
-            />
+            <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-[18px] font-bold text-brand-navy">Địa chỉ giao hàng</h2>
+                  <p className="text-sm text-neutral-500">Vui lòng kiểm tra địa chỉ. Bạn không thể đổi địa chỉ sau khi đặt hàng.</p>
+                </div>
+                <button type="button" onClick={() => setShowAddressForm((value) => !value)} className="rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-brand-navy">
+                  {addresses.length === 0 ? 'Thêm địa chỉ' : 'Thay đổi'}
+                </button>
+              </div>
+
+              {isLoadingAddresses && <p className="text-sm text-neutral-500">Đang tải sổ địa chỉ...</p>}
+              {!isLoadingAddresses && addresses.length === 0 && !showAddressForm && <p className="text-sm text-neutral-600">Bạn chưa có địa chỉ giao hàng.</p>}
+
+              {addresses.length > 0 && (
+                <div className="space-y-3">
+                  {addresses.map((address) => (
+                    <label key={address.id} className={`block rounded-xl border p-4 cursor-pointer ${selectedAddressId === address.id ? 'border-brand-navy bg-brand-navy/5' : 'border-neutral-200'}`}>
+                      <div className="flex gap-3">
+                        <input type="radio" checked={selectedAddressId === address.id} onChange={() => setSelectedAddressId(address.id)} className="mt-1" />
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <span className="font-bold text-brand-navy">{address.recipientName}</span>
+                            <span className="text-neutral-300">|</span>
+                            <span>{address.phone}</span>
+                            {address.isDefault && <span className="rounded-full bg-brand-navy/10 px-2 py-0.5 text-xs font-semibold text-brand-navy">Mặc định</span>}
+                          </div>
+                          <p className="mt-1 text-sm text-neutral-700">{address.addressLine}, {address.wardName}, {address.districtName}, {address.provinceName}</p>
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {showAddressForm && (
+                <div className="mt-4">
+                  <AddressForm
+                    isSaving={createAddress.isPending}
+                    onCancel={() => setShowAddressForm(false)}
+                    onSubmit={(payload) => {
+                      createAddress.mutateAsync(payload)
+                        .then((address) => { setSelectedAddressId(address.id); setShowAddressForm(false); refetchAddresses(); toast.success('Đã thêm địa chỉ giao hàng'); })
+                        .catch((error) => toast.error(getErrorMessage(error, 'Không thể thêm địa chỉ')));
+                    }}
+                  />
+                </div>
+              )}
+
+              <div className="mt-4">
+                <label className="text-sm font-semibold text-brand-navy">Ghi chú giao hàng</label>
+                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={500} className="mt-2 min-h-20 w-full rounded-xl border border-neutral-200 p-3 text-sm" placeholder="Ví dụ: giao giờ hành chính" />
+              </div>
+            </section>
 
             <DeliveryOptions paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
 

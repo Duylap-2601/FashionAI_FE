@@ -21,7 +21,12 @@ export interface ShippingInfo {
 
 export interface CreateOrderRequest {
   items: OrderItemInput[];
-  shippingInfo: ShippingInfo;
+  shippingInfo?: ShippingInfo;
+  shippingAddressId?: string;
+  addressVersion?: number;
+  shippingNote?: string;
+  quoteToken?: string;
+  idempotencyKey?: string;
   paymentMethod?: 'BANK_TRANSFER' | 'BANK' | 'SEPAY';
   couponCode?: string;
   discountAmount?: number;
@@ -37,6 +42,8 @@ export interface OrderQuote {
   discountAmount: number;
   couponCode?: string;
   totalAmount: number;
+  quoteToken?: string;
+  expiresAt?: string;
   shippingQuote?: {
     provider: 'GHN';
     totalFee: number;
