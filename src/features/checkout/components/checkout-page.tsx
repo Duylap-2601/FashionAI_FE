@@ -365,6 +365,7 @@ export default function CheckoutPage() {
               {showAddressForm && (
                 <div className="mt-4">
                   <AddressForm
+                    renderAsForm={false}
                     isSaving={createAddress.isPending}
                     onCancel={() => setShowAddressForm(false)}
                     onSubmit={(payload) => {

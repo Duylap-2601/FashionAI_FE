@@ -9,9 +9,10 @@ interface AddressFormProps {
   isSaving?: boolean;
   onCancel?: () => void;
   onSubmit: (payload: UserAddressInput) => void;
+  renderAsForm?: boolean;
 }
 
-export function AddressForm({ initial, isSaving, onCancel, onSubmit }: AddressFormProps) {
+export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsForm = true }: AddressFormProps) {
   const [recipientName, setRecipientName] = useState(initial?.recipientName ?? '');
   const [phone, setPhone] = useState(initial?.phone ?? '');
   const [addressLine, setAddressLine] = useState(initial?.addressLine ?? '');
@@ -25,20 +26,19 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit }: AddressFo
   const { wards, isLoading: loadingWards } = useGhnWards(districtId);
 
   useEffect(() => {
-    if (!initial) return;
-    setRecipientName(initial.recipientName);
-    setPhone(initial.phone);
-    setAddressLine(initial.addressLine);
-    setLabel(initial.label ?? '');
-    setIsDefault(initial.isDefault);
-    setProvinceId(initial.ghnProvinceId);
-    setDistrictId(initial.ghnDistrictId);
-    setWardCode(initial.ghnWardCode);
+    setRecipientName(initial?.recipientName ?? '');
+    setPhone(initial?.phone ?? '');
+    setAddressLine(initial?.addressLine ?? '');
+    setLabel(initial?.label ?? '');
+    setIsDefault(initial?.isDefault ?? false);
+    setProvinceId(initial?.ghnProvinceId ?? '');
+    setDistrictId(initial?.ghnDistrictId ?? '');
+    setWardCode(initial?.ghnWardCode ?? '');
   }, [initial]);
 
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!provinceId || !districtId || !wardCode) return;
+  const submit = (event?: React.FormEvent) => {
+    event?.preventDefault();
+    if (!recipientName.trim() || !phone.trim() || !addressLine.trim() || !provinceId || !districtId || !wardCode) return;
     onSubmit({
       recipientName,
       phone,
@@ -52,8 +52,11 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit }: AddressFo
     });
   };
 
+  const Wrapper = renderAsForm ? 'form' : 'div';
+  const wrapperProps = renderAsForm ? { onSubmit: submit } : {};
+
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm space-y-4">
+    <Wrapper {...wrapperProps} className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <input className="h-11 rounded-xl border border-neutral-200 px-3" placeholder="Người nhận" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} required />
         <input className="h-11 rounded-xl border border-neutral-200 px-3" placeholder="Số điện thoại" value={phone} onChange={(e) => setPhone(e.target.value)} required />
@@ -81,8 +84,8 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit }: AddressFo
       </div>
       <div className="flex gap-3 justify-end">
         {onCancel && <button type="button" onClick={onCancel} className="h-10 px-4 rounded-xl border border-neutral-200">Hủy</button>}
-        <button disabled={isSaving} className="h-10 px-5 rounded-xl bg-brand-navy text-white font-semibold disabled:opacity-50">{isSaving ? 'Đang lưu...' : 'Lưu địa chỉ'}</button>
+        <button type={renderAsForm ? 'submit' : 'button'} onClick={renderAsForm ? undefined : () => submit()} disabled={isSaving} className="h-10 px-5 rounded-xl bg-brand-navy text-white font-semibold disabled:opacity-50">{isSaving ? 'Đang lưu...' : 'Lưu địa chỉ'}</button>
       </div>
-    </form>
+    </Wrapper>
   );
 }
