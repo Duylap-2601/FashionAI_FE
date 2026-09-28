@@ -88,11 +88,11 @@ export default function SubscriptionPage() {
     setUpgradeConfirmTier(null);
     try {
       toast.loading('Đang khởi tạo cổng thanh toán...', { id: 'checkout' });
-      const result = await checkout({ targetTier, provider: 'SEPAY' });
+      const result = await checkout({ targetTier, provider: 'MOMO' });
       toast.dismiss('checkout');
 
       if (result.checkoutUrl) {
-        if (result.extra?.formAction && result.extra?.formFields) {
+        if (result.provider === 'SEPAY' && result.extra?.formAction && result.extra?.formFields) {
           const form = document.createElement('form');
           form.method = 'POST';
           form.action = result.extra.formAction;
@@ -111,6 +111,7 @@ export default function SubscriptionPage() {
         try {
           const parsedUrl = new URL(result.checkoutUrl, window.location.origin);
           if (
+            result.provider === 'SEPAY' &&
             (parsedUrl.hostname.includes('sepay.vn') || parsedUrl.pathname.includes('/checkout/init')) &&
             parsedUrl.searchParams.size > 0
           ) {

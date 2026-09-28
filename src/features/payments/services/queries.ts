@@ -1,4 +1,4 @@
-import type { PaymentOrder } from '@/features/payments/types/payments';
+import type { PaymentOrder, PaymentStatusResponse } from '@/features/payments/types/payments';
 import { http } from '@/lib/http';
 
 export async function fetchPaymentOrders() {
@@ -8,6 +8,10 @@ export async function fetchPaymentOrders() {
 
 export function fetchPaymentOrderByCodeResponse(id: string) {
   return fetch(`/api/orders?orderCode=${id}`);
+}
+
+export async function fetchPaymentStatus(paymentId: string) {
+  return http.get<PaymentStatusResponse>(`/payments/${paymentId}`);
 }
 
 export { queryKeys } from './query-keys';

@@ -132,7 +132,7 @@ export default function CheckoutPage() {
 
     clearCart();
 
-    if (checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
+    if (checkoutResult.provider === 'SEPAY' && checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = checkoutResult.extra.formAction;
@@ -151,6 +151,7 @@ export default function CheckoutPage() {
     try {
       const parsedUrl = new URL(checkoutResult.checkoutUrl, window.location.origin);
       if (
+        checkoutResult.provider === 'SEPAY' &&
         (parsedUrl.hostname.includes('sepay.vn') || parsedUrl.pathname.includes('/checkout/init')) &&
         parsedUrl.searchParams.size > 0
       ) {
@@ -233,7 +234,7 @@ export default function CheckoutPage() {
       }
 
       try {
-        const checkoutResult = await checkout({ orderId, provider: 'SEPAY' });
+        const checkoutResult = await checkout({ orderId, provider: 'MOMO' });
         if (checkoutResult.checkoutUrl) {
           setPendingOrderId(orderId);
           setPendingCheckout(checkoutResult);

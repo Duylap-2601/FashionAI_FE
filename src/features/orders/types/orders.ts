@@ -27,13 +27,13 @@ export interface CreateOrderRequest {
   shippingNote?: string;
   quoteToken?: string;
   idempotencyKey?: string;
-  paymentMethod?: 'BANK_TRANSFER' | 'BANK' | 'SEPAY';
+  paymentMethod?: 'BANK_TRANSFER' | 'BANK' | 'SEPAY' | 'MOMO';
   couponCode?: string;
   discountAmount?: number;
   shippingFee?: number;
   totalAmount?: number;
   targetTier?: 'MEMBER' | 'VIP';
-  provider?: 'PAYOS' | 'SEPAY';
+  provider?: 'PAYOS' | 'SEPAY' | 'MOMO';
 }
 
 export interface OrderQuote {
