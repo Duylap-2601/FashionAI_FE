@@ -9,7 +9,7 @@ function toCreateOrderBody(payload: CreateOrderRequest) {
       color: item.color,
       price: item.price,
     })),
-    shippingInfo: {
+    shippingInfo: payload.shippingInfo ? {
       name: payload.shippingInfo.name,
       phone: payload.shippingInfo.phone,
       address: payload.shippingInfo.address,
@@ -21,7 +21,12 @@ function toCreateOrderBody(payload: CreateOrderRequest) {
       ghnProvinceId: payload.shippingInfo.ghnProvinceId,
       ghnDistrictId: payload.shippingInfo.ghnDistrictId,
       ghnWardCode: payload.shippingInfo.ghnWardCode,
-    },
+    } : undefined,
+    shippingAddressId: payload.shippingAddressId,
+    addressVersion: payload.addressVersion,
+    shippingNote: payload.shippingNote,
+    quoteToken: payload.quoteToken,
+    idempotencyKey: payload.idempotencyKey,
     paymentMethod: payload.paymentMethod,
     provider: payload.provider,
     couponCode: payload.couponCode,
