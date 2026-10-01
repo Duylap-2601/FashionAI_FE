@@ -2,19 +2,21 @@
 
 import { CheckoutSummary } from '@/features/checkout/components/checkout-summary';
 import { DeliveryOptions } from '@/features/checkout/components/delivery-options';
+import type { CheckoutPaymentMethod } from '@/features/checkout/types/delivery-options';
 import { useCart } from '@/features/cart/store/cartStore';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
 import { quoteOrder } from '@/features/orders/services/mutations';
 import type { OrderQuote } from '@/features/orders/types/orders';
-import { useCheckout } from '@/features/payments/hooks/usePayments';
+import { useCheckout, usePaymentStatus } from '@/features/payments/hooks/usePayments';
 import type { CheckoutResponse } from '@/features/payments/types/payments';
 import { AddressForm } from '@/features/profile/components/address-form';
 import { useAddressMutations, useUserAddresses } from '@/features/profile/hooks/use-addresses';
 import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
-import { ChevronRight, ShoppingBag, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronRight, ExternalLink, Loader2, ShoppingBag, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { QRCodeSVG } from 'qrcode.react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -27,7 +29,7 @@ export default function CheckoutPage() {
   const { data: addresses = [], isLoading: isLoadingAddresses, refetch: refetchAddresses } = useUserAddresses();
   const { createAddress } = useAddressMutations();
 
-  const [paymentMethod, setPaymentMethod] = useState<'bank'>('bank');
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('zalopay');
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState('');
@@ -234,7 +236,10 @@ export default function CheckoutPage() {
       }
 
       try {
-        const checkoutResult = await checkout({ orderId, provider: 'MOMO' });
+        const checkoutResult = await checkout({
+          orderId,
+          provider: 'ZALOPAY',
+        });
         if (checkoutResult.checkoutUrl) {
           setPendingOrderId(orderId);
           setPendingCheckout(checkoutResult);
@@ -415,7 +420,20 @@ export default function CheckoutPage() {
         </form>
       </div>
 
-      {pendingCheckout && (
+      {pendingCheckout?.provider === 'ZALOPAY' && (
+        <ZaloPayCheckoutDialog
+          checkoutResult={pendingCheckout}
+          orderId={pendingOrderId}
+          total={total}
+          onClose={() => {
+            setPendingCheckout(null);
+            setPendingOrderId(null);
+          }}
+          onPaid={clearCart}
+        />
+      )}
+
+      {pendingCheckout && pendingCheckout.provider !== 'ZALOPAY' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <h3 className="text-[18px] font-bold text-brand-navy mb-2">Ghi nhớ mã đơn hàng của bạn</h3>
@@ -453,6 +471,120 @@ export default function CheckoutPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ZaloPayCheckoutDialog({
+  checkoutResult,
+  orderId,
+  total,
+  onClose,
+  onPaid,
+}: {
+  checkoutResult: CheckoutResponse;
+  orderId: string | null;
+  total: number;
+  onClose: () => void;
+  onPaid: () => void;
+}) {
+  const router = useRouter();
+  const paymentId = checkoutResult.paymentId ?? null;
+  const { data: payment, isLoading } = usePaymentStatus(paymentId);
+  const qrValue = checkoutResult.qrCode || checkoutResult.checkoutUrl || checkoutResult.payUrl || '';
+  const isPaid = payment?.status === 'PAID' || payment?.orderStatus === 'PAID';
+  const isFailed = payment?.status === 'FAILED';
+  const isRefundRequired = payment?.status === 'REFUND_REQUIRED';
+
+  useEffect(() => {
+    if (!isPaid || !paymentId) return;
+    onPaid();
+    toast.success('Thanh toán ZaloPay thành công');
+    router.push(`/payment/result?paymentId=${encodeURIComponent(paymentId)}`);
+  }, [isPaid, onPaid, paymentId, router]);
+
+  const openGateway = () => {
+    if (!checkoutResult.checkoutUrl) return;
+    window.open(checkoutResult.checkoutUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <h3 className="text-[20px] font-bold text-brand-navy">Thanh toán ZaloPay</h3>
+            <p className="text-body-sm text-neutral-600 mt-1">
+              Mở ZaloPay hoặc quét QR. Bạn có thể giữ trang này, hệ thống sẽ tự cập nhật khi thanh toán thành công.
+            </p>
+          </div>
+          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-brand-navy" aria-label="Đóng">
+            ✕
+          </button>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-[180px_1fr] items-center">
+          <div className="rounded-2xl border border-neutral-200 bg-white p-4 flex items-center justify-center">
+            {qrValue ? (
+              <QRCodeSVG value={qrValue} size={148} level="M" includeMargin />
+            ) : (
+              <div className="h-[148px] w-[148px] rounded-xl bg-neutral-100 flex items-center justify-center text-center text-xs text-neutral-500">
+                Không có dữ liệu QR
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <div className="rounded-xl bg-brand-cream p-4">
+              <p className="text-label-sm text-neutral-500 mb-1">Mã đơn hàng</p>
+              <p className="font-mono text-[18px] font-bold text-brand-navy">#{checkoutResult.orderCode}</p>
+              <p className="text-label-sm text-neutral-500 mt-3 mb-1">Số tiền</p>
+              <p className="text-body-lg font-bold text-brand-navy">{total.toLocaleString('vi-VN')}đ</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={openGateway}
+              disabled={!checkoutResult.checkoutUrl}
+              className="w-full h-12 rounded-xl bg-brand-navy text-white font-semibold hover:bg-brand-navy/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              Mở ZaloPay <ExternalLink className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-xl border border-neutral-200 p-4">
+          {isPaid && (
+            <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
+              <CheckCircle2 className="w-5 h-5" /> Thanh toán thành công, đang chuyển trang...
+            </div>
+          )}
+          {isFailed && (
+            <div className="flex items-start gap-2 text-red-700 text-sm">
+              <AlertCircle className="w-5 h-5 mt-0.5" />
+              <span>{payment?.failureReason || 'Thanh toán thất bại hoặc link đã hết hạn. Vui lòng tạo lại thanh toán.'}</span>
+            </div>
+          )}
+          {isRefundRequired && (
+            <div className="flex items-start gap-2 text-amber-700 text-sm">
+              <AlertCircle className="w-5 h-5 mt-0.5" />
+              <span>Đã nhận tiền nhưng đơn chưa thể ghi nhận thanh toán. Khoản tiền sẽ được xử lý hoàn lại.</span>
+            </div>
+          )}
+          {!isPaid && !isFailed && !isRefundRequired && (
+            <div className="flex items-center gap-2 text-neutral-600 text-sm">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {isLoading ? 'Đang kiểm tra trạng thái thanh toán...' : 'Đang chờ ZaloPay xác nhận thanh toán...'}
+            </div>
+          )}
+        </div>
+
+        {orderId && (
+          <Link href={`/orders/${orderId}`} className="block text-center text-label-sm text-neutral-500 mt-4 hover:text-brand-navy">
+            Xem chi tiết đơn hàng
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

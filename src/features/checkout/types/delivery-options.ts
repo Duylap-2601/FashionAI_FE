@@ -1,6 +1,8 @@
 import React from 'react';
 
+export type CheckoutPaymentMethod = 'zalopay';
+
 export interface DeliveryOptionsProps {
-  paymentMethod: "bank";
-  setPaymentMethod: React.Dispatch<React.SetStateAction<"bank">>;
+  paymentMethod: CheckoutPaymentMethod;
+  setPaymentMethod: React.Dispatch<React.SetStateAction<CheckoutPaymentMethod>>;
 }

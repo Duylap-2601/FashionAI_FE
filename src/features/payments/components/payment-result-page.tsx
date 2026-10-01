@@ -24,10 +24,14 @@ function PaymentResultContent() {
   }
 
   if (payment.status === 'FAILED') {
-    return <ResultShell icon="error" title="Thanh toán thất bại" message={payment.failureReason || 'Giao dịch chưa được MoMo xác nhận thành công.'} orderId={payment.orderId} />;
+    return <ResultShell icon="error" title="Thanh toán thất bại" message={payment.failureReason || 'Giao dịch chưa được cổng thanh toán xác nhận thành công.'} orderId={payment.orderId} />;
   }
 
-  return <ResultShell icon="pending" title="Đang xác nhận thanh toán" message="MoMo đang gửi xác nhận về hệ thống. Trang này sẽ tự cập nhật khi IPN hợp lệ hoặc đối soát hoàn tất." orderId={payment.orderId} />;
+  if (payment.status === 'REFUND_REQUIRED') {
+    return <ResultShell icon="error" title="Thanh toán cần hoàn tiền" message="Hệ thống đã nhận tiền nhưng chưa thể ghi nhận cho đơn hàng này. Khoản tiền sẽ được xử lý hoàn lại." orderId={payment.orderId} />;
+  }
+
+  return <ResultShell icon="pending" title="Đang xác nhận thanh toán" message="Cổng thanh toán đang gửi xác nhận về hệ thống. Trang này sẽ tự cập nhật khi callback hợp lệ hoặc đối soát hoàn tất." orderId={payment.orderId} />;
 }
 
 function LoadingState() {

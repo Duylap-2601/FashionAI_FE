@@ -1,4 +1,4 @@
-export type PaymentProvider = 'PAYOS' | 'SEPAY' | 'MOMO';
+export type PaymentProvider = 'PAYOS' | 'SEPAY' | 'MOMO' | 'ZALOPAY';
 
 export type TargetTier = 'MEMBER' | 'VIP';
 
@@ -43,7 +43,7 @@ export interface PaymentStatusResponse {
   orderId: string;
   orderCode: number;
   provider: PaymentProvider | string;
-  status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUND_PENDING' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | string;
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUND_REQUIRED' | 'REFUND_PENDING' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | string;
   orderStatus: string;
   paymentStatus?: string | null;
   amountVnd?: number | null;
