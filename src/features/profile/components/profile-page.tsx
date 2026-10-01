@@ -18,6 +18,7 @@ import {
   Loader2,
   Lock,
   LogOut,
+  MapPin,
   Ruler,
   ShoppingBag, Sparkles,
   Star,
@@ -302,13 +303,6 @@ export default function ProfilePage() {
                     <Lock className="w-3.5 h-3.5" /> Đổi mật khẩu
                   </button>
                 )}
-                <button
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-100 text-semantic-error rounded-lg text-label-sm font-medium hover:border-semantic-error/30 hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" /> {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
-                </button>
               </div>
             </div>
           </div>
@@ -378,6 +372,7 @@ export default function ProfilePage() {
             desc="Cập nhật số đo, thông tin cá nhân"
             badge={!hasMeasurements ? 'Mới' : undefined}
           />
+          <NavCard href="/profile/addresses" icon={MapPin} label="Sổ địa chỉ" desc="Thêm, sửa và chọn địa chỉ giao hàng mặc định" />
           <NavCard href="/profile/history" icon={History} label="Lịch sử Try-On" desc="Xem lại và tải ảnh thử đồ AI của bạn" />
           <NavCard href="/profile/stylist-history" icon={Sparkles} label="Lịch sử AI Stylist" desc="Các lần tư vấn phong cách đã thực hiện" />
           <NavCard href="/profile/orders" icon={ShoppingBag} label="Đơn hàng của tôi" desc="Theo dõi và quản lý đơn hàng" />
