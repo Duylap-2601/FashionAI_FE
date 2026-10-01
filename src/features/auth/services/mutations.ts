@@ -1,5 +1,5 @@
 import { API_BASE_URL, authRequest } from '@/features/auth/services/session';
-import type { AuthPayload } from '@/features/auth/types/session';
+import type { AuthPayload, RegisterResponseData, VerifyEmailPayload } from '@/features/auth/types/session';
 
 export async function loginWithPassword(email: string, password?: string) {
   return authRequest<AuthPayload>('/auth/login', {
@@ -33,7 +33,7 @@ export async function registerWithPassword(payload: {
   password: string;
   confirmPassword: string;
 }) {
-  return authRequest<AuthPayload>('/auth/register', {
+  return authRequest<RegisterResponseData>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -57,12 +57,21 @@ export function resetPassword(token: string, newPassword: string) {
   });
 }
 
-export function verifyEmail(token: string) {
+export function verifyEmail(payload: VerifyEmailPayload) {
   return fetch(`${API_BASE_URL}/auth/verify-email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ token }),
+    body: JSON.stringify(payload),
+  });
+}
+
+export function resendVerification(email: string) {
+  return fetch(`${API_BASE_URL}/auth/resend-verification`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email }),
   });
 }
 

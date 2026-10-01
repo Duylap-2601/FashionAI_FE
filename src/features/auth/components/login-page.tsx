@@ -10,6 +10,7 @@ import React, { Suspense, useState } from 'react';
 function LoginFormContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { login, isLoggedIn, currentUser, status } = useAuth();
   const router = useRouter();
@@ -29,10 +30,11 @@ function LoginFormContent() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setUnverifiedEmail(null);
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
+    const email = (formData.get('email') as string)?.trim();
     const password = formData.get('password') as string;
 
     try {
@@ -40,7 +42,19 @@ function LoginFormContent() {
       setIsLoading(false);
 
       if (res?.error) {
-        setError('Email hoặc mật khẩu không chính xác');
+        if (res.status === 403) {
+          setUnverifiedEmail(email);
+          setError(
+            res.error ||
+            'Tài khoản chưa xác thực email. Vui lòng xác thực OTP trước khi đăng nhập.',
+          );
+        } else {
+          setError(
+            res.status === 401
+              ? 'Email hoặc mật khẩu không chính xác'
+              : (res.error || 'Đăng nhập thất bại.'),
+          );
+        }
       } else {
         const role = res?.user?.role;
         if (role === 'ADMIN') {
@@ -78,12 +92,27 @@ function LoginFormContent() {
         <div className="flex-1 h-px bg-neutral-200"></div>
       </div>
 
-      {error && (
+      {unverifiedEmail ? (
+        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in">
+          <div className="flex items-start gap-2.5 mb-3">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <span className="text-body-sm text-amber-800 leading-snug">
+              Tài khoản chưa xác thực email. Vui lòng xác thực OTP trước khi đăng nhập.
+            </span>
+          </div>
+          <Link
+            href={`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`}
+            className="inline-flex items-center gap-1.5 h-8 px-3 bg-amber-600 text-white text-body-xs font-semibold rounded-lg hover:bg-amber-700 transition-colors"
+          >
+            Xác thực ngay →
+          </Link>
+        </div>
+      ) : error ? (
         <div className="mb-4 flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-semantic-error text-body-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
-      )}
+      ) : null}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>

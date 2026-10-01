@@ -200,12 +200,15 @@ test('email verification and password recovery retain JSON bodies and cookie cre
   const mutations = load('@/features/auth/services/mutations');
   await mutations.requestPasswordReset('test@example.com');
   await mutations.resetPassword('reset-token', 'new-password');
-  await mutations.verifyEmail('verify-token');
+  await mutations.verifyEmail({ email: 'test@example.com', otp: '1234' });
+  await mutations.resendVerification('test@example.com');
   assert.ok(calls.every(([, init]) => init.method === 'POST' && init.credentials === 'include'));
   assert.equal(calls[0][0], '/api/backend/auth/forgot-password');
   assert.equal(calls[0][1].body, JSON.stringify({ email: 'test@example.com' }));
   assert.equal(calls[1][0], '/api/backend/auth/reset-password');
   assert.equal(calls[1][1].body, JSON.stringify({ token: 'reset-token', newPassword: 'new-password' }));
   assert.equal(calls[2][0], '/api/backend/auth/verify-email');
-  assert.equal(calls[2][1].body, JSON.stringify({ token: 'verify-token' }));
+  assert.equal(calls[2][1].body, JSON.stringify({ email: 'test@example.com', otp: '1234' }));
+  assert.equal(calls[3][0], '/api/backend/auth/resend-verification');
+  assert.equal(calls[3][1].body, JSON.stringify({ email: 'test@example.com' }));
 });

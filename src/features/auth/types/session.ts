@@ -11,3 +11,12 @@ export interface AuthPayload {
 export interface ApiEnvelope<T> {
   data?: T;
 }
+
+export interface RegisterResponseData {
+  email: string;
+}
+
+export interface VerifyEmailPayload {
+  email: string;
+  otp: string;
+}

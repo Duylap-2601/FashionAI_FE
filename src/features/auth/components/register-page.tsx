@@ -1,7 +1,6 @@
 'use client';
 
 import { AuthSplitLayout, GoogleButton } from '@/features/auth/components/AuthLayout';
-import { useAuth } from '@/features/auth/hooks/useAuth';
 import { registerWithPassword } from '@/features/auth/services/mutations';
 import { AuthClientError } from '@/features/auth/services/session';
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
@@ -17,7 +16,6 @@ export default function Register() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const router = useRouter();
 
   const passwordRules = [
@@ -57,7 +55,7 @@ export default function Register() {
 
     try {
       setIsLoading(true);
-      await registerWithPassword({
+      const res = await registerWithPassword({
         name: fullName,
         email,
         password: pass,
@@ -65,11 +63,10 @@ export default function Register() {
       });
 
       setIsSuccess(true);
-      await login(email, pass);
-
+      const targetEmail = res?.email || email;
       setTimeout(() => {
-        router.push('/products');
-      }, 1500);
+        router.push(`/verify-email?email=${encodeURIComponent(targetEmail)}`);
+      }, 1000);
     } catch (err: unknown) {
       const errorBody = err instanceof AuthClientError && err.data && typeof err.data === 'object'
         ? err.data as { message?: string; details?: string[] }
@@ -233,7 +230,7 @@ export default function Register() {
             <svg className="w-4 h-4 text-semantic-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="text-body-sm text-semantic-success font-medium">Đăng ký thành công! Đang chuyển trang...</span>
+            <span className="text-body-sm text-semantic-success font-medium">Đăng ký thành công! Đang chuyển đến xác thực OTP...</span>
           </div>
         )}
       </form>
