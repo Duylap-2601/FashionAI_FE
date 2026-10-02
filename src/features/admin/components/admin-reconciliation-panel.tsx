@@ -13,7 +13,7 @@ import { AdminPagination } from '@/features/admin/components/admin-pagination';
 import { AdminReconciliationRow } from '@/features/admin/components/admin-reconciliation-row';
 import { AdminConfirmPaymentModal } from '@/features/admin/components/admin-confirm-payment-modal';
 import { AdminIgnoreFailureModal } from '@/features/admin/components/admin-ignore-failure-modal';
-import { fetchUnmatchedTransactions } from '@/features/admin/services/reconciliation';
+import { fetchUnmatchedTransactions, fetchWebhookFailures } from '@/features/admin/services/reconciliation';
 import type {
   ReconciliationCandidate,
   ReconciliationPagination,
@@ -57,37 +57,79 @@ export function AdminReconciliationPanel({ onStatsRefresh }: AdminReconciliation
     async (pageToLoad = pagination.page, isResolved = resolvedTab, silent = false) => {
       if (!silent) setIsLoading(true);
       try {
-        const res = await fetchUnmatchedTransactions({
-          resolved: isResolved,
-          page: pageToLoad,
-          limit: pagination.limit,
-        });
+        if (isResolved) {
+          // Tab "Đã xử lý": Lấy danh sách failures đã resolved
+          const failuresRes = await fetchWebhookFailures();
+          const allFailures = (Array.isArray(failuresRes)
+            ? failuresRes
+            : failuresRes && typeof failuresRes === 'object' && 'items' in failuresRes
+            ? (failuresRes as { items?: unknown[] }).items
+            : []) as Record<string, unknown>[];
 
-        const raw = res as UnmatchedTransactionsResponse & { data?: UnmatchedTransaction[] };
-        const items = Array.isArray(raw?.data)
-          ? raw.data
-          : Array.isArray(raw?.items)
-          ? raw.items
-          : Array.isArray(raw)
-          ? (raw as unknown as UnmatchedTransaction[])
-          : [];
+          const resolvedList: UnmatchedTransaction[] = allFailures
+            .filter(f => Boolean(f.resolved))
+            .map(f => ({
+              id: String(f.id || ''),
+              reason: String(f.reason || 'RESOLVED'),
+              transferAmount: Number(f.amount || f.transferAmount || 0),
+              code: String(f.code || f.orderCode || ''),
+              content: String(f.message || f.content || ''),
+              transactionDate: String(f.createdAt || ''),
+              referenceCode: String(f.referenceCode || f.id || '').substring(0, 16),
+              gateway: String(f.provider || f.gateway || 'SePay'),
+              accountNumber: String(f.accountNumber || ''),
+              resolved: true,
+              createdAt: String(f.createdAt || ''),
+              resolvedAt: f.resolvedAt ? String(f.resolvedAt) : null,
+              candidates: [],
+            }));
 
-        const meta = raw?.meta || raw?.__meta;
-        const total = meta?.total ?? items.length;
-        const totalPages = meta?.totalPages ?? Math.max(1, Math.ceil(total / pagination.limit));
+          const total = resolvedList.length;
+          const totalPages = Math.max(1, Math.ceil(total / pagination.limit));
+          const pagedItems = resolvedList.slice(
+            (pageToLoad - 1) * pagination.limit,
+            pageToLoad * pagination.limit,
+          );
 
-        setTransactions(items);
-        setPagination(prev => ({
-          ...prev,
-          page: pageToLoad,
-          total,
-          totalPages,
-        }));
+          setTransactions(pagedItems);
+          setPagination(prev => ({
+            ...prev,
+            page: pageToLoad,
+            total,
+            totalPages,
+          }));
+        } else {
+          // Tab "Chưa xử lý": Gọi endpoint unmatched-transactions của P3-BE
+          const res = await fetchUnmatchedTransactions({
+            page: pageToLoad,
+            limit: pagination.limit,
+          });
 
-        if (!isResolved) {
+          const raw = res as UnmatchedTransactionsResponse & { data?: UnmatchedTransaction[] };
+          const items = Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw?.items)
+            ? raw.items
+            : Array.isArray(raw)
+            ? (raw as unknown as UnmatchedTransaction[])
+            : [];
+
+          const meta = raw?.meta || raw?.__meta;
+          const total = meta?.total ?? items.length;
+          const totalPages = meta?.totalPages ?? Math.max(1, Math.ceil(total / pagination.limit));
+
+          setTransactions(items);
+          setPagination(prev => ({
+            ...prev,
+            page: pageToLoad,
+            total,
+            totalPages,
+          }));
+
           setUnresolvedCount(total);
         }
       } catch (err) {
+        console.error('[UNMATCHED_FETCH_ERROR]', err, (err as { response?: { data?: unknown } })?.response?.data);
         if (!silent) {
           toast.error(getErrorMessage(err, 'Không thể tải danh sách giao dịch đối soát.'));
         }

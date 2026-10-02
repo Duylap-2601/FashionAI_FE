@@ -43,7 +43,7 @@ export function fetchUnmatchedTransactions(
   config?: HttpOptions,
 ) {
   const query = new URLSearchParams();
-  if (params?.resolved !== undefined) query.set('resolved', String(params.resolved));
+  // Backend validation forbids `resolved` on this endpoint ("property resolved should not exist")
   if (params?.page !== undefined) query.set('page', String(params.page));
   if (params?.limit !== undefined) query.set('limit', String(params.limit));
   const qs = query.toString();

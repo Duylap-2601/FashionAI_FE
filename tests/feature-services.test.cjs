@@ -234,7 +234,7 @@ test('reconciliation services query and confirm manual payment with webhook fail
   });
 
   assert.equal(calls[0][0], 'GET');
-  assert.equal(calls[0][1], '/payments/admin/unmatched-transactions?resolved=false&page=1&limit=20');
+  assert.equal(calls[0][1], '/payments/admin/unmatched-transactions?page=1&limit=20');
 
   assert.equal(calls[1][0], 'POST');
   assert.equal(calls[1][1], '/payments/admin/orders/68472872/confirm-manual');
