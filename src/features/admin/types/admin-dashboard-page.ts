@@ -183,6 +183,7 @@ export interface AdminStats {
   netProductRevenue?: number;
   reviewCount?: number;
   totalReviews?: number;
+  avgRating?: number;
 }
 
 export interface AdminWebhookFailure {
