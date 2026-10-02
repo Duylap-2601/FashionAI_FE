@@ -87,6 +87,7 @@ function AdminDashboardContent() {
   const [isProductsFetching, setIsProductsFetching] = useState(false);
 
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [allUsers, setAllUsers] = useState<AdminUser[]>([]);
   const [userFilters, setUserFilters] = useState<AdminUserFilters>({
     search: '',
     tier: '',
@@ -333,7 +334,10 @@ function AdminDashboardContent() {
     setIsProductsFetching(true);
     try {
       const params: Record<string, string | number> = { page, limit };
-      if (filters.search) params.search = filters.search;
+      if (filters.search) {
+        params.search = filters.search;
+        params.q = filters.search;
+      }
       if (filters.category && filters.category !== 'ALL') params.category = filters.category;
       if (filters.status && filters.status !== 'ALL') params.status = filters.status;
 
@@ -424,7 +428,10 @@ function AdminDashboardContent() {
     setIsOrdersFetching(true);
     try {
       const params: Record<string, string | number> = { page, limit };
-      if (filters.search) params.search = filters.search;
+      if (filters.search) {
+        params.search = filters.search;
+        params.q = filters.search;
+      }
       if (filters.status && filters.status !== 'ALL') params.status = filters.status;
       if (filters.paymentStatus && filters.paymentStatus !== 'ALL') params.paymentStatus = filters.paymentStatus;
 
@@ -555,6 +562,51 @@ function AdminDashboardContent() {
     }
   }, [shipmentPagination.page, shipmentPagination.pageSize, shipmentFilters]);
 
+  const applyUserFiltersAndPagination = useCallback((
+    sourceList: AdminUser[],
+    filters: AdminUserFilters,
+    page: number,
+    pageSize: number
+  ) => {
+    let filtered = Array.isArray(sourceList) ? sourceList : [];
+
+    if (filters.search?.trim()) {
+      const q = filters.search.trim().toLowerCase();
+      filtered = filtered.filter(u =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.id.toLowerCase().includes(q)
+      );
+    }
+
+    if (filters.tier && filters.tier !== 'ALL') {
+      filtered = filtered.filter(u => u.tier === filters.tier);
+    }
+
+    if (filters.role && filters.role !== 'ALL') {
+      filtered = filtered.filter(u => u.role === filters.role);
+    }
+
+    if (filters.isVerified === 'VERIFIED') {
+      filtered = filtered.filter(u => Boolean(u.isVerified));
+    } else if (filters.isVerified === 'UNVERIFIED') {
+      filtered = filtered.filter(u => !u.isVerified);
+    }
+
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const pageItems = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+    setUsers(pageItems);
+    setUserPagination({
+      page: safePage,
+      pageSize,
+      total,
+      totalPages,
+    });
+  }, []);
+
   const fetchUsers = useCallback(async (
     page = userPagination.page,
     limit = userPagination.pageSize,
@@ -562,10 +614,19 @@ function AdminDashboardContent() {
   ) => {
     setIsUsersFetching(true);
     try {
-      const params: Record<string, string | number> = { page, limit };
-      if (filters.search) params.search = filters.search;
+      const params: Record<string, string | number> = {
+        page: 1,
+        limit: 1000,
+      };
+      if (filters.search) {
+        params.search = filters.search;
+        params.q = filters.search;
+      }
       if (filters.tier && filters.tier !== 'ALL') params.tier = filters.tier;
       if (filters.role && filters.role !== 'ALL') params.role = filters.role;
+      if (filters.isVerified && filters.isVerified !== 'ALL') {
+        params.isVerified = filters.isVerified === 'VERIFIED' ? 'true' : 'false';
+      }
 
       const res = await fetchAdminUsers({ params });
       const resObj = res as ApiPaginatedResponse<AdminUserDto> | undefined;
@@ -583,58 +644,15 @@ function AdminDashboardContent() {
         spent: Number(u.spent || 0),
       }));
 
-      const meta = resObj?.__meta || resObj?.meta || resObj?.pagination;
-      const serverTotal = typeof meta?.total === 'number' ? meta.total : typeof resObj?.total === 'number' ? resObj.total : undefined;
-
-      if (serverTotal !== undefined) {
-        setUsers(mappedList);
-        setUserPagination(prev => ({
-          ...prev,
-          page,
-          pageSize: limit,
-          total: serverTotal,
-          totalPages: typeof meta?.totalPages === 'number' ? meta.totalPages : Math.ceil(serverTotal / limit) || 1,
-        }));
-      } else {
-        let filtered = mappedList;
-        if (filters.search) {
-          const q = filters.search.toLowerCase();
-          filtered = filtered.filter(u =>
-            u.name.toLowerCase().includes(q) ||
-            u.email.toLowerCase().includes(q)
-          );
-        }
-        if (filters.tier && filters.tier !== 'ALL') {
-          filtered = filtered.filter(u => u.tier === filters.tier);
-        }
-        if (filters.role && filters.role !== 'ALL') {
-          filtered = filtered.filter(u => u.role === filters.role);
-        }
-        if (filters.isVerified === 'VERIFIED') {
-          filtered = filtered.filter(u => u.isVerified);
-        } else if (filters.isVerified === 'UNVERIFIED') {
-          filtered = filtered.filter(u => !u.isVerified);
-        }
-
-        const total = filtered.length;
-        const totalPages = Math.ceil(total / limit) || 1;
-        const pageItems = filtered.slice((page - 1) * limit, page * limit);
-        setUsers(pageItems);
-        setUserPagination(prev => ({
-          ...prev,
-          page,
-          pageSize: limit,
-          total,
-          totalPages,
-        }));
-      }
+      setAllUsers(mappedList);
+      applyUserFiltersAndPagination(mappedList, filters, page, limit);
     } catch (e) {
       console.error('Backend API users fetch failed:', e);
       toast.error('Không thể tải danh sách người dùng');
     } finally {
       setIsUsersFetching(false);
     }
-  }, [userPagination.page, userPagination.pageSize, userFilters]);
+  }, [userPagination.page, userPagination.pageSize, userFilters, applyUserFiltersAndPagination]);
 
   // ─── Products Pagination & Filter Handlers ───
   const handleProductFilterChange = useCallback((patch: Partial<AdminProductFilters>) => {
@@ -694,28 +712,32 @@ function AdminDashboardContent() {
   const handleUserFilterChange = useCallback((patch: Partial<AdminUserFilters>) => {
     setUserFilters(prev => {
       const next = { ...prev, ...patch };
-      setUserPagination(p => ({ ...p, page: 1 }));
-      fetchUsers(1, userPagination.pageSize, next);
+      if (allUsers.length > 0) {
+        applyUserFiltersAndPagination(allUsers, next, 1, userPagination.pageSize);
+      } else {
+        fetchUsers(1, userPagination.pageSize, next);
+      }
       return next;
     });
-  }, [fetchUsers, userPagination.pageSize]);
+  }, [allUsers, userPagination.pageSize, applyUserFiltersAndPagination, fetchUsers]);
 
   const handleResetUserFilters = useCallback(() => {
     const empty: AdminUserFilters = { search: '', tier: '', role: '', isVerified: '' };
     setUserFilters(empty);
-    setUserPagination(p => ({ ...p, page: 1 }));
-    fetchUsers(1, userPagination.pageSize, empty);
-  }, [fetchUsers, userPagination.pageSize]);
+    if (allUsers.length > 0) {
+      applyUserFiltersAndPagination(allUsers, empty, 1, userPagination.pageSize);
+    } else {
+      fetchUsers(1, userPagination.pageSize, empty);
+    }
+  }, [allUsers, userPagination.pageSize, applyUserFiltersAndPagination, fetchUsers]);
 
   const handleUserPageChange = useCallback((page: number) => {
-    setUserPagination(prev => ({ ...prev, page }));
-    fetchUsers(page, userPagination.pageSize, userFilters);
-  }, [fetchUsers, userPagination.pageSize, userFilters]);
+    applyUserFiltersAndPagination(allUsers, userFilters, page, userPagination.pageSize);
+  }, [allUsers, userFilters, userPagination.pageSize, applyUserFiltersAndPagination]);
 
   const handleUserPageSizeChange = useCallback((size: number) => {
-    setUserPagination(prev => ({ ...prev, page: 1, pageSize: size }));
-    fetchUsers(1, size, userFilters);
-  }, [fetchUsers, userFilters]);
+    applyUserFiltersAndPagination(allUsers, userFilters, 1, size);
+  }, [allUsers, userFilters, applyUserFiltersAndPagination]);
 
   // ─── Shipments Pagination Handlers ───
   const handleShipmentPageChange = useCallback((page: number) => {
@@ -1191,7 +1213,11 @@ function AdminDashboardContent() {
       if (patch.tier) body.tier = patch.tier;
       if (patch.role) body.role = patch.role;
       await updateUser(id, body);
-      setUsers(prev => prev.map(u => u.id === id ? { ...u, ...patch } : u));
+      setAllUsers(prev => {
+        const next = prev.map(u => u.id === id ? { ...u, ...patch } : u);
+        applyUserFiltersAndPagination(next, userFilters, userPagination.page, userPagination.pageSize);
+        return next;
+      });
       if (selectedUser?.id === id) setSelectedUser(prev => prev ? { ...prev, ...patch } : null);
       toast.success('Cập nhật người dùng thành công');
     } catch (e) {
