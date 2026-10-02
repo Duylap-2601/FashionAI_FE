@@ -1367,6 +1367,12 @@ function AdminDashboardContent() {
   const NON_REVENUE_STATUSES: BackendOrderStatus[] = ['CANCELLED', 'FAILED', 'EXPIRED', 'PENDING', 'RETURNED'];
   const totalRevenue = stats?.totalRevenue
     || orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
+  const refundedRevenue = stats?.refundedRevenue ?? 0;
+  const netRevenue = stats?.netRevenue ?? Math.max(0, totalRevenue - refundedRevenue);
+  const subscriptionRevenue = stats?.subscriptionRevenue;
+  const productRevenue = stats?.productRevenue;
+  const netSubscriptionRevenue = stats?.netSubscriptionRevenue;
+  const netProductRevenue = stats?.netProductRevenue;
   const paidOrdersCount = orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).length;
   const avgOrderValue = paidOrdersCount > 0 ? Math.round(totalRevenue / paidOrdersCount) : 0;
 
@@ -1541,6 +1547,12 @@ function AdminDashboardContent() {
                 setSelectedOrder={setSelectedOrder}
                 products={products}
                 openProductEditor={openProductEditor}
+                refundedRevenue={refundedRevenue}
+                netRevenue={netRevenue}
+                subscriptionRevenue={subscriptionRevenue}
+                productRevenue={productRevenue}
+                netSubscriptionRevenue={netSubscriptionRevenue}
+                netProductRevenue={netProductRevenue}
               />
             )}
 

@@ -20,8 +20,8 @@ export const DEFAULT_PLANS: Plan[] = [
   {
     id: 'MEMBER',
     name: 'Hội Viên (Member)',
-    priceText: '49.000đ',
-    numericPrice: 49000,
+    priceText: '34.000đ',
+    numericPrice: 34000,
     periodText: '/ 30 ngày',
     badge: 'Phổ biến nhất',
     isPopular: true,

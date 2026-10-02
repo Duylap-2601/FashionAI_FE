@@ -24,4 +24,10 @@ export interface DashboardOverviewProps {
   setSelectedOrder: React.Dispatch<React.SetStateAction<AdminOrder | null>>;
   products: AdminProduct[];
   openProductEditor: (product: Partial<AdminProduct> | null) => void;
+  refundedRevenue?: number;
+  netRevenue?: number;
+  subscriptionRevenue?: number;
+  productRevenue?: number;
+  netSubscriptionRevenue?: number;
+  netProductRevenue?: number;
 }

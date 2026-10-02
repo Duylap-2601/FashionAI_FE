@@ -7,4 +7,5 @@ export interface SubscriptionPlansProps {
   scheduled: import("@/features/subscription/types/subscription").SubscriptionDetail | null;
   handleInitiateUpgrade: (targetTier: TargetTier) => void;
   isCheckoutLoading: boolean;
+  apiPlans?: import("@/features/subscription/types/subscription").PlanItem[];
 }

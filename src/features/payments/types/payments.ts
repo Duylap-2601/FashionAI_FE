@@ -8,12 +8,22 @@ export interface CheckoutRequest {
   provider?: PaymentProvider;
 }
 
+export interface ProrationBreakdown {
+  oldTier: string;
+  newTier: string;
+  remainingDays: number;
+  credit: number;
+  debit: number;
+  net: number;
+}
+
 export interface CheckoutResponse {
   checkoutUrl?: string;
   paymentUrl?: string;
   orderCode?: number;
   qrCode?: string;
   provider?: PaymentProvider;
+  proration?: ProrationBreakdown | null;
   extra?: {
     formAction?: string;
     formMethod?: string;

@@ -175,6 +175,12 @@ export interface AdminStats {
   tryOnToday: number;
   stylistCount: number;
   totalRevenue: number;
+  refundedRevenue?: number;
+  netRevenue?: number;
+  subscriptionRevenue?: number;
+  productRevenue?: number;
+  netSubscriptionRevenue?: number;
+  netProductRevenue?: number;
 }
 
 export interface AdminWebhookFailure {

@@ -9,7 +9,7 @@ import {
   Sparkles
 } from 'lucide-react';
 
-export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTab, handleInitiateUpgrade, formatDate, rawExpiresAt, expirationInfo, scheduled, handleToggleAutoRenew, isCancelling, isResuming }: CurrentSubscriptionProps) {
+export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTab, handleInitiateUpgrade, formatDate, rawExpiresAt, expirationInfo, scheduled, handleToggleAutoRenew, isCancelling, isResuming, handleCancelScheduled, isCancellingScheduled }: CurrentSubscriptionProps) {
   return (
     <div className="max-w-[840px] mx-auto space-y-8 animate-in fade-in duration-300">
       {/* Main Current Subscription Card */}
@@ -53,7 +53,7 @@ export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTa
         </div>
 
         {/* Status details */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 py-6 border-b border-neutral-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-6 border-b border-neutral-100">
           <div>
             <span className="text-[12px] text-neutral-400 block mb-1">Thời hạn sử dụng</span>
             <span className="text-body-md font-bold text-brand-navy">
@@ -67,6 +67,12 @@ export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTa
             </span>
           </div>
           <div>
+            <span className="text-[12px] text-neutral-400 block mb-1">Đã thanh toán</span>
+            <span className="text-body-md font-bold text-brand-navy">
+              {current?.price != null && current.price > 0 ? `${current.price.toLocaleString('vi-VN')}đ` : '—'}
+            </span>
+          </div>
+          <div>
             <span className="text-[12px] text-neutral-400 block mb-1">Nhắc thanh toán gia hạn</span>
             <span className="text-body-md font-bold text-brand-navy">
               {current ? (current.autoRenew ? 'Đang bật' : 'Đã tắt') : '—'}
@@ -76,16 +82,28 @@ export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTa
 
         {/* Scheduled Downgrade Notice if any */}
         {scheduled && (
-          <div className="my-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
-            <Clock className="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-body-sm font-bold text-blue-900">
-                Gói {scheduled.tier} đã được lên lịch kích hoạt
-              </h4>
-              <p className="text-[13px] text-blue-800 mt-0.5">
-                Gói {scheduled.tier} sẽ tự động bắt đầu từ ngày <strong>{formatDate(scheduled.startsAt)}</strong> sau khi gói hiện tại hết hạn.
-              </p>
+          <div className="my-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-body-sm font-bold text-blue-900">
+                  Gói {scheduled.tier} đã được lên lịch kích hoạt
+                </h4>
+                <p className="text-[13px] text-blue-800 mt-0.5">
+                  Gói {scheduled.tier} sẽ tự động bắt đầu từ ngày <strong>{formatDate(scheduled.startsAt)}</strong> sau khi gói hiện tại hết hạn.
+                </p>
+              </div>
             </div>
+            {handleCancelScheduled && (
+              <button
+                type="button"
+                onClick={handleCancelScheduled}
+                disabled={isCancellingScheduled}
+                className="px-4 py-2 bg-white text-red-600 border border-red-200 hover:bg-red-50 font-bold rounded-xl text-[13px] transition-colors shadow-xs shrink-0 disabled:opacity-50 cursor-pointer"
+              >
+                {isCancellingScheduled ? 'Đang hủy...' : 'Hủy lịch chuyển gói'}
+              </button>
+            )}
           </div>
         )}
 

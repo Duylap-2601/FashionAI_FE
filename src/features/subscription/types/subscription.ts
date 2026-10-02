@@ -25,11 +25,17 @@ export interface SubscriptionDetail {
   startsAt: string;
   expiresAt: string;
   daysRemaining: number;
+  price?: number;
   order?: {
     orderCode: number;
     amount: number;
     createdAt?: string;
   };
+}
+
+export interface CancelScheduledSubscriptionResponse {
+  message?: string;
+  success?: boolean;
 }
 
 export interface MySubscriptionResponse {

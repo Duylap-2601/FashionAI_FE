@@ -2,7 +2,7 @@
 
 import { mutationKeys } from '@/features/subscription/services/mutation-keys';
 import { queryKeys as subscriptionQueryKeys } from '@/features/subscription/services/query-keys';
-import { cancelSubscription, resumeSubscription } from '@/features/subscription/services/mutations';
+import { cancelSubscription, cancelScheduledSubscription, resumeSubscription } from '@/features/subscription/services/mutations';
 import { fetchMySubscription, fetchPlans, fetchSubscriptionHistory } from '@/features/subscription/services/queries';
 import type { MySubscriptionResponse, PlanItem, SubscriptionHistoryResponse } from '@/features/subscription/types/subscription';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -115,3 +115,26 @@ export function useResumeSubscription() {
     error: mutation.error,
   };
 }
+
+/**
+ * POST /api/payments/subscriptions/scheduled/cancel - Hủy lịch chuyển gói
+ */
+export function useCancelScheduledSubscription() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationKey: mutationKeys.cancelScheduledSubscription(),
+    mutationFn: cancelScheduledSubscription,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: subscriptionQueryKeys.subscriptionMe() });
+      queryClient.invalidateQueries({ queryKey: subscriptionQueryKeys.subscriptionHistory() });
+    },
+  });
+
+  return {
+    cancelScheduledSubscription: mutation.mutateAsync,
+    isCancellingScheduled: mutation.isPending,
+    error: mutation.error,
+  };
+}
+

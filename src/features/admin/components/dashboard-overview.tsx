@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Clock,
   CreditCard,
+  HelpCircle,
   Package,
   ShoppingBag,
   Truck,
@@ -16,7 +17,36 @@ import {
   XCircle
 } from 'lucide-react';
 
-export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pendingOrders, deliveredOrders, totalProducts, activeProducts, totalUsers, memberUsers, vipUsers, users, setActiveTab, shippingOrders, cancelledOrders, setChartDays, setHoveredPoint, chartDays, renderRevenueChart, orders, setSelectedOrder, products, openProductEditor }: DashboardOverviewProps) {
+export function DashboardOverview({
+  totalRevenue,
+  avgOrderValue,
+  totalOrders,
+  pendingOrders,
+  deliveredOrders,
+  totalProducts,
+  activeProducts,
+  totalUsers,
+  memberUsers,
+  vipUsers,
+  users,
+  setActiveTab,
+  shippingOrders,
+  cancelledOrders,
+  setChartDays,
+  setHoveredPoint,
+  chartDays,
+  renderRevenueChart,
+  orders,
+  setSelectedOrder,
+  products,
+  openProductEditor,
+  refundedRevenue,
+  netRevenue,
+  subscriptionRevenue,
+  productRevenue,
+  netSubscriptionRevenue,
+  netProductRevenue,
+}: DashboardOverviewProps) {
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -39,6 +69,34 @@ export function DashboardOverview({ totalRevenue, avgOrderValue, totalOrders, pe
             <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
               <span>Giá trị TB: <strong className="text-neutral-700">{avgOrderValue > 0 ? fmt(avgOrderValue) : '0đ'}</strong>/đơn</span>
               <span className="text-emerald-600 font-semibold flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" /> Đã thu</span>
+            </div>
+
+            {/* Net & Refund Breakdown */}
+            <div className="mt-3 pt-2.5 border-t border-neutral-100 flex flex-col gap-1 text-[11px]">
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500 flex items-center gap-1" title="Khoản hoàn tiền hoặc khấu trừ credit nâng cấp gói giữa kỳ">
+                  Hoàn tiền
+                  <HelpCircle className="w-3 h-3 text-neutral-400" />
+                </span>
+                <span className="text-amber-600 font-semibold">
+                  −{fmt(refundedRevenue ?? 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-700 font-bold flex items-center gap-1" title="Doanh thu thực (net) = Doanh thu đã thanh toán − Hoàn tiền">
+                  Doanh thu thực (net)
+                  <HelpCircle className="w-3 h-3 text-neutral-400" />
+                </span>
+                <span className="text-emerald-700 font-bold">
+                  {fmt(netRevenue ?? Math.max(0, totalRevenue - (refundedRevenue ?? 0)))}
+                </span>
+              </div>
+              {(subscriptionRevenue != null || productRevenue != null) && (
+                <div className="mt-1 text-[10px] text-neutral-400 flex items-center justify-between pt-1 border-t border-neutral-50">
+                  <span>Gói: {fmt(netSubscriptionRevenue ?? subscriptionRevenue ?? 0)}</span>
+                  <span>Đơn: {fmt(netProductRevenue ?? productRevenue ?? 0)}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
