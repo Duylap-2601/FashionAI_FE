@@ -32,6 +32,7 @@ import { NotificationBell } from '@/features/notifications/components/Notificati
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 import { AdminReviewTable } from '@/features/reviews/components/AdminReviewTable';
+import { fetchAdminReviewsResponse } from '@/features/reviews/services/queries';
 import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -51,7 +52,6 @@ import {
 } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import Image from 'next/image';
-import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -126,6 +126,8 @@ function AdminDashboardContent() {
   const [isShipmentsFetching, setIsShipmentsFetching] = useState(false);
 
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [reviewsCount, setReviewsCount] = useState<number>(0);
+  const [avgRating, setAvgRating] = useState<number>(0);
   const [webhookFailures, setWebhookFailures] = useState<AdminWebhookFailure[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -745,15 +747,39 @@ function AdminDashboardContent() {
     }
   }, []);
 
+  const fetchReviewsData = useCallback(async () => {
+    try {
+      const res = await fetchAdminReviewsResponse();
+      if (Array.isArray(res)) {
+        setReviewsCount(res.length);
+        if (res.length > 0) {
+          const sum = res.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
+          setAvgRating(Math.round((sum / res.length) * 10) / 10);
+        }
+      } else if (res && typeof res === 'object') {
+        const obj = res as Record<string, unknown>;
+        const list = Array.isArray(obj.data) ? obj.data : Array.isArray(obj.items) ? obj.items : [];
+        const total = typeof obj.total === 'number' ? obj.total : (obj.meta as { total?: number })?.total ?? list.length;
+        setReviewsCount(total);
+        if (list.length > 0) {
+          const sum = list.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
+          setAvgRating(Math.round((sum / list.length) * 10) / 10);
+        }
+      }
+    } catch {
+      // Backend may not have implemented /products/admin/reviews yet; fallback to 0
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
-    Promise.all([fetchProducts(), fetchOrders(), fetchShipments(), fetchUsers(), fetchStats(), fetchWebhookFailuresList()])
+    Promise.all([fetchProducts(), fetchOrders(), fetchShipments(), fetchUsers(), fetchStats(), fetchWebhookFailuresList(), fetchReviewsData()])
       .finally(() => {
         if (mounted) setIsLoading(false);
       });
     return () => { mounted = false; };
-  }, [fetchProducts, fetchOrders, fetchShipments, fetchUsers, fetchStats, fetchWebhookFailuresList]);
+  }, [fetchProducts, fetchOrders, fetchShipments, fetchUsers, fetchStats, fetchWebhookFailuresList, fetchReviewsData]);
 
   // Auto-refresh orders and stats when new notification arrives in realtime
   const recentNotifications = useNotificationStore((s) => s.recentNotifications);
@@ -1389,6 +1415,9 @@ function AdminDashboardContent() {
   const memberUsers = users.filter(u => u.tier === 'MEMBER').length;
   const vipUsers = users.filter(u => u.tier === 'VIP').length;
 
+  const totalReviews = stats?.reviewCount ?? stats?.totalReviews ?? reviewsCount;
+  const finalAvgRating = stats?.avgRating ?? avgRating;
+
   return (
     <div className="flex bg-neutral-100 h-screen overflow-hidden text-neutral-800 font-sans">
 
@@ -1553,6 +1582,8 @@ function AdminDashboardContent() {
                 productRevenue={productRevenue}
                 netSubscriptionRevenue={netSubscriptionRevenue}
                 netProductRevenue={netProductRevenue}
+                totalReviews={totalReviews}
+                avgRating={finalAvgRating}
               />
             )}
 

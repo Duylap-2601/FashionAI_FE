@@ -181,6 +181,8 @@ export interface AdminStats {
   productRevenue?: number;
   netSubscriptionRevenue?: number;
   netProductRevenue?: number;
+  reviewCount?: number;
+  totalReviews?: number;
 }
 
 export interface AdminWebhookFailure {

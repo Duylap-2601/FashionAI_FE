@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Package,
   ShoppingBag,
+  Star,
   Truck,
   Users,
   XCircle
@@ -46,6 +47,8 @@ export function DashboardOverview({
   productRevenue,
   netSubscriptionRevenue,
   netProductRevenue,
+  totalReviews,
+  avgRating,
 }: DashboardOverviewProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -55,7 +58,7 @@ export function DashboardOverview({
       </div>
 
       {/* Metrics cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
         {/* Card 1: Doanh thu */}
         <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col justify-between gap-3">
           <div className="flex items-center justify-between">
@@ -147,6 +150,30 @@ export function DashboardOverview({
             <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
               <span className="text-brand-navy font-semibold">{memberUsers + vipUsers} hội viên VIP/Member</span>
               <span className="text-neutral-400">{users.filter(u => u.isVerified).length} đã xác thực</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 5: Tổng đánh giá */}
+        <div
+          onClick={() => setActiveTab('reviews')}
+          className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex flex-col justify-between gap-3 cursor-pointer hover:border-amber-400 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-label-sm text-neutral-500 font-medium group-hover:text-neutral-800 transition-colors">Tổng đánh giá</span>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[26px] font-bold text-neutral-900">{(totalReviews ?? 0).toLocaleString('vi-VN')}</span>
+            <div className="text-[11px] text-neutral-500 mt-1 flex items-center justify-between">
+              <span className="text-amber-600 font-semibold flex items-center gap-0.5">
+                {avgRating && avgRating > 0 ? `${avgRating} ★ trung bình` : 'Đánh giá sản phẩm'}
+              </span>
+              <span className="text-brand-navy font-semibold flex items-center gap-0.5 group-hover:underline">
+                Xem <ChevronRight className="w-3 h-3" />
+              </span>
             </div>
           </div>
         </div>

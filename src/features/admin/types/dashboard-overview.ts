@@ -30,4 +30,6 @@ export interface DashboardOverviewProps {
   productRevenue?: number;
   netSubscriptionRevenue?: number;
   netProductRevenue?: number;
+  totalReviews?: number;
+  avgRating?: number;
 }
