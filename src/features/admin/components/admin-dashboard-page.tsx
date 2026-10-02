@@ -15,6 +15,7 @@ import { AdminShipmentsPanel } from '@/features/admin/components/admin-shipments
 import { AdminUserModal } from '@/features/admin/components/admin-user-modal';
 import { AdminUsersPanel } from '@/features/admin/components/admin-users-panel';
 import { AdminWebhookFailuresPanel } from '@/features/admin/components/admin-webhook-failures-panel';
+import { AdminReconciliationPanel } from '@/features/admin/components/admin-reconciliation-panel';
 import { DashboardOverview } from '@/features/admin/components/dashboard-overview';
 import { fmt } from '@/features/admin/services/format';
 import type { ProductImageItem } from '@/features/admin/types/admin-dashboard-page';
@@ -1525,7 +1526,7 @@ function AdminDashboardContent() {
               { id: 'users', label: 'Người dùng', icon: Users },
               { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
               { id: 'shipments', label: 'Vận đơn', icon: Truck },
-              { id: 'webhook-failures', label: 'Giao dịch lỗi', icon: AlertTriangle },
+              { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
               { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
               { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
               { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
@@ -1533,7 +1534,9 @@ function AdminDashboardContent() {
             ] as { id: AdminPage; label: string; icon: LucideIcon }[]).map(item => {
               const IconComponent = item.icon;
               const active = activeTab === item.id;
-              const unresolvedCount = item.id === 'webhook-failures' ? webhookFailures.filter(f => !f.resolved).length : 0;
+              const unresolvedCount = (item.id === 'reconciliation' || item.id === 'webhook-failures')
+                ? webhookFailures.filter(f => !f.resolved).length
+                : 0;
               return (
                 <button
                   key={item.id}
@@ -1583,8 +1586,8 @@ function AdminDashboardContent() {
                       activeTab === 'users' ? 'Quản lý người dùng' :
                         activeTab === 'orders' ? 'Quản lý đơn hàng' :
                           activeTab === 'shipments' ? 'Quản lý vận đơn' :
-                              activeTab === 'webhook-failures' ? 'Giao dịch lỗi' :
-                                activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
+                            (activeTab === 'webhook-failures' || activeTab === 'reconciliation') ? 'Đối soát giao dịch lạ' :
+                              activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
                                   activeTab === 'shipping-settings' ? 'Cài đặt GHN' :
                                     activeTab === 'live-try-on-settings' ? 'Cài đặt Live Try-On' : 'Cài đặt Quota'}
               </span>
@@ -1743,9 +1746,9 @@ function AdminDashboardContent() {
               />
             )}
 
-            {/* ─── TAB: WEBHOOK FAILURES ──────────────────────────────────────────── */}
-            {activeTab === 'webhook-failures' && (
-              <AdminWebhookFailuresPanel failures={webhookFailures} onResolve={handleResolveWebhookFailure} />
+            {/* ─── TAB: RECONCILIATION / WEBHOOK FAILURES ─────────────────────────── */}
+            {(activeTab === 'reconciliation' || activeTab === 'webhook-failures') && (
+              <AdminReconciliationPanel onStatsRefresh={() => fetchStats()} />
             )}
 
             {/* ─── TAB: QUOTA USAGE ────────────────────────────────────────────────── */}

@@ -212,3 +212,37 @@ test('email verification and password recovery retain JSON bodies and cookie cre
   assert.equal(calls[3][0], '/api/backend/auth/resend-verification');
   assert.equal(calls[3][1].body, JSON.stringify({ email: 'test@example.com' }));
 });
+
+test('reconciliation services query and confirm manual payment with webhook failure resolution', async () => {
+  const calls = [];
+  const load = createSourceLoader({
+    mocks: {
+      '@/lib/http': {
+        http: {
+          get: async (...args) => { calls.push(['GET', ...args]); return { data: [] }; },
+          post: async (...args) => { calls.push(['POST', ...args]); return { success: true }; },
+          patch: async (...args) => { calls.push(['PATCH', ...args]); return { success: true }; },
+        },
+      },
+    },
+  });
+  const reconciliation = load('@/features/admin/services/reconciliation');
+  await reconciliation.fetchUnmatchedTransactions({ resolved: false, page: 1, limit: 20 });
+  await reconciliation.processManualReconciliation(68472872, 'fail-123', {
+    reference: 'FT12345',
+    note: 'Đối chiếu sao kê MBBank 0345986537',
+  });
+
+  assert.equal(calls[0][0], 'GET');
+  assert.equal(calls[0][1], '/payments/admin/unmatched-transactions?resolved=false&page=1&limit=20');
+
+  assert.equal(calls[1][0], 'POST');
+  assert.equal(calls[1][1], '/payments/admin/orders/68472872/confirm-manual');
+  assert.deepEqual(calls[1][2], {
+    reference: 'FT12345',
+    note: 'Đối chiếu sao kê MBBank 0345986537',
+  });
+
+  assert.equal(calls[2][0], 'PATCH');
+  assert.equal(calls[2][1], '/payments/admin/webhook-failures/fail-123/resolve');
+});
