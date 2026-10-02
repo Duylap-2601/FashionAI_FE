@@ -176,11 +176,17 @@ export interface AdminStats {
   stylistCount: number;
   totalRevenue: number;
   refundedRevenue?: number;
+  refundedAmount?: number;
+  subscriptionRefunded?: number;
+  productRefunded?: number;
   netRevenue?: number;
   subscriptionRevenue?: number;
   productRevenue?: number;
   netSubscriptionRevenue?: number;
   netProductRevenue?: number;
+  paidOrders?: number;
+  subscriptionOrders?: number;
+  productOrders?: number;
   reviewCount?: number;
   totalReviews?: number;
   avgRating?: number;

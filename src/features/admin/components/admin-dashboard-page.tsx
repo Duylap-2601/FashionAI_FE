@@ -753,6 +753,7 @@ function AdminDashboardContent() {
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetchAdminStats();
+      console.log('[DEBUG_BE_STATS]', res);
       setStats(res as AdminStats);
     } catch (e) {
       console.warn('Backend API stats fetch failed.', e);
@@ -1417,16 +1418,67 @@ function AdminDashboardContent() {
 
   // ─── Dashboard Derived Business Metrics ───────────────────────────────────
   const NON_REVENUE_STATUSES: BackendOrderStatus[] = ['CANCELLED', 'FAILED', 'EXPIRED', 'PENDING', 'RETURNED'];
-  const totalRevenue = stats?.totalRevenue
-    || orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
-  const refundedRevenue = stats?.refundedRevenue ?? 0;
-  const netRevenue = stats?.netRevenue ?? Math.max(0, totalRevenue - refundedRevenue);
-  const subscriptionRevenue = stats?.subscriptionRevenue;
-  const productRevenue = stats?.productRevenue;
-  const netSubscriptionRevenue = stats?.netSubscriptionRevenue;
-  const netProductRevenue = stats?.netProductRevenue;
-  const paidOrdersCount = orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).length;
-  const avgOrderValue = paidOrdersCount > 0 ? Math.round(totalRevenue / paidOrdersCount) : 0;
+  const rawStats = (stats || {}) as Record<string, unknown>;
+
+  const totalRevenue = typeof stats?.totalRevenue === 'number'
+    ? stats.totalRevenue
+    : orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
+
+  const refundedRevenue = Number(
+    rawStats.refundedAmount
+    ?? rawStats.productRefunded
+    ?? rawStats.refundedRevenue
+    ?? rawStats.refunded_revenue
+    ?? rawStats.refundRevenue
+    ?? rawStats.refund_revenue
+    ?? 0
+  );
+
+  const rawProductRev = rawStats.productRevenue
+    ?? rawStats.product_revenue
+    ?? rawStats.orderRevenue
+    ?? rawStats.order_revenue;
+  const productRevenue = typeof rawProductRev === 'number'
+    ? rawProductRev
+    : orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
+
+  const rawSubRev = rawStats.subscriptionRevenue
+    ?? rawStats.subscription_revenue
+    ?? rawStats.subscriptionsRevenue
+    ?? rawStats.subscriptions_revenue
+    ?? rawStats.packageRevenue
+    ?? rawStats.package_revenue
+    ?? rawStats.subRevenue;
+  const subscriptionRevenue = (typeof rawSubRev === 'number' && rawSubRev > 0)
+    ? rawSubRev
+    : Math.max(0, totalRevenue - productRevenue);
+
+  const rawNetSubRev = rawStats.netSubscriptionRevenue
+    ?? rawStats.net_subscription_revenue
+    ?? rawStats.netPackageRevenue;
+  const netSubscriptionRevenue = typeof rawNetSubRev === 'number'
+    ? rawNetSubRev
+    : subscriptionRevenue;
+
+  const rawNetProductRev = rawStats.netProductRevenue
+    ?? rawStats.net_product_revenue
+    ?? rawStats.netOrderRevenue;
+  const netProductRevenue = typeof rawNetProductRev === 'number'
+    ? rawNetProductRev
+    : productRevenue;
+
+  const expectedNet = Math.max(0, totalRevenue - refundedRevenue);
+  const rawNetRev = rawStats.netRevenue ?? rawStats.net_revenue;
+  const netRevenue = (typeof rawNetRev === 'number' && rawNetRev <= productRevenue && subscriptionRevenue > 0)
+    ? rawNetRev + netSubscriptionRevenue
+    : (typeof rawNetRev === 'number' ? rawNetRev : expectedNet);
+
+  const effectivePaidOrders = typeof stats?.paidOrders === 'number' && stats.paidOrders > 0
+    ? stats.paidOrders
+    : orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).length;
+  const avgOrderValue = effectivePaidOrders > 0
+    ? Math.round(totalRevenue / effectivePaidOrders)
+    : 0;
 
   const totalOrders = stats?.orderCount ?? orders.length;
   const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
@@ -1437,9 +1489,10 @@ function AdminDashboardContent() {
   const totalProducts = stats?.productCount ?? products.length;
   const activeProducts = products.filter(p => p.status === 'ACTIVE').length;
 
-  const totalUsers = stats?.userCount ?? users.length;
-  const memberUsers = users.filter(u => u.tier === 'MEMBER').length;
-  const vipUsers = users.filter(u => u.tier === 'VIP').length;
+  const userSource = allUsers.length > 0 ? allUsers : users;
+  const totalUsers = stats?.userCount ?? userSource.length;
+  const memberUsers = userSource.filter(u => u.tier === 'MEMBER').length;
+  const vipUsers = userSource.filter(u => u.tier === 'VIP').length;
 
   const totalReviews = stats?.reviewCount ?? stats?.totalReviews ?? reviewsCount;
   const finalAvgRating = stats?.avgRating ?? avgRating;
@@ -1590,7 +1643,7 @@ function AdminDashboardContent() {
                 totalUsers={totalUsers}
                 memberUsers={memberUsers}
                 vipUsers={vipUsers}
-                users={users}
+                users={userSource}
                 setActiveTab={setActiveTab}
                 shippingOrders={shippingOrders}
                 cancelledOrders={cancelledOrders}
