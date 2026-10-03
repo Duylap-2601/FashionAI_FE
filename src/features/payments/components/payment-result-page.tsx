@@ -1,6 +1,7 @@
 'use client';
 
 import { usePaymentStatus } from '@/features/payments/hooks/usePayments';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { AlertCircle, CheckCircle2, Clock, CreditCard, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -9,14 +10,19 @@ import { Suspense } from 'react';
 function PaymentResultContent() {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get('paymentId');
+  const authStatus = useAuthStore((state) => state.status);
   const { data: payment, isLoading, isError } = usePaymentStatus(paymentId);
 
   if (!paymentId || isError) {
     return <ResultShell icon="error" title="Không tìm thấy thanh toán" message="Vui lòng đăng nhập lại hoặc mở trang đơn hàng để kiểm tra trạng thái." />;
   }
 
-  if (isLoading || !payment) {
+  if (authStatus === 'loading' || isLoading || !payment) {
     return <LoadingState />;
+  }
+
+  if (authStatus === 'unauthenticated') {
+    return <ResultShell icon="error" title="Cần đăng nhập" message="Vui lòng đăng nhập lại để kiểm tra trạng thái thanh toán." />;
   }
 
   if (payment.status === 'PAID') {
@@ -31,7 +37,7 @@ function PaymentResultContent() {
     return <ResultShell icon="error" title="Thanh toán cần hoàn tiền" message="Hệ thống đã nhận tiền nhưng chưa thể ghi nhận cho đơn hàng này. Khoản tiền sẽ được xử lý hoàn lại." orderId={payment.orderId} />;
   }
 
-  return <ResultShell icon="pending" title="Đang xác nhận thanh toán" message="Cổng thanh toán đang gửi xác nhận về hệ thống. Trang này sẽ tự cập nhật khi callback hợp lệ hoặc đối soát hoàn tất." orderId={payment.orderId} />;
+  return <ResultShell icon="pending" title="Đang xác nhận thanh toán" message="Hệ thống đang kiểm tra thanh toán. Bạn có thể xem đơn hàng để theo dõi trạng thái." orderId={payment.orderId} />;
 }
 
 function LoadingState() {

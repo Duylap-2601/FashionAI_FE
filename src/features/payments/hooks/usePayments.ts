@@ -1,6 +1,7 @@
 'use client';
 
 import { mutationKeys } from '@/features/payments/services/mutation-keys';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { queryKeys as paymentsQueryKeys } from '@/features/payments/services/query-keys';
 import { checkout } from '@/features/payments/services/mutations';
 import { fetchPaymentOrders, fetchPaymentStatus } from '@/features/payments/services/queries';
@@ -28,10 +29,12 @@ export function useCheckout() {
 }
 
 export function usePaymentStatus(paymentId: string | null) {
+  const authStatus = useAuthStore((state) => state.status);
+
   return useQuery<PaymentStatusResponse>({
     queryKey: paymentsQueryKeys.paymentStatus(paymentId ?? ''),
     queryFn: () => fetchPaymentStatus(paymentId ?? ''),
-    enabled: Boolean(paymentId),
+    enabled: Boolean(paymentId) && authStatus === 'authenticated',
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       return status === 'PENDING' ? 2_000 : false;

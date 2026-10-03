@@ -1,1 +1,1 @@
-export const PROTECTED_ROUTES = ['/try-on', '/profile', '/ai-stylist', '/chat', '/checkout', '/admin'];
+export const PROTECTED_ROUTES = ['/try-on', '/profile', '/ai-stylist', '/chat', '/checkout', '/payment', '/admin'];

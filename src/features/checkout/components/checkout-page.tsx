@@ -13,7 +13,7 @@ import type { CheckoutResponse } from '@/features/payments/types/payments';
 import { AddressForm } from '@/features/profile/components/address-form';
 import { useAddressMutations, useUserAddresses } from '@/features/profile/hooks/use-addresses';
 import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
-import { AlertCircle, CheckCircle2, ChevronRight, ExternalLink, Loader2, ShoppingBag, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronRight, Copy, ExternalLink, Loader2, ShoppingBag, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
@@ -101,6 +101,15 @@ export default function CheckoutPage() {
   const shippingFee = orderQuote?.shippingFee ?? 0;
   const total = orderQuote?.totalAmount ?? Math.max(0, totalPrice);
   const isOrderBlocked = isSubmitting || isCheckoutLoading || isPricingLoading || !!pricingError || (!!selectedAddress && !orderQuote);
+  const submitLabel = isPricingLoading
+    ? 'Đang tính phí...'
+    : isSubmitting
+      ? 'Đang đặt hàng...'
+      : isCheckoutLoading
+        ? 'Đang tạo thanh toán...'
+        : pricingError
+          ? 'Cần kiểm tra lại đơn hàng'
+          : 'Xác nhận đặt hàng →';
 
   const handleApplyCoupon = () => {
     const code = coupon.trim().toUpperCase();
@@ -131,8 +140,6 @@ export default function CheckoutPage() {
       toast.error('Không nhận được link thanh toán');
       return;
     }
-
-    clearCart();
 
     if (checkoutResult.provider === 'SEPAY' && checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
       const form = document.createElement('form');
@@ -176,6 +183,16 @@ export default function CheckoutPage() {
     }
 
     window.location.href = checkoutResult.checkoutUrl;
+  };
+
+  const copyTransferContent = async () => {
+    const transferContent = pendingCheckout?.extra?.invoiceNumber || `FAI${pendingCheckout?.orderCode ?? ''}`;
+    try {
+      await navigator.clipboard.writeText(transferContent);
+      toast.success('Đã sao chép nội dung chuyển khoản');
+    } catch {
+      toast.error('Không thể sao chép tự động');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -238,7 +255,7 @@ export default function CheckoutPage() {
       try {
         const checkoutResult = await checkout({
           orderId,
-          provider: 'ZALOPAY',
+          provider: paymentMethod === 'sepay' ? 'SEPAY' : 'ZALOPAY',
         });
         if (checkoutResult.checkoutUrl) {
           setPendingOrderId(orderId);
@@ -397,7 +414,7 @@ export default function CheckoutPage() {
                 disabled={isOrderBlocked}
                 className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl flex items-center justify-between px-6 hover:bg-brand-navy/90 transition-colors disabled:opacity-50"
               >
-                <span>{isSubmitting ? 'Đang đặt hàng...' : 'Xác nhận đặt hàng'}</span>
+                  <span>{submitLabel.replace(' →', '')}</span>
                 <span>{total.toLocaleString('vi-VN')}đ</span>
               </button>
             </div>
@@ -410,6 +427,7 @@ export default function CheckoutPage() {
             discount={discount}
             total={total}
             isSubmitting={isOrderBlocked}
+            submitLabel={submitLabel}
             isPricingLoading={isPricingLoading}
             pricingError={pricingError}
             coupon={coupon}
@@ -428,6 +446,7 @@ export default function CheckoutPage() {
           onClose={() => {
             setPendingCheckout(null);
             setPendingOrderId(null);
+            toast.info('Đơn hàng đã được tạo. Bạn có thể tiếp tục thanh toán trong trang chi tiết đơn hàng.');
           }}
           onPaid={clearCart}
         />
@@ -436,15 +455,33 @@ export default function CheckoutPage() {
       {pendingCheckout && pendingCheckout.provider !== 'ZALOPAY' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-[18px] font-bold text-brand-navy mb-2">Ghi nhớ mã đơn hàng của bạn</h3>
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h3 className="text-[18px] font-bold text-brand-navy">Thanh toán chuyển khoản ngân hàng</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingCheckout(null);
+                  setPendingOrderId(null);
+                }}
+                className="text-neutral-400 hover:text-brand-navy"
+                aria-label="Đóng"
+              >
+                ✕
+              </button>
+            </div>
             <p className="text-body-sm text-neutral-600 mb-4">
-              Khi chuyển khoản, vui lòng ghi đúng nội dung dưới đây để hệ thống tự động xác nhận thanh toán.
+              Vui lòng ghi đúng nội dung dưới đây để hệ thống tự động xác nhận thanh toán.
             </p>
             <div className="bg-brand-cream rounded-xl p-4 mb-4">
               <p className="text-label-sm text-neutral-500 mb-1">Nội dung chuyển khoản</p>
-              <p className="text-[20px] font-bold text-brand-navy font-mono">
-                {pendingCheckout.extra?.invoiceNumber || `FAI${pendingCheckout.orderCode ?? ''}`}
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[20px] font-bold text-brand-navy font-mono break-all">
+                  {pendingCheckout.extra?.invoiceNumber || `FAI${pendingCheckout.orderCode ?? ''}`}
+                </p>
+                <button type="button" onClick={copyTransferContent} className="shrink-0 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-brand-navy hover:bg-neutral-50 inline-flex items-center gap-1.5">
+                  <Copy className="w-3.5 h-3.5" /> Sao chép
+                </button>
+              </div>
               <p className="text-label-sm text-neutral-500 mt-3 mb-1">Số tiền cần thanh toán</p>
               <p className="text-body-lg font-bold text-brand-navy">{total.toLocaleString('vi-VN')}đ</p>
             </div>
@@ -458,7 +495,7 @@ export default function CheckoutPage() {
               }}
               className="w-full h-12 rounded-xl bg-brand-navy text-white font-semibold hover:bg-brand-navy/90 transition-colors"
             >
-              Tiếp tục thanh toán
+              Mở cổng chuyển khoản
             </button>
             {pendingOrderId && (
               <Link

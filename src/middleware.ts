@@ -6,11 +6,11 @@ export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const hasAuthMarker = Boolean(req.cookies.get(AUTH_MARKER_COOKIE_NAME)?.value);
 
-  const protectedRoutes = ['/try-on', '/profile', '/ai-stylist', '/chat', '/checkout', '/admin'];
+  const protectedRoutes = ['/try-on', '/profile', '/ai-stylist', '/chat', '/checkout', '/payment', '/admin'];
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
   if (isProtected && !hasAuthMarker) {
-    return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, req.url));
+    return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(`${pathname}${req.nextUrl.search}`)}`, req.url));
   }
 
   return NextResponse.next();

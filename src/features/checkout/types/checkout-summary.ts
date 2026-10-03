@@ -7,6 +7,7 @@ export interface CheckoutSummaryProps {
   discount: number;
   total: number;
   isSubmitting: boolean;
+  submitLabel: string;
   isPricingLoading?: boolean;
   pricingError?: string | null;
   coupon: string;

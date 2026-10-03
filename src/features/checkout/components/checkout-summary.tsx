@@ -13,6 +13,7 @@ export function CheckoutSummary({
   discount,
   total,
   isSubmitting,
+  submitLabel,
   isPricingLoading,
   pricingError,
   coupon,
@@ -109,7 +110,7 @@ export function CheckoutSummary({
         </div>
 
         <button type="submit" disabled={isSubmitting} className="hidden lg:flex w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl items-center justify-center hover:bg-brand-navy/90 transition-colors mb-6 shadow-sm disabled:opacity-50">
-          {isSubmitting ? 'Đang đặt hàng...' : 'Xác nhận đặt hàng \u2192'}
+          {submitLabel}
         </button>
 
         <div className="bg-[#EEF0FD] rounded-xl p-4 flex items-start gap-3 border border-[#AFA9EC]">

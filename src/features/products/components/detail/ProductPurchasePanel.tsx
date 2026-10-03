@@ -175,8 +175,8 @@ export function ProductPurchasePanel({
           <span className="font-bold text-brand-navy">{subtotal.toLocaleString('vi-VN')}đ</span>
         </div>
 
-        <button onClick={onAddToCart} className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl hover:bg-brand-navy/90 active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
-          <ShoppingBag className="w-5 h-5" /> Thêm vào giỏ hàng
+        <button onClick={onAddToCart} className="w-full h-[54px] bg-brand-navy text-white text-body-md font-bold rounded-xl hover:bg-brand-navy/90 active:scale-[0.99] transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+          <ShoppingBag className="w-5 h-5" /> Thêm vào giỏ · Tiếp tục mua
         </button>
 
         <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[10px] font-semibold text-neutral-600">

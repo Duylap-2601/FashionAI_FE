@@ -7,13 +7,15 @@ import { fetchCurrentUser } from '@/features/auth/services/queries';
 import { toAuthSession } from '@/features/auth/services/session';
 import { clearAuthMarker, hasAuthMarker, useAuthStore } from '@/features/auth/store/authStore';
 import { useQueryClient } from '@tanstack/react-query';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export function AuthBootstrap() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function AuthBootstrap() {
       } catch {
         if (isMounted) {
           clearInvalidSession(queryClient);
-          redirectIfProtected(pathname, router);
+          redirectIfProtected(pathname, search, router);
         }
       } finally {
         if (isMounted) setIsRefreshing(false);
@@ -59,7 +61,7 @@ export function AuthBootstrap() {
     return () => {
       isMounted = false;
     };
-  }, [pathname, queryClient, router]);
+  }, [pathname, queryClient, router, search]);
 
   useEffect(() => {
     return subscribeAuthInvalidated((event) => {
@@ -67,10 +69,10 @@ export function AuthBootstrap() {
       if (event.redirectTo) {
         router.replace(event.redirectTo);
       } else {
-        redirectIfProtected(pathname, router);
+        redirectIfProtected(pathname, search, router);
       }
     });
-  }, [pathname, queryClient, router]);
+  }, [pathname, queryClient, router, search]);
 
   if (!isRefreshing) return null;
 
@@ -93,7 +95,8 @@ function clearInvalidSession(queryClient: ReturnType<typeof useQueryClient>) {
     .catch(() => undefined);
 }
 
-function redirectIfProtected(pathname: string, router: ReturnType<typeof useRouter>) {
+function redirectIfProtected(pathname: string, search: string, router: ReturnType<typeof useRouter>) {
   if (!PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) return;
-  router.replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+  const callbackUrl = search ? `${pathname}?${search}` : pathname;
+  router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
 }
