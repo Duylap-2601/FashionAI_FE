@@ -14,10 +14,8 @@ import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import {
   Bell,
   Clock,
-  History, LogOut, Mail, MapPin, Menu, Package, Phone, Ruler,
-  ShieldCheck,
+  LogOut, Mail, MapPin, Menu, Package, Phone, Ruler,
   ShoppingBag,
-  Sparkles,
   Star,
   Search,
   User as UserIcon,
@@ -109,7 +107,6 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
       { label: 'Try-On', href: tryOnHref },
       { label: 'Stylist', href: stylistHref },
       { label: 'Trợ lý AI', href: chatHref },
-      ...(currentUser.role !== 'guest' ? [{ label: 'Lịch sử', href: '/profile/history' }] : []),
     ];
 
   const getTierColor = (tier?: string) => {
@@ -220,7 +217,10 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
             ) : (
               <div className="relative order-1 hidden shrink-0 md:order-none md:block" ref={dropdownRef}>
                 <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  onClick={() => {
+                    setIsNavMenuOpen(false);
+                    setIsDropdownOpen((open) => !open);
+                  }}
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-navy text-label-sm font-bold text-white ring-2 ring-transparent transition-all hover:ring-neutral-200 md:h-8 md:w-8"
                   aria-label="Tài khoản"
                 >
@@ -258,17 +258,8 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
                         <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                           <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
                         </Link>
-                        <Link href="/rack" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                          <HangerIcon className="w-4 h-4 text-[#5D1C34]" /> Giá treo đồ
-                        </Link>
                         <Link href="/profile/measurements" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                           <Ruler className="w-4 h-4" /> Số đo & chi tiết
-                        </Link>
-                        <Link href="/profile/history" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                          <History className="w-4 h-4" /> Lịch sử Try-On
-                        </Link>
-                        <Link href="/profile/stylist-history" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                          <Sparkles className="w-4 h-4" /> Lịch sử AI Stylist
                         </Link>
                         <Link href="/profile/orders" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
                           <Package className="w-4 h-4" /> Đơn hàng
@@ -301,7 +292,10 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
             <div className="relative order-6 hidden shrink-0 md:block" ref={navMenuRef}>
               <button
                 type="button"
-                onClick={() => setIsNavMenuOpen((open) => !open)}
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  setIsNavMenuOpen((open) => !open);
+                }}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-brand-navy"
                 aria-label="Mở menu điều hướng"
                 aria-expanded={isNavMenuOpen}
