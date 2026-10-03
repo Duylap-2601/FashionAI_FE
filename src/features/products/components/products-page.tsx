@@ -17,7 +17,7 @@ import type { Product } from '@/features/products/types/products';
 import type { ProductListParams } from '@/features/products/types/products-hook';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePinToRack, useRackItems, useUnpinFromRack } from '@/features/rack/hooks/useRack';
-import { ShoppingBag, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -284,25 +284,13 @@ export default function ProductListing() {
     });
 
     toast.custom((t) => (
-      <div className="bg-[#FDFBF7] border-l-4 border-[#5D1C34] border-y border-r border-[#E5DFD5] p-4 rounded-xl shadow-lg flex items-start gap-3.5 max-w-[380px] w-full relative">
-        <div className="p-2 bg-[#5D1C34]/10 text-[#5D1C34] rounded-lg shrink-0 mt-0.5">
-          <ShoppingBag className="w-4 h-4" />
-        </div>
-        <div className="flex-1 min-w-0 pr-4">
-          <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã thêm vào giỏ hàng!</h4>
-          <p className="text-[12px] text-neutral-700 font-semibold mt-1 truncate">{product.name}</p>
-          <p className="text-[11px] text-neutral-500 mt-0.5">Màu: {color} · May đo theo số đo | SL: 1</p>
-        </div>
-        <div className="flex flex-col items-end justify-between self-stretch shrink-0 min-h-[56px]">
-          <button type="button" onClick={() => toast.dismiss(t)} className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-neutral-600 transition-colors">
-            <X className="w-3.5 h-3.5" />
-          </button>
-          <button type="button" onClick={() => { setIsCartOpen(true); toast.dismiss(t); }} className="text-[12px] font-bold text-[#5D1C34] hover:underline underline-offset-2 transition-all mt-auto">
-            Xem giỏ hàng
-          </button>
-        </div>
+      <div className="flex w-[min(360px,calc(100vw-56px))] items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-[13px] font-semibold text-brand-navy">Đã thêm {product.name} vào giỏ</p>
+        <button type="button" onClick={() => { setIsCartOpen(true); toast.dismiss(t); }} className="shrink-0 text-[12px] font-bold text-[#5D1C34] hover:underline">
+          Xem giỏ
+        </button>
       </div>
-    ), { duration: 4000 });
+    ), { duration: 2500 });
   };
 
   const filterPanelProps = {

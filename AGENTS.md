@@ -151,6 +151,9 @@ src/
   Checkout and order pricing are backend-owned: the frontend may request quotes
   for display, but must not calculate or submit authoritative product totals,
   shipping fees, or discount amounts.
+  ZaloPay is the active online checkout flow for new orders; MoMo may exist in
+  legacy result/status screens but should not be offered for new checkout unless
+  the backend provider is explicitly restored and verified.
 - Account: `auth`, `profile`, `measurements`, `subscription`.
 - AI and interaction: `try-on`, `stylist`, `rack`, `chat`, `notifications`, `reviews`.
 - `admin` owns the dashboard. Collection/review management belongs to the relevant feature.
@@ -226,6 +229,20 @@ src/
   items, structured GHN address fields, coupon code, and an optional total for
   backend double-checking; do not send client-resolved `shippingFee` or
   `discountAmount` as a source of truth.
+- ZaloPay checkout UX stays on the merchant site. After `POST /payments/checkout`
+  returns, show the in-site payment modal, render a QR from `qrCode` or fallback
+  `checkoutUrl`, open `checkoutUrl` in a new tab/window, and poll
+  `GET /payments/:paymentId` until terminal status. Do not depend on ZaloPay
+  browser redirect as the source of truth.
+- Clear the cart only after payment polling confirms `PAID`, not immediately
+  after checkout link creation. Clearing early unmounts the checkout page and
+  hides the payment modal.
+- `/payment/result` should be able to poll by `paymentId` when the backend embeds
+  it in the redirect URL. If a gateway redirect lacks `paymentId`, send the user
+  to their order history/detail page instead of assuming success.
+- Treat `REFUND_REQUIRED` payment status as a customer-support state: money was
+  collected but could not be applied to the order, so the user should see a clear
+  refund/support message rather than a generic failure.
 - Admin GHN pickup origin is configured in the admin dashboard and persisted by
   the backend. Keep the UI sending legacy GHN IDs/codes for province, district,
   and ward; do not hard-code pickup address environment values in the frontend.
