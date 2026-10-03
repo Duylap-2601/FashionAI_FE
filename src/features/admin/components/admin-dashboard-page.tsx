@@ -15,6 +15,7 @@ import { AdminShipmentsPanel } from '@/features/admin/components/admin-shipments
 import { AdminUserModal } from '@/features/admin/components/admin-user-modal';
 import { AdminUsersPanel } from '@/features/admin/components/admin-users-panel';
 import { AdminWebhookFailuresPanel } from '@/features/admin/components/admin-webhook-failures-panel';
+import { AdminReconciliationPanel } from '@/features/admin/components/admin-reconciliation-panel';
 import { DashboardOverview } from '@/features/admin/components/dashboard-overview';
 import { fmt } from '@/features/admin/services/format';
 import type { ProductImageItem } from '@/features/admin/types/admin-dashboard-page';
@@ -32,6 +33,7 @@ import { NotificationBell } from '@/features/notifications/components/Notificati
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 import { AdminReviewTable } from '@/features/reviews/components/AdminReviewTable';
+import { fetchAdminReviewsResponse } from '@/features/reviews/services/queries';
 import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -51,7 +53,6 @@ import {
 } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import Image from 'next/image';
-import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -87,6 +88,7 @@ function AdminDashboardContent() {
   const [isProductsFetching, setIsProductsFetching] = useState(false);
 
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [allUsers, setAllUsers] = useState<AdminUser[]>([]);
   const [userFilters, setUserFilters] = useState<AdminUserFilters>({
     search: '',
     tier: '',
@@ -126,6 +128,8 @@ function AdminDashboardContent() {
   const [isShipmentsFetching, setIsShipmentsFetching] = useState(false);
 
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [reviewsCount, setReviewsCount] = useState<number>(0);
+  const [avgRating, setAvgRating] = useState<number>(0);
   const [webhookFailures, setWebhookFailures] = useState<AdminWebhookFailure[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -331,7 +335,10 @@ function AdminDashboardContent() {
     setIsProductsFetching(true);
     try {
       const params: Record<string, string | number> = { page, limit };
-      if (filters.search) params.search = filters.search;
+      if (filters.search) {
+        params.search = filters.search;
+        params.q = filters.search;
+      }
       if (filters.category && filters.category !== 'ALL') params.category = filters.category;
       if (filters.status && filters.status !== 'ALL') params.status = filters.status;
 
@@ -422,7 +429,10 @@ function AdminDashboardContent() {
     setIsOrdersFetching(true);
     try {
       const params: Record<string, string | number> = { page, limit };
-      if (filters.search) params.search = filters.search;
+      if (filters.search) {
+        params.search = filters.search;
+        params.q = filters.search;
+      }
       if (filters.status && filters.status !== 'ALL') params.status = filters.status;
       if (filters.paymentStatus && filters.paymentStatus !== 'ALL') params.paymentStatus = filters.paymentStatus;
 
@@ -553,6 +563,51 @@ function AdminDashboardContent() {
     }
   }, [shipmentPagination.page, shipmentPagination.pageSize, shipmentFilters]);
 
+  const applyUserFiltersAndPagination = useCallback((
+    sourceList: AdminUser[],
+    filters: AdminUserFilters,
+    page: number,
+    pageSize: number
+  ) => {
+    let filtered = Array.isArray(sourceList) ? sourceList : [];
+
+    if (filters.search?.trim()) {
+      const q = filters.search.trim().toLowerCase();
+      filtered = filtered.filter(u =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.id.toLowerCase().includes(q)
+      );
+    }
+
+    if (filters.tier && filters.tier !== 'ALL') {
+      filtered = filtered.filter(u => u.tier === filters.tier);
+    }
+
+    if (filters.role && filters.role !== 'ALL') {
+      filtered = filtered.filter(u => u.role === filters.role);
+    }
+
+    if (filters.isVerified === 'VERIFIED') {
+      filtered = filtered.filter(u => Boolean(u.isVerified));
+    } else if (filters.isVerified === 'UNVERIFIED') {
+      filtered = filtered.filter(u => !u.isVerified);
+    }
+
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const pageItems = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+    setUsers(pageItems);
+    setUserPagination({
+      page: safePage,
+      pageSize,
+      total,
+      totalPages,
+    });
+  }, []);
+
   const fetchUsers = useCallback(async (
     page = userPagination.page,
     limit = userPagination.pageSize,
@@ -560,10 +615,19 @@ function AdminDashboardContent() {
   ) => {
     setIsUsersFetching(true);
     try {
-      const params: Record<string, string | number> = { page, limit };
-      if (filters.search) params.search = filters.search;
+      const params: Record<string, string | number> = {
+        page: 1,
+        limit: 1000,
+      };
+      if (filters.search) {
+        params.search = filters.search;
+        params.q = filters.search;
+      }
       if (filters.tier && filters.tier !== 'ALL') params.tier = filters.tier;
       if (filters.role && filters.role !== 'ALL') params.role = filters.role;
+      if (filters.isVerified && filters.isVerified !== 'ALL') {
+        params.isVerified = filters.isVerified === 'VERIFIED' ? 'true' : 'false';
+      }
 
       const res = await fetchAdminUsers({ params });
       const resObj = res as ApiPaginatedResponse<AdminUserDto> | undefined;
@@ -581,58 +645,15 @@ function AdminDashboardContent() {
         spent: Number(u.spent || 0),
       }));
 
-      const meta = resObj?.__meta || resObj?.meta || resObj?.pagination;
-      const serverTotal = typeof meta?.total === 'number' ? meta.total : typeof resObj?.total === 'number' ? resObj.total : undefined;
-
-      if (serverTotal !== undefined) {
-        setUsers(mappedList);
-        setUserPagination(prev => ({
-          ...prev,
-          page,
-          pageSize: limit,
-          total: serverTotal,
-          totalPages: typeof meta?.totalPages === 'number' ? meta.totalPages : Math.ceil(serverTotal / limit) || 1,
-        }));
-      } else {
-        let filtered = mappedList;
-        if (filters.search) {
-          const q = filters.search.toLowerCase();
-          filtered = filtered.filter(u =>
-            u.name.toLowerCase().includes(q) ||
-            u.email.toLowerCase().includes(q)
-          );
-        }
-        if (filters.tier && filters.tier !== 'ALL') {
-          filtered = filtered.filter(u => u.tier === filters.tier);
-        }
-        if (filters.role && filters.role !== 'ALL') {
-          filtered = filtered.filter(u => u.role === filters.role);
-        }
-        if (filters.isVerified === 'VERIFIED') {
-          filtered = filtered.filter(u => u.isVerified);
-        } else if (filters.isVerified === 'UNVERIFIED') {
-          filtered = filtered.filter(u => !u.isVerified);
-        }
-
-        const total = filtered.length;
-        const totalPages = Math.ceil(total / limit) || 1;
-        const pageItems = filtered.slice((page - 1) * limit, page * limit);
-        setUsers(pageItems);
-        setUserPagination(prev => ({
-          ...prev,
-          page,
-          pageSize: limit,
-          total,
-          totalPages,
-        }));
-      }
+      setAllUsers(mappedList);
+      applyUserFiltersAndPagination(mappedList, filters, page, limit);
     } catch (e) {
       console.error('Backend API users fetch failed:', e);
       toast.error('Không thể tải danh sách người dùng');
     } finally {
       setIsUsersFetching(false);
     }
-  }, [userPagination.page, userPagination.pageSize, userFilters]);
+  }, [userPagination.page, userPagination.pageSize, userFilters, applyUserFiltersAndPagination]);
 
   // ─── Products Pagination & Filter Handlers ───
   const handleProductFilterChange = useCallback((patch: Partial<AdminProductFilters>) => {
@@ -692,28 +713,32 @@ function AdminDashboardContent() {
   const handleUserFilterChange = useCallback((patch: Partial<AdminUserFilters>) => {
     setUserFilters(prev => {
       const next = { ...prev, ...patch };
-      setUserPagination(p => ({ ...p, page: 1 }));
-      fetchUsers(1, userPagination.pageSize, next);
+      if (allUsers.length > 0) {
+        applyUserFiltersAndPagination(allUsers, next, 1, userPagination.pageSize);
+      } else {
+        fetchUsers(1, userPagination.pageSize, next);
+      }
       return next;
     });
-  }, [fetchUsers, userPagination.pageSize]);
+  }, [allUsers, userPagination.pageSize, applyUserFiltersAndPagination, fetchUsers]);
 
   const handleResetUserFilters = useCallback(() => {
     const empty: AdminUserFilters = { search: '', tier: '', role: '', isVerified: '' };
     setUserFilters(empty);
-    setUserPagination(p => ({ ...p, page: 1 }));
-    fetchUsers(1, userPagination.pageSize, empty);
-  }, [fetchUsers, userPagination.pageSize]);
+    if (allUsers.length > 0) {
+      applyUserFiltersAndPagination(allUsers, empty, 1, userPagination.pageSize);
+    } else {
+      fetchUsers(1, userPagination.pageSize, empty);
+    }
+  }, [allUsers, userPagination.pageSize, applyUserFiltersAndPagination, fetchUsers]);
 
   const handleUserPageChange = useCallback((page: number) => {
-    setUserPagination(prev => ({ ...prev, page }));
-    fetchUsers(page, userPagination.pageSize, userFilters);
-  }, [fetchUsers, userPagination.pageSize, userFilters]);
+    applyUserFiltersAndPagination(allUsers, userFilters, page, userPagination.pageSize);
+  }, [allUsers, userFilters, userPagination.pageSize, applyUserFiltersAndPagination]);
 
   const handleUserPageSizeChange = useCallback((size: number) => {
-    setUserPagination(prev => ({ ...prev, page: 1, pageSize: size }));
-    fetchUsers(1, size, userFilters);
-  }, [fetchUsers, userFilters]);
+    applyUserFiltersAndPagination(allUsers, userFilters, 1, size);
+  }, [allUsers, userFilters, applyUserFiltersAndPagination]);
 
   // ─── Shipments Pagination Handlers ───
   const handleShipmentPageChange = useCallback((page: number) => {
@@ -729,6 +754,7 @@ function AdminDashboardContent() {
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetchAdminStats();
+      console.log('[DEBUG_BE_STATS]', res);
       setStats(res as AdminStats);
     } catch (e) {
       console.warn('Backend API stats fetch failed.', e);
@@ -745,15 +771,39 @@ function AdminDashboardContent() {
     }
   }, []);
 
+  const fetchReviewsData = useCallback(async () => {
+    try {
+      const res = await fetchAdminReviewsResponse();
+      if (Array.isArray(res)) {
+        setReviewsCount(res.length);
+        if (res.length > 0) {
+          const sum = res.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
+          setAvgRating(Math.round((sum / res.length) * 10) / 10);
+        }
+      } else if (res && typeof res === 'object') {
+        const obj = res as Record<string, unknown>;
+        const list = Array.isArray(obj.data) ? obj.data : Array.isArray(obj.items) ? obj.items : [];
+        const total = typeof obj.total === 'number' ? obj.total : (obj.meta as { total?: number })?.total ?? list.length;
+        setReviewsCount(total);
+        if (list.length > 0) {
+          const sum = list.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
+          setAvgRating(Math.round((sum / list.length) * 10) / 10);
+        }
+      }
+    } catch {
+      // Backend may not have implemented /products/admin/reviews yet; fallback to 0
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
-    Promise.all([fetchProducts(), fetchOrders(), fetchShipments(), fetchUsers(), fetchStats(), fetchWebhookFailuresList()])
+    Promise.all([fetchProducts(), fetchOrders(), fetchShipments(), fetchUsers(), fetchStats(), fetchWebhookFailuresList(), fetchReviewsData()])
       .finally(() => {
         if (mounted) setIsLoading(false);
       });
     return () => { mounted = false; };
-  }, [fetchProducts, fetchOrders, fetchShipments, fetchUsers, fetchStats, fetchWebhookFailuresList]);
+  }, [fetchProducts, fetchOrders, fetchShipments, fetchUsers, fetchStats, fetchWebhookFailuresList, fetchReviewsData]);
 
   // Auto-refresh orders and stats when new notification arrives in realtime
   const recentNotifications = useNotificationStore((s) => s.recentNotifications);
@@ -1165,7 +1215,11 @@ function AdminDashboardContent() {
       if (patch.tier) body.tier = patch.tier;
       if (patch.role) body.role = patch.role;
       await updateUser(id, body);
-      setUsers(prev => prev.map(u => u.id === id ? { ...u, ...patch } : u));
+      setAllUsers(prev => {
+        const next = prev.map(u => u.id === id ? { ...u, ...patch } : u);
+        applyUserFiltersAndPagination(next, userFilters, userPagination.page, userPagination.pageSize);
+        return next;
+      });
       if (selectedUser?.id === id) setSelectedUser(prev => prev ? { ...prev, ...patch } : null);
       toast.success('Cập nhật người dùng thành công');
     } catch (e) {
@@ -1365,10 +1419,67 @@ function AdminDashboardContent() {
 
   // ─── Dashboard Derived Business Metrics ───────────────────────────────────
   const NON_REVENUE_STATUSES: BackendOrderStatus[] = ['CANCELLED', 'FAILED', 'EXPIRED', 'PENDING', 'RETURNED'];
-  const totalRevenue = stats?.totalRevenue
-    || orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
-  const paidOrdersCount = orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).length;
-  const avgOrderValue = paidOrdersCount > 0 ? Math.round(totalRevenue / paidOrdersCount) : 0;
+  const rawStats = (stats || {}) as Record<string, unknown>;
+
+  const totalRevenue = typeof stats?.totalRevenue === 'number'
+    ? stats.totalRevenue
+    : orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
+
+  const refundedRevenue = Number(
+    rawStats.refundedAmount
+    ?? rawStats.productRefunded
+    ?? rawStats.refundedRevenue
+    ?? rawStats.refunded_revenue
+    ?? rawStats.refundRevenue
+    ?? rawStats.refund_revenue
+    ?? 0
+  );
+
+  const rawProductRev = rawStats.productRevenue
+    ?? rawStats.product_revenue
+    ?? rawStats.orderRevenue
+    ?? rawStats.order_revenue;
+  const productRevenue = typeof rawProductRev === 'number'
+    ? rawProductRev
+    : orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).reduce((acc, o) => acc + o.total, 0);
+
+  const rawSubRev = rawStats.subscriptionRevenue
+    ?? rawStats.subscription_revenue
+    ?? rawStats.subscriptionsRevenue
+    ?? rawStats.subscriptions_revenue
+    ?? rawStats.packageRevenue
+    ?? rawStats.package_revenue
+    ?? rawStats.subRevenue;
+  const subscriptionRevenue = (typeof rawSubRev === 'number' && rawSubRev > 0)
+    ? rawSubRev
+    : Math.max(0, totalRevenue - productRevenue);
+
+  const rawNetSubRev = rawStats.netSubscriptionRevenue
+    ?? rawStats.net_subscription_revenue
+    ?? rawStats.netPackageRevenue;
+  const netSubscriptionRevenue = typeof rawNetSubRev === 'number'
+    ? rawNetSubRev
+    : subscriptionRevenue;
+
+  const rawNetProductRev = rawStats.netProductRevenue
+    ?? rawStats.net_product_revenue
+    ?? rawStats.netOrderRevenue;
+  const netProductRevenue = typeof rawNetProductRev === 'number'
+    ? rawNetProductRev
+    : productRevenue;
+
+  const expectedNet = Math.max(0, totalRevenue - refundedRevenue);
+  const rawNetRev = rawStats.netRevenue ?? rawStats.net_revenue;
+  const netRevenue = (typeof rawNetRev === 'number' && rawNetRev <= productRevenue && subscriptionRevenue > 0)
+    ? rawNetRev + netSubscriptionRevenue
+    : (typeof rawNetRev === 'number' ? rawNetRev : expectedNet);
+
+  const effectivePaidOrders = typeof stats?.paidOrders === 'number' && stats.paidOrders > 0
+    ? stats.paidOrders
+    : orders.filter(o => !NON_REVENUE_STATUSES.includes(o.status)).length;
+  const avgOrderValue = effectivePaidOrders > 0
+    ? Math.round(totalRevenue / effectivePaidOrders)
+    : 0;
 
   const totalOrders = stats?.orderCount ?? orders.length;
   const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
@@ -1379,9 +1490,13 @@ function AdminDashboardContent() {
   const totalProducts = stats?.productCount ?? products.length;
   const activeProducts = products.filter(p => p.status === 'ACTIVE').length;
 
-  const totalUsers = stats?.userCount ?? users.length;
-  const memberUsers = users.filter(u => u.tier === 'MEMBER').length;
-  const vipUsers = users.filter(u => u.tier === 'VIP').length;
+  const userSource = allUsers.length > 0 ? allUsers : users;
+  const totalUsers = stats?.userCount ?? userSource.length;
+  const memberUsers = userSource.filter(u => u.tier === 'MEMBER').length;
+  const vipUsers = userSource.filter(u => u.tier === 'VIP').length;
+
+  const totalReviews = stats?.reviewCount ?? stats?.totalReviews ?? reviewsCount;
+  const finalAvgRating = stats?.avgRating ?? avgRating;
 
   return (
     <div className="flex bg-neutral-100 h-screen overflow-hidden text-neutral-800 font-sans">
@@ -1411,7 +1526,7 @@ function AdminDashboardContent() {
               { id: 'users', label: 'Người dùng', icon: Users },
               { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
               { id: 'shipments', label: 'Vận đơn', icon: Truck },
-              { id: 'webhook-failures', label: 'Giao dịch lỗi', icon: AlertTriangle },
+              { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
               { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
               { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
               { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
@@ -1419,7 +1534,9 @@ function AdminDashboardContent() {
             ] as { id: AdminPage; label: string; icon: LucideIcon }[]).map(item => {
               const IconComponent = item.icon;
               const active = activeTab === item.id;
-              const unresolvedCount = item.id === 'webhook-failures' ? webhookFailures.filter(f => !f.resolved).length : 0;
+              const unresolvedCount = (item.id === 'reconciliation' || item.id === 'webhook-failures')
+                ? webhookFailures.filter(f => !f.resolved).length
+                : 0;
               return (
                 <button
                   key={item.id}
@@ -1469,8 +1586,8 @@ function AdminDashboardContent() {
                       activeTab === 'users' ? 'Quản lý người dùng' :
                         activeTab === 'orders' ? 'Quản lý đơn hàng' :
                           activeTab === 'shipments' ? 'Quản lý vận đơn' :
-                              activeTab === 'webhook-failures' ? 'Giao dịch lỗi' :
-                                activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
+                            (activeTab === 'webhook-failures' || activeTab === 'reconciliation') ? 'Đối soát giao dịch lạ' :
+                              activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
                                   activeTab === 'shipping-settings' ? 'Cài đặt GHN' :
                                     activeTab === 'live-try-on-settings' ? 'Cài đặt Live Try-On' : 'Cài đặt Quota'}
               </span>
@@ -1529,7 +1646,7 @@ function AdminDashboardContent() {
                 totalUsers={totalUsers}
                 memberUsers={memberUsers}
                 vipUsers={vipUsers}
-                users={users}
+                users={userSource}
                 setActiveTab={setActiveTab}
                 shippingOrders={shippingOrders}
                 cancelledOrders={cancelledOrders}
@@ -1541,6 +1658,14 @@ function AdminDashboardContent() {
                 setSelectedOrder={setSelectedOrder}
                 products={products}
                 openProductEditor={openProductEditor}
+                refundedRevenue={refundedRevenue}
+                netRevenue={netRevenue}
+                subscriptionRevenue={subscriptionRevenue}
+                productRevenue={productRevenue}
+                netSubscriptionRevenue={netSubscriptionRevenue}
+                netProductRevenue={netProductRevenue}
+                totalReviews={totalReviews}
+                avgRating={finalAvgRating}
               />
             )}
 
@@ -1621,9 +1746,9 @@ function AdminDashboardContent() {
               />
             )}
 
-            {/* ─── TAB: WEBHOOK FAILURES ──────────────────────────────────────────── */}
-            {activeTab === 'webhook-failures' && (
-              <AdminWebhookFailuresPanel failures={webhookFailures} onResolve={handleResolveWebhookFailure} />
+            {/* ─── TAB: RECONCILIATION / WEBHOOK FAILURES ─────────────────────────── */}
+            {(activeTab === 'reconciliation' || activeTab === 'webhook-failures') && (
+              <AdminReconciliationPanel onStatsRefresh={() => fetchStats()} />
             )}
 
             {/* ─── TAB: QUOTA USAGE ────────────────────────────────────────────────── */}

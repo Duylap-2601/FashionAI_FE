@@ -13,7 +13,28 @@ import {
   Sparkles
 } from 'lucide-react';
 
-export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, handleInitiateUpgrade, isCheckoutLoading }: SubscriptionPlansProps) {
+import { useMemo } from 'react';
+
+export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, handleInitiateUpgrade, isCheckoutLoading, apiPlans }: SubscriptionPlansProps) {
+  const plans = useMemo(() => {
+    return DEFAULT_PLANS.map((plan) => {
+      const apiPlan = apiPlans?.find((p) => p.tier === plan.id);
+      if (apiPlan && typeof apiPlan.price === 'number') {
+        const priceVnd = apiPlan.price;
+        return {
+          ...plan,
+          numericPrice: priceVnd,
+          priceText: priceVnd === 0 ? '0đ' : `${priceVnd.toLocaleString('vi-VN')}đ`,
+        };
+      }
+      return plan;
+    });
+  }, [apiPlans]);
+
+  const memberPrice = plans.find((p) => p.id === 'MEMBER')?.numericPrice ?? 34000;
+  const memberHeaderLabel = `Gói MEMBER (${Math.round(memberPrice / 1000)}k)`;
+  const vipPrice = plans.find((p) => p.id === 'VIP')?.numericPrice ?? 99000;
+  const vipHeaderLabel = `Gói VIP (${Math.round(vipPrice / 1000)}k)`;
   return (
     <div className="space-y-12 animate-in fade-in duration-300">
       {/* Current Tier Quick Summary Banner */}
@@ -76,7 +97,7 @@ export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, han
 
       {/* Pricing Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch">
-        {DEFAULT_PLANS.map((plan) => {
+        {plans.map((plan) => {
           const isCurrent = tier === plan.id;
           const isVip = plan.id === 'VIP';
           const isMember = plan.id === 'MEMBER';
@@ -195,8 +216,8 @@ export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, han
               <tr className="border-b border-neutral-200 text-neutral-500 font-semibold">
                 <th className="py-3 px-4">Tính năng AI</th>
                 <th className="py-3 px-4">Gói FREE</th>
-                <th className="py-3 px-4 text-[#5D1C34] font-bold">Gói MEMBER (49k)</th>
-                <th className="py-3 px-4 text-[#A67D44] font-bold">Gói VIP (99k)</th>
+                <th className="py-3 px-4 text-[#5D1C34] font-bold">{memberHeaderLabel}</th>
+                <th className="py-3 px-4 text-[#A67D44] font-bold">{vipHeaderLabel}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">

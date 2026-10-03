@@ -21,10 +21,16 @@ export default function ForgotPassword() {
     try {
       const response = await requestPasswordReset(email);
       const body = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(body?.message || 'Khong the gui email dat lai mat khau.');
+      if (!response.ok) {
+        const message =
+          body?.details?.[0] ||
+          (Array.isArray(body?.message) ? body?.message[0] : body?.message) ||
+          'Không thể gửi email đặt lại mật khẩu.';
+        throw new Error(message);
+      }
       setIsSuccess(true);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Khong the gui email dat lai mat khau.'));
+      setError(getErrorMessage(err, 'Không thể gửi email đặt lại mật khẩu.'));
     } finally {
       setIsLoading(false);
     }

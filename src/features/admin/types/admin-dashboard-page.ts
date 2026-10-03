@@ -1,6 +1,6 @@
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 
-export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'reviews' | 'quota' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures';
+export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'reviews' | 'quota' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
 
 export interface GhnPickupSettings {
   provinceId?: number;
@@ -175,6 +175,21 @@ export interface AdminStats {
   tryOnToday: number;
   stylistCount: number;
   totalRevenue: number;
+  refundedRevenue?: number;
+  refundedAmount?: number;
+  subscriptionRefunded?: number;
+  productRefunded?: number;
+  netRevenue?: number;
+  subscriptionRevenue?: number;
+  productRevenue?: number;
+  netSubscriptionRevenue?: number;
+  netProductRevenue?: number;
+  paidOrders?: number;
+  subscriptionOrders?: number;
+  productOrders?: number;
+  reviewCount?: number;
+  totalReviews?: number;
+  avgRating?: number;
 }
 
 export interface AdminWebhookFailure {

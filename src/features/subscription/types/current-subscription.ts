@@ -15,4 +15,6 @@ export interface CurrentSubscriptionProps {
   handleToggleAutoRenew: () => Promise<void>;
   isCancelling: boolean;
   isResuming: boolean;
+  handleCancelScheduled?: () => void;
+  isCancellingScheduled?: boolean;
 }
