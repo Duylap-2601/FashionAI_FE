@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   RefreshCw,
   Search,
-  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
@@ -192,7 +191,7 @@ export function AdminReconciliationPanel({ onStatsRefresh }: AdminReconciliation
               Đối soát giao dịch lạ
             </h1>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-brand-navy/10 text-brand-navy">
-              <Sparkles className="w-3 h-3 text-brand-gold" /> P3-SePay QR
+              P3-SePay QR
             </span>
           </div>
           <p className="text-body-sm text-neutral-500 mt-1 max-w-3xl">

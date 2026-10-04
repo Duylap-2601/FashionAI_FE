@@ -1,12 +1,12 @@
 'use client';
 
-import { Home, MessageCircle, Package, Sparkles, User as UserIcon, type LucideIcon } from 'lucide-react';
+import { Home, MessageCircle, Package, User as UserIcon, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 
 interface BottomTabItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   isActive: (pathname: string) => boolean;
   iconPadding?: string;
 }
@@ -27,7 +27,6 @@ const bottomTabs: BottomTabItem[] = [
   {
     label: 'Try-On',
     href: '/try-on',
-    icon: Sparkles,
     isActive: (pathname) => pathname === '/try-on',
     iconPadding: 'p-1.5',
   },
@@ -69,7 +68,7 @@ function BottomTabBarItem({ tab, pathname }: { tab: BottomTabItem; pathname: str
   return (
     <Link href={tab.href} className="flex min-w-[64px] flex-col items-center gap-1 p-2">
       <div className={`${tab.iconPadding ?? 'p-1'} rounded-xl transition-colors ${isActive ? 'bg-brand-navy/10' : ''}`}>
-        <Icon className={`w-[22px] h-[22px] ${activeClass}`} />
+        {Icon && <Icon className={`w-[22px] h-[22px] ${activeClass}`} />}
       </div>
       <span className={`text-[10px] font-medium ${activeClass}`}>
         {tab.label}

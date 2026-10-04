@@ -1,4 +1,4 @@
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 
 export function OnboardingModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
@@ -27,7 +27,6 @@ export function OnboardingModal({ isOpen, onClose }: { isOpen: boolean, onClose:
           {step === 1 && (
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#5D1C34]/10 rounded-full flex items-center justify-center mb-6 text-[#5D1C34]">
-                <Sparkles className="w-8 h-8" />
               </div>
               <h2 className="text-[24px] font-semibold text-brand-navy mb-3 tracking-tight">Chào mừng đến StAle.! 👋</h2>
               <p className="text-body-md text-neutral-600 mb-8 max-w-[400px]">

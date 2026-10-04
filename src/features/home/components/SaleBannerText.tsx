@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export function SaleBannerText() {
@@ -8,7 +8,6 @@ export function SaleBannerText() {
     <section className="py-10 md:py-14 bg-[#FAF7F2] border-y border-[#EAE3D9]">
       <div className="max-w-[1200px] mx-auto px-4 text-center">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#5D1C34]/10 text-[#5D1C34] text-[11px] font-bold tracking-widest uppercase mb-4">
-          <Sparkles className="w-3.5 h-3.5" />
           ƯU ĐÃI ĐỘC QUYỀN MÙA MỚI
         </div>
 
@@ -33,7 +32,6 @@ export function SaleBannerText() {
             href="/try-on"
             className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-neutral-300 text-neutral-800 rounded-full font-semibold text-xs uppercase tracking-wider hover:bg-neutral-50 transition-colors shadow-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 text-brand-gold" />
             <span>THỬ ĐỒ AI MIỄN PHÍ</span>
           </Link>
         </div>

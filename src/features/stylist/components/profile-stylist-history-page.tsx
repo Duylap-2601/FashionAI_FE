@@ -14,7 +14,6 @@ import {
   Palette,
   Search,
   ShoppingBag,
-  Sparkles,
   Star,
   Trash2,
   User
@@ -142,7 +141,6 @@ function StylistCard({ item, onDelete, isDeleting }: {
               {item.skinTone && (
                 <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200">
                   <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-600 uppercase tracking-wider mb-1">
-                    <Sparkles className="w-3.5 h-3.5 text-brand-gold" />
                     <span>Sắc tố da (Skin Tone)</span>
                   </div>
                   <p className="text-[13px] text-neutral-700 leading-relaxed">
@@ -190,7 +188,7 @@ function StylistCard({ item, onDelete, isDeleting }: {
           {item.stylingTips && (
             <div>
               <div className="flex items-center gap-1.5 mb-1.5 text-label-sm font-semibold text-neutral-700 uppercase tracking-wide">
-                <Sparkles className="w-3.5 h-3.5 text-brand-sage" /> Mẹo phong cách
+                Mẹo phong cách
               </div>
               <p className="text-body-sm text-neutral-700 leading-relaxed">{item.stylingTips}</p>
             </div>
@@ -333,9 +331,6 @@ export default function StylistHistoryPage() {
         {/* CTA Banner */}
         <div className="mb-6 bg-gradient-to-r from-brand-navy to-brand-navy/80 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
             <div>
               <p className="text-body-sm font-semibold text-white">Nhận tư vấn phong cách mới</p>
               <p className="text-label-sm text-white/70">AI phân tích dáng người, màu da và gợi ý outfit hoàn hảo</p>
@@ -364,7 +359,6 @@ export default function StylistHistoryPage() {
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white rounded-2xl border border-neutral-200 border-dashed">
             <div className="relative w-24 h-24 mb-6">
               <div className="absolute inset-0 bg-brand-navy/5 rounded-full animate-pulse" />
-              <Sparkles className="w-12 h-12 text-neutral-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               <Crown className="w-6 h-6 text-brand-gold absolute top-2 right-2" />
             </div>
             <h3 className="text-heading-h3 font-semibold text-neutral-900 mb-2">
@@ -380,7 +374,7 @@ export default function StylistHistoryPage() {
                 href="/ai-stylist"
                 className="px-6 py-3 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-md font-semibold transition-colors shadow-md flex items-center gap-2"
               >
-                <Sparkles className="w-4 h-4" /> Bắt đầu tư vấn
+                Bắt đầu tư vấn
               </Link>
             )}
           </div>

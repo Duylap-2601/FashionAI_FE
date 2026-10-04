@@ -1,7 +1,7 @@
 'use client';
 
 import type { HeroBannerProps } from '@/features/home/types/hero-banner';
-import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -98,7 +98,6 @@ export function HeroBanner({ collections }: HeroBannerProps) {
               {/* Center Content Overlay */}
               <div className="relative z-10 flex flex-col items-center text-center max-w-[520px] mx-auto">
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-white/60 text-[#5D1C34] text-[11px] font-bold tracking-widest uppercase mb-4 shadow-sm">
-                  <Sparkles className="w-3 h-3 text-[#5D1C34] fill-[#5D1C34]" />
                   {activeCollection.season || 'BỘ SƯU TẬP 2026'}
                 </span>
 
@@ -126,7 +125,6 @@ export function HeroBanner({ collections }: HeroBannerProps) {
                     href="/try-on"
                     className="h-11 sm:h-12 px-5 sm:px-7 rounded-full bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-body-sm flex items-center justify-center gap-2 shadow-xl border border-white/10 hover:scale-103 active:scale-97 transition-all duration-200"
                   >
-                    <Sparkles className="w-4 h-4 text-brand-gold" />
                     <span>Thử đồ AI</span>
                   </Link>
                 </div>

@@ -5,7 +5,7 @@ import { useCart } from '@/features/cart/store/cartStore';
 import { GARMENT_TYPE_TABS } from '@/features/products/constants/product-filters';
 import { matchesGarmentType } from '@/features/products/services/product-filters';
 import type { Product } from '@/features/products/types/products';
-import { ChevronRight, Eye, ShoppingBag, Sparkles, Star } from 'lucide-react';
+import { ChevronRight, Eye, ShoppingBag, Star } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -188,7 +188,6 @@ export function ProductGrid({
                         title="Thử đồ AI"
                         aria-label="Thử đồ AI"
                       >
-                        <Sparkles className="w-3.5 h-3.5" />
                       </button>
 
                       <Link

@@ -20,7 +20,7 @@ import {
   LogOut,
   MapPin,
   Ruler,
-  ShoppingBag, Sparkles,
+  ShoppingBag,
   Star,
   Zap
 } from 'lucide-react';
@@ -203,15 +203,17 @@ function QuotaBar({ used, limit, unlimited, label }: { used: number; limit: numb
 }
 
 // ─── Nav Card ────────────────────────────────────────────────────────────────
-function NavCard({ href, icon: Icon, label, desc, badge }: { href: string; icon: React.ComponentType<{ className?: string }>; label: string; desc: string; badge?: string }) {
+function NavCard({ href, icon: Icon, label, desc, badge }: { href: string; icon?: React.ComponentType<{ className?: string }>; label: string; desc: string; badge?: string }) {
   return (
     <Link
       href={href}
       className="group flex items-center gap-4 p-4 bg-white border border-neutral-200 rounded-xl hover:border-brand-navy/30 hover:shadow-md transition-all duration-200"
     >
-      <div className="w-10 h-10 rounded-xl bg-brand-cream flex items-center justify-center shrink-0 group-hover:bg-brand-navy/10 transition-colors">
-        <Icon className="w-5 h-5 text-brand-navy" />
-      </div>
+      {Icon && (
+        <div className="w-10 h-10 rounded-xl bg-brand-cream flex items-center justify-center shrink-0 group-hover:bg-brand-navy/10 transition-colors">
+          <Icon className="w-5 h-5 text-brand-navy" />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-body-sm font-semibold text-neutral-900">{label}</span>
@@ -374,7 +376,7 @@ export default function ProfilePage() {
           />
           <NavCard href="/profile/addresses" icon={MapPin} label="Sổ địa chỉ" desc="Thêm, sửa và chọn địa chỉ giao hàng mặc định" />
           <NavCard href="/profile/history" icon={History} label="Lịch sử Try-On" desc="Xem lại và tải ảnh thử đồ AI của bạn" />
-          <NavCard href="/profile/stylist-history" icon={Sparkles} label="Lịch sử AI Stylist" desc="Các lần tư vấn phong cách đã thực hiện" />
+          <NavCard href="/profile/stylist-history" label="Lịch sử AI Stylist" desc="Các lần tư vấn phong cách đã thực hiện" />
           <NavCard href="/profile/orders" icon={ShoppingBag} label="Đơn hàng của tôi" desc="Theo dõi và quản lý đơn hàng" />
         </div>
 
@@ -382,7 +384,7 @@ export default function ProfilePage() {
         <div className="space-y-2">
           <h2 className="text-label-sm font-semibold text-neutral-400 uppercase tracking-wider px-1 mb-3">Khám phá</h2>
           <NavCard href="/products" icon={Camera} label="Thử đồ mới" desc="Khám phá và thử trang phục công sở" />
-          <NavCard href="/ai-stylist" icon={Sparkles} label="Tư vấn phong cách" desc="AI phân tích và gợi ý outfit phù hợp" />
+          <NavCard href="/ai-stylist" label="Tư vấn phong cách" desc="AI phân tích và gợi ý outfit phù hợp" />
         </div>
 
         {/* ── Danger Zone ── */}

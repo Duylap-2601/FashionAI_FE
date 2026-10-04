@@ -1,7 +1,7 @@
 'use client';
 
 import { MESSAGES } from '@/features/home/constants/announcement-bar';
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function AnnouncementBar() {
@@ -38,7 +38,6 @@ export function AnnouncementBar() {
         href={current.link}
         className="flex items-center gap-2 hover:underline underline-offset-4 text-center truncate max-w-[85%] md:max-w-none transition-all duration-300"
       >
-        <Sparkles className="w-3 h-3 text-brand-gold shrink-0 animate-pulse" />
         <span>{current.text}</span>
       </a>
 

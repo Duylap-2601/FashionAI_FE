@@ -13,7 +13,7 @@ import type { CheckoutResponse } from '@/features/payments/types/payments';
 import { AddressForm } from '@/features/profile/components/address-form';
 import { useAddressMutations, useUserAddresses } from '@/features/profile/hooks/use-addresses';
 import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
-import { AlertCircle, CheckCircle2, ChevronRight, Copy, ExternalLink, Loader2, ShoppingBag, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronRight, Copy, ExternalLink, Loader2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
@@ -323,7 +323,6 @@ export default function CheckoutPage() {
               <div className="p-5 bg-brand-navy/5 border border-brand-navy/20 rounded-2xl animate-in fade-in duration-300">
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-brand-navy/10 rounded-xl text-brand-navy shrink-0 mt-0.5">
-                    <Sparkles className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-body-md font-bold text-brand-navy mb-1">

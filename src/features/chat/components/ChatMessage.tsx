@@ -1,7 +1,7 @@
 'use client';
 
 import type { ChatMessageProps } from '@/features/chat/types/chat-message';
-import { Check, Copy, ExternalLink, Package, RotateCcw, Sparkles } from 'lucide-react';
+import { Check, Copy, ExternalLink, Package, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
@@ -38,7 +38,6 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
       {/* Assistant Avatar */}
       {!isUser && (
         <div className="w-8 h-8 rounded-full bg-brand-navy flex items-center justify-center shrink-0 mt-0.5 shadow-sm ring-2 ring-brand-gold/30">
-          <Sparkles className="w-4 h-4 text-brand-gold" />
         </div>
       )}
 

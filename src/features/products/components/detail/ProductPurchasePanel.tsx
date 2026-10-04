@@ -3,7 +3,7 @@ import { COMBO_OPTIONS } from '@/features/products/constants/product-detail-conf
 import { getComboDiscount, getComboDisplayPrice, getComboOriginalPrice, getComboPrice } from '@/features/products/services/combo-pricing';
 import type { ProductPurchasePanelProps } from '@/features/products/types/product-purchase-panel';
 import { StarRating } from '@/features/reviews/components/StarRating';
-import { AlertCircle, ChevronRight, MessageSquare, Minus, Plus, Ruler, ShoppingBag, Sparkles } from 'lucide-react';
+import { AlertCircle, ChevronRight, MessageSquare, Minus, Plus, Ruler, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 
 function ProductPrice({ product, selectedType, isComboSuit }: Pick<ProductPurchasePanelProps, 'product' | 'selectedType' | 'isComboSuit'>) {
@@ -199,7 +199,7 @@ export function ProductPurchasePanel({
             href={`/try-on?productId=${product.id}`}
             className="h-[48px] bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2"
           >
-            <Sparkles className="w-4 h-4" /> Thử đồ ảo ngay
+            Thử đồ ảo ngay
           </Link>
           <Link
             href={`/chat?productId=${product.id}&message=${encodeURIComponent('Tư vấn giúp tôi về kích thước và cách phối đồ với sản phẩm ' + product.name)}`}

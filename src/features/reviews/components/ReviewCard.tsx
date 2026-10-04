@@ -12,7 +12,6 @@ import {
   MessageSquare,
   MoreVertical,
   ShieldAlert,
-  Sparkles,
   Trash2,
   X
 } from 'lucide-react';
@@ -300,7 +299,6 @@ export function ReviewCard({
                       <div className="flex items-center gap-2 flex-wrap">
                         {isShop ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-navy text-white text-[10px] font-bold tracking-wide uppercase">
-                            <Sparkles className="w-3 h-3 text-brand-gold" />
                             Phản hồi từ shop
                           </span>
                         ) : (

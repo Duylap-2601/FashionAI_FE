@@ -12,10 +12,12 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
   const { notifications, isLoading } = useNotifications({ page: 1, limit: 10 });
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllNotificationsAsRead();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const unreadNotifications = notifications.filter((item) => !item.isRead);
+  const hasUnreadNotifications = unreadCount > 0 || unreadNotifications.length > 0;
 
   const handleMarkAll = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (unreadCount > 0 && !isMarkingAll) {
+    if (hasUnreadNotifications && !isMarkingAll) {
       markAllAsRead();
     }
   };
@@ -34,7 +36,7 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {unreadCount > 0 && (
+          {hasUnreadNotifications && (
             <button
               onClick={handleMarkAll}
               disabled={isMarkingAll}
@@ -62,18 +64,18 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
             <Loader2 className="w-6 h-6 animate-spin text-[#5D1C34]" />
             <span className="text-body-xs">Đang tải thông báo...</span>
           </div>
-        ) : notifications.length === 0 ? (
+        ) : unreadNotifications.length === 0 ? (
           <div className="p-8 flex flex-col items-center justify-center text-center">
             <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-2">
               <Bell className="w-6 h-6" />
             </div>
-            <p className="font-medium text-body-sm text-neutral-800">Chưa có thông báo nào</p>
+            <p className="font-medium text-body-sm text-neutral-800">Không có thông báo mới</p>
             <p className="text-body-xs text-neutral-500 mt-0.5">
-              Các cập nhật đơn hàng và ưu đãi sẽ xuất hiện ở đây.
+              Thông báo đã đọc có thể xem trong trang chi tiết.
             </p>
           </div>
         ) : (
-          notifications.map((item) => (
+          unreadNotifications.map((item) => (
             <NotificationItem key={item.id} notification={item} onItemClick={onClose} />
           ))
         )}
