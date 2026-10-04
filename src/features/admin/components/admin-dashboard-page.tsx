@@ -33,7 +33,7 @@ import { NotificationBell } from '@/features/notifications/components/Notificati
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 import { AdminReviewTable } from '@/features/reviews/components/AdminReviewTable';
-import { fetchAdminReviewsResponse } from '@/features/reviews/services/queries';
+import { fetchAdminReviewsResponse, fetchReviewStats } from '@/features/reviews/services/queries';
 import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -780,18 +780,50 @@ function AdminDashboardContent() {
           const sum = res.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
           setAvgRating(Math.round((sum / res.length) * 10) / 10);
         }
+        return;
       } else if (res && typeof res === 'object') {
         const obj = res as Record<string, unknown>;
-        const list = Array.isArray(obj.data) ? obj.data : Array.isArray(obj.items) ? obj.items : [];
+        const list = Array.isArray(obj.data) ? obj.data : Array.isArray(obj.items) ? obj.items : Array.isArray(obj.reviews) ? obj.reviews : [];
         const total = typeof obj.total === 'number' ? obj.total : (obj.meta as { total?: number })?.total ?? list.length;
-        setReviewsCount(total);
-        if (list.length > 0) {
-          const sum = list.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
-          setAvgRating(Math.round((sum / list.length) * 10) / 10);
+        if (total > 0 || list.length > 0) {
+          setReviewsCount(total);
+          if (list.length > 0) {
+            const sum = list.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
+            setAvgRating(Math.round((sum / list.length) * 10) / 10);
+          }
+          return;
         }
       }
     } catch {
-      // Backend may not have implemented /products/admin/reviews yet; fallback to 0
+      // Backend may not have implemented /products/admin/reviews yet; fallback
+    }
+
+    try {
+      // Fallback: Quét review stats từ danh mục sản phẩm nếu admin reviews endpoint bị lỗi
+      const prodRes = await fetchAdminProducts({ params: { page: 1, limit: 100 } });
+      const resObj = prodRes as ApiPaginatedResponse<AdminProductDto> | undefined;
+      const prodList = (Array.isArray(prodRes) ? prodRes : resObj?.items || []) as AdminProductDto[];
+      if (prodList.length > 0) {
+        const results = await Promise.allSettled(
+          prodList.map((p) => fetchReviewStats(p.id))
+        );
+        let totalCount = 0;
+        let weightedRatingSum = 0;
+        for (const item of results) {
+          if (item.status === 'fulfilled') {
+            const s = item.value;
+            const count = Number(s.reviewCount || 0);
+            totalCount += count;
+            weightedRatingSum += Number(s.avgRating || 0) * count;
+          }
+        }
+        setReviewsCount(totalCount);
+        if (totalCount > 0) {
+          setAvgRating(Math.round((weightedRatingSum / totalCount) * 10) / 10);
+        }
+      }
+    } catch (e) {
+      console.warn('Fallback reviews data fetch failed.', e);
     }
   }, []);
 
@@ -1495,8 +1527,12 @@ function AdminDashboardContent() {
   const memberUsers = userSource.filter(u => u.tier === 'MEMBER').length;
   const vipUsers = userSource.filter(u => u.tier === 'VIP').length;
 
-  const totalReviews = stats?.reviewCount ?? stats?.totalReviews ?? reviewsCount;
-  const finalAvgRating = stats?.avgRating ?? avgRating;
+  const totalReviews = (typeof stats?.reviewCount === 'number' && stats.reviewCount > 0)
+    ? stats.reviewCount
+    : (reviewsCount || (typeof stats?.totalReviews === 'number' ? stats.totalReviews : 0));
+  const finalAvgRating = (typeof stats?.avgRating === 'number' && stats.avgRating > 0)
+    ? stats.avgRating
+    : avgRating;
 
   return (
     <div className="flex bg-neutral-100 h-screen overflow-hidden text-neutral-800 font-sans">
