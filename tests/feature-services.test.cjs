@@ -92,7 +92,7 @@ test('order creation preserves shipping note mapping and payment amounts', async
   assert.equal(Object.hasOwn(body.items[0], 'size'), false);
 });
 
-test('checkout keeps the default provider and distinguishes product orders from subscription upgrades', async () => {
+test('checkout preserves explicit provider and omits provider for backend default', async () => {
   const calls = [];
   const load = createSourceLoader({ mocks: {
     '@/lib/http': { http: { post: async (...args) => { calls.push(args); return { checkoutUrl: 'https://example.com/pay' }; } } },
@@ -101,7 +101,7 @@ test('checkout keeps the default provider and distinguishes product orders from 
   await checkout({ orderId: 'order-1' });
   await checkout({ targetTier: 'VIP', provider: 'PAYOS' });
   assert.equal(calls[0][0], '/payments/checkout');
-  assert.equal(JSON.stringify(calls[0][1]), JSON.stringify({ provider: 'SEPAY', orderId: 'order-1' }));
+  assert.equal(JSON.stringify(calls[0][1]), JSON.stringify({ orderId: 'order-1' }));
   assert.equal(JSON.stringify(calls[1][1]), JSON.stringify({ provider: 'PAYOS', targetTier: 'VIP' }));
 });
 

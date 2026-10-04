@@ -21,7 +21,7 @@ export function ProductGrid({
   showCategories = true,
 }: ProductGridProps) {
   const router = useRouter();
-  const { addToCart } = useCart();
+  const { addToCart, setIsCartOpen } = useCart();
   const [selectedTabKey, setSelectedTabKey] = useState<string>('ALL');
 
   const selectedTab = GARMENT_TYPE_TABS.find((t) => t.key === selectedTabKey) || GARMENT_TYPE_TABS[0];
@@ -46,7 +46,14 @@ export function ProductGrid({
       image: product.image,
       color: product.colors?.[0]?.name,
     });
-    toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
+    toast.custom((t) => (
+      <div className="flex w-[min(360px,calc(100vw-56px))] items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-[13px] font-semibold text-brand-navy">Đã thêm {product.name} vào giỏ</p>
+        <button type="button" onClick={() => { setIsCartOpen(true); toast.dismiss(t); }} className="shrink-0 text-[12px] font-bold text-[#5D1C34] hover:underline">
+          Xem giỏ
+        </button>
+      </div>
+    ), { duration: 2500 });
   };
 
   const handleTryOn = (product: Product, e: React.MouseEvent) => {
@@ -168,11 +175,11 @@ export function ProductGrid({
                     <div className="absolute inset-x-2 bottom-2.5 flex items-center gap-1.5 opacity-100 translate-y-0 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 transition-all duration-200 z-20">
                       <button
                         onClick={(e) => handleQuickAdd(product, e)}
-                        className="flex-1 h-9 bg-neutral-900/90 hover:bg-neutral-900 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+                        className="flex-1 h-10 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
                         title="Thêm vào giỏ hàng"
                       >
                         <ShoppingBag className="w-3.5 h-3.5" />
-                        <span className="max-[360px]:hidden">Thêm giỏ</span>
+                        <span>Thêm giỏ</span>
                       </button>
 
                       <button

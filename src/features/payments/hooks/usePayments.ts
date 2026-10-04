@@ -1,11 +1,12 @@
 'use client';
 
 import { mutationKeys } from '@/features/payments/services/mutation-keys';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { queryKeys as paymentsQueryKeys } from '@/features/payments/services/query-keys';
 import { checkout } from '@/features/payments/services/mutations';
-import { fetchPaymentOrders } from '@/features/payments/services/queries';
+import { fetchPaymentOrders, fetchPaymentStatus } from '@/features/payments/services/queries';
 import { extractErrorMessage } from '@/features/payments/services/payments-utils';
-import type { PaymentOrder } from '@/features/payments/types/payments';
+import type { PaymentOrder, PaymentStatusResponse } from '@/features/payments/types/payments';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 /**
@@ -25,6 +26,20 @@ export function useCheckout() {
     errorMessage: mutation.error ? extractErrorMessage(mutation.error) : null,
     reset: mutation.reset,
   };
+}
+
+export function usePaymentStatus(paymentId: string | null) {
+  const authStatus = useAuthStore((state) => state.status);
+
+  return useQuery<PaymentStatusResponse>({
+    queryKey: paymentsQueryKeys.paymentStatus(paymentId ?? ''),
+    queryFn: () => fetchPaymentStatus(paymentId ?? ''),
+    enabled: Boolean(paymentId) && authStatus === 'authenticated',
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === 'PENDING' ? 2_000 : false;
+    },
+  });
 }
 
 /**

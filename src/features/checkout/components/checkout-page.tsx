@@ -2,19 +2,21 @@
 
 import { CheckoutSummary } from '@/features/checkout/components/checkout-summary';
 import { DeliveryOptions } from '@/features/checkout/components/delivery-options';
+import type { CheckoutPaymentMethod } from '@/features/checkout/types/delivery-options';
 import { useCart } from '@/features/cart/store/cartStore';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
 import { quoteOrder } from '@/features/orders/services/mutations';
 import type { OrderQuote } from '@/features/orders/types/orders';
-import { useCheckout } from '@/features/payments/hooks/usePayments';
+import { useCheckout, usePaymentStatus } from '@/features/payments/hooks/usePayments';
 import type { CheckoutResponse } from '@/features/payments/types/payments';
 import { AddressForm } from '@/features/profile/components/address-form';
 import { useAddressMutations, useUserAddresses } from '@/features/profile/hooks/use-addresses';
 import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
-import { ChevronRight, ShoppingBag, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronRight, Copy, ExternalLink, Loader2, ShoppingBag, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { QRCodeSVG } from 'qrcode.react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -27,7 +29,7 @@ export default function CheckoutPage() {
   const { data: addresses = [], isLoading: isLoadingAddresses, refetch: refetchAddresses } = useUserAddresses();
   const { createAddress } = useAddressMutations();
 
-  const [paymentMethod, setPaymentMethod] = useState<'bank'>('bank');
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('zalopay');
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState('');
@@ -99,6 +101,15 @@ export default function CheckoutPage() {
   const shippingFee = orderQuote?.shippingFee ?? 0;
   const total = orderQuote?.totalAmount ?? Math.max(0, totalPrice);
   const isOrderBlocked = isSubmitting || isCheckoutLoading || isPricingLoading || !!pricingError || (!!selectedAddress && !orderQuote);
+  const submitLabel = isPricingLoading
+    ? 'Đang tính phí...'
+    : isSubmitting
+      ? 'Đang đặt hàng...'
+      : isCheckoutLoading
+        ? 'Đang tạo thanh toán...'
+        : pricingError
+          ? 'Cần kiểm tra lại đơn hàng'
+          : 'Xác nhận đặt hàng →';
 
   const handleApplyCoupon = () => {
     const code = coupon.trim().toUpperCase();
@@ -130,9 +141,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    clearCart();
-
-    if (checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
+    if (checkoutResult.provider === 'SEPAY' && checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = checkoutResult.extra.formAction;
@@ -151,6 +160,7 @@ export default function CheckoutPage() {
     try {
       const parsedUrl = new URL(checkoutResult.checkoutUrl, window.location.origin);
       if (
+        checkoutResult.provider === 'SEPAY' &&
         (parsedUrl.hostname.includes('sepay.vn') || parsedUrl.pathname.includes('/checkout/init')) &&
         parsedUrl.searchParams.size > 0
       ) {
@@ -173,6 +183,16 @@ export default function CheckoutPage() {
     }
 
     window.location.href = checkoutResult.checkoutUrl;
+  };
+
+  const copyTransferContent = async () => {
+    const transferContent = pendingCheckout?.extra?.invoiceNumber || `FAI${pendingCheckout?.orderCode ?? ''}`;
+    try {
+      await navigator.clipboard.writeText(transferContent);
+      toast.success('Đã sao chép nội dung chuyển khoản');
+    } catch {
+      toast.error('Không thể sao chép tự động');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -233,7 +253,10 @@ export default function CheckoutPage() {
       }
 
       try {
-        const checkoutResult = await checkout({ orderId, provider: 'SEPAY' });
+        const checkoutResult = await checkout({
+          orderId,
+          provider: paymentMethod === 'sepay' ? 'SEPAY' : 'ZALOPAY',
+        });
         if (checkoutResult.checkoutUrl) {
           setPendingOrderId(orderId);
           setPendingCheckout(checkoutResult);
@@ -391,7 +414,7 @@ export default function CheckoutPage() {
                 disabled={isOrderBlocked}
                 className="w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl flex items-center justify-between px-6 hover:bg-brand-navy/90 transition-colors disabled:opacity-50"
               >
-                <span>{isSubmitting ? 'Đang đặt hàng...' : 'Xác nhận đặt hàng'}</span>
+                  <span>{submitLabel.replace(' →', '')}</span>
                 <span>{total.toLocaleString('vi-VN')}đ</span>
               </button>
             </div>
@@ -404,6 +427,7 @@ export default function CheckoutPage() {
             discount={discount}
             total={total}
             isSubmitting={isOrderBlocked}
+            submitLabel={submitLabel}
             isPricingLoading={isPricingLoading}
             pricingError={pricingError}
             coupon={coupon}
@@ -414,18 +438,50 @@ export default function CheckoutPage() {
         </form>
       </div>
 
-      {pendingCheckout && (
+      {pendingCheckout?.provider === 'ZALOPAY' && (
+        <ZaloPayCheckoutDialog
+          checkoutResult={pendingCheckout}
+          orderId={pendingOrderId}
+          total={total}
+          onClose={() => {
+            setPendingCheckout(null);
+            setPendingOrderId(null);
+            toast.info('Đơn hàng đã được tạo. Bạn có thể tiếp tục thanh toán trong trang chi tiết đơn hàng.');
+          }}
+          onPaid={clearCart}
+        />
+      )}
+
+      {pendingCheckout && pendingCheckout.provider !== 'ZALOPAY' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-[18px] font-bold text-brand-navy mb-2">Ghi nhớ mã đơn hàng của bạn</h3>
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h3 className="text-[18px] font-bold text-brand-navy">Thanh toán chuyển khoản ngân hàng</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingCheckout(null);
+                  setPendingOrderId(null);
+                }}
+                className="text-neutral-400 hover:text-brand-navy"
+                aria-label="Đóng"
+              >
+                ✕
+              </button>
+            </div>
             <p className="text-body-sm text-neutral-600 mb-4">
-              Khi chuyển khoản, vui lòng ghi đúng nội dung dưới đây để hệ thống tự động xác nhận thanh toán.
+              Vui lòng ghi đúng nội dung dưới đây để hệ thống tự động xác nhận thanh toán.
             </p>
             <div className="bg-brand-cream rounded-xl p-4 mb-4">
               <p className="text-label-sm text-neutral-500 mb-1">Nội dung chuyển khoản</p>
-              <p className="text-[20px] font-bold text-brand-navy font-mono">
-                {pendingCheckout.extra?.invoiceNumber || `FAI${pendingCheckout.orderCode ?? ''}`}
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[20px] font-bold text-brand-navy font-mono break-all">
+                  {pendingCheckout.extra?.invoiceNumber || `FAI${pendingCheckout.orderCode ?? ''}`}
+                </p>
+                <button type="button" onClick={copyTransferContent} className="shrink-0 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-brand-navy hover:bg-neutral-50 inline-flex items-center gap-1.5">
+                  <Copy className="w-3.5 h-3.5" /> Sao chép
+                </button>
+              </div>
               <p className="text-label-sm text-neutral-500 mt-3 mb-1">Số tiền cần thanh toán</p>
               <p className="text-body-lg font-bold text-brand-navy">{total.toLocaleString('vi-VN')}đ</p>
             </div>
@@ -439,7 +495,7 @@ export default function CheckoutPage() {
               }}
               className="w-full h-12 rounded-xl bg-brand-navy text-white font-semibold hover:bg-brand-navy/90 transition-colors"
             >
-              Tiếp tục thanh toán
+              Mở cổng chuyển khoản
             </button>
             {pendingOrderId && (
               <Link
@@ -452,6 +508,120 @@ export default function CheckoutPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ZaloPayCheckoutDialog({
+  checkoutResult,
+  orderId,
+  total,
+  onClose,
+  onPaid,
+}: {
+  checkoutResult: CheckoutResponse;
+  orderId: string | null;
+  total: number;
+  onClose: () => void;
+  onPaid: () => void;
+}) {
+  const router = useRouter();
+  const paymentId = checkoutResult.paymentId ?? null;
+  const { data: payment, isLoading } = usePaymentStatus(paymentId);
+  const qrValue = checkoutResult.qrCode || checkoutResult.checkoutUrl || checkoutResult.payUrl || '';
+  const isPaid = payment?.status === 'PAID' || payment?.orderStatus === 'PAID';
+  const isFailed = payment?.status === 'FAILED';
+  const isRefundRequired = payment?.status === 'REFUND_REQUIRED';
+
+  useEffect(() => {
+    if (!isPaid || !paymentId) return;
+    onPaid();
+    toast.success('Thanh toán ZaloPay thành công');
+    router.push(`/payment/result?paymentId=${encodeURIComponent(paymentId)}`);
+  }, [isPaid, onPaid, paymentId, router]);
+
+  const openGateway = () => {
+    if (!checkoutResult.checkoutUrl) return;
+    window.open(checkoutResult.checkoutUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <h3 className="text-[20px] font-bold text-brand-navy">Thanh toán ZaloPay</h3>
+            <p className="text-body-sm text-neutral-600 mt-1">
+              Mở ZaloPay hoặc quét QR. Bạn có thể giữ trang này, hệ thống sẽ tự cập nhật khi thanh toán thành công.
+            </p>
+          </div>
+          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-brand-navy" aria-label="Đóng">
+            ✕
+          </button>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-[180px_1fr] items-center">
+          <div className="rounded-2xl border border-neutral-200 bg-white p-4 flex items-center justify-center">
+            {qrValue ? (
+              <QRCodeSVG value={qrValue} size={148} level="M" includeMargin />
+            ) : (
+              <div className="h-[148px] w-[148px] rounded-xl bg-neutral-100 flex items-center justify-center text-center text-xs text-neutral-500">
+                Không có dữ liệu QR
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <div className="rounded-xl bg-brand-cream p-4">
+              <p className="text-label-sm text-neutral-500 mb-1">Mã đơn hàng</p>
+              <p className="font-mono text-[18px] font-bold text-brand-navy">#{checkoutResult.orderCode}</p>
+              <p className="text-label-sm text-neutral-500 mt-3 mb-1">Số tiền</p>
+              <p className="text-body-lg font-bold text-brand-navy">{total.toLocaleString('vi-VN')}đ</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={openGateway}
+              disabled={!checkoutResult.checkoutUrl}
+              className="w-full h-12 rounded-xl bg-brand-navy text-white font-semibold hover:bg-brand-navy/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              Mở ZaloPay <ExternalLink className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-xl border border-neutral-200 p-4">
+          {isPaid && (
+            <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
+              <CheckCircle2 className="w-5 h-5" /> Thanh toán thành công, đang chuyển trang...
+            </div>
+          )}
+          {isFailed && (
+            <div className="flex items-start gap-2 text-red-700 text-sm">
+              <AlertCircle className="w-5 h-5 mt-0.5" />
+              <span>{payment?.failureReason || 'Thanh toán thất bại hoặc link đã hết hạn. Vui lòng tạo lại thanh toán.'}</span>
+            </div>
+          )}
+          {isRefundRequired && (
+            <div className="flex items-start gap-2 text-amber-700 text-sm">
+              <AlertCircle className="w-5 h-5 mt-0.5" />
+              <span>Đã nhận tiền nhưng đơn chưa thể ghi nhận thanh toán. Khoản tiền sẽ được xử lý hoàn lại.</span>
+            </div>
+          )}
+          {!isPaid && !isFailed && !isRefundRequired && (
+            <div className="flex items-center gap-2 text-neutral-600 text-sm">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {isLoading ? 'Đang kiểm tra trạng thái thanh toán...' : 'Đang chờ ZaloPay xác nhận thanh toán...'}
+            </div>
+          )}
+        </div>
+
+        {orderId && (
+          <Link href={`/orders/${orderId}`} className="block text-center text-label-sm text-neutral-500 mt-4 hover:text-brand-navy">
+            Xem chi tiết đơn hàng
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

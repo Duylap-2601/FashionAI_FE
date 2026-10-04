@@ -151,7 +151,7 @@ export default function SubscriptionPage() {
     setUpgradeConfirmTier(null);
     try {
       toast.loading('Đang khởi tạo cổng thanh toán...', { id: 'checkout' });
-      const result = await checkout({ targetTier, provider: 'SEPAY' });
+      const result = await checkout({ targetTier, provider: 'MOMO' });
       toast.dismiss('checkout');
 
       if (result.proration != null) {
