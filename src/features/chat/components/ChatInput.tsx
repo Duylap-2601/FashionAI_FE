@@ -1,7 +1,7 @@
 'use client';
 
 import type { ChatInputProps } from '@/features/chat/types/chat-input';
-import { CornerDownLeft, Package, Send, Sparkles, Square, X } from 'lucide-react';
+import { CornerDownLeft, Package, Send, Square, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
 export function ChatInput({
@@ -140,7 +140,6 @@ export function ChatInput({
       {/* Footer hint */}
       <div className="flex items-center justify-between px-2 pt-1.5 text-[11px] text-neutral-400">
         <span className="hidden sm:inline-flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-brand-gold" />
           <span>StAle. AI có thể giải đáp về size, số đo & mix match</span>
         </span>
         <span className="ml-auto hidden sm:inline-flex items-center gap-0.5 font-medium text-neutral-400">

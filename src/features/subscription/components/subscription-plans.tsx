@@ -10,7 +10,6 @@ import {
   Crown,
   RefreshCw,
   Shield,
-  Sparkles
 } from 'lucide-react';
 
 import { useMemo } from 'react';
@@ -47,7 +46,7 @@ export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, han
                   ? 'bg-[#5D1C34] text-white'
                   : 'bg-neutral-100 text-neutral-600'
               }`}>
-              {tier === 'VIP' ? <Crown className="w-7 h-7" /> : tier === 'MEMBER' ? <Sparkles className="w-7 h-7" /> : <Shield className="w-7 h-7" />}
+              {tier === 'VIP' ? <Crown className="w-7 h-7" /> : tier === 'MEMBER' ? null : <Shield className="w-7 h-7" />}
             </div>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">

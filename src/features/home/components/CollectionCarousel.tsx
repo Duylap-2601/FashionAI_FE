@@ -1,7 +1,7 @@
 'use client';
 
 import type { CollectionCarouselProps } from '@/features/home/types/collection-carousel';
-import { ArrowUpRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
@@ -116,7 +116,7 @@ export function CollectionCarousel({
                     </span>
                     {isSelected && (
                       <span className="px-2.5 py-0.5 rounded-full bg-brand-gold text-brand-navy text-[10px] font-bold flex items-center gap-1 shadow-md">
-                        <Sparkles className="w-3 h-3" /> Đang chọn
+                        Đang chọn
                       </span>
                     )}
                   </div>

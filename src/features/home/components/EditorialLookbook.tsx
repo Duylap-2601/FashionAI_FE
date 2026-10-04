@@ -2,7 +2,7 @@
 
 import { DEFAULT_LOOKBOOK_IMAGES } from '@/features/home/constants/editorial-lookbook';
 import type { EditorialLookbookProps } from '@/features/home/types/editorial-lookbook';
-import { ArrowUpRight, Sparkles } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -26,7 +26,6 @@ export function EditorialLookbook({ images, collection }: EditorialLookbookProps
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-brand-gold text-[10px] font-bold tracking-widest uppercase mb-3 border border-white/10">
-            <Sparkles className="w-3 h-3 fill-brand-gold" />
             EDITORIAL CAMPAIGN
           </span>
           <h2 className="text-[28px] sm:text-[38px] font-bold tracking-tight uppercase mb-3">

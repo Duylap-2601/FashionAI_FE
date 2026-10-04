@@ -12,7 +12,6 @@ import {
   ArrowDown,
   Menu,
   RotateCcw,
-  Sparkles,
   Trash2
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -169,7 +168,6 @@ export function ChatWindow({
 
             {/* Avatar & Title */}
             <div className="w-8 h-8 rounded-full bg-brand-navy flex items-center justify-center shrink-0 shadow-xs">
-              <Sparkles className="w-4 h-4 text-brand-gold" />
             </div>
 
             <div className="flex flex-col min-w-0">

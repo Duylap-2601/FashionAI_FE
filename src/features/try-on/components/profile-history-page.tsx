@@ -12,7 +12,6 @@ import {
   Download,
   Eye,
   Search,
-  Sparkles,
   Trash2,
   Zap
 } from 'lucide-react';
@@ -215,7 +214,6 @@ export default function TryOnHistoryPage() {
           <div className="mb-8 bg-gradient-to-r from-brand-navy/5 to-brand-gold/5 border border-brand-navy/10 rounded-xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
-                <Sparkles className="w-5 h-5 text-brand-gold" />
               </div>
               <div>
                 <h3 className="text-label-md font-bold text-neutral-900 mb-0.5">Bạn đang xem 10 kết quả gần nhất</h3>
@@ -242,7 +240,6 @@ export default function TryOnHistoryPage() {
             <div className="relative w-24 h-24 mb-6">
               <div className="absolute inset-0 bg-brand-navy/5 rounded-full animate-pulse"></div>
               <Camera className="w-12 h-12 text-neutral-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-              <Sparkles className="w-6 h-6 text-brand-navy absolute top-2 right-2" />
             </div>
             <h3 className="text-heading-h3 font-semibold text-neutral-900 mb-2">
               {searchTerm || selectedCategory !== 'Tất cả' ? 'Không tìm thấy kết quả' : 'Chưa có lịch sử thử đồ'}
@@ -256,7 +253,7 @@ export default function TryOnHistoryPage() {
               href="/products"
               className="px-6 py-3 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-md font-semibold transition-colors shadow-md flex items-center gap-2"
             >
-              <Sparkles className="w-4 h-4" /> Khám phá sản phẩm
+              Khám phá sản phẩm
             </Link>
           </div>
         ) : (

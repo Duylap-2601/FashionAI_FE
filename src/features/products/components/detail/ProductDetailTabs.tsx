@@ -1,5 +1,5 @@
 import type { ProductDetailTabsProps } from '@/features/products/types/product-detail-tabs';
-import { AlertCircle, Sparkles } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export function ProductDetailTabs({ product, activeTab, isComboSuit, onTabChange }: ProductDetailTabsProps) {
@@ -66,7 +66,6 @@ export function ProductDetailTabs({ product, activeTab, isComboSuit, onTabChange
 
                 <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-brand-navy/5 to-brand-gold/10 border border-brand-gold/20 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-brand-navy text-brand-gold flex items-center justify-center shrink-0 shadow-xs"><Sparkles className="w-4 h-4" /></div>
                     <div>
                       <div className="text-body-sm font-bold text-brand-navy">Tư vấn phối đồ theo dáng người</div>
                       <div className="text-label-xs text-neutral-500">Hỏi AI Stylist cách mix & match sản phẩm này</div>

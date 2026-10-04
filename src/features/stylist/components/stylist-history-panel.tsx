@@ -8,7 +8,6 @@ import {
   ChevronRight,
   ChevronUp,
   History as HistoryIcon,
-  Sparkles,
   Trash2
 } from 'lucide-react';
 
@@ -34,9 +33,6 @@ export function StylistHistoryPanel({ setHistoryOpen, historyOpen, meta, history
                 className="flex items-center gap-4 flex-1 min-w-0"
                 onClick={() => handleSelectHistoryItem(item)}
               >
-                <div className="w-10 h-10 rounded bg-brand-navy/5 flex items-center justify-center text-brand-navy shrink-0">
-                  <Sparkles className="w-5 h-5" />
-                </div>
                 <div className="min-w-0">
                   <div className="text-label-sm font-semibold text-neutral-900 truncate">
                     {item.product?.name || item.occasion || 'Tư vấn outfit'}

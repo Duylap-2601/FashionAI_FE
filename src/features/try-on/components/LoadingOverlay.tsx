@@ -1,4 +1,3 @@
-import { Sparkles } from 'lucide-react';
 
 export function LoadingOverlay({ progress, isCombo }: { progress: number; isCombo?: boolean }) {
   const stepText = isCombo
@@ -11,7 +10,6 @@ export function LoadingOverlay({ progress, isCombo }: { progress: number; isComb
         <div className="relative w-16 h-16">
           <div className="absolute inset-0 rounded-full border-4 border-neutral-100" />
           <div className="absolute inset-0 rounded-full border-4 border-brand-navy border-r-transparent animate-spin" />
-          <div className="absolute inset-0 flex items-center justify-center"><Sparkles className="w-6 h-6 text-brand-gold animate-pulse" /></div>
         </div>
         <div className="w-full flex flex-col gap-3 text-center">
           <p className="text-body-md font-semibold text-neutral-900">Đang xử lý ảnh... {progress}%</p>

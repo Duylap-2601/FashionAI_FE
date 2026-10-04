@@ -13,7 +13,6 @@ import {
   MapPin, Phone,
   Search,
   ShoppingBag,
-  Sparkles,
   Star
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -217,7 +216,7 @@ function OrderCard({
               href="/try-on"
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-brand-navy/8 text-brand-navy rounded-lg text-label-sm font-medium hover:bg-brand-navy/12 transition-colors"
             >
-              <Sparkles className="w-3.5 h-3.5" /> Try-On lại
+              Try-On lại
             </Link>
           )}
           {status === 'PENDING' && (

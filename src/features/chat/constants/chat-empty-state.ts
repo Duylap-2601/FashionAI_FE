@@ -1,4 +1,4 @@
-import { Compass, Ruler, Shirt, Sparkles } from 'lucide-react';
+import { Compass, Ruler, Shirt } from 'lucide-react';
 
 export const QUICK_PROMPTS = [
   {
@@ -23,7 +23,6 @@ export const QUICK_PROMPTS = [
     color: 'border-indigo-200/60 bg-indigo-50/40 hover:bg-indigo-50/80',
   },
   {
-    icon: Sparkles,
     tag: 'AI Features',
     title: 'Hướng dẫn sử dụng AI Try-On',
     prompt: 'Làm thế nào để chụp ảnh và trải nghiệm thử đồ ảo (Try-On) đạt kết quả chân thực nhất?',

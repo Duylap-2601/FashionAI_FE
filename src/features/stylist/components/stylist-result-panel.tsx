@@ -4,7 +4,6 @@ import type { StylistResultPanelProps } from '@/features/stylist/types/stylist-r
 import {
   CheckCircle2,
   Ruler,
-  Sparkles,
   Sun
 } from 'lucide-react';
 import Link from 'next/link';
@@ -109,7 +108,7 @@ export function StylistResultPanel({ resultRef, displayResult, toColorList, scor
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-label-sm font-bold text-brand-navy">
-                  <Sparkles className="w-4 h-4" /> Độ tương thích sản phẩm
+                  Độ tương thích sản phẩm
                 </div>
                 <span className="text-heading-h3 font-bold text-neutral-900">{score}%</span>
               </div>

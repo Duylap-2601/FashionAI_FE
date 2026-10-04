@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import React from "react";
 import { Toaster as Sonner, ToasterProps } from "sonner";
 
@@ -14,7 +14,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         success: <CheckCircle2 className="w-5 h-5 text-[#2D7A4F] shrink-0" />,
         error: <AlertCircle className="w-5 h-5 text-[#B91C1C] shrink-0" />,
         warning: <AlertTriangle className="w-5 h-5 text-[#B45309] shrink-0" />,
-        info: <Sparkles className="w-5 h-5 text-[#5D1C34] shrink-0" />,
+        info: null,
         loading: <Loader2 className="w-5 h-5 text-[#5D1C34] animate-spin shrink-0" />,
       }}
       toastOptions={{

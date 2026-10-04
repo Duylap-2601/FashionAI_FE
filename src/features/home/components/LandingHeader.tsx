@@ -10,7 +10,6 @@ import {
   LogOut, Package,
   Search,
   ShoppingBag,
-  Sparkles,
   User as UserIcon,
   X
 } from 'lucide-react';
@@ -220,7 +219,7 @@ export function LandingHeader({ collections }: LandingHeaderProps) {
                   onClick={() => setMobileMenuOpen(false)}
                   className="px-3 py-2.5 rounded-lg text-body-md font-semibold text-[#5D1C34] bg-[#5D1C34]/5 flex items-center gap-2"
                 >
-                  <Sparkles className="w-4 h-4" /> Thử đồ AI Virtual Try-On
+                  Thử đồ AI Virtual Try-On
                 </Link>
                 <Link
                   href="/ai-stylist"

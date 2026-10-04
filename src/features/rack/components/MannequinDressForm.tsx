@@ -12,7 +12,6 @@ import {
   Move,
   Plus,
   RotateCcw,
-  Sparkles,
   Trash2,
   X,
 } from 'lucide-react';
@@ -240,7 +239,6 @@ export function MannequinDressForm({
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-[#E2D8CC] pb-3 mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-9 h-9 rounded-xl bg-[#5D1C34] text-white flex items-center justify-center shadow-sm shrink-0">
-            <Sparkles className="w-4 h-4" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -459,7 +457,6 @@ export function MannequinDressForm({
           {isDragOver && (
             <div className="absolute inset-0 z-50 bg-[#5D1C34]/10 backdrop-blur-2xs flex flex-col items-center justify-center pointer-events-none animate-in fade-in duration-150">
               <div className="px-5 py-3 rounded-2xl bg-white/95 shadow-2xl border-2 border-[#5D1C34] flex items-center gap-2.5 text-[#5D1C34] font-bold text-sm">
-                <Sparkles className="w-5 h-5 text-amber-500 animate-spin" />
                 <span>Thả trang phục vào đây để ướm thử!</span>
               </div>
             </div>
@@ -595,7 +592,6 @@ export function MannequinDressForm({
               onClick={onGoToTryOn}
               className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white font-bold text-body-sm hover:opacity-95 active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Sparkles className="w-4 h-4 text-amber-200" />
               Thử đồ ảo AI với bộ này
               <ArrowRight className="w-4 h-4" />
             </button>

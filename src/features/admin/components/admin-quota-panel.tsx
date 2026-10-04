@@ -6,7 +6,6 @@ import {
   Crown,
   Settings,
   ShieldCheck,
-  Sparkles,
   TrendingUp,
   Users
 } from 'lucide-react';
@@ -45,16 +44,15 @@ export function AdminQuotaPanel({ users, stats }: AdminQuotaPanelProps) {
           {/* ── Stats overview ───────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {([
-              { label: 'Try-on hôm nay', value: totalTryOnToday, icon: Sparkles, color: 'text-brand-navy', bg: 'bg-brand-navy/10' },
+              { label: 'Try-on hôm nay', value: totalTryOnToday, color: 'text-brand-navy', bg: 'bg-brand-navy/10' },
               { label: 'Tổng try-on mọi thời gian', value: totalTryOnAll, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
               { label: 'Tài khoản MEMBER', value: memberUsers.length, icon: Crown, color: 'text-blue-600', bg: 'bg-blue-50' },
               { label: 'Tài khoản VIP', value: vipUsers.length, icon: ShieldCheck, color: 'text-brand-navy', bg: 'bg-brand-navy/10' },
             ] as const).map(card => {
-              const CardIcon = card.icon;
               return (
                 <div key={card.label} className="bg-white rounded-2xl border border-neutral-200 shadow-xs p-5 flex flex-col gap-3">
                   <div className={`w-9 h-9 rounded-xl ${card.bg} flex items-center justify-center`}>
-                    <CardIcon className={`w-4.5 h-4.5 ${card.color}`} />
+                    {'icon' in card && <card.icon className={`w-4.5 h-4.5 ${card.color}`} />}
                   </div>
                   <div>
                     <div className={`text-2xl font-bold ${card.color}`}>{card.value.toLocaleString('vi-VN')}</div>
@@ -116,7 +114,6 @@ export function AdminQuotaPanel({ users, stats }: AdminQuotaPanelProps) {
           {/* ── Top users by try-on usage ────────────────────────────── */}
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-xs overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-100 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-brand-navy" />
               <h2 className="text-body-sm font-bold text-neutral-800">Top người dùng Try-On nhiều nhất</h2>
               <span className="ml-auto text-label-xs text-neutral-400 italic">Tổng lịch sử</span>
             </div>

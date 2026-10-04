@@ -2,7 +2,7 @@
 
 import { QUICK_PROMPTS } from '@/features/chat/constants/chat-empty-state';
 import type { ChatEmptyStateProps } from '@/features/chat/types/chat-empty-state';
-import { ArrowRight, CheckCircle2, Ruler, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Ruler } from 'lucide-react';
 import Link from 'next/link';
 
 export function ChatEmptyState({ onSelectPrompt, userMeasurements, userName }: ChatEmptyStateProps) {
@@ -16,7 +16,6 @@ export function ChatEmptyState({ onSelectPrompt, userMeasurements, userName }: C
       {/* Brand Badge & Title */}
       <div className="text-center space-y-3 mb-8">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-navy text-white text-[12px] font-semibold shadow-xs">
-          <Sparkles className="w-3.5 h-3.5 text-brand-gold animate-pulse" />
           <span>StAle. AI Fashion Assistant</span>
         </div>
 
@@ -69,7 +68,7 @@ export function ChatEmptyState({ onSelectPrompt, userMeasurements, userName }: C
                   <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
                     {item.tag}
                   </span>
-                  <Icon className="w-4 h-4 text-brand-navy/70 group-hover:text-brand-navy transition-colors" />
+                  {Icon && <Icon className="w-4 h-4 text-brand-navy/70 group-hover:text-brand-navy transition-colors" />}
                 </div>
                 <h3 className="text-body-sm font-bold text-neutral-900 mb-1 group-hover:text-brand-navy transition-colors">
                   {item.title}

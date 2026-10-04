@@ -19,7 +19,6 @@ import {
   LayoutGrid,
   ScanFace,
   Shirt,
-  Sparkles,
   Watch
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
@@ -203,7 +202,6 @@ export default function AIStylistPage() {
         {/* HEADER */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-navy/10 mb-4">
-            <Sparkles className="w-6 h-6 text-brand-navy animate-pulse" />
           </div>
           <h1 className="text-heading-h2 font-semibold text-neutral-900 mb-2">AI Stylist</h1>
           <p className="text-body-md text-neutral-600 mb-4">
