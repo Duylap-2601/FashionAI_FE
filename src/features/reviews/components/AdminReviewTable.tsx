@@ -23,9 +23,17 @@ import { toast } from 'sonner';
 
 function toReviewList(payload: unknown): Review[] {
   if (Array.isArray(payload)) return payload as Review[];
-  if (payload && typeof payload === 'object' && 'data' in payload) {
-    const data = (payload as { data?: unknown }).data;
-    return Array.isArray(data) ? data as Review[] : [];
+  if (payload && typeof payload === 'object') {
+    const p = payload as Record<string, unknown>;
+    if (Array.isArray(p.data)) return p.data as Review[];
+    if (Array.isArray(p.items)) return p.items as Review[];
+    if (Array.isArray(p.reviews)) return p.reviews as Review[];
+    if (p.data && typeof p.data === 'object') {
+      const d = p.data as Record<string, unknown>;
+      if (Array.isArray(d.items)) return d.items as Review[];
+      if (Array.isArray(d.reviews)) return d.reviews as Review[];
+      if (Array.isArray(d.data)) return d.data as Review[];
+    }
   }
   return [];
 }
@@ -41,51 +49,83 @@ export function AdminReviewTable() {
   const { products, isLoading: isProductsLoading } = useProductCatalog();
   const adminDeleteMutation = useAdminDeleteReview();
 
-  // Thử gọi GET /products/admin/reviews nếu BE có, hoặc tổng hợp từ các products
+  // Gọi GET /products/admin/reviews nếu BE có, hoặc tổng hợp từ danh mục sản phẩm
   const { data: allReviews = [], isLoading: isReviewsLoading, refetch } = useQuery<Review[]>({
     queryKey: reviewsQueryKeys.adminReviews(selectedProductId),
     queryFn: async () => {
+      // 1. Nếu chọn 1 sản phẩm cụ thể: Lấy trực tiếp từ API sản phẩm đó (nhanh & chính xác nhất)
+      if (selectedProductId && selectedProductId !== 'all') {
+        const res = await fetchProductReviewsResponse(selectedProductId, {
+          params: { limit: 50 },
+        });
+        const list = toReviewList(res);
+        const prod = products.find((p) => p.id === selectedProductId);
+        return list.map((r) => ({
+          ...r,
+          product: prod
+            ? {
+                id: prod.id,
+                name: prod.name,
+                image: prod.image,
+              }
+            : r.product,
+        }));
+      }
+
+      // 2. Nếu chọn 'all': Thử endpoint tập trung của admin trước nếu BE có dữ liệu hợp lệ
       try {
-        // Thử endpoint tập trung của admin trước nếu BE có
         const res = await fetchAdminReviewsResponse();
-        return toReviewList(res);
-      } catch {
-        // Fallback: Lấy reviews theo từng sản phẩm
-        if (selectedProductId && selectedProductId !== 'all') {
-          const res = await fetchProductReviewsResponse(selectedProductId, {
-            params: { limit: 50 },
+        const adminList = toReviewList(res);
+        if (adminList.length > 0) {
+          return adminList.map((r) => {
+            const prod = products.find((p) => p.id === r.productId);
+            return {
+              ...r,
+              product: r.product || (prod ? {
+                id: prod.id,
+                name: prod.name,
+                image: prod.image,
+              } : undefined),
+            };
           });
+        }
+      } catch {
+        // Endpoint admin lỗi (500 do BE có bản ghi lỗi hoặc 404) -> Fallback quét toàn bộ sản phẩm
+      }
+
+      // 3. Fallback: Quét toàn bộ sản phẩm trong danh mục
+      if (!products || products.length === 0) return [];
+
+      const results = await Promise.allSettled(
+        products.map(async (p) => {
+          const res = await fetchProductReviewsResponse(p.id, { params: { limit: 20 } });
           const list = toReviewList(res);
-          const prod = products.find((p) => p.id === selectedProductId);
           return list.map((r) => ({
             ...r,
-            product: prod
-              ? { id: prod.id, name: prod.name, image: prod.image }
-              : r.product,
+            product: {
+              id: p.id,
+              name: p.name,
+              image: p.image,
+            },
           }));
-        } else {
-          // Lấy reviews từ top 10 sản phẩm đầu tiên
-          const topProducts = products.slice(0, 10);
-          const results = await Promise.allSettled(
-            topProducts.map(async (p) => {
-              const res = await fetchProductReviewsResponse(p.id, { params: { limit: 10 } });
-              const list = toReviewList(res);
-              return list.map((r) => ({
-                ...r,
-                product: { id: p.id, name: p.name, image: p.image },
-              }));
-            })
-          );
+        })
+      );
 
-          const aggregated: Review[] = [];
-          for (const item of results) {
-            if (item.status === 'fulfilled') {
-              aggregated.push(...item.value);
-            }
-          }
-          return aggregated;
+      const aggregated: Review[] = [];
+      for (const item of results) {
+        if (item.status === 'fulfilled') {
+          aggregated.push(...item.value);
         }
       }
+
+      // Sắp xếp review mới nhất lên đầu
+      aggregated.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      return aggregated;
     },
     enabled: !isProductsLoading,
   });
@@ -293,10 +333,10 @@ export function AdminReviewTable() {
                     {/* Cột Sản phẩm */}
                     <div className="py-4 px-6 min-w-0">
                       <div className="flex items-center gap-3">
-                        {r.product?.image && (
+                        {(r.product?.image || r.product?.garmentUrl) && (
                           <div className="w-9 h-9 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
                             <img
-                              src={r.product.image}
+                              src={r.product.image || r.product.garmentUrl || ''}
                               alt={r.product.name}
                               className="w-full h-full object-cover"
                             />

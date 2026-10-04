@@ -59,6 +59,7 @@ export function useCreateReview() {
       queryClient.invalidateQueries({ queryKey: productsQueryKeys.product(variables.productId) });
       queryClient.invalidateQueries({ queryKey: productsQueryKeys.products() });
       queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.myReviews() });
+      queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.adminReviews() });
     },
   });
 }
@@ -77,6 +78,7 @@ export function useUpdateReview() {
         queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.reviews() });
       }
       queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.myReviews() });
+      queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.adminReviews() });
     },
   });
 }
@@ -98,6 +100,7 @@ export function useDeleteReview() {
       }
       queryClient.invalidateQueries({ queryKey: productsQueryKeys.products() });
       queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.myReviews() });
+      queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.adminReviews() });
     },
   });
 }
