@@ -114,6 +114,7 @@ export function WriteReviewModal({
         await updateMutation.mutateAsync({
           id: editingReview.id,
           productId,
+          rating,
           comment: comment.trim() || undefined,
           images: imageUrls,
         });
@@ -184,16 +185,14 @@ export function WriteReviewModal({
           {/* Chọn số sao Rating */}
           <div className="flex flex-col items-center justify-center p-4 bg-amber-50/50 border border-amber-200/60 rounded-xl text-center">
             <span className="text-body-sm font-semibold text-neutral-800 mb-2">
-              {isEditing
-                ? 'Số sao đánh giá (Không thể thay đổi sau khi gửi)'
-                : 'Bạn cảm nhận thế nào về sản phẩm?'}
+              Bạn cảm nhận thế nào về sản phẩm?
             </span>
 
             <StarRating
               value={rating}
-              onChange={isEditing ? undefined : setRating}
+              onChange={setRating}
               size="lg"
-              readOnly={isEditing}
+              readOnly={false}
               className="py-1"
             />
 

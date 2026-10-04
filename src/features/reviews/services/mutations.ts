@@ -7,7 +7,8 @@ export async function createReview(payload: CreateReviewInput) {
   return data && typeof data === 'object' && 'data' in data ? data.data : data;
 }
 
-export async function updateReview({ id, ...body }: UpdateReviewInput) {
+export async function updateReview({ id, productId, ...body }: UpdateReviewInput) {
+  void productId;
   const data = await http.patch<{ data?: unknown } | unknown>(`/products/reviews/${id}`, body);
   return data && typeof data === 'object' && 'data' in data ? data.data : data;
 }
@@ -21,12 +22,12 @@ export async function adminDeleteReview({ id }: { id: string; productId?: string
 }
 
 export async function createReply({ reviewId, comment }: CreateReplyInput) {
-  const data = await http.post<{ data?: unknown } | unknown>(`/products/reviews/${reviewId}/replies`, { comment });
+  const data = await http.post<{ data?: unknown } | unknown>(`/products/reviews/${reviewId}/replies`, { content: comment });
   return data && typeof data === 'object' && 'data' in data ? data.data : data;
 }
 
 export async function updateReply({ id, comment }: UpdateReplyInput) {
-  const data = await http.patch<{ data?: unknown } | unknown>(`/products/reviews/replies/${id}`, { comment });
+  const data = await http.patch<{ data?: unknown } | unknown>(`/products/reviews/replies/${id}`, { content: comment });
   return data && typeof data === 'object' && 'data' in data ? data.data : data;
 }
 

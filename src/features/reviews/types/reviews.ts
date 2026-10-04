@@ -37,7 +37,8 @@ export interface ReviewReply {
   id: string;
   reviewId: string;
   userId: string;
-  comment: string;
+  content: string;
+  comment?: string;
   createdAt: string;
   updatedAt: string;
   user?: ReviewReplyUser;
@@ -99,6 +100,7 @@ export interface CreateReviewInput {
 export interface UpdateReviewInput {
   id: string;
   productId?: string;
+  rating?: number;
   comment?: string;
   images?: string[];
 }

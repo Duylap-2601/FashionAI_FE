@@ -93,7 +93,7 @@ export function ReviewCard({
   // Bắt đầu sửa reply
   const handleStartEditReply = (rep: ReviewReply) => {
     setEditingReplyId(rep.id);
-    setEditReplyText(rep.comment);
+    setEditReplyText(rep.content || rep.comment || "");
   };
 
   // Lưu chỉnh sửa reply
@@ -369,7 +369,7 @@ export function ReviewCard({
                       </div>
                     ) : (
                       <p className="text-body-sm text-neutral-700 leading-relaxed whitespace-pre-line">
-                        {rep.comment}
+                        {rep.content || rep.comment}
                       </p>
                     )}
                   </div>
