@@ -1,7 +1,7 @@
 'use client';
 
 import type { QuotaExhaustedModalProps } from '@/features/stylist/types/quota-exhausted-modal';
-import { ArrowRight, Clock, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Clock, X } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 
@@ -55,7 +55,6 @@ export function QuotaExhaustedModal({
             onClick={onClose}
             className="w-full h-12 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white rounded-xl font-bold text-body-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
           >
-            <Sparkles className="w-4 h-4" />
             Nâng cấp gói tài khoản <ArrowRight className="w-4 h-4" />
           </Link>
           <button

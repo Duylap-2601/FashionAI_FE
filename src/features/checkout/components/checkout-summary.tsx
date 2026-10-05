@@ -2,7 +2,6 @@
 
 import type { CheckoutSummaryProps } from '@/features/checkout/types/checkout-summary';
 import { PaymentMethodSelector } from '@/features/checkout/components/payment-method-selector';
-import { Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -114,7 +113,6 @@ export function CheckoutSummary({
         </button>
 
         <div className="bg-[#EEF0FD] rounded-xl p-4 flex items-start gap-3 border border-[#AFA9EC]">
-          <div className="mt-0.5 text-brand-navy"><Sparkles className="w-5 h-5" /></div>
           <div>
             <h4 className="text-body-sm font-bold text-[#3C3489] mb-1">Thử đồ trước khi thanh toán</h4>
             <p className="text-[12px] text-[#3C3489]/80 mb-2 leading-relaxed">

@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   Camera as CameraIcon,
   Package,
-  Sparkles,
   UploadCloud,
   Wallet,
   X
@@ -337,7 +336,7 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5 text-brand-gold animate-bounce" /> Phân tích phong cách bằng AI
+                Phân tích phong cách bằng AI
               </>
             )}
           </button>

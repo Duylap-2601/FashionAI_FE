@@ -6,7 +6,6 @@ import {
   Crown,
   Shield,
   ShieldCheck,
-  Sparkles
 } from 'lucide-react';
 
 export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTab, handleInitiateUpgrade, formatDate, rawExpiresAt, expirationInfo, scheduled, handleToggleAutoRenew, isCancelling, isResuming, handleCancelScheduled, isCancellingScheduled }: CurrentSubscriptionProps) {
@@ -22,7 +21,7 @@ export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTa
                   ? 'bg-[#5D1C34] text-white'
                   : 'bg-neutral-100 text-neutral-600'
               }`}>
-              {tier === 'VIP' ? <Crown className="w-8 h-8" /> : tier === 'MEMBER' ? <Sparkles className="w-8 h-8" /> : <Shield className="w-8 h-8" />}
+              {tier === 'VIP' ? <Crown className="w-8 h-8" /> : tier === 'MEMBER' ? null : <Shield className="w-8 h-8" />}
             </div>
             <div>
               <span className="text-[12px] font-bold text-neutral-400 uppercase tracking-wider">Gói hiện tại</span>

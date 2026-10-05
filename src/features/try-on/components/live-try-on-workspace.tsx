@@ -3,7 +3,7 @@
 import type { Product } from '@/features/products/types/products';
 import { useLiveTryOnQuota } from '@/features/subscription/hooks/useQuota';
 import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
-import { ArrowRight, Camera, Check, ChevronDown, CirclePause, Expand, Image as ImageIcon, Loader2, Play, Plus, RefreshCw, Shirt, Sparkles, Square, Timer } from 'lucide-react';
+import { ArrowRight, Camera, Check, ChevronDown, CirclePause, Expand, Image as ImageIcon, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
@@ -78,7 +78,7 @@ export function LiveTryOnWorkspace({ selectedProduct, upperProduct, lowerProduct
           <h2 className="font-serif text-[30px] leading-[1.1] tracking-tight text-[#302323] sm:text-[40px]">Phòng thử của bạn</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[#81716D]">Một góc nhìn mới, một bộ đồ thật hợp.</p>
         </div>
-        <span className="hidden shrink-0 items-center gap-2 rounded-full border border-[#E7DDD6] px-3 py-2 text-[12px] text-[#715B55] sm:inline-flex"><Sparkles size={14} /> Thử đồ trực tiếp</span>
+        <span className="hidden shrink-0 items-center gap-2 rounded-full border border-[#E7DDD6] px-3 py-2 text-[12px] text-[#715B55] sm:inline-flex">Thử đồ trực tiếp</span>
       </div>
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] lg:gap-7">

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Camera, CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowRight, Camera, CheckCircle2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -16,7 +16,6 @@ export function AiTryOnFeatureBanner() {
             {/* Left: Content & 3 Steps */}
             <div className="lg:col-span-7 flex flex-col items-start">
               <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-gold/15 border border-brand-gold/30 text-brand-gold text-xs font-bold uppercase tracking-wider mb-6">
-                <Sparkles className="w-3.5 h-3.5" />
                 CÔNG NGHỆ THỬ ĐỒ ĐỘC QUYỀN
               </span>
 
@@ -34,7 +33,6 @@ export function AiTryOnFeatureBanner() {
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col">
                   <span className="text-xs font-bold text-brand-gold tracking-widest uppercase mb-2">BƯỚC 01</span>
                   <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white mb-3">
-                    <Sparkles className="w-5 h-5 text-brand-gold" />
                   </div>
                   <h4 className="text-white font-semibold text-body-sm mb-1">Chọn trang phục</h4>
                   <p className="text-white/60 text-xs leading-relaxed">Chọn món đồ bạn muốn thử từ các bộ sưu tập.</p>
@@ -64,7 +62,6 @@ export function AiTryOnFeatureBanner() {
                 href="/try-on"
                 className="h-13 px-8 rounded-full bg-brand-gold hover:bg-[#b58b52] text-brand-navy font-bold text-body-sm inline-flex items-center gap-3 shadow-xl hover:scale-103 active:scale-97 transition-all duration-200"
               >
-                <Sparkles className="w-4 h-4 fill-brand-navy" />
                 <span>TRẢI NGHIỆM VIRTUAL TRY-ON NGAY</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>

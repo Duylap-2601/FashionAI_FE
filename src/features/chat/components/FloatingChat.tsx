@@ -2,7 +2,7 @@
 
 import { QUICK_REPLIES } from '@/features/chat/constants/floating-chat';
 import { useChat } from '@/features/chat/hooks/useChat';
-import { Check, ChevronDown, Copy, MessageCircle, RotateCcw, Send, Sparkles, Square, X } from 'lucide-react';
+import { Check, ChevronDown, Copy, MessageCircle, RotateCcw, Send, Square, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FormattedChatText } from './FormattedChatText';
@@ -106,7 +106,6 @@ export function FloatingChat() {
             {/* Header */}
             <div className="bg-brand-navy px-4 py-3.5 flex items-center gap-3 shrink-0">
               <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center shrink-0">
-                <Sparkles className="w-4.5 h-4.5 text-brand-gold" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-semibold text-body-sm">StAle. Assistant</p>
@@ -142,7 +141,6 @@ export function FloatingChat() {
               ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-neutral-400 py-6 my-auto">
                   <div className="w-12 h-12 bg-brand-navy/10 rounded-2xl flex items-center justify-center shadow-xs">
-                    <Sparkles className="w-6 h-6 text-brand-navy" />
                   </div>
                   <div className="text-center px-4 space-y-1.5 max-w-xs">
                     <p className="text-body-sm font-semibold text-neutral-900">
@@ -163,7 +161,6 @@ export function FloatingChat() {
                     >
                       {!isUser && (
                         <div className="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0 mt-0.5 shadow-xs ring-1 ring-brand-gold/30">
-                          <Sparkles className="w-3.5 h-3.5 text-brand-gold" />
                         </div>
                       )}
                       <div
