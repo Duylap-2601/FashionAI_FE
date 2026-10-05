@@ -3,8 +3,8 @@
 import { FILTER_TABS, STATUS_CONFIG, STEPS } from '@/features/orders/constants/profile-orders-page';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { useCart } from '@/features/cart/store/cartStore';
-import { useCancelOrder, useConfirmDelivery, useOrders } from '@/features/orders/hooks/useOrders';
-import type { Order, OrderItem } from '@/features/orders/types/orders';
+import { useCancelOrder, useConfirmDelivery, useInfiniteOrders } from '@/features/orders/hooks/useOrders';
+import type { BackendOrderStatus, Order, OrderItem } from '@/features/orders/types/orders';
 import { WriteReviewModal } from '@/features/reviews/components/WriteReviewModal';
 import {
   CheckCircle2,
@@ -18,7 +18,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 function fmt(n: number) {
@@ -370,24 +370,36 @@ function EmptyOrders() {
 }
 
 export default function OrdersPage() {
-  const { orders, isLoading } = useOrders();
   const [activeFilter, setActiveFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [reviewModalItem, setReviewModalItem] = useState<{ item: OrderItem; orderId: string } | null>(null);
-
-  const filtered = orders.filter(o => {
-    const status = o.status || 'pending';
-    const matchFilter = activeFilter === 'all' || status.toLowerCase() === activeFilter.toLowerCase();
-
-    const orderCode = `ORD-${o.orderCode}`;
-    const matchSearch = !search ||
-      orderCode.includes(search.toUpperCase()) ||
-      o.items.some(i => (i.product?.name || '').toLowerCase().includes(search.toLowerCase()));
-
-    return matchFilter && matchSearch;
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const queryStatus = activeFilter === 'all' ? undefined : activeFilter.toUpperCase() as BackendOrderStatus;
+  const { orders, meta, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteOrders({
+    limit: 20,
+    status: queryStatus,
+    search: search.trim() || undefined,
   });
 
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '360px 0px' },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   const countByStatus = (id: string) => {
+    if (id === activeFilter) return meta.total;
     if (id === 'all') return orders.length;
     return orders.filter(o => (o.status || 'pending').toLowerCase() === id.toLowerCase()).length;
   };
@@ -447,19 +459,34 @@ export default function OrdersPage() {
           <div className="flex justify-center items-center py-20">
             <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : orders.length === 0 ? (
           <EmptyOrders />
         ) : (
-          <StaggerContainer className="flex flex-col gap-4">
-            {filtered.map(order => (
-              <StaggerItem key={order.id}>
-                <OrderCard
-                  order={order}
-                  onReviewItem={(item, orderId) => setReviewModalItem({ item, orderId })}
-                />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+          <>
+            <StaggerContainer className="flex flex-col gap-4">
+              {orders.map(order => (
+                <StaggerItem key={order.id}>
+                  <OrderCard
+                    order={order}
+                    onReviewItem={(item, orderId) => setReviewModalItem({ item, orderId })}
+                  />
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+            <div ref={loadMoreRef} className="flex justify-center py-8">
+              {isFetchingNextPage ? (
+                <div className="w-6 h-6 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+              ) : hasNextPage ? (
+                <button
+                  type="button"
+                  onClick={() => fetchNextPage()}
+                  className="px-5 py-2.5 bg-white border border-neutral-200 rounded-xl text-label-sm font-semibold text-neutral-700 hover:border-brand-navy/30 transition-colors"
+                >
+                  Tải thêm đơn hàng
+                </button>
+              ) : null}
+            </div>
+          </>
         )}
       </div>
 

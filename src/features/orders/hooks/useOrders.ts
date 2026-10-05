@@ -3,11 +3,11 @@
 import { mutationKeys } from '@/features/orders/services/mutation-keys';
 import { queryKeys as ordersQueryKeys } from '@/features/orders/services/query-keys';
 import { cancelOrder, confirmDelivery, createOrder } from '@/features/orders/services/mutations';
-import { fetchOrder, fetchOrders } from '@/features/orders/services/queries';
+import { fetchOrder, fetchOrders, fetchOrdersPage } from '@/features/orders/services/queries';
 import { isTerminalOrderStatus } from '@/features/orders/services/orders-utils';
-import type { Order } from '@/features/orders/types/orders';
+import type { Order, OrdersListParams, OrdersListResult } from '@/features/orders/types/orders';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useCreateOrder() {
   const queryClient = useQueryClient();
@@ -40,6 +40,38 @@ export function useOrders() {
     orders: query.data || [],
     isLoading: status === 'loading' || query.isLoading,
     isError: query.isError,
+    refetch: query.refetch,
+  };
+}
+
+export function useInfiniteOrders(params: Omit<OrdersListParams, 'page'> = {}) {
+  const status = useAuthStore((state) => state.status);
+  const query = useInfiniteQuery<OrdersListResult>({
+    queryKey: ordersQueryKeys.orders('infinite', params),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => fetchOrdersPage({ ...params, page: Number(pageParam) }),
+    getNextPageParam: (lastPage) => (
+      lastPage.meta.page < lastPage.meta.totalPages ? lastPage.meta.page + 1 : undefined
+    ),
+    enabled: status === 'authenticated',
+  });
+
+  const pages = query.data?.pages || [];
+  const meta = pages[pages.length - 1]?.meta || {
+    total: 0,
+    page: 1,
+    limit: params.limit ?? 20,
+    totalPages: 0,
+  };
+
+  return {
+    orders: pages.flatMap((page) => page.orders),
+    meta,
+    isLoading: status === 'loading' || query.isLoading,
+    isFetchingNextPage: query.isFetchingNextPage,
+    isError: query.isError,
+    hasNextPage: query.hasNextPage,
+    fetchNextPage: query.fetchNextPage,
     refetch: query.refetch,
   };
 }
