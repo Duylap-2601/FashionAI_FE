@@ -1,11 +1,13 @@
 'use client';
 
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { allMeasurementFields } from '@/features/measurements/constants/profile-measurements-page';
 import { validate } from '@/features/measurements/services/measurement-validation';
 import type { MeasurementField } from '@/features/measurements/types/profile-measurements-page';
 import {
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  HelpCircle
 } from 'lucide-react';
 
 export function MeasurementInput({
@@ -24,8 +26,8 @@ export function MeasurementInput({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1.5 gap-2">
-        <label className="text-label-md font-medium text-neutral-800 flex items-center gap-1.5 flex-wrap">
+      <div className="flex items-start justify-between mb-1.5 gap-2 min-h-[42px]">
+        <label className="text-label-md font-medium text-neutral-800 flex items-center gap-1.5 flex-wrap min-w-0">
           <span>{field.label}</span>
           {field.requiredFor && (
             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-brand-navy/10 text-brand-navy">
@@ -34,7 +36,21 @@ export function MeasurementInput({
           )}
           {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse" />}
         </label>
-        <span className="text-label-sm text-neutral-400 text-right truncate">{field.desc}</span>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Hướng dẫn đo ${field.label}`}
+              className="mt-0.5 text-neutral-400 transition-colors hover:text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/20 rounded-full"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="end" sideOffset={8} className="w-64 rounded-xl border-neutral-200 p-3 text-body-sm text-neutral-700 shadow-lg">
+            <p className="font-semibold text-neutral-900">{field.label}</p>
+            <p className="mt-1">{field.desc}</p>
+          </PopoverContent>
+        </Popover>
       </div>
       <div className="relative">
         <input
