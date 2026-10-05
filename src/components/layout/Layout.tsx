@@ -10,6 +10,7 @@ import { useCart } from '@/features/cart/store/cartStore';
 import { FloatingChat } from '@/features/chat/components/FloatingChat';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { HeaderSearch } from '@/features/products/components/HeaderSearch';
+import { SEARCH_HISTORY_KEY } from '@/features/products/constants/header-search';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import {
   Bell,
@@ -69,6 +70,18 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
 
+    try {
+      const raw = window.localStorage.getItem(SEARCH_HISTORY_KEY);
+      const parsed: string[] = raw ? JSON.parse(raw) : [];
+      const filtered = Array.isArray(parsed)
+        ? parsed.filter((item) => typeof item === 'string' && item.toLowerCase() !== trimmed.toLowerCase())
+        : [];
+      const updated = [trimmed, ...filtered].slice(0, 12);
+      window.localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
+    } catch {
+      // Ignore localStorage errors
+    }
+
     setSearchQuery('');
     router.push(`/products?search=${encodeURIComponent(trimmed)}`);
   };
@@ -127,7 +140,7 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
 
   return (
     <>
-      <header className="sticky top-0 z-50 shrink-0 border-b border-neutral-200 bg-white/95 backdrop-blur-md transition-all duration-300">
+      <header className={`sticky top-0 z-50 shrink-0 border-b border-neutral-200 bg-white/95 backdrop-blur-md transition-all duration-300 ${pathname === '/search' ? 'hidden md:block' : ''}`}>
         <div className="relative mx-auto flex h-[68px] max-w-[1400px] items-center gap-3 px-4 md:gap-4 md:px-8">
           {/* Logo */}
           <div className="flex shrink-0 items-center gap-2 md:gap-8">
@@ -454,11 +467,13 @@ export function AppLayout({
   const router = useRouter();
   const { currentUser, status } = useAuth();
   const isChat = pathname === '/chat';
+  const isSearch = pathname === '/search';
   const { isCartOpen, setIsCartOpen, totalItems } = useCart();
-  const shouldShowFloatingChat = showFloatingChat ?? !isChat;
-  const shouldShowFooter = showFooter ?? (footerVariant !== 'none' && !isChat);
+  const shouldShowFloatingChat = showFloatingChat ?? (!isChat && !isSearch);
+  const shouldShowFooter = showFooter ?? (footerVariant !== 'none' && !isChat && !isSearch);
   const resolvedFooterVariant = footerVariant === 'none' ? 'simple' : footerVariant;
-  const contentPadding = isChat || !showBottomTab ? 'pb-0' : 'pb-[64px] md:pb-0';
+  const shouldShowBottomTab = showBottomTab && !isChat && !isSearch;
+  const contentPadding = isChat || !shouldShowBottomTab ? 'pb-0' : 'pb-[64px] md:pb-0';
 
   useEffect(() => {
     if (status !== 'loading' && currentUser.role === 'admin') {
@@ -484,7 +499,7 @@ export function AppLayout({
       {shouldShowFooter && <SiteFooter variant={resolvedFooterVariant} />}
       {shouldShowFloatingChat && <FloatingChat />}
       <CartSlideOver isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-      {showBottomTab && <BottomTabBar pathname={pathname} />}
+      {shouldShowBottomTab && <BottomTabBar pathname={pathname} />}
     </div>
   );
 }

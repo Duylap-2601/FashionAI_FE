@@ -6,14 +6,17 @@ import { NotificationItem } from '@/features/notifications/components/Notificati
 import { useMarkAllNotificationsAsRead, useNotifications } from '@/features/notifications/hooks/useNotifications';
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
 import {
+  ArrowLeft,
   Bell, CheckCheck,
   ChevronLeft, ChevronRight,
   Info,
   Loader2
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
   const limit = 15;
@@ -42,6 +45,16 @@ export default function NotificationsPage() {
       <PageHeader
         title="Thông báo"
         subtitle="Cập nhật thông tin đơn hàng, thanh toán và các ưu đãi mới nhất"
+        breadcrumbs={
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1.5 text-body-sm font-medium text-neutral-600 hover:text-brand-navy transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Quay lại</span>
+          </button>
+        }
         cta={
           unreadCount > 0 ? (
             <button

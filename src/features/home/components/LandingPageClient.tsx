@@ -9,8 +9,35 @@ import { NewsletterBar } from '@/features/home/components/NewsletterBar';
 import { ProductGrid } from '@/features/home/components/ProductGrid';
 import { SaleBannerText } from '@/features/home/components/SaleBannerText';
 import { PRODUCTS } from '@/features/products/constants/products';
+import type { Product } from '@/features/products/types/products';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+
+function getTrendingScore(product: Product): number {
+  let score = 0;
+  // 1. Tiêu chí cao nhất: Số lượt đánh giá từ khách hàng
+  if (product.reviewCount && product.reviewCount > 0) {
+    score += product.reviewCount * 50;
+  }
+  // 2. Điểm đánh giá trung bình
+  if (product.rating && product.rating > 0) {
+    score += product.rating * 10;
+  }
+  // 3. Số lượt bán (nếu có)
+  if (product.soldCount && product.soldCount > 0) {
+    score += product.soldCount * 20;
+  }
+  // 4. Fallback khi các chỉ số đều bằng nhau (như khi chưa có review):
+  // Ưu tiên các dòng trang phục chủ đạo, thiết kế cao cấp của thương hiệu StAle
+  const nameLower = product.name.toLowerCase();
+  const garmentType = product.garmentType || '';
+  if (nameLower.includes('blazer') || garmentType === 'JACKET') score += 15;
+  if (nameLower.includes('vest') || garmentType === 'VEST') score += 12;
+  if (nameLower.includes('đầm') || garmentType === 'DRESS') score += 10;
+  if (nameLower.includes('combo')) score += 8;
+
+  return score;
+}
 
 export function LandingPageClient() {
   const { products: apiProducts } = useProductCatalog();
@@ -33,10 +60,15 @@ export function LandingPageClient() {
     backendCollectionProducts.length > 0
       ? backendCollectionProducts
       : selectedCollection?.productIds && selectedCollection.productIds.length > 0
-        ? displayProducts.filter((p) => selectedCollection.productIds?.includes(p.id))
+        ? displayProducts.filter((p: Product) => selectedCollection.productIds?.includes(p.id))
         : displayProducts;
 
-  const bestSellers = [...displayProducts].sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0));
+  // Lọc và sắp xếp Top Trending dựa trên lượt đánh giá và chỉ lấy Top 8 sản phẩm
+  const bestSellers = useMemo(() => {
+    return [...displayProducts]
+      .sort((a, b) => getTrendingScore(b) - getTrendingScore(a))
+      .slice(0, 8);
+  }, [displayProducts]);
 
   return (
     <main className="flex-1 overflow-x-hidden bg-white text-neutral-900 selection:bg-[#5D1C34] selection:text-white">

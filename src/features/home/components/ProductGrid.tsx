@@ -230,10 +230,13 @@ export function ProductGrid({
                         )}
                       </div>
 
-                      {Boolean(product.rating && product.rating > 0) && (
-                        <div className="flex items-center gap-0.5 text-[11px] text-amber-600 shrink-0 font-medium">
+                      {Boolean((product.rating && product.rating > 0) || (product.reviewCount && product.reviewCount > 0)) && (
+                        <div className="flex items-center gap-1 text-[11px] text-amber-600 shrink-0 font-medium">
                           <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          <span>{product.rating!.toFixed(1)}</span>
+                          <span>{(product.rating && product.rating > 0 ? product.rating : 5.0).toFixed(1)}</span>
+                          {Boolean(product.reviewCount && product.reviewCount > 0) && (
+                            <span className="text-neutral-400 font-normal">({product.reviewCount})</span>
+                          )}
                         </div>
                       )}
                     </div>
