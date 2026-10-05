@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, MessageCircle, Package, User as UserIcon, type LucideIcon } from 'lucide-react';
+import { Home, MessageCircle, Package, Sparkles, User as UserIcon, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 
 interface BottomTabItem {
@@ -27,6 +27,7 @@ const bottomTabs: BottomTabItem[] = [
   {
     label: 'Try-On',
     href: '/try-on',
+    icon: Sparkles,
     isActive: (pathname) => pathname === '/try-on',
     iconPadding: 'p-1.5',
   },
