@@ -8,7 +8,6 @@ import { AdminLiveTryOnSettingsPanel } from '@/features/admin/components/admin-l
 import { AdminOrdersPanel } from '@/features/admin/components/admin-orders-panel';
 import { AdminProductModal } from '@/features/admin/components/admin-product-modal';
 import { AdminProductsPanel } from '@/features/admin/components/admin-products-panel';
-import { AdminQuotaPanel } from '@/features/admin/components/admin-quota-panel';
 import { AdminShippingSettingsPanel } from '@/features/admin/components/admin-shipping-settings-panel';
 import { AdminShipmentModal } from '@/features/admin/components/admin-shipment-modal';
 import { AdminShipmentsPanel } from '@/features/admin/components/admin-shipments-panel';
@@ -1566,7 +1565,6 @@ function AdminDashboardContent() {
               { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
               { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
               { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
-              { id: 'quota', label: 'Cài đặt Quota', icon: Settings },
             ] as { id: AdminPage; label: string; icon: LucideIcon }[]).map(item => {
               const IconComponent = item.icon;
               const active = activeTab === item.id;
@@ -1624,8 +1622,7 @@ function AdminDashboardContent() {
                           activeTab === 'shipments' ? 'Quản lý vận đơn' :
                             (activeTab === 'webhook-failures' || activeTab === 'reconciliation') ? 'Đối soát giao dịch lạ' :
                               activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
-                                  activeTab === 'shipping-settings' ? 'Cài đặt GHN' :
-                                    activeTab === 'live-try-on-settings' ? 'Cài đặt Live Try-On' : 'Cài đặt Quota'}
+                                  activeTab === 'shipping-settings' ? 'Cài đặt GHN' : 'Cài đặt Live Try-On'}
               </span>
             </div>
 
@@ -1702,6 +1699,9 @@ function AdminDashboardContent() {
                 netProductRevenue={netProductRevenue}
                 totalReviews={totalReviews}
                 avgRating={finalAvgRating}
+                tryOnToday={stats?.tryOnToday ?? 0}
+                tryOnCount={stats?.tryOnCount ?? 0}
+                stylistCount={stats?.stylistCount ?? 0}
               />
             )}
 
@@ -1786,9 +1786,6 @@ function AdminDashboardContent() {
             {(activeTab === 'reconciliation' || activeTab === 'webhook-failures') && (
               <AdminReconciliationPanel onStatsRefresh={() => fetchStats()} />
             )}
-
-            {/* ─── TAB: QUOTA USAGE ────────────────────────────────────────────────── */}
-            {activeTab === 'quota' && <AdminQuotaPanel users={users} stats={stats} />}
 
             {/* ─── TAB: SHIPPING SETTINGS ─────────────────────────────────────────── */}
             {activeTab === 'shipping-settings' && <AdminShippingSettingsPanel />}

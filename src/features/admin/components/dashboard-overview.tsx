@@ -9,10 +9,14 @@ import {
   ChevronRight,
   Clock,
   CreditCard,
+  Crown,
   HelpCircle,
   Package,
+  ShieldCheck,
   ShoppingBag,
+  Sparkles,
   Star,
+  TrendingUp,
   Truck,
   Users,
   XCircle
@@ -49,7 +53,15 @@ export function DashboardOverview({
   netProductRevenue,
   totalReviews,
   avgRating,
+  tryOnToday = 0,
+  tryOnCount = 0,
+  stylistCount = 0,
 }: DashboardOverviewProps) {
+  const freeUsersCount = Math.max(0, totalUsers - (memberUsers + vipUsers));
+  const freePct = totalUsers > 0 ? Math.round((freeUsersCount / totalUsers) * 100) : 0;
+  const memberPct = totalUsers > 0 ? Math.round((memberUsers / totalUsers) * 100) : 0;
+  const vipPct = totalUsers > 0 ? Math.max(0, 100 - freePct - memberPct) : 0;
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -233,6 +245,112 @@ export function DashboardOverview({
               <span className="text-body-md font-bold">{cancelledOrders}</span>
             </div>
             <span className="text-[11px] text-neutral-500">Đơn huỷ hoặc trả hàng</span>
+          </div>
+        </div>
+      </div>
+
+      {/* AI & Member Activity Section */}
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-brand-navy/10 flex items-center justify-center text-brand-navy">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-label-sm font-bold text-neutral-800 uppercase tracking-wide">
+                Hoạt động AI & Phân bổ hội viên
+              </h4>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('users')}
+            className="text-label-sm font-semibold text-brand-navy hover:underline flex items-center gap-1 bg-transparent border-0 cursor-pointer"
+          >
+            Quản lý người dùng <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* 4 Stat Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Card 1: Try-on hôm nay */}
+          <div className="p-3 bg-purple-50/70 border border-purple-200/60 rounded-xl">
+            <div className="flex items-center justify-between text-purple-700 text-label-sm font-semibold mb-1">
+              <span className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> Try-on hôm nay</span>
+              <span className="text-body-md font-bold">{tryOnToday.toLocaleString('vi-VN')}</span>
+            </div>
+            <span className="text-[11px] text-purple-600/80">Lượt thử đồ trong ngày</span>
+          </div>
+
+          {/* Card 2: Tổng try-on */}
+          <div className="p-3 bg-blue-50/70 border border-blue-200/60 rounded-xl">
+            <div className="flex items-center justify-between text-blue-700 text-label-sm font-semibold mb-1">
+              <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5" /> Tổng lượt Try-on</span>
+              <span className="text-body-md font-bold">{tryOnCount.toLocaleString('vi-VN')}</span>
+            </div>
+            <span className="text-[11px] text-blue-600/80">Toàn bộ thời gian</span>
+          </div>
+
+          {/* Card 3: Gói MEMBER */}
+          <div className="p-3 bg-sky-50/70 border border-sky-200/60 rounded-xl">
+            <div className="flex items-center justify-between text-sky-700 text-label-sm font-semibold mb-1">
+              <span className="flex items-center gap-1.5"><Crown className="w-3.5 h-3.5" /> Gói MEMBER</span>
+              <span className="text-body-md font-bold">{memberUsers.toLocaleString('vi-VN')}</span>
+            </div>
+            <span className="text-[11px] text-sky-600/80">{memberPct}% trên tổng số</span>
+          </div>
+
+          {/* Card 4: Gói VIP */}
+          <div className="p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl">
+            <div className="flex items-center justify-between text-amber-700 text-label-sm font-semibold mb-1">
+              <span className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> Gói VIP</span>
+              <span className="text-body-md font-bold">{vipUsers.toLocaleString('vi-VN')}</span>
+            </div>
+            <span className="text-[11px] text-amber-600/80">{vipPct}% trên tổng số</span>
+          </div>
+        </div>
+
+        {/* Plan Distribution Bar */}
+        <div className="mt-3 pt-3 border-t border-neutral-100 flex flex-col gap-2">
+          <div className="flex items-center justify-between text-[11px] text-neutral-500">
+            <span className="font-semibold text-neutral-700">Tỷ lệ phân bổ theo gói</span>
+            <span>Tổng: <strong className="text-neutral-800">{totalUsers.toLocaleString('vi-VN')}</strong> tài khoản</span>
+          </div>
+          <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden flex">
+            {freePct > 0 && (
+              <div
+                className="bg-neutral-300 h-full transition-all"
+                style={{ width: `${freePct}%` }}
+                title={`Free: ${freeUsersCount} (${freePct}%)`}
+              />
+            )}
+            {memberPct > 0 && (
+              <div
+                className="bg-sky-500 h-full transition-all"
+                style={{ width: `${memberPct}%` }}
+                title={`Member: ${memberUsers} (${memberPct}%)`}
+              />
+            )}
+            {vipPct > 0 && (
+              <div
+                className="bg-amber-500 h-full transition-all"
+                style={{ width: `${vipPct}%` }}
+                title={`VIP: ${vipUsers} (${vipPct}%)`}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-4 text-[11px] text-neutral-500 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-neutral-300" />
+              <span>Free: <strong className="text-neutral-700">{freeUsersCount}</strong> ({freePct}%)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-sky-500" />
+              <span>Member: <strong className="text-neutral-700">{memberUsers}</strong> ({memberPct}%)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span>VIP: <strong className="text-neutral-700">{vipUsers}</strong> ({vipPct}%)</span>
+            </div>
           </div>
         </div>
       </div>

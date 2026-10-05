@@ -32,4 +32,7 @@ export interface DashboardOverviewProps {
   netProductRevenue?: number;
   totalReviews?: number;
   avgRating?: number;
+  tryOnToday?: number;
+  tryOnCount?: number;
+  stylistCount?: number;
 }
