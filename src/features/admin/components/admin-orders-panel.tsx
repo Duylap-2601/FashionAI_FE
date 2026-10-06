@@ -4,7 +4,8 @@ import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-pag
 import { fmt } from '@/features/admin/services/format';
 import type { AdminOrdersPanelProps } from '@/features/admin/types/admin-orders-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
-import { RotateCcw, Search } from 'lucide-react';
+import { RotateCcw, Scissors, Search } from 'lucide-react';
+import Link from 'next/link';
 
 export function AdminOrdersPanel({
   orders,
@@ -147,7 +148,15 @@ export function AdminOrdersPanel({
                         {cfg.label}
                       </span>
                     </div>
-                    <div className="px-6 py-3.5 text-right">
+                    <div className="px-6 py-3.5 text-right flex items-center justify-end gap-3">
+                      <Link
+                        href={`/admin/orders/${o.id}/measurements`}
+                        className="text-xs text-purple-700 font-semibold hover:underline inline-flex items-center gap-1 no-underline"
+                        title="Xem phiếu số đo may đo"
+                      >
+                        <Scissors className="w-3.5 h-3.5" />
+                        <span>Số đo</span>
+                      </Link>
                       <button
                         onClick={() => setSelectedOrder(o)}
                         className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
