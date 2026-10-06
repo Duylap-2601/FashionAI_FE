@@ -10,4 +10,8 @@ export async function fetchMeasurementsCompleteness(): Promise<MeasurementsCompl
   return http.get<MeasurementsCompletenessResponse>('/users/me/measurements/completeness');
 }
 
+export async function fetchUserMeasurements(userId: string): Promise<UserMeasurements> {
+  return (await http.get<UserMeasurements>(`/users/${userId}/measurements`)) || {};
+}
+
 export { queryKeys } from './query-keys';

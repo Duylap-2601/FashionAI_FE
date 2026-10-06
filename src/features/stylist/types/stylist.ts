@@ -43,6 +43,7 @@ export interface StylistAnalysisResult {
   outfitCombinations: OutfitCombination[] | string[];
   stylingTips: string;
   verdict: string;
+  warnings?: string[];
 }
 
 export interface StylistResult extends Partial<StylistAnalysisResult> {
@@ -60,6 +61,7 @@ export interface StylistResult extends Partial<StylistAnalysisResult> {
   productCompatibilityScore?: number | null;
   product?: StylistProduct | null;
   model?: string;
+  warnings?: string[];
 }
 
 export interface StylistHistoryMeta {

@@ -108,6 +108,19 @@ function StylistCard({ item, onDelete, isDeleting }: {
           </div>
         </div>
 
+        {/* Stylist Warnings */}
+        {item.warnings && item.warnings.length > 0 && (
+          <div className="p-3 bg-amber-50/90 rounded-xl border border-amber-200/80 flex items-start gap-2 text-[12px] text-amber-900">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-semibold text-amber-950">Lưu ý từ AI:</span>
+              {item.warnings.map((w, idx) => (
+                <p key={idx} className="text-amber-800 leading-relaxed">{w}</p>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Structured Analysis Sections */}
         <div className="flex flex-col gap-2.5">
           {/* Personal Color */}

@@ -6,6 +6,7 @@ export function mapOrder(order: BackendOrder): Order {
   return {
     id: order.id,
     orderCode: order.orderCode,
+    userId: order.userId || order.user?.id,
     status: order.status,
     paymentStatus: order.paymentStatus,
     refundStatus: order.refundStatus,
@@ -38,6 +39,7 @@ export function mapOrder(order: BackendOrder): Order {
       color: item.color || '',
       price: Number(item.price),
       measurementSnapshot: item.measurementSnapshot || undefined,
+      measurementDisplay: Array.isArray(item.measurementDisplay) ? item.measurementDisplay : undefined,
       measurementReview: item.measurementReview || undefined,
       productNameSnapshot: item.productNameSnapshot,
       fabricSnapshot: item.fabricSnapshot,

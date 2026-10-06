@@ -246,3 +246,54 @@ test('reconciliation services query and confirm manual payment with webhook fail
   assert.equal(calls[2][0], 'PATCH');
   assert.equal(calls[2][1], '/payments/admin/webhook-failures/fail-123/resolve');
 });
+
+test('order mapping preserves userId and measurementDisplay, and admin user measurements query hits /users/:id/measurements', async () => {
+  const calls = [];
+  const load = createSourceLoader({
+    mocks: {
+      '@/lib/http': {
+        http: {
+          get: async (...args) => { calls.push(['GET', ...args]); return { height: 175, chest: 90 }; },
+        },
+      },
+    },
+  });
+  const { mapOrder } = load('@/features/orders/services/orders-utils');
+  const { fetchUserMeasurements } = load('@/features/measurements/services/queries');
+  const { queryKeys: measurementKeys } = load('@/features/measurements/services/query-keys');
+
+  const mapped = mapOrder({
+    id: 'ord-123',
+    orderCode: 9988,
+    userId: 'user-456',
+    status: 'MEASUREMENT_REVIEW',
+    amount: '500000',
+    discountAmount: 0,
+    shippingFee: 30000,
+    items: [
+      {
+        id: 'item-1',
+        productId: 'prod-1',
+        quantity: 1,
+        price: '500000',
+        measurementSnapshot: { height: 170, chest: 88 },
+        measurementDisplay: [
+          { field: 'height', label: 'Chiều cao', value: 170, unit: 'cm' },
+          { field: 'chest', label: 'Vòng ngực', value: 88, unit: 'cm' },
+        ],
+      },
+    ],
+  });
+
+  assert.equal(mapped.userId, 'user-456');
+  assert.equal(mapped.items[0].measurementDisplay?.length, 2);
+  assert.equal(mapped.items[0].measurementDisplay?.[0].label, 'Chiều cao');
+
+  const userMeasurements = await fetchUserMeasurements('user-456');
+  assert.equal(calls[0][0], 'GET');
+  assert.equal(calls[0][1], '/users/user-456/measurements');
+  assert.equal(userMeasurements.height, 175);
+
+  assert.equal(JSON.stringify(measurementKeys.userMeasurements('user-456')), JSON.stringify(['measurements', 'user', 'user-456']));
+});
+

@@ -2,6 +2,7 @@
 
 import type { StylistResultPanelProps } from '@/features/stylist/types/stylist-result-panel';
 import {
+  AlertCircle,
   CheckCircle2,
   Ruler,
   Sun
@@ -11,6 +12,21 @@ import Link from 'next/link';
 export function StylistResultPanel({ resultRef, displayResult, toColorList, score, scoreColor, scoreLabel, occasion, toOutfitList, getOutfitIcon }: StylistResultPanelProps) {
   return (
     <div ref={resultRef} className="space-y-8 scroll-mt-6 animate-[fadeInUp_0.5s_ease-out]">
+
+      {/* Stylist Warnings Callout */}
+      {displayResult.warnings && displayResult.warnings.length > 0 && (
+        <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 md:p-5 flex items-start gap-3 shadow-xs">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-body-sm text-amber-900 space-y-1">
+            <p className="font-semibold text-amber-950">Lưu ý từ AI Stylist</p>
+            {displayResult.warnings.map((warning, idx) => (
+              <p key={idx} className="text-amber-800 leading-relaxed text-[13.5px]">
+                {warning}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {displayResult.product && (
         <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-neutral-200 flex items-center gap-4">

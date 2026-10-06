@@ -90,6 +90,13 @@ export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIA
 export type RefundStatus = 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
 export type ShipmentStatus = 'PENDING' | 'CREATED' | 'PICKING' | 'PICKED' | 'IN_TRANSIT' | 'DELIVERING' | 'DELIVERED' | 'DELIVERY_FAILED' | 'RETURNING' | 'RETURNED' | 'CANCELLED';
 
+export interface MeasurementDisplayItem {
+  field: string;
+  label: string;
+  value: number;
+  unit: string;
+}
+
 export interface OrderItem {
   id: string;
   productId: string;
@@ -97,6 +104,7 @@ export interface OrderItem {
   color?: string;
   price: number;
   measurementSnapshot?: MeasurementSnapshot;
+  measurementDisplay?: MeasurementDisplayItem[];
   measurementReview?: MeasurementReview;
   productNameSnapshot?: string | null;
   fabricSnapshot?: string | null;
@@ -109,6 +117,7 @@ export interface OrderItem {
 export interface Order {
   id: string;
   orderCode: number;
+  userId?: string;
   status: BackendOrderStatus;
   paymentStatus?: PaymentStatus;
   refundStatus?: RefundStatus;
@@ -135,6 +144,7 @@ export interface BackendOrderItem {
   color?: string | null;
   price: number | string;
   measurementSnapshot?: MeasurementSnapshot | null;
+  measurementDisplay?: MeasurementDisplayItem[] | null;
   measurementReview?: MeasurementReview | null;
   productNameSnapshot?: string | null;
   fabricSnapshot?: string | null;
@@ -145,11 +155,23 @@ export interface BackendOrderItem {
 }
 
 export interface MeasurementSnapshot {
+  height?: number | string | null;
+  weight?: number | string | null;
   chest?: number | string | null;
   waist?: number | string | null;
   hip?: number | string | null;
   shoulder?: number | string | null;
-  height?: number | string | null;
+  neck?: number | string | null;
+  sleeveLength?: number | string | null;
+  wrist?: number | string | null;
+  thigh?: number | string | null;
+  knee?: number | string | null;
+  calf?: number | string | null;
+  inseam?: number | string | null;
+  outseam?: number | string | null;
+  shirtLength?: number | string | null;
+  underbust?: number | string | null;
+  [key: string]: unknown;
 }
 
 export interface MeasurementReview {
@@ -185,6 +207,8 @@ export interface OrderHistoryEvent {
 export interface BackendOrder {
   id: string;
   orderCode: number;
+  userId?: string;
+  user?: { id?: string; name?: string; email?: string } | null;
   status: BackendOrderStatus;
   paymentStatus?: PaymentStatus;
   refundStatus?: RefundStatus;

@@ -263,7 +263,20 @@ export default function OrderDetailPage() {
                         <span>•</span>
                         <span>Vải: <strong className="text-neutral-700">{item.fabricSnapshot || 'Theo sản phẩm'}</strong></span>
                       </div>
-                      {item.measurementSnapshot && Object.keys(item.measurementSnapshot).length > 0 && (
+                      {item.measurementDisplay && item.measurementDisplay.length > 0 ? (
+                        <div className="mt-2 p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 text-[11px] text-neutral-600 flex flex-wrap gap-x-3 gap-y-1">
+                          <span className="font-semibold text-brand-navy">Số đo may:</span>
+                          {item.measurementDisplay.map((m) => (
+                            <span key={m.field}>
+                              {m.label}: <strong className="text-neutral-700">{m.value}{m.unit}</strong>
+                            </span>
+                          ))}
+                        </div>
+                      ) : item.measurementDisplay && item.measurementDisplay.length === 0 ? (
+                        <div className="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-200/60 text-[11px] text-amber-800">
+                          Chưa đủ dữ liệu số đo bắt buộc cho món này
+                        </div>
+                      ) : item.measurementSnapshot && Object.keys(item.measurementSnapshot).length > 0 ? (
                         <div className="mt-2 p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 text-[11px] text-neutral-600 flex flex-wrap gap-x-3 gap-y-1">
                           <span className="font-semibold text-brand-navy">Số đo đã chốt:</span>
                           {item.measurementSnapshot.chest && <span>Ngực: {item.measurementSnapshot.chest}cm</span>}
@@ -272,7 +285,7 @@ export default function OrderDetailPage() {
                           {item.measurementSnapshot.shoulder && <span>Vai: {item.measurementSnapshot.shoulder}cm</span>}
                           {item.measurementSnapshot.height && <span>Cao: {item.measurementSnapshot.height}cm</span>}
                         </div>
-                      )}
+                      ) : null}
                       <div className="text-[13px] text-neutral-500 mt-0.5">
                         Số lượng: <strong className="text-brand-navy">{item.quantity}</strong>
                       </div>
@@ -352,10 +365,12 @@ export default function OrderDetailPage() {
                 <span className="text-neutral-700 font-medium">{order.shippingFee.toLocaleString('vi-VN')}đ</span>
               </div>
 
-              <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
-                <span className="text-neutral-500">Giảm giá</span>
-                <span className="text-neutral-700 font-medium">-{order.discountAmount.toLocaleString('vi-VN')}đ</span>
-              </div>
+              {order.discountAmount > 0 && (
+                <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
+                  <span className="text-neutral-500">Giảm giá</span>
+                  <span className="text-neutral-700 font-medium">-{order.discountAmount.toLocaleString('vi-VN')}đ</span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between pt-4">
                 <span className="text-body-md font-bold text-brand-navy">Tổng thanh toán</span>
