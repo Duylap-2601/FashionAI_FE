@@ -228,3 +228,22 @@ export interface BackendOrder {
   history?: OrderHistoryEvent[];
   allowedActions?: { cancel?: boolean; updateMeasurement?: boolean };
 }
+
+export interface OrdersListParams {
+  page?: number;
+  limit?: number;
+  status?: BackendOrderStatus;
+  search?: string;
+}
+
+export interface OrdersListMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface OrdersListResult {
+  orders: Order[];
+  meta: OrdersListMeta;
+}
