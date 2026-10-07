@@ -995,6 +995,13 @@ function AdminDashboardContent() {
 
     try {
       if (editingProduct.id) {
+        const existingImagesPayload = productImages
+          .filter(item => item.isExisting && item.imageId)
+          .map(item => ({
+            id: item.imageId!,
+            colorName: resolveImageColor(item.colorName),
+          }));
+
         // PUT /products/:id chỉ nhận JSON (không upload file) → cập nhật thông tin trước.
         await updateProduct(editingProduct.id, {
           name: editingProduct.name,
@@ -1006,6 +1013,7 @@ function AdminDashboardContent() {
           material: editingProduct.material || undefined,
           description: editingProduct.description || undefined,
           status: editingProduct.status || 'ACTIVE',
+          images: existingImagesPayload,
         });
 
         // Nếu admin chọn thêm ảnh mới → upload qua endpoint ảnh.
