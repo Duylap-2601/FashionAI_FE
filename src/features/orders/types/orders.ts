@@ -55,6 +55,7 @@ export interface OrderQuote {
 }
 
 export type BackendOrderStatus =
+  | 'CREATED'
   | 'PENDING_PAYMENT'
   | 'PENDING'
   | 'PAID'
@@ -86,9 +87,18 @@ export interface ConfirmDeliveryResponse {
   data: BackendOrder;
 }
 
-export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | null;
+export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | null;
 export type RefundStatus = 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
-export type ShipmentStatus = 'PENDING' | 'CREATED' | 'PICKING' | 'PICKED' | 'IN_TRANSIT' | 'DELIVERING' | 'DELIVERED' | 'DELIVERY_FAILED' | 'RETURNING' | 'RETURNED' | 'CANCELLED';
+export type ShipmentStatus = 'PENDING' | 'UNKNOWN' | 'READY_TO_PICK' | 'CREATED' | 'PICKING' | 'PICKED' | 'SHIPPING' | 'IN_TRANSIT' | 'DELIVERING' | 'DELIVERED' | 'DELIVERY_FAILED' | 'RETURNING' | 'RETURNED' | 'CANCELLED' | 'FAILED';
+
+export interface OrderDisplayStatus {
+  source: 'ORDER' | 'GHN' | string;
+  code: string;
+  label: string;
+  providerTerminal: boolean;
+  orderFinal: boolean;
+  issue: boolean;
+}
 
 export interface MeasurementDisplayItem {
   field: string;
@@ -148,6 +158,7 @@ export interface Order {
   orderCode: number;
   userId?: string;
   status: BackendOrderStatus;
+  displayStatus?: OrderDisplayStatus;
   paymentStatus?: PaymentStatus;
   refundStatus?: RefundStatus;
   fulfillmentFlowVersion?: number | null;
@@ -175,8 +186,11 @@ export interface Order {
   payments?: OrderPayment[];
   refunds?: OrderRefund[];
   shipment?: OrderShipment | null;
+  activeShipment?: OrderShipment | null;
+  currentShipment?: OrderShipment | null;
+  shipmentHistory?: OrderShipment[];
   history?: OrderHistoryEvent[];
-  allowedActions?: { cancel?: boolean; updateMeasurement?: boolean };
+  allowedActions?: { cancel?: boolean; confirmDelivery?: boolean; startShipmentCreation?: boolean; createReplacementShipment?: boolean; updateMeasurement?: boolean };
 }
 
 export interface BackendOrderItem {
@@ -234,6 +248,7 @@ export interface OrderShipment {
   provider: string;
   providerOrderCode?: string | null;
   status: ShipmentStatus;
+  rawStatus?: string | null;
   shippingFee?: number | null;
   quotedShippingFee?: number | null;
   actualShippingFee?: number | null;
@@ -250,6 +265,9 @@ export interface OrderHistoryEvent {
   occurredAt: string;
   publicMessage?: string | null;
   shipmentId?: string | null;
+  fromShipmentStatus?: ShipmentStatus | null;
+  toShipmentStatus?: ShipmentStatus | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface BackendOrder {
@@ -258,6 +276,7 @@ export interface BackendOrder {
   userId?: string;
   user?: { id?: string; name?: string; email?: string } | null;
   status: BackendOrderStatus;
+  displayStatus?: OrderDisplayStatus;
   paymentStatus?: PaymentStatus;
   refundStatus?: RefundStatus;
   fulfillmentFlowVersion?: number | null;
@@ -285,8 +304,11 @@ export interface BackendOrder {
   payments?: OrderPayment[];
   refunds?: OrderRefund[];
   shipment?: OrderShipment | null;
+  activeShipment?: OrderShipment | null;
+  currentShipment?: OrderShipment | null;
+  shipmentHistory?: OrderShipment[];
   history?: OrderHistoryEvent[];
-  allowedActions?: { cancel?: boolean; updateMeasurement?: boolean };
+  allowedActions?: { cancel?: boolean; confirmDelivery?: boolean; startShipmentCreation?: boolean; createReplacementShipment?: boolean; updateMeasurement?: boolean };
 }
 
 export interface OrdersListParams {

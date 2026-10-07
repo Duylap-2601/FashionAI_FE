@@ -17,7 +17,7 @@ export function normalizeProductListParams(params: ProductListParams = {}) {
 
 export async function fetchProductsPage(params: ProductListParams = {}): Promise<ProductListResult> {
   const queryParams = normalizeProductListParams(params);
-  const data = await http.get<(BackendProduct[] & { __meta?: Partial<ProductListResult['meta']> }) | { items?: BackendProduct[]; __meta?: Partial<ProductListResult['meta']> }>('/products', { params: queryParams });
+  const data = await http.get<(BackendProduct[] & { __meta?: Partial<ProductListResult['meta']> }) | { items?: BackendProduct[]; __meta?: Partial<ProductListResult['meta']> }>('/products', { auth: 'public', params: queryParams });
   const rawList = Array.isArray(data) ? data : data.items || [];
   const responseMeta = data.__meta;
   const fallbackLimit = Number(queryParams.limit) || DEFAULT_PRODUCT_LIST_META.limit;
@@ -40,7 +40,7 @@ export async function fetchProducts(params: ProductListParams = {}) {
 }
 
 export async function fetchProduct(id: string | undefined) {
-  const data = await http.get<BackendProduct>(`/products/${id}`);
+  const data = await http.get<BackendProduct>(`/products/${id}`, { auth: 'public' });
   return mapProduct(data);
 }
 

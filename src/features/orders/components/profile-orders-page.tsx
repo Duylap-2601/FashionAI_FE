@@ -95,9 +95,10 @@ function OrderCard({
   const { addToCart, setIsCartOpen } = useCart();
   const [copied, setCopied] = useState(false);
 
-  const status = order.status || 'PENDING';
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
+  const status = order.status || 'CREATED';
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.CREATED;
   const Icon = cfg.icon;
+  const statusLabel = order.displayStatus?.label ?? cfg.label;
   const orderCode = `ORD-${order.orderCode}`;
 
   const copyCode = () => {
@@ -151,7 +152,7 @@ function OrderCard({
           <span className="text-label-sm text-neutral-400">{fmtDate(order.createdAt)}</span>
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-semibold ${cfg.badge}`}>
             <Icon className="w-3 h-3" />
-            {cfg.label}
+            {statusLabel}
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -204,7 +205,7 @@ function OrderCard({
           >
             Xem trang đơn <ExternalLink className="w-3 h-3" />
           </Link>
-          {status === 'DELIVERED' && (
+          {order.allowedActions?.confirmDelivery && (
             <button
               type="button"
               onClick={handleConfirmDelivery}
@@ -222,7 +223,7 @@ function OrderCard({
               Try-On lại
             </Link>
           )}
-          {status === 'PENDING' && (
+          {order.allowedActions?.cancel && (
             <button
               onClick={handleCancel}
               disabled={isCancelling}
@@ -377,7 +378,16 @@ export default function OrdersPage() {
   const [search, setSearch] = useState('');
   const [reviewModalItem, setReviewModalItem] = useState<{ item: OrderItem; orderId: string } | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const queryStatus = activeFilter === 'all' ? undefined : activeFilter.toUpperCase() as BackendOrderStatus;
+  const filterStatusMap: Record<string, BackendOrderStatus | undefined> = {
+    all: undefined,
+    pending: 'CREATED',
+    tailoring: 'PROCESSING',
+    processing: 'PROCESSING',
+    ready_to_ship: 'READY_TO_SHIP',
+    completed: 'COMPLETED',
+    cancelled: 'CANCELLED',
+  };
+  const queryStatus = filterStatusMap[activeFilter] ?? (activeFilter === 'shipping' || activeFilter === 'delivered' ? undefined : activeFilter.toUpperCase() as BackendOrderStatus);
   const { orders, meta, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteOrders({
     limit: 20,
     status: queryStatus,
@@ -404,7 +414,9 @@ export default function OrdersPage() {
   const countByStatus = (id: string) => {
     if (id === activeFilter) return meta.total;
     if (id === 'all') return orders.length;
-    return orders.filter(o => (o.status || 'pending').toLowerCase() === id.toLowerCase()).length;
+    const status = filterStatusMap[id];
+    if (!status) return orders.length;
+    return orders.filter(o => o.status === status).length;
   };
 
   return (
