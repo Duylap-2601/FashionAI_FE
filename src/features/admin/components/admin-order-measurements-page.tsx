@@ -45,6 +45,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
+  CREATED: 'Đã tạo',
   PENDING_PAYMENT: 'Chờ thanh toán',
   PENDING: 'Chờ xác nhận',
   PAID: 'Đã thanh toán',

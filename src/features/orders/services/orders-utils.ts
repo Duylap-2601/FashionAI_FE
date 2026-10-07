@@ -8,6 +8,7 @@ export function mapOrder(order: BackendOrder): Order {
     orderCode: order.orderCode,
     userId: order.userId || order.user?.id,
     status: order.status,
+    displayStatus: order.displayStatus,
     paymentStatus: order.paymentStatus,
     refundStatus: order.refundStatus,
     fulfillmentFlowVersion: order.fulfillmentFlowVersion,
@@ -78,12 +79,15 @@ export function mapOrder(order: BackendOrder): Order {
       createdAt: p.createdAt,
     })) || [],
     refunds: order.refunds || [],
-    shipment: order.shipment,
+    shipment: order.currentShipment ?? order.shipment,
+    activeShipment: order.activeShipment ?? null,
+    currentShipment: order.currentShipment ?? order.shipment ?? null,
+    shipmentHistory: order.shipmentHistory ?? (order.shipment ? [order.shipment] : []),
     history: order.history || [],
     allowedActions: order.allowedActions,
   };
 }
 
 export function isTerminalOrderStatus(status: string) {
-  return ['COMPLETED', 'CANCELLED', 'RETURNED', 'EXPIRED', 'FAILED'].includes(status);
+  return ['COMPLETED', 'CANCELLED'].includes(status);
 }
