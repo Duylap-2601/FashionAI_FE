@@ -222,7 +222,12 @@ function AdminDashboardContent() {
         setEditingProduct(prev => prev ? ({
           ...prev,
           garmentUrl: updatedProd.garmentUrl || prev.garmentUrl,
-          images: mappedBackendImages.map(image => ({ id: image.imageId || '', imageUrl: image.url, isMain: image.isMain })),
+          images: mappedBackendImages.map(image => ({
+            id: image.imageId || '',
+            imageUrl: image.url,
+            isMain: image.isMain,
+            colorName: image.colorName ?? null,
+          })),
         }) : prev);
 
         // Giữ lại các ảnh mới chưa lưu nếu người dùng vừa chọn thêm
@@ -360,12 +365,13 @@ function AdminDashboardContent() {
         const rawImages: AdminImageDto[] = Array.isArray(p.images) ? p.images : [];
         const normalizedImages: AdminProductImage[] = rawImages.map((img: AdminImageDto, idx: number) => {
           if (typeof img === 'string') {
-            return { id: '', imageUrl: img, isMain: idx === 0 };
+            return { id: '', imageUrl: img, isMain: idx === 0, colorName: null };
           }
           return {
             id: img.id || '',
             imageUrl: img.imageUrl || img.url || '',
             isMain: Boolean(img.isMain),
+            colorName: img.colorName ?? null,
           };
         }).filter((item: AdminProductImage) => Boolean(item.imageUrl));
 
@@ -983,6 +989,20 @@ function AdminDashboardContent() {
     const colors = (editingProduct.colors || [])
       .map(c => ({ name: c.name.trim(), hex: normalizeHex(c.hex) }))
       .filter(c => c.name.length > 0);
+
+    // Tự động bổ sung các màu đã gán cho ảnh nhưng chưa có trong danh sách colors
+    // để backend chấp nhận hợp lệ và không bị mất màu khi lưu
+    productImages.forEach(img => {
+      if (img.colorName && img.colorName.trim()) {
+        const cTrim = img.colorName.trim();
+        const exists = colors.some(c => c.name.toLowerCase() === cTrim.toLowerCase());
+        if (!exists) {
+          const hex = cTrim.toLowerCase().includes('đen') ? '#111111' : '#000000';
+          colors.push({ name: cTrim, hex });
+        }
+      }
+    });
+
     const primaryColor = colors[0]?.name;
 
     const resolveImageColor = (cName?: string | null): string | null => {
@@ -1023,6 +1043,7 @@ function AdminDashboardContent() {
             imageForm.append('images', file);
             if (index === 0) imageForm.append('image', file);
           });
+          imageForm.append('isMainIndex', '0');
           imageForm.append('isMain', 'true');
           imageForm.append('imageColors', JSON.stringify(newColors));
           try {

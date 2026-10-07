@@ -101,6 +101,14 @@ function VirtualTryOnContent() {
   const [selectedColor, setSelectedColor] = useState<string | null>(initialColor || initialProduct?.colors?.[0]?.name || null);
   const [upperProduct, setUpperProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null);
   const [lowerProduct, setLowerProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || null);
+  const [upperColor, setUpperColor] = useState<string | null>(() => {
+    const p = catalogProducts.find(item => (item.garmentCategory || toBackendCategory(item.category)) === 'UPPER');
+    return p?.colors?.[0]?.name || null;
+  });
+  const [lowerColor, setLowerColor] = useState<string | null>(() => {
+    const p = catalogProducts.find(item => (item.garmentCategory || toBackendCategory(item.category)) === 'LOWER');
+    return p?.colors?.[0]?.name || null;
+  });
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [catalogSlot, setCatalogSlot] = useState<CatalogSlot>('single');
   const [showQuotaModal, setShowQuotaModal] = useState(false);
@@ -138,9 +146,16 @@ function VirtualTryOnContent() {
         const match = catalogProducts.find(p => p.id === ids[0]);
         if (match) {
           const cat = match.garmentCategory || toBackendCategory(match.category);
-          if (cat === 'UPPER') setUpperProduct(match);
-          if (cat === 'LOWER') setLowerProduct(match);
+          if (cat === 'UPPER') {
+            setUpperProduct(match);
+            setUpperColor(match.colors?.[0]?.name || null);
+          }
+          if (cat === 'LOWER') {
+            setLowerProduct(match);
+            setLowerColor(match.colors?.[0]?.name || null);
+          }
           setSelectedProduct(match);
+          setSelectedColor(match.colors?.[0]?.name || null);
           setGarmentMode('single');
         }
       } else if (ids.length >= 2) {
@@ -151,17 +166,25 @@ function VirtualTryOnContent() {
           const cat1 = p1.garmentCategory || toBackendCategory(p1.category);
           if (cat0 === 'UPPER' && cat1 === 'LOWER') {
             setUpperProduct(p0);
+            setUpperColor(p0.colors?.[0]?.name || null);
             setLowerProduct(p1);
+            setLowerColor(p1.colors?.[0]?.name || null);
           } else if (cat0 === 'LOWER' && cat1 === 'UPPER') {
             setUpperProduct(p1);
+            setUpperColor(p1.colors?.[0]?.name || null);
             setLowerProduct(p0);
+            setLowerColor(p0.colors?.[0]?.name || null);
           } else {
             setUpperProduct(p0);
+            setUpperColor(p0.colors?.[0]?.name || null);
             setLowerProduct(p1);
+            setLowerColor(p1.colors?.[0]?.name || null);
           }
           setGarmentMode('combo');
         } else if (p0 || p1) {
-          setSelectedProduct((p0 || p1)!);
+          const single = (p0 || p1)!;
+          setSelectedProduct(single);
+          setSelectedColor(single.colors?.[0]?.name || null);
           setGarmentMode('single');
         }
       }
@@ -170,6 +193,21 @@ function VirtualTryOnContent() {
       if (match) setSelectedProduct(match);
     } else if (catalogProducts.length > 0) {
       setSelectedProduct(prev => prev ?? catalogProducts[0]);
+    }
+
+    if (catalogProducts.length > 0) {
+      setUpperProduct(prev => {
+        if (prev) return prev;
+        const u = catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null;
+        if (u) setUpperColor(u.colors?.[0]?.name || null);
+        return u;
+      });
+      setLowerProduct(prev => {
+        if (prev) return prev;
+        const l = catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || null;
+        if (l) setLowerColor(l.colors?.[0]?.name || null);
+        return l;
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rackIds, productId, catalogProducts]);
@@ -212,8 +250,10 @@ function VirtualTryOnContent() {
       router.replace(`/try-on?productId=${product.id}`);
     } else if (catalogSlot === 'upper') {
       setUpperProduct(product);
+      setUpperColor(product.colors?.[0]?.name || null);
     } else if (catalogSlot === 'lower') {
       setLowerProduct(product);
+      setLowerColor(product.colors?.[0]?.name || null);
     }
   };
 
@@ -252,8 +292,8 @@ function VirtualTryOnContent() {
       let payload: Parameters<typeof tryOnAsync>[0];
       if (garmentMode === 'combo') {
         const garments: GarmentSlotInput[] = [];
-        if (upperProduct) garments.push({ productId: upperProduct.id, garmentCategory: 'UPPER', color: upperProduct.colors?.[0]?.name });
-        if (lowerProduct) garments.push({ productId: lowerProduct.id, garmentCategory: 'LOWER', color: lowerProduct.colors?.[0]?.name });
+        if (upperProduct) garments.push({ productId: upperProduct.id, garmentCategory: 'UPPER', color: upperColor || upperProduct.colors?.[0]?.name || undefined });
+        if (lowerProduct) garments.push({ productId: lowerProduct.id, garmentCategory: 'LOWER', color: lowerColor || lowerProduct.colors?.[0]?.name || undefined });
         payload = { humanImage: currentHumanImage, garments, productId: upperProduct?.id || lowerProduct?.id };
       } else {
         if (!selectedProduct?.id) return;
@@ -431,6 +471,8 @@ function VirtualTryOnContent() {
             upperProduct={upperProduct}
             lowerProduct={lowerProduct}
             selectedColor={selectedColor}
+            upperColor={upperColor}
+            lowerColor={lowerColor}
             onOpenUpperCatalog={() => handleOpenCatalog('upper')}
             onOpenLowerCatalog={() => handleOpenCatalog('lower')}
             onOpenCatalog={() => handleOpenCatalog('single')}
@@ -448,6 +490,8 @@ function VirtualTryOnContent() {
             selectedColor={selectedColor}
             upperProduct={upperProduct}
             lowerProduct={lowerProduct}
+            upperColor={upperColor}
+            lowerColor={lowerColor}
             canGenerate={canGenerate}
             isSubmitting={isSubmitting || pageState === 'loading'}
             isBlocked={isBlocked}
@@ -458,6 +502,8 @@ function VirtualTryOnContent() {
             onModeChange={handleModeChange}
             onOpenCatalog={handleOpenCatalog}
             onSelectColor={setSelectedColor}
+            onSelectUpperColor={setUpperColor}
+            onSelectLowerColor={setLowerColor}
             onGenerate={handleGenerate}
             onDownload={handleDownload}
             onShare={handleShare}

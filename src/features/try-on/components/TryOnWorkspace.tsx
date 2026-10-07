@@ -8,22 +8,79 @@ import { Bookmark, Download, Info, Layers, Loader2, Share2 } from 'lucide-react'
 import Image from 'next/image';
 import Link from 'next/link';
 
-function GarmentSlot({ title, product, actionLabel, emptyLabel, onSelect }: { title: string; product: Product | null; actionLabel: string; emptyLabel: string; onSelect: () => void }) {
+function GarmentSlot({
+  title,
+  product,
+  selectedColor,
+  actionLabel,
+  emptyLabel,
+  onSelect,
+  onSelectColor,
+}: {
+  title: string;
+  product: Product | null;
+  selectedColor?: string | null;
+  actionLabel: string;
+  emptyLabel: string;
+  onSelect: () => void;
+  onSelectColor?: (color: string) => void;
+}) {
+  const currentColor = selectedColor || product?.colors?.[0]?.name;
+  const matchingImage = product?.imageItems?.find(
+    img => img.colorName && img.colorName.trim().toLowerCase() === currentColor?.trim().toLowerCase()
+  );
+  const slotImage = matchingImage?.url || product?.image;
+
   return (
     <div className="p-4 bg-white rounded-2xl border border-[#E5DFD5]">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[13px] font-semibold text-[#5D1C34]">{title}</span>
-        <button type="button" onClick={onSelect} className="text-[13px] font-semibold text-[#5D1C34] hover:underline">{actionLabel}</button>
+        <button type="button" onClick={onSelect} className="text-[13px] font-semibold text-[#5D1C34] hover:underline cursor-pointer">
+          {actionLabel}
+        </button>
       </div>
       {product ? (
-        <div className="flex items-center gap-3">
-          <div className="relative w-14 h-18 shrink-0 overflow-hidden rounded-lg border border-neutral-100 bg-neutral-100">
-            <Image src={product.image} alt={product.name} fill sizes="56px" unoptimized className="object-cover" />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="relative w-14 h-18 shrink-0 overflow-hidden rounded-lg border border-neutral-100 bg-neutral-100">
+              {slotImage && (
+                <Image src={slotImage} alt={product.name} fill sizes="56px" unoptimized className="object-cover" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-body-sm font-bold text-brand-navy truncate">{product.name}</h4>
+              <p className="text-[12px] text-neutral-500">{product.price}</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-body-sm font-bold text-brand-navy truncate">{product.name}</h4>
-            <p className="text-[12px] text-neutral-500">{product.price}</p>
-          </div>
+
+          {product.colors && product.colors.length > 0 && onSelectColor && (
+            <div className="pt-2.5 border-t border-neutral-100 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between text-xs font-medium text-neutral-600">
+                <span>Màu sắc:</span>
+                <span className="font-semibold text-[#5D1C34]">{currentColor}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {product.colors.map(col => {
+                  const isSelected = currentColor?.trim().toLowerCase() === col.name.trim().toLowerCase();
+                  return (
+                    <button
+                      key={col.name}
+                      type="button"
+                      onClick={() => onSelectColor(col.name)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-[#5D1C34] bg-white text-[#5D1C34] shadow-xs ring-1 ring-[#5D1C34]'
+                          : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: col.hex }} />
+                      <span>{col.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <p className="text-body-sm text-neutral-400 italic py-2">{emptyLabel}</p>
@@ -43,6 +100,8 @@ export function TryOnWorkspace({
   selectedColor,
   upperProduct,
   lowerProduct,
+  upperColor,
+  lowerColor,
   canGenerate,
   isSubmitting,
   isBlocked,
@@ -53,6 +112,8 @@ export function TryOnWorkspace({
   onModeChange,
   onOpenCatalog,
   onSelectColor,
+  onSelectUpperColor,
+  onSelectLowerColor,
   onGenerate,
   onDownload,
   onShare,
@@ -177,16 +238,20 @@ export function TryOnWorkspace({
             <GarmentSlot
               title="Món 1: Áo / Blazer (Upper)"
               product={upperProduct}
+              selectedColor={upperColor}
               actionLabel={upperProduct ? 'Đổi áo khác' : '+ Chọn áo'}
               emptyLabel="Chưa chọn áo"
               onSelect={() => onOpenCatalog('upper')}
+              onSelectColor={onSelectUpperColor}
             />
             <GarmentSlot
               title="Món 2: Quần / Chân váy (Lower)"
               product={lowerProduct}
+              selectedColor={lowerColor}
               actionLabel={lowerProduct ? 'Đổi quần/váy' : '+ Chọn quần/váy'}
               emptyLabel="Chưa chọn quần hoặc váy"
               onSelect={() => onOpenCatalog('lower')}
+              onSelectColor={onSelectLowerColor}
             />
             <div className="p-3.5 bg-white rounded-xl border border-[#E5DFD5] text-[13px] text-neutral-600 flex items-center justify-between">
               <span>Phối bộ sẽ dùng:</span>

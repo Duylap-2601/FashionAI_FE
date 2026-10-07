@@ -12,7 +12,11 @@ export interface TryOnWorkspaceProps {
   selectedColor?: string | null;
   upperProduct: Product | null;
   lowerProduct: Product | null;
+  upperColor?: string | null;
+  lowerColor?: string | null;
   onSelectColor?: (color: string) => void;
+  onSelectUpperColor?: (color: string) => void;
+  onSelectLowerColor?: (color: string) => void;
   canGenerate: boolean;
   isSubmitting: boolean;
   isBlocked: boolean;

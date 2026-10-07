@@ -12,6 +12,8 @@ interface LiveTryOnWorkspaceProps {
   upperProduct: Product | null;
   lowerProduct: Product | null;
   selectedColor?: string | null;
+  upperColor?: string | null;
+  lowerColor?: string | null;
   onOpenUpperCatalog: () => void;
   onOpenLowerCatalog: () => void;
   onOpenCatalog: () => void;
@@ -20,7 +22,18 @@ interface LiveTryOnWorkspaceProps {
 
 const buttonFocus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D1C34] focus-visible:ring-offset-4 disabled:cursor-not-allowed disabled:opacity-45';
 
-export function LiveTryOnWorkspace({ selectedProduct, upperProduct, lowerProduct, selectedColor, onOpenUpperCatalog, onOpenLowerCatalog, onOpenCatalog, onSwitchToPhoto }: LiveTryOnWorkspaceProps) {
+export function LiveTryOnWorkspace({
+  selectedProduct,
+  upperProduct,
+  lowerProduct,
+  selectedColor,
+  upperColor,
+  lowerColor,
+  onOpenUpperCatalog,
+  onOpenLowerCatalog,
+  onOpenCatalog,
+  onSwitchToPhoto,
+}: LiveTryOnWorkspaceProps) {
   const [outfitMode, setOutfitMode] = useState(false);
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -122,7 +135,7 @@ export function LiveTryOnWorkspace({ selectedProduct, upperProduct, lowerProduct
               ))}
             </div>
             <div className={outfitMode ? 'grid grid-cols-1 min-[380px]:grid-cols-2 gap-3' : ''}>
-              {outfitMode ? <><GarmentCard label="Áo" product={upperProduct} onSelect={onOpenUpperCatalog} disabled={selectionLocked} color={selectedColor} /><GarmentCard label="Quần" product={lowerProduct} onSelect={onOpenLowerCatalog} disabled={selectionLocked} /></> : <GarmentCard label="Trang phục" product={selectedProduct} onSelect={onOpenCatalog} disabled={selectionLocked} horizontal color={selectedColor} />}
+              {outfitMode ? <><GarmentCard label="Áo" product={upperProduct} onSelect={onOpenUpperCatalog} disabled={selectionLocked} color={upperColor || selectedColor} /><GarmentCard label="Quần" product={lowerProduct} onSelect={onOpenLowerCatalog} disabled={selectionLocked} color={lowerColor} /></> : <GarmentCard label="Trang phục" product={selectedProduct} onSelect={onOpenCatalog} disabled={selectionLocked} horizontal color={selectedColor} />}
             </div>
             <p className={`mt-4 flex items-start gap-2 text-[12px] leading-5 ${isPaused ? 'text-[#5D1C34]' : 'text-[#8A7871]'}`}>
               {isPaused ? <RefreshCw size={14} className="mt-0.5 shrink-0" /> : <CirclePause size={14} className="mt-0.5 shrink-0" />}

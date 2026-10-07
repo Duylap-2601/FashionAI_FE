@@ -272,6 +272,12 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
                             {c.name.trim()}
                           </option>
                         ))}
+                      {img.colorName &&
+                        !(editingProduct.colors || []).some(
+                          c => c.name?.trim().toLowerCase() === img.colorName?.trim().toLowerCase()
+                        ) && (
+                          <option value={img.colorName.trim()}>{img.colorName.trim()}</option>
+                        )}
                     </select>
                   </div>
                 );
