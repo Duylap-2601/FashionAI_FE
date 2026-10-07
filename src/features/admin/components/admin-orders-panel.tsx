@@ -4,7 +4,7 @@ import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-pag
 import { fmt } from '@/features/admin/services/format';
 import type { AdminOrdersPanelProps } from '@/features/admin/types/admin-orders-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
-import { RotateCcw, Scissors, Search } from 'lucide-react';
+import { Calendar, RotateCcw, Scissors, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export function AdminOrdersPanel({
@@ -24,7 +24,9 @@ export function AdminOrdersPanel({
   const isFiltered = Boolean(
     filters.search ||
     (filters.status && filters.status !== 'ALL') ||
-    (filters.paymentStatus && filters.paymentStatus !== 'ALL')
+    (filters.paymentStatus && filters.paymentStatus !== 'ALL') ||
+    filters.fromDate ||
+    filters.toDate
   );
 
   return (
@@ -41,12 +43,12 @@ export function AdminOrdersPanel({
         <div className="p-4 border-b border-neutral-100 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-neutral-50/50">
           <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
             {/* Search */}
-            <div className="relative min-w-[220px] max-w-sm flex-1">
+            <div className="relative min-w-[240px] max-w-sm flex-1">
               <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 value={filters.search ?? ''}
                 onChange={(e) => onFilterChange?.({ search: e.target.value })}
-                placeholder="Tìm mã đơn, tên, SĐT, email..."
+                placeholder="Tìm mã đơn (0012, ORD-0012), tên, email..."
                 className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm focus:outline-none focus:border-brand-navy"
               />
             </div>
@@ -59,11 +61,23 @@ export function AdminOrdersPanel({
             >
               <option value="ALL">Tất cả trạng thái đơn</option>
               <option value="PENDING">Chờ xử lý (PENDING)</option>
+              <option value="PAID">Đã thanh toán (PAID)</option>
               <option value="CONFIRMED">Đã xác nhận (CONFIRMED)</option>
-              <option value="PROCESSING">Đang may (PROCESSING)</option>
-              <option value="SHIPPED">Đang giao (SHIPPED)</option>
+              <option value="MEASUREMENT_REVIEW">Kiểm tra số đo</option>
+              <option value="MEASUREMENT_CONFIRMED">Chốt số đo</option>
+              <option value="TAILORING">Đang may (TAILORING)</option>
+              <option value="QUALITY_CHECK">QC kiểm tra</option>
+              <option value="READY_TO_SHIP">Sẵn sàng giao</option>
+              <option value="SHIPPING">Đang giao (SHIPPING)</option>
               <option value="DELIVERED">Đã giao (DELIVERED)</option>
+              <option value="COMPLETED">Hoàn tất (COMPLETED)</option>
               <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+              <option value="RETURN_REQUESTED">Yêu cầu hoàn trả</option>
+              <option value="RETURN_APPROVED">Duyệt hoàn trả</option>
+              <option value="RETURNING">Đang hoàn trả</option>
+              <option value="RETURNED">Đã hoàn trả</option>
+              <option value="EXPIRED">Hết hạn (EXPIRED)</option>
+              <option value="FAILED">Thất bại (FAILED)</option>
             </select>
 
             {/* Payment Status Filter */}
@@ -76,7 +90,28 @@ export function AdminOrdersPanel({
               <option value="PAID">Đã thanh toán (PAID)</option>
               <option value="PENDING">Chờ thanh toán (PENDING)</option>
               <option value="FAILED">Thất bại (FAILED)</option>
+              <option value="REFUNDED">Đã hoàn tiền (REFUNDED)</option>
+              <option value="PARTIALLY_REFUNDED">Hoàn tiền 1 phần</option>
             </select>
+
+            {/* Date Range Filter (fromDate / toDate) */}
+            <div className="flex items-center gap-1.5 bg-white border border-neutral-200 rounded-xl px-2.5 py-1.5 text-body-sm text-neutral-600">
+              <Calendar className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+              <span className="text-[11px] text-neutral-400 shrink-0">Từ:</span>
+              <input
+                type="date"
+                value={filters.fromDate ?? ''}
+                onChange={(e) => onFilterChange?.({ fromDate: e.target.value })}
+                className="bg-transparent text-xs text-neutral-700 focus:outline-none cursor-pointer"
+              />
+              <span className="text-[11px] text-neutral-400 shrink-0">Đến:</span>
+              <input
+                type="date"
+                value={filters.toDate ?? ''}
+                onChange={(e) => onFilterChange?.({ toDate: e.target.value })}
+                className="bg-transparent text-xs text-neutral-700 focus:outline-none cursor-pointer"
+              />
+            </div>
           </div>
 
           {/* Reset button */}
@@ -125,7 +160,7 @@ export function AdminOrdersPanel({
                         {o.email && <span className="text-[11px] text-neutral-400 truncate">{o.email}</span>}
                       </div>
                     </div>
-                    <div className="px-4 py-3.5 text-right font-bold text-brand-navy truncate">{fmt(o.total)}</div>
+                    <div className="px-4 py-3.5 text-right font-bold text-brand-navy truncate">{fmt(o.totalVnd ?? o.total)}</div>
                     <div className="px-4 py-3.5 min-w-0">
                       {o.shipment ? (
                         <div className="flex flex-col gap-0.5">

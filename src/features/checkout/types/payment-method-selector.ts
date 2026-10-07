@@ -6,4 +6,5 @@ export interface PaymentMethodSelectorProps {
   discount: number;
   setDiscount: React.Dispatch<React.SetStateAction<number>>;
   handleApplyCoupon: () => void;
+  couponError?: string | null;
 }

@@ -97,12 +97,41 @@ export interface MeasurementDisplayItem {
   unit: string;
 }
 
+export type OrderRefundStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+
+export interface OrderRefund {
+  id: string;
+  paymentId: string;
+  provider: string;
+  amountVnd: number;
+  reason?: string | null;
+  status: OrderRefundStatus;
+  requestedAt: string;
+  processedAt?: string | null;
+  failedReason?: string | null;
+}
+
+export interface OrderPayment {
+  id?: string;
+  provider?: string;
+  transactionId?: string | null;
+  status?: string;
+  amountVnd?: number;
+  createdAt?: string;
+}
+
 export interface OrderItem {
   id: string;
   productId: string;
   quantity: number;
   color?: string;
   price: number;
+  productSkuSnapshot?: string | null;
+  productImageSnapshot?: string | null;
+  productCategorySnapshot?: string | null;
+  brandSnapshot?: string | null;
+  unitPriceVnd?: number;
+  lineTotalVnd?: number;
   measurementSnapshot?: MeasurementSnapshot;
   measurementDisplay?: MeasurementDisplayItem[];
   measurementReview?: MeasurementReview;
@@ -122,6 +151,17 @@ export interface Order {
   paymentStatus?: PaymentStatus;
   refundStatus?: RefundStatus;
   fulfillmentFlowVersion?: number | null;
+  currency?: string;
+  itemsSubtotalVnd?: number;
+  shippingFeeVnd?: number;
+  discountVnd?: number;
+  taxVnd?: number;
+  totalVnd?: number;
+  amountPaidVnd?: number;
+  amountRefundedVnd?: number;
+  shippingAddressSnapshot?: Record<string, unknown> | null;
+  shippingQuoteSnapshot?: Record<string, unknown> | null;
+  refundEvidence?: string | null;
   totalAmount: number;
   itemsTotal: number;
   shippingFee: number;
@@ -132,6 +172,8 @@ export interface Order {
   createdAt: string;
   updatedAt?: string;
   items: OrderItem[];
+  payments?: OrderPayment[];
+  refunds?: OrderRefund[];
   shipment?: OrderShipment | null;
   history?: OrderHistoryEvent[];
   allowedActions?: { cancel?: boolean; updateMeasurement?: boolean };
@@ -143,6 +185,12 @@ export interface BackendOrderItem {
   quantity: number;
   color?: string | null;
   price: number | string;
+  productSkuSnapshot?: string | null;
+  productImageSnapshot?: string | null;
+  productCategorySnapshot?: string | null;
+  brandSnapshot?: string | null;
+  unitPriceVnd?: number | string | null;
+  lineTotalVnd?: number | string | null;
   measurementSnapshot?: MeasurementSnapshot | null;
   measurementDisplay?: MeasurementDisplayItem[] | null;
   measurementReview?: MeasurementReview | null;
@@ -213,6 +261,17 @@ export interface BackendOrder {
   paymentStatus?: PaymentStatus;
   refundStatus?: RefundStatus;
   fulfillmentFlowVersion?: number | null;
+  currency?: string;
+  itemsSubtotalVnd?: number | string | null;
+  shippingFeeVnd?: number | string | null;
+  discountVnd?: number | string | null;
+  taxVnd?: number | string | null;
+  totalVnd?: number | string | null;
+  amountPaidVnd?: number | string | null;
+  amountRefundedVnd?: number | string | null;
+  shippingAddressSnapshot?: Record<string, unknown> | null;
+  shippingQuoteSnapshot?: Record<string, unknown> | null;
+  refundEvidence?: string | null;
   amount: number | string;
   itemsTotal?: number | string;
   shippingFee?: number | string | null;
@@ -223,7 +282,8 @@ export interface BackendOrder {
   createdAt: string;
   updatedAt?: string;
   items?: BackendOrderItem[];
-  payments?: { provider?: string }[];
+  payments?: OrderPayment[];
+  refunds?: OrderRefund[];
   shipment?: OrderShipment | null;
   history?: OrderHistoryEvent[];
   allowedActions?: { cancel?: boolean; updateMeasurement?: boolean };
@@ -233,7 +293,10 @@ export interface OrdersListParams {
   page?: number;
   limit?: number;
   status?: BackendOrderStatus;
+  paymentStatus?: string;
   search?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface OrdersListMeta {

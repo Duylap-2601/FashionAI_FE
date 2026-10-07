@@ -1,6 +1,6 @@
-import type { BackendOrderStatus } from '@/features/orders/types/orders';
+import type { BackendOrderStatus, OrderPayment, OrderRefund } from '@/features/orders/types/orders';
 
-export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
+export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'coupons' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
 
 export interface GhnPickupSettings {
   provinceId?: number;
@@ -85,6 +85,12 @@ export interface AdminOrder {
   email: string;
   items: number;
   total: number;
+  totalVnd?: number;
+  itemsSubtotalVnd?: number;
+  shippingFeeVnd?: number;
+  discountVnd?: number;
+  amountPaidVnd?: number;
+  amountRefundedVnd?: number;
   status: BackendOrderStatus;
   paymentStatus?: string;
   refundStatus?: 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
@@ -92,6 +98,8 @@ export interface AdminOrder {
   payment: string;
   address?: string;
   phone?: string;
+  payments?: OrderPayment[];
+  refunds?: OrderRefund[];
   shipment?: AdminOrderShipmentSummary | null;
 }
 

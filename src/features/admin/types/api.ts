@@ -1,5 +1,5 @@
 import type { AdminOrderShipmentSummary, AdminProduct, AdminShipment, AdminShipmentDetail, AdminUser } from './admin-dashboard-page';
-import type { BackendOrderStatus } from '@/features/orders/types/orders';
+import type { BackendOrderStatus, OrderPayment, OrderRefund } from '@/features/orders/types/orders';
 
 export type AdminImageDto = string | {
   id?: string;
@@ -20,11 +20,21 @@ export interface AdminOrderDto {
   user?: { name?: string; email?: string };
   items?: unknown[];
   amount: string | number;
+  itemsTotal?: string | number;
+  currency?: string;
+  itemsSubtotalVnd?: number | string | null;
+  shippingFeeVnd?: number | string | null;
+  discountVnd?: number | string | null;
+  taxVnd?: number | string | null;
+  totalVnd?: number | string | null;
+  amountPaidVnd?: number | string | null;
+  amountRefundedVnd?: number | string | null;
   status: BackendOrderStatus;
   paymentStatus?: string;
   refundStatus?: 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
   createdAt?: string;
-  payments?: { provider?: string }[];
+  payments?: OrderPayment[];
+  refunds?: OrderRefund[];
   shipment?: AdminOrderShipmentSummary | null;
 }
 

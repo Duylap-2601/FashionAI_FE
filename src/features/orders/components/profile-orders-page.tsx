@@ -66,13 +66,16 @@ function TrackingBar({ status }: { status: string }) {
 }
 
 function getProductImage(item: OrderItem) {
+  if (item.productImageSnapshot) {
+    return item.productImageSnapshot;
+  }
   if (item.product?.images) {
     try {
       const parsed = typeof item.product.images === 'string' ? JSON.parse(item.product.images) : item.product.images;
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed[0].url || parsed[0];
       }
-    } catch (e) {
+    } catch {
       // Fallback
     }
   }
@@ -152,7 +155,7 @@ function OrderCard({
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-body-md font-bold text-brand-navy">{fmt(order.totalAmount)}</span>
+          <span className="text-body-md font-bold text-brand-navy">{fmt(order.totalVnd ?? order.totalAmount)}</span>
           <button
             onClick={() => setExpanded(v => !v)}
             className="flex items-center gap-1 text-label-sm font-medium text-neutral-500 hover:text-brand-navy transition-colors font-sans border-0 bg-transparent cursor-pointer"
@@ -318,12 +321,12 @@ function OrderCard({
                   <div className="flex flex-col gap-2 text-body-sm">
                     <div className="flex justify-between text-neutral-600">
                       <span>Phí giao hàng</span>
-                      <span>{fmt(order.shippingFee)}</span>
+                      <span>{fmt(order.shippingFeeVnd ?? order.shippingFee)}</span>
                     </div>
-                    {order.discountAmount > 0 && (
+                    {((order.discountVnd !== undefined && order.discountVnd > 0) || order.discountAmount > 0) && (
                       <div className="flex justify-between text-neutral-600">
                         <span>Giảm giá</span>
-                        <span>-{fmt(order.discountAmount)}</span>
+                        <span>-{fmt(order.discountVnd ?? order.discountAmount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-neutral-600">
@@ -332,7 +335,7 @@ function OrderCard({
                     </div>
                     <div className="flex justify-between font-bold text-brand-navy pt-2 border-t border-neutral-100">
                       <span>Tổng cộng</span>
-                      <span>{fmt(order.totalAmount)}</span>
+                      <span>{fmt(order.totalVnd ?? order.totalAmount)}</span>
                     </div>
                     <p className="text-label-sm text-neutral-500 mt-1">Phương thức: {order.paymentMethod}</p>
                     {order.history && order.history.length > 0 ? (

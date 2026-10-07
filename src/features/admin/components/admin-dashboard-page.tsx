@@ -6,6 +6,7 @@ import type { AdminImageDto, AdminProductDto, AdminOrderDto, AdminShipmentDetail
 import { AdminOrderModal } from '@/features/admin/components/admin-order-modal';
 import { AdminLiveTryOnSettingsPanel } from '@/features/admin/components/admin-live-try-on-settings-panel';
 import { AdminOrdersPanel } from '@/features/admin/components/admin-orders-panel';
+import { AdminCouponsPanel } from '@/features/admin/components/admin-coupons-panel';
 import { AdminProductModal } from '@/features/admin/components/admin-product-modal';
 import { AdminProductsPanel } from '@/features/admin/components/admin-products-panel';
 import { AdminShippingSettingsPanel } from '@/features/admin/components/admin-shipping-settings-panel';
@@ -47,6 +48,7 @@ import {
   RefreshCw,
   Settings,
   ShoppingBag,
+  Tag,
   Truck,
   Users
 } from 'lucide-react';
@@ -107,6 +109,8 @@ function AdminDashboardContent() {
     search: '',
     status: '',
     paymentStatus: '',
+    fromDate: '',
+    toDate: '',
   });
   const [orderPagination, setOrderPagination] = useState({
     page: 1,
@@ -428,18 +432,20 @@ function AdminDashboardContent() {
     setIsOrdersFetching(true);
     try {
       const params: Record<string, string | number> = { page, limit };
-      if (filters.search) {
-        params.search = filters.search;
-        params.q = filters.search;
+      if (filters.search?.trim()) {
+        params.search = filters.search.trim();
       }
       if (filters.status && filters.status !== 'ALL') params.status = filters.status;
       if (filters.paymentStatus && filters.paymentStatus !== 'ALL') params.paymentStatus = filters.paymentStatus;
+      if (filters.fromDate?.trim()) params.fromDate = filters.fromDate.trim();
+      if (filters.toDate?.trim()) params.toDate = filters.toDate.trim();
 
       const res = await fetchAdminOrders({ params });
       const resObj = res as ApiPaginatedResponse<AdminOrderDto> | undefined;
       const rawList = (Array.isArray(res) ? res : resObj?.items || []) as AdminOrderDto[];
       const mappedList: AdminOrder[] = rawList.map((o) => {
         const ship = o.shippingInfo;
+        const totalVnd = o.totalVnd !== undefined && o.totalVnd !== null ? Number(o.totalVnd) : undefined;
         return {
           id: o.id,
           code: `#${o.orderCode}`,
@@ -447,7 +453,13 @@ function AdminDashboardContent() {
           customer: ship?.name || o.user?.name || 'Khách hàng',
           email: o.user?.email || ship?.phone || '',
           items: o.items?.length || 1,
-          total: Number(o.amount),
+          total: totalVnd !== undefined ? totalVnd : Number(o.amount),
+          totalVnd,
+          itemsSubtotalVnd: o.itemsSubtotalVnd !== undefined && o.itemsSubtotalVnd !== null ? Number(o.itemsSubtotalVnd) : undefined,
+          shippingFeeVnd: o.shippingFeeVnd !== undefined && o.shippingFeeVnd !== null ? Number(o.shippingFeeVnd) : undefined,
+          discountVnd: o.discountVnd !== undefined && o.discountVnd !== null ? Number(o.discountVnd) : undefined,
+          amountPaidVnd: o.amountPaidVnd !== undefined && o.amountPaidVnd !== null ? Number(o.amountPaidVnd) : undefined,
+          amountRefundedVnd: o.amountRefundedVnd !== undefined && o.amountRefundedVnd !== null ? Number(o.amountRefundedVnd) : undefined,
           status: o.status as BackendOrderStatus,
           paymentStatus: o.paymentStatus,
           refundStatus: o.refundStatus,
@@ -455,6 +467,8 @@ function AdminDashboardContent() {
           payment: o.payments?.[0]?.provider || 'COD',
           address: ship?.address,
           phone: ship?.phone,
+          payments: o.payments,
+          refunds: o.refunds,
           shipment: o.shipment || null,
         };
       });
@@ -692,7 +706,7 @@ function AdminDashboardContent() {
   }, [fetchOrders, orderPagination.pageSize]);
 
   const handleResetOrderFilters = useCallback(() => {
-    const empty: AdminOrderFilters = { search: '', status: '', paymentStatus: '' };
+    const empty: AdminOrderFilters = { search: '', status: '', paymentStatus: '', fromDate: '', toDate: '' };
     setOrderFilters(empty);
     setOrderPagination(p => ({ ...p, page: 1 }));
     fetchOrders(1, orderPagination.pageSize, empty);
@@ -1561,6 +1575,7 @@ function AdminDashboardContent() {
               { id: 'users', label: 'Người dùng', icon: Users },
               { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
               { id: 'shipments', label: 'Vận đơn', icon: Truck },
+              { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
               { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
               { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
               { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
@@ -1620,8 +1635,9 @@ function AdminDashboardContent() {
                       activeTab === 'users' ? 'Quản lý người dùng' :
                         activeTab === 'orders' ? 'Quản lý đơn hàng' :
                           activeTab === 'shipments' ? 'Quản lý vận đơn' :
-                            (activeTab === 'webhook-failures' || activeTab === 'reconciliation') ? 'Đối soát giao dịch lạ' :
-                              activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
+                            activeTab === 'coupons' ? 'Quản lý mã giảm giá' :
+                              (activeTab === 'webhook-failures' || activeTab === 'reconciliation') ? 'Đối soát giao dịch lạ' :
+                                activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
                                   activeTab === 'shipping-settings' ? 'Cài đặt GHN' : 'Cài đặt Live Try-On'}
               </span>
             </div>
@@ -1798,6 +1814,9 @@ function AdminDashboardContent() {
 
             {/* ─── TAB: REVIEWS ──────────────────────────────────────────────────── */}
             {activeTab === 'reviews' && <AdminReviewTable />}
+
+            {/* ─── TAB: COUPONS ──────────────────────────────────────────────────── */}
+            {activeTab === 'coupons' && <AdminCouponsPanel />}
 
           </main>
 

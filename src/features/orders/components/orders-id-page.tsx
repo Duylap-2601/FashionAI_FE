@@ -238,9 +238,11 @@ export default function OrderDetailPage() {
 
             <div className="flex flex-col divide-y divide-neutral-100">
               {order.items.map((item, index) => {
-                const rawImg = item.product?.images?.[0];
+                const rawImg = item.productImageSnapshot || item.product?.images?.[0];
                 const img = (typeof rawImg === 'object' && rawImg !== null ? (rawImg as { url?: string; imageUrl?: string }).url || (rawImg as { url?: string; imageUrl?: string }).imageUrl : rawImg) || '/images/726470431_1311184104081177_6052756217829444481_n.png';
                 const name = item.productNameSnapshot || item.product?.name || `Trang phục #${item.productId}`;
+                const itemUnitPrice = item.unitPriceVnd ?? item.price;
+                const itemLineTotal = item.lineTotalVnd ?? (item.price * item.quantity);
 
                 return (
                   <div key={item.id || index} className="py-4 flex gap-4 items-center">
@@ -258,7 +260,10 @@ export default function OrderDetailPage() {
                       <Link href={`/products/${item.productId}`} className="text-body-md font-bold text-brand-navy hover:underline line-clamp-1">
                         {name}
                       </Link>
-                      <div className="flex items-center gap-2 mt-1 text-[13px] text-neutral-500">
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-[13px] text-neutral-500">
+                        {item.productSkuSnapshot && (
+                          <span className="font-mono text-[11px] text-neutral-400">SKU: {item.productSkuSnapshot} •</span>
+                        )}
                         <span>Màu: <strong className="text-neutral-700">{item.color || 'Mặc định'}</strong></span>
                         <span>•</span>
                         <span>Vải: <strong className="text-neutral-700">{item.fabricSnapshot || 'Theo sản phẩm'}</strong></span>
@@ -292,11 +297,11 @@ export default function OrderDetailPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-body-md font-bold text-brand-navy">
-                        {(item.price * item.quantity).toLocaleString('vi-VN')}đ
+                        {itemLineTotal.toLocaleString('vi-VN')}đ
                       </div>
                       {item.quantity > 1 && (
                         <div className="text-[11px] text-neutral-400">
-                          {item.price.toLocaleString('vi-VN')}đ / cái
+                          {itemUnitPrice.toLocaleString('vi-VN')}đ / cái
                         </div>
                       )}
                     </div>
@@ -357,28 +362,67 @@ export default function OrderDetailPage() {
 
               <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
                 <span className="text-neutral-500">Tạm tính</span>
-                <span className="text-neutral-700 font-medium">{order.itemsTotal.toLocaleString('vi-VN')}đ</span>
+                <span className="text-neutral-700 font-medium">{(order.itemsSubtotalVnd ?? order.itemsTotal).toLocaleString('vi-VN')}đ</span>
               </div>
 
               <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
                 <span className="text-neutral-500">Phí vận chuyển</span>
-                <span className="text-neutral-700 font-medium">{order.shippingFee.toLocaleString('vi-VN')}đ</span>
+                <span className="text-neutral-700 font-medium">{(order.shippingFeeVnd ?? order.shippingFee).toLocaleString('vi-VN')}đ</span>
               </div>
 
-              {order.discountAmount > 0 && (
+              {((order.discountVnd !== undefined && order.discountVnd > 0) || (order.discountAmount > 0)) && (
                 <div className="flex items-center justify-between text-body-sm py-2 border-b border-neutral-100">
                   <span className="text-neutral-500">Giảm giá</span>
-                  <span className="text-neutral-700 font-medium">-{order.discountAmount.toLocaleString('vi-VN')}đ</span>
+                  <span className="text-emerald-600 font-medium">-{(order.discountVnd ?? order.discountAmount).toLocaleString('vi-VN')}đ</span>
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-4">
-                <span className="text-body-md font-bold text-brand-navy">Tổng thanh toán</span>
+              <div className="flex items-center justify-between pt-4 border-b border-neutral-100 pb-3">
+                <span className="text-body-md font-bold text-brand-navy">Tổng đơn hàng</span>
                 <span className="text-[20px] font-bold text-brand-navy">
-                  {order.totalAmount.toLocaleString('vi-VN')}đ
+                  {(order.totalVnd ?? order.totalAmount).toLocaleString('vi-VN')}đ
                 </span>
               </div>
+
+              {order.amountPaidVnd !== undefined && (
+                <div className="flex items-center justify-between text-body-sm pt-3">
+                  <span className="text-neutral-500">Đã thanh toán</span>
+                  <span className="font-bold text-emerald-700">
+                    {order.amountPaidVnd.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+              )}
+
+              {order.amountRefundedVnd !== undefined && order.amountRefundedVnd > 0 && (
+                <div className="flex items-center justify-between text-body-sm pt-2">
+                  <span className="text-neutral-500">Đã hoàn tiền</span>
+                  <span className="font-bold text-red-600">
+                    -{order.amountRefundedVnd.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* Refunds list if any */}
+            {order.refunds && order.refunds.length > 0 && (
+              <div className="bg-white border border-amber-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-[16px] font-bold text-amber-900 mb-3">Lịch sử hoàn tiền</h3>
+                <div className="flex flex-col gap-2.5">
+                  {order.refunds.map(r => (
+                    <div key={r.id} className="p-3 bg-amber-50/50 rounded-xl border border-amber-100 text-xs">
+                      <div className="flex justify-between items-center font-bold">
+                        <span className="text-red-600">-{r.amountVnd.toLocaleString('vi-VN')}đ</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800">{r.status}</span>
+                      </div>
+                      {r.reason && <p className="text-neutral-600 mt-1">Lý do: {r.reason}</p>}
+                      <p className="text-[11px] text-neutral-400 mt-1">
+                        Ngày yêu cầu: {new Date(r.requestedAt).toLocaleString('vi-VN')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
               <h3 className="text-[16px] font-bold text-brand-navy mb-4">Lịch sử đơn hàng</h3>

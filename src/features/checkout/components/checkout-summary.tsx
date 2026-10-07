@@ -63,6 +63,7 @@ export function CheckoutSummary({
             discount={discount}
             setDiscount={setDiscount}
             handleApplyCoupon={handleApplyCoupon}
+            couponError={pricingError}
           />
         </div>
 

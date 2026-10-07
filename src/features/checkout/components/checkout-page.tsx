@@ -85,7 +85,11 @@ export default function CheckoutPage() {
         console.error('Failed to quote order:', error);
         setOrderQuote(null);
         setDiscount(0);
-        setPricingError(getErrorMessage(error, 'Không thể tính tổng đơn hàng. Vui lòng kiểm tra địa chỉ hoặc mã giảm giá.'));
+        const errMsg = getErrorMessage(error, 'Không thể tính tổng đơn hàng. Vui lòng kiểm tra địa chỉ hoặc mã giảm giá.');
+        setPricingError(errMsg);
+        if (appliedCoupon) {
+          toast.error(errMsg);
+        }
       } finally {
         if (isMounted) setIsPricingLoading(false);
       }
@@ -283,7 +287,7 @@ export default function CheckoutPage() {
           },
         });
       } else {
-        toast.error(`Lỗi tạo đơn: ${getErrorMessage(error, 'Đã xảy ra lỗi khi tạo đơn hàng.')}`);
+        toast.error(getErrorMessage(error, 'Đã xảy ra lỗi khi tạo đơn hàng.'));
       }
     }
   };

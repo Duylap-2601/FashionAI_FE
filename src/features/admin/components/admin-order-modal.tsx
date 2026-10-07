@@ -162,15 +162,168 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
             <p className="text-body-sm text-neutral-600 mt-1">Email: {selectedOrder.email || '—'}</p>
           </div>
 
-          <div>
-            <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Thanh toán</p>
-            <p className="text-body-sm text-neutral-600">Phương thức: {selectedOrder.payment || '—'}</p>
-            <p className="text-body-sm text-neutral-600 mt-1">Trạng thái: {selectedOrder.paymentStatus || '—'}</p>
-            {orderDetail && orderDetail.discountAmount > 0 && (
-              <p className="text-body-sm text-emerald-600 mt-1 font-medium">Giảm giá: -{fmt(orderDetail.discountAmount)}</p>
-            )}
-            <p className="text-body-sm font-bold text-brand-navy mt-1">Tổng tiền: {fmt(selectedOrder.total)}</p>
+          <div className="rounded-xl border border-neutral-200 p-4 bg-neutral-50/30">
+            <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">Thanh toán & Chi phí</p>
+            <div className="space-y-1.5 text-body-sm">
+              <div className="flex justify-between text-neutral-600">
+                <span>Phương thức:</span>
+                <span className="font-semibold text-neutral-800">{orderDetail?.paymentMethod || selectedOrder.payment || '—'}</span>
+              </div>
+              <div className="flex justify-between text-neutral-600">
+                <span>Trạng thái:</span>
+                <span className="font-semibold text-neutral-800">{orderDetail?.paymentStatus || selectedOrder.paymentStatus || '—'}</span>
+              </div>
+              {orderDetail?.itemsSubtotalVnd !== undefined ? (
+                <div className="flex justify-between text-neutral-600">
+                  <span>Tiền hàng:</span>
+                  <span className="text-neutral-800">{fmt(orderDetail.itemsSubtotalVnd)}</span>
+                </div>
+              ) : orderDetail?.itemsTotal ? (
+                <div className="flex justify-between text-neutral-600">
+                  <span>Tiền hàng:</span>
+                  <span className="text-neutral-800">{fmt(orderDetail.itemsTotal)}</span>
+                </div>
+              ) : null}
+              {orderDetail?.shippingFeeVnd !== undefined ? (
+                <div className="flex justify-between text-neutral-600">
+                  <span>Phí vận chuyển:</span>
+                  <span className="text-neutral-800">{fmt(orderDetail.shippingFeeVnd)}</span>
+                </div>
+              ) : orderDetail?.shippingFee ? (
+                <div className="flex justify-between text-neutral-600">
+                  <span>Phí vận chuyển:</span>
+                  <span className="text-neutral-800">{fmt(orderDetail.shippingFee)}</span>
+                </div>
+              ) : null}
+              {((orderDetail?.discountVnd && orderDetail.discountVnd > 0) || (orderDetail?.discountAmount && orderDetail.discountAmount > 0)) && (
+                <div className="flex justify-between text-emerald-600 font-medium">
+                  <span>Giảm giá:</span>
+                  <span>-{fmt(orderDetail.discountVnd ?? orderDetail.discountAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-body-md font-bold text-brand-navy pt-2 border-t border-neutral-200">
+                <span>Tổng tiền đơn:</span>
+                <span>{fmt(orderDetail?.totalVnd ?? selectedOrder.totalVnd ?? selectedOrder.total)}</span>
+              </div>
+              {orderDetail?.amountPaidVnd !== undefined && (
+                <div className="flex justify-between text-xs text-neutral-600 pt-1">
+                  <span>Đã thu khách:</span>
+                  <span className="font-semibold text-emerald-700">{fmt(orderDetail.amountPaidVnd)}</span>
+                </div>
+              )}
+              {orderDetail?.amountRefundedVnd !== undefined && orderDetail.amountRefundedVnd > 0 && (
+                <div className="flex justify-between text-xs text-neutral-600">
+                  <span>Đã hoàn lại:</span>
+                  <span className="font-semibold text-red-600">-{fmt(orderDetail.amountRefundedVnd)}</span>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Payment Transactions Card */}
+          {((orderDetail?.payments && orderDetail.payments.length > 0) || (selectedOrder.payments && selectedOrder.payments.length > 0)) && (
+            <div className="rounded-xl border border-neutral-200 p-4 bg-white shadow-2xs">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide">
+                  Chi tiết giao dịch thanh toán
+                </p>
+                <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full font-medium">
+                  {(orderDetail?.payments || selectedOrder.payments || []).length} GD
+                </span>
+              </div>
+              <div className="space-y-2.5">
+                {(orderDetail?.payments || selectedOrder.payments || []).map((p, idx) => (
+                  <div key={p.id || idx} className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 text-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-neutral-900 uppercase px-2 py-0.5 bg-neutral-200 rounded text-[11px]">
+                          {p.provider || 'SEPAY'}
+                        </span>
+                        {p.transactionId && (
+                          <span className="font-mono text-neutral-500 text-[11px]">
+                            Mã GD: {p.transactionId}
+                          </span>
+                        )}
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        p.status === 'PAID'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : p.status === 'FAILED'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {p.status || 'PENDING'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-neutral-500">
+                        {p.createdAt ? new Date(p.createdAt).toLocaleString('vi-VN') : '—'}
+                      </span>
+                      <span className="font-bold text-brand-navy text-body-sm">
+                        {p.amountVnd !== undefined ? fmt(p.amountVnd) : '—'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Refund History Card */}
+          {((orderDetail?.refunds && orderDetail.refunds.length > 0) || (selectedOrder.refunds && selectedOrder.refunds.length > 0)) && (
+            <div className="rounded-xl border border-amber-200 p-4 bg-amber-50/40">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-label-sm font-semibold text-amber-800 uppercase tracking-wide">
+                  Lịch sử hoàn tiền
+                </p>
+                <span className="text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-bold">
+                  {(orderDetail?.refunds || selectedOrder.refunds || []).length} lượt
+                </span>
+              </div>
+              <div className="space-y-2.5">
+                {(orderDetail?.refunds || selectedOrder.refunds || []).map((r, idx) => (
+                  <div key={r.id || idx} className="p-3 bg-white rounded-xl border border-amber-200 text-xs space-y-1.5 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-red-600 text-body-sm">
+                        -{fmt(r.amountVnd)}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        r.status === 'COMPLETED'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : r.status === 'FAILED'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {r.status}
+                      </span>
+                    </div>
+                    {r.reason && (
+                      <p className="text-neutral-700"><strong>Lý do:</strong> {r.reason}</p>
+                    )}
+                    <div className="flex items-center justify-between text-[11px] text-neutral-500">
+                      <span>Cổng: {r.provider}</span>
+                      <span>Yêu cầu: {new Date(r.requestedAt).toLocaleString('vi-VN')}</span>
+                    </div>
+                    {r.processedAt && (
+                      <p className="text-[11px] text-neutral-500">
+                        Xử lý lúc: {new Date(r.processedAt).toLocaleString('vi-VN')}
+                      </p>
+                    )}
+                    {r.failedReason && (
+                      <p className="text-[11px] text-red-600 font-medium">
+                        Lỗi: {r.failedReason}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {orderDetail?.refundEvidence && (
+                <div className="mt-2 text-xs text-amber-800 bg-amber-100/60 p-2 rounded-lg">
+                  <strong>Bằng chứng hoàn tiền:</strong> {orderDetail.refundEvidence}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Dedicated Measurements Sheet Link */}
           <div className="rounded-xl border border-purple-200 bg-purple-50/70 p-4">
@@ -206,36 +359,47 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
 
             {orderDetail?.items && orderDetail.items.length > 0 ? (
               <div className="space-y-2.5">
-                {orderDetail.items.map((item, idx) => (
-                  <div key={item.id || idx} className="bg-white rounded-xl border border-neutral-200 p-3 shadow-2xs flex items-center gap-3">
-                    {item.product?.images?.[0] ? (
-                      <img
-                        src={item.product.images[0]}
-                        alt={item.product.name}
-                        className="w-11 h-13 object-cover rounded-lg bg-neutral-100 shrink-0 border border-neutral-200"
-                      />
-                    ) : (
-                      <div className="w-11 h-13 bg-neutral-100 rounded-lg flex items-center justify-center shrink-0 border border-neutral-200">
-                        <Package className="w-4 h-4 text-neutral-400" />
+                {orderDetail.items.map((item, idx) => {
+                  const displayImage = item.productImageSnapshot || item.product?.images?.[0];
+                  const itemUnitPrice = item.unitPriceVnd ?? item.price;
+                  const itemLineTotal = item.lineTotalVnd ?? (item.price * item.quantity);
+                  return (
+                    <div key={item.id || idx} className="bg-white rounded-xl border border-neutral-200 p-3 shadow-2xs flex items-center gap-3">
+                      {displayImage ? (
+                        <img
+                          src={displayImage}
+                          alt={item.productNameSnapshot || item.product?.name || 'Sản phẩm'}
+                          className="w-11 h-13 object-cover rounded-lg bg-neutral-100 shrink-0 border border-neutral-200"
+                        />
+                      ) : (
+                        <div className="w-11 h-13 bg-neutral-100 rounded-lg flex items-center justify-center shrink-0 border border-neutral-200">
+                          <Package className="w-4 h-4 text-neutral-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-body-sm font-bold text-brand-navy truncate">
+                          {item.productNameSnapshot || item.product?.name || `Sản phẩm #${item.productId}`}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500 mt-0.5">
+                          {item.productSkuSnapshot && (
+                            <span className="font-mono text-[11px] text-neutral-400">SKU: {item.productSkuSnapshot}</span>
+                          )}
+                          <span>Màu: <strong className="text-neutral-700">{item.color || 'Mặc định'}</strong></span>
+                          <span>•</span>
+                          <span>SL: <strong className="text-brand-navy font-bold">{item.quantity}</strong></span>
+                        </div>
+                        <div className="text-[11px] text-neutral-400 mt-0.5">
+                          Đơn giá: {fmt(itemUnitPrice)}
+                        </div>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-body-sm font-bold text-brand-navy truncate">
-                        {item.productNameSnapshot || item.product?.name || `Sản phẩm #${item.productId}`}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5">
-                        <span>Màu: <strong className="text-neutral-700">{item.color || 'Mặc định'}</strong></span>
-                        <span>•</span>
-                        <span>SL: <strong className="text-brand-navy font-bold">{item.quantity}</strong></span>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-bold text-brand-navy">
+                          {fmt(itemLineTotal)}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-bold text-brand-navy">
-                        {fmt(item.price * item.quantity)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-xs text-neutral-500 py-2 text-center">

@@ -1,5 +1,6 @@
 import type { UpdateLiveTryOnSettingsInput } from '@/features/admin/types/admin-dashboard-page';
 import type { PatchOrdersStatusInput, PatchUsersInput, PutProductsInput } from '@/features/admin/types/requests';
+import type { AdminCoupon, CreateCouponPayload, UpdateCouponPayload } from '@/features/admin/types/admin-coupons';
 import { api } from '@/lib/api';
 import { http, type HttpOptions } from '@/lib/http';
 
@@ -66,3 +67,16 @@ export function updateLiveTryOnSettings(payload: UpdateLiveTryOnSettingsInput) {
 export function updateUser(id: string, payload: PatchUsersInput) {
   return http.patch(`/users/${id}`, payload);
 }
+
+export function createAdminCoupon(payload: CreateCouponPayload, config?: HttpOptions) {
+  return http.post<AdminCoupon>('/coupons', payload, config);
+}
+
+export function updateAdminCoupon(id: string, payload: UpdateCouponPayload, config?: HttpOptions) {
+  return http.patch<AdminCoupon>(`/coupons/${id}`, payload, config);
+}
+
+export function deleteAdminCoupon(id: string, config?: HttpOptions) {
+  return http.delete<{ success?: boolean }>(`/coupons/${id}`, config);
+}
+

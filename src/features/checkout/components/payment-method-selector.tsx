@@ -8,6 +8,7 @@ export function PaymentMethodSelector({
   discount,
   setDiscount,
   handleApplyCoupon,
+  couponError,
 }: PaymentMethodSelectorProps) {
   return (
     <section>
@@ -28,7 +29,7 @@ export function PaymentMethodSelector({
               setDiscount(0);
               setCoupon('');
             }}
-            className="px-4 h-[44px] border border-neutral-200 text-neutral-700 text-body-sm font-medium rounded-xl hover:bg-neutral-50 transition-colors"
+            className="px-4 h-[44px] border border-neutral-200 text-neutral-700 text-body-sm font-medium rounded-xl hover:bg-neutral-50 transition-colors cursor-pointer"
           >
             Hủy
           </button>
@@ -36,12 +37,17 @@ export function PaymentMethodSelector({
           <button
             type="button"
             onClick={handleApplyCoupon}
-            className="px-4 h-[44px] bg-brand-navy text-white text-body-sm font-medium rounded-xl hover:bg-brand-navy/90 transition-colors"
+            className="px-4 h-[44px] bg-brand-navy text-white text-body-sm font-medium rounded-xl hover:bg-brand-navy/90 transition-colors cursor-pointer"
           >
             Áp dụng
           </button>
         )}
       </div>
+      {couponError && discount === 0 && (
+        <p className="text-[13px] text-red-600 mt-2 font-medium">
+          {couponError}
+        </p>
+      )}
       {discount > 0 && (
         <p className="text-[13px] text-semantic-success mt-2">
           Đã áp dụng mã giảm giá {discount.toLocaleString('vi-VN')}đ

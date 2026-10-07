@@ -1,6 +1,7 @@
 import { http, type HttpOptions } from '@/lib/http';
 import type { LiveTryOnSettings } from '@/features/admin/types/admin-dashboard-page';
 import type { UnmatchedTransaction, UnmatchedTransactionsResponse } from '@/features/admin/types/admin-reconciliation';
+import type { AdminCoupon, AdminCouponsResponse } from '@/features/admin/types/admin-coupons';
 
 export function fetchAdminProducts(config: HttpOptions) {
   return http.get('/products', config);
@@ -51,5 +52,13 @@ export function fetchUnmatchedTransactions(
     `/payments/admin/unmatched-transactions${qs ? `?${qs}` : ''}`,
     config,
   );
+}
+
+export function fetchAdminCoupons(config?: HttpOptions) {
+  return http.get<AdminCouponsResponse | AdminCoupon[]>('/coupons', config);
+}
+
+export function fetchAdminCouponDetail(id: string, config?: HttpOptions) {
+  return http.get<AdminCoupon>(`/coupons/${id}`, config);
 }
 
