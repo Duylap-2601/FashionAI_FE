@@ -13,6 +13,7 @@ export interface Product {
   garmentType?: GarmentType;
   image: string;
   gallery: string[];
+  imageItems?: { url: string; colorName?: string | null; isMain?: boolean }[];
   colors: { name: string; hex: string }[];
   isGuest: boolean;
   description?: string;

@@ -77,6 +77,7 @@ function VirtualTryOnContent() {
   const searchParams = useSearchParams();
   const productId = searchParams.get('productId');
   const rackIds = searchParams.get('rackIds');
+  const initialColor = searchParams.get('color');
   const user = useAuthStore((state) => state.user);
 
   const { tryOnAsync, isSubmitting } = useTryOn();
@@ -97,6 +98,7 @@ function VirtualTryOnContent() {
   const [resultSourcePhotoUrl, setResultSourcePhotoUrl] = useState<string | null>(null);
   const [inputError, setInputError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialProduct);
+  const [selectedColor, setSelectedColor] = useState<string | null>(initialColor || initialProduct?.colors?.[0]?.name || null);
   const [upperProduct, setUpperProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null);
   const [lowerProduct, setLowerProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || null);
   const [showCatalogModal, setShowCatalogModal] = useState(false);
@@ -206,6 +208,7 @@ function VirtualTryOnContent() {
     clearResult();
     if (catalogSlot === 'single') {
       setSelectedProduct(product);
+      setSelectedColor(product.colors?.[0]?.name || null);
       router.replace(`/try-on?productId=${product.id}`);
     } else if (catalogSlot === 'upper') {
       setUpperProduct(product);
@@ -249,13 +252,19 @@ function VirtualTryOnContent() {
       let payload: Parameters<typeof tryOnAsync>[0];
       if (garmentMode === 'combo') {
         const garments: GarmentSlotInput[] = [];
-        if (upperProduct) garments.push({ productId: upperProduct.id, garmentCategory: 'UPPER' });
-        if (lowerProduct) garments.push({ productId: lowerProduct.id, garmentCategory: 'LOWER' });
+        if (upperProduct) garments.push({ productId: upperProduct.id, garmentCategory: 'UPPER', color: upperProduct.colors?.[0]?.name });
+        if (lowerProduct) garments.push({ productId: lowerProduct.id, garmentCategory: 'LOWER', color: lowerProduct.colors?.[0]?.name });
         payload = { humanImage: currentHumanImage, garments, productId: upperProduct?.id || lowerProduct?.id };
       } else {
         if (!selectedProduct?.id) return;
         const cat = selectedProduct.garmentCategory || toBackendCategory(selectedProduct.category);
-        payload = { humanImage: currentHumanImage, productId: selectedProduct.id, garmentCategory: cat, garments: [{ productId: selectedProduct.id, garmentCategory: cat }] };
+        payload = {
+          humanImage: currentHumanImage,
+          productId: selectedProduct.id,
+          garmentCategory: cat,
+          color: selectedColor || undefined,
+          garments: [{ productId: selectedProduct.id, garmentCategory: cat, color: selectedColor || undefined }],
+        };
       }
 
       const result = await tryOnAsync(payload);
@@ -421,6 +430,7 @@ function VirtualTryOnContent() {
             selectedProduct={selectedProduct}
             upperProduct={upperProduct}
             lowerProduct={lowerProduct}
+            selectedColor={selectedColor}
             onOpenUpperCatalog={() => handleOpenCatalog('upper')}
             onOpenLowerCatalog={() => handleOpenCatalog('lower')}
             onOpenCatalog={() => handleOpenCatalog('single')}
@@ -435,6 +445,7 @@ function VirtualTryOnContent() {
             inputError={inputError}
             garmentMode={garmentMode}
             selectedProduct={selectedProduct}
+            selectedColor={selectedColor}
             upperProduct={upperProduct}
             lowerProduct={lowerProduct}
             canGenerate={canGenerate}
@@ -446,6 +457,7 @@ function VirtualTryOnContent() {
             onUseMockPhoto={handleUseMockPhoto}
             onModeChange={handleModeChange}
             onOpenCatalog={handleOpenCatalog}
+            onSelectColor={setSelectedColor}
             onGenerate={handleGenerate}
             onDownload={handleDownload}
             onShare={handleShare}

@@ -6,6 +6,7 @@ export type AdminImageDto = string | {
   imageUrl?: string;
   url?: string;
   isMain?: boolean;
+  colorName?: string | null;
 };
 
 export interface AdminProductDto extends Omit<AdminProduct, 'image' | 'images' | 'price'> {

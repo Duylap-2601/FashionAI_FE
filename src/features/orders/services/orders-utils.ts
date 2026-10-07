@@ -63,7 +63,9 @@ export function mapOrder(order: BackendOrder): Order {
       product: item.product || item.productImageSnapshot
         ? {
           name: item.productNameSnapshot || item.product?.name || `Sản phẩm #${item.productId}`,
-          images: item.product?.images?.map((img) => img.imageUrl) || (item.productImageSnapshot ? [item.productImageSnapshot] : []),
+          images: item.productImageSnapshot
+            ? [item.productImageSnapshot, ...(item.product?.images?.map((img) => img.imageUrl).filter((u) => u !== item.productImageSnapshot) || [])]
+            : item.product?.images?.map((img) => img.imageUrl) || [],
         }
         : undefined,
     })),

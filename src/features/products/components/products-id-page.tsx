@@ -97,6 +97,18 @@ export default function ProductDetail() {
     else if (type === 'retail') setActiveThumb(2);
   };
 
+  const handleSelectColor = (colorName: string) => {
+    setSelectedColor(colorName);
+    if (product?.imageItems && product.imageItems.length > 0) {
+      const matchIdx = product.imageItems.findIndex(
+        img => img.colorName && img.colorName.trim().toLowerCase() === colorName.trim().toLowerCase()
+      );
+      if (matchIdx !== -1) {
+        setActiveThumb(matchIdx);
+      }
+    }
+  };
+
   const handleAddToCart = () => {
     let price = product.numericPrice;
     let name = product.name;
@@ -198,7 +210,7 @@ export default function ProductDetail() {
           pinned={isPinned(product.id)}
           isRackMutating={isPinning || isUnpinning}
           onSelectType={handleSelectType}
-          onSelectColor={setSelectedColor}
+          onSelectColor={handleSelectColor}
           onQuantityChange={setQuantity}
           onAddToCart={handleAddToCart}
           onTogglePin={handleTogglePin}

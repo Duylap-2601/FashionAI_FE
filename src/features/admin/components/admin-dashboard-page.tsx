@@ -161,8 +161,13 @@ function AdminDashboardContent() {
       url: URL.createObjectURL(file),
       file,
       isExisting: false,
+      colorName: null,
     }));
     setProductImages(prev => [...prev, ...newItems]);
+  }, []);
+
+  const handleSetImageColor = useCallback((index: number, colorName: string | null) => {
+    setProductImages(prev => prev.map((item, i) => i === index ? { ...item, colorName: colorName || null } : item));
   }, []);
 
   const handleRemoveImage = useCallback(async (itemToRemove: ProductImageItem) => {
@@ -201,7 +206,7 @@ function AdminDashboardContent() {
         // Chuyển đổi images mới từ backend
         const mappedBackendImages: ProductImageItem[] = updatedProd.images.map((img: AdminImageDto, i: number) => {
           if (typeof img === 'string') {
-            return { id: `existing-${i}-${img}`, imageId: undefined, url: img, isMain: i === 0, isExisting: true };
+            return { id: `existing-${i}-${img}`, imageId: undefined, url: img, isMain: i === 0, isExisting: true, colorName: null };
           }
           const url = img.imageUrl || img.url || '';
           return {
@@ -210,6 +215,7 @@ function AdminDashboardContent() {
             url,
             isMain: Boolean(img.isMain),
             isExisting: true,
+            colorName: img.colorName ?? null,
           };
         });
 
@@ -286,6 +292,7 @@ function AdminDashboardContent() {
               url: img,
               isMain: i === 0,
               isExisting: true,
+              colorName: null,
             };
           }
           const url = img.imageUrl || img.url || '';
@@ -295,6 +302,7 @@ function AdminDashboardContent() {
             url,
             isMain: Boolean(img.isMain),
             isExisting: true,
+            colorName: img.colorName ?? null,
           };
         });
       }
@@ -903,8 +911,24 @@ function AdminDashboardContent() {
     };
   }, [fetchOrders, fetchShipments, fetchStats]);
 
-  // Handle smart navigation from notification clicks
+  // Handle smart navigation from notification clicks & URL search params
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      const tabParam = sp.get('tab') as AdminPage | null;
+      if (tabParam) {
+        setActiveTab(tabParam);
+      }
+      const orderCodeParam = sp.get('orderCode');
+      if (orderCodeParam) {
+        setSearchQuery(orderCodeParam);
+      }
+      const shipmentCodeParam = sp.get('shipmentCode');
+      if (shipmentCodeParam) {
+        setShipmentFilters(prev => ({ ...prev, providerOrderCode: shipmentCodeParam }));
+      }
+    }
+
     const handleAdminNavigate = (e: Event) => {
       const customEvent = e as CustomEvent;
       if (customEvent.detail?.tab) {
@@ -933,7 +957,8 @@ function AdminDashboardContent() {
       toast.error('Vui lòng chọn danh mục.');
       return;
     }
-    const newFiles = productImages.filter(item => item.file).map(item => item.file!);
+    const newItems = productImages.filter(item => item.file);
+    const newFiles = newItems.map(item => item.file!);
 
     // Sản phẩm mới bắt buộc phải có ít nhất 1 ảnh; khi sửa thì có thể giữ nguyên ảnh cũ.
     if (!editingProduct.id && productImages.length === 0) {
@@ -941,9 +966,32 @@ function AdminDashboardContent() {
       return;
     }
 
-    // Bỏ các màu chưa đặt tên; đồng bộ color = phần tử đầu để tương thích ngược.
-    const colors = (editingProduct.colors || []).filter(c => c.name.trim());
+    // Bỏ các màu chưa đặt tên; normalize hex (#RRGGBB); đồng bộ color = phần tử đầu để tương thích ngược.
+    const normalizeHex = (hex?: string): string => {
+      if (!hex) return '#000000';
+      let h = hex.trim();
+      if (!h.startsWith('#')) h = '#' + h;
+      if (/^#[0-9A-Fa-f]{3}$/.test(h)) {
+        h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+      }
+      if (/^#[0-9A-Fa-f]{6}$/.test(h)) {
+        return h.toUpperCase();
+      }
+      return '#000000';
+    };
+
+    const colors = (editingProduct.colors || [])
+      .map(c => ({ name: c.name.trim(), hex: normalizeHex(c.hex) }))
+      .filter(c => c.name.length > 0);
     const primaryColor = colors[0]?.name;
+
+    const resolveImageColor = (cName?: string | null): string | null => {
+      if (!cName) return null;
+      const match = colors.find(c => c.name.toLowerCase() === cName.trim().toLowerCase());
+      return match ? match.name : null;
+    };
+
+    const newColors = newItems.map(item => resolveImageColor(item.colorName));
 
     try {
       if (editingProduct.id) {
@@ -968,15 +1016,20 @@ function AdminDashboardContent() {
             if (index === 0) imageForm.append('image', file);
           });
           imageForm.append('isMain', 'true');
+          imageForm.append('imageColors', JSON.stringify(newColors));
           try {
             await uploadProductImage(editingProduct.id, imageForm, {
               headers: { 'Content-Type': 'multipart/form-data' },
             });
           } catch {
             // Fallback: upload từng ảnh nếu backend nhận single file
-            for (const file of newFiles) {
+            for (let i = 0; i < newFiles.length; i++) {
+              const file = newFiles[i];
+              const singleColor = newColors[i];
               const singleForm = new FormData();
               singleForm.append('image', file);
+              singleForm.append('images', file);
+              singleForm.append('imageColors', JSON.stringify([singleColor]));
               await uploadProductImage(editingProduct.id, singleForm, {
                 headers: { 'Content-Type': 'multipart/form-data' },
               });
@@ -1002,6 +1055,7 @@ function AdminDashboardContent() {
           });
           // Gửi thêm field 'image' của ảnh đầu tiên để tương thích
           form.append('image', newFiles[0]);
+          form.append('imageColors', JSON.stringify(newColors));
         }
 
         await createProduct(form, {
@@ -1861,6 +1915,7 @@ function AdminDashboardContent() {
                 productImages={productImages}
                 handleSelectImages={handleSelectImages}
                 handleSetPrimaryImage={handleSetPrimaryImage}
+                handleSetImageColor={handleSetImageColor}
                 handleRemoveImage={handleRemoveImage}
                 handleSaveProduct={handleSaveProduct}
               />

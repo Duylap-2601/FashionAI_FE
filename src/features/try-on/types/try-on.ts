@@ -2,6 +2,7 @@ export interface TryOnGarment {
   category: 'UPPER' | 'LOWER' | 'FULL_BODY' | string;
   productId?: string | null;
   image?: string | null;
+  color?: string | null;
 }
 
 export interface TryOnResult {
@@ -25,6 +26,7 @@ export interface GarmentSlotInput {
   productId?: string;
   garmentImage?: File;
   imageUrl?: string;
+  color?: string;
 }
 
 export interface TryOnRequest {
@@ -34,4 +36,5 @@ export interface TryOnRequest {
   productId?: string;
   garmentImage?: File;
   garmentCategory?: 'UPPER' | 'LOWER' | 'FULL_BODY';
+  color?: string;
 }

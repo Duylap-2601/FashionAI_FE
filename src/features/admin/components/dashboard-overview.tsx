@@ -10,6 +10,7 @@ import {
   Clock,
   CreditCard,
   Crown,
+  Eye,
   HelpCircle,
   Package,
   ShieldCheck,
@@ -21,6 +22,7 @@ import {
   Users,
   XCircle
 } from 'lucide-react';
+import Link from 'next/link';
 
 export function DashboardOverview({
   totalRevenue,
@@ -435,12 +437,14 @@ export function DashboardOverview({
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-right">
-                        <button
-                          onClick={() => setSelectedOrder(o)}
-                          className="text-label-sm font-semibold text-brand-navy hover:underline bg-transparent border-0 cursor-pointer"
+                        <Link
+                          href={`/admin/orders/${o.id}/measurements`}
+                          className="text-label-sm font-semibold text-brand-navy hover:underline inline-flex items-center gap-1 no-underline whitespace-nowrap"
+                          title="Xem chi tiết đơn hàng và số đo"
                         >
-                          Chi tiết
-                        </button>
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Xem chi tiết</span>
+                        </Link>
                       </td>
                     </tr>
                   );

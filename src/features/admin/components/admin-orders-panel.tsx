@@ -4,7 +4,7 @@ import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-pag
 import { fmt } from '@/features/admin/services/format';
 import type { AdminOrdersPanelProps } from '@/features/admin/types/admin-orders-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
-import { Calendar, RotateCcw, Scissors, Search } from 'lucide-react';
+import { Calendar, Eye, RotateCcw, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export function AdminOrdersPanel({
@@ -132,7 +132,7 @@ export function AdminOrdersPanel({
           <div className="min-w-[1010px] flex-1 flex flex-col min-h-0">
             {/* Fixed Header */}
             <div className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase shrink-0 select-none shadow-2xs">
-              <div className="grid grid-cols-[130px_minmax(200px,1fr)_140px_160px_130px_150px_100px] items-center">
+              <div className="grid grid-cols-[130px_minmax(180px,1fr)_140px_160px_130px_150px_130px] items-center">
                 <div className="px-6 py-3">Mã đơn</div>
                 <div className="px-4 py-3">Khách hàng</div>
                 <div className="px-4 py-3 text-right">Tổng tiền</div>
@@ -151,7 +151,7 @@ export function AdminOrdersPanel({
                 return (
                   <div
                     key={o.id}
-                    className="grid grid-cols-[130px_minmax(200px,1fr)_140px_160px_130px_150px_100px] items-center hover:bg-neutral-50/80 transition-colors"
+                    className="grid grid-cols-[130px_minmax(180px,1fr)_140px_160px_130px_150px_130px] items-center hover:bg-neutral-50/80 transition-colors"
                   >
                     <div className="px-6 py-3.5 font-semibold text-neutral-800 font-mono truncate">{o.code}</div>
                     <div className="px-4 py-3.5 min-w-0">
@@ -183,21 +183,15 @@ export function AdminOrdersPanel({
                         {cfg.label}
                       </span>
                     </div>
-                    <div className="px-6 py-3.5 text-right flex items-center justify-end gap-3">
+                    <div className="px-6 py-3.5 text-right flex items-center justify-end">
                       <Link
                         href={`/admin/orders/${o.id}/measurements`}
-                        className="text-xs text-purple-700 font-semibold hover:underline inline-flex items-center gap-1 no-underline"
-                        title="Xem phiếu số đo may đo"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-brand-navy bg-brand-navy/5 hover:bg-brand-navy/10 transition-colors no-underline whitespace-nowrap cursor-pointer"
+                        title="Xem chi tiết đơn hàng và số đo"
                       >
-                        <Scissors className="w-3.5 h-3.5" />
-                        <span>Số đo</span>
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Xem chi tiết</span>
                       </Link>
-                      <button
-                        onClick={() => setSelectedOrder(o)}
-                        className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
-                      >
-                        Chi tiết
-                      </button>
                     </div>
                   </div>
                 );

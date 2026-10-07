@@ -40,6 +40,7 @@ export function TryOnWorkspace({
   inputError,
   garmentMode,
   selectedProduct,
+  selectedColor,
   upperProduct,
   lowerProduct,
   canGenerate,
@@ -51,12 +52,18 @@ export function TryOnWorkspace({
   onUseMockPhoto,
   onModeChange,
   onOpenCatalog,
+  onSelectColor,
   onGenerate,
   onDownload,
   onShare,
   onTryAnother,
   onChangePhoto,
 }: TryOnWorkspaceProps) {
+  const matchingImage = selectedProduct.imageItems?.find(
+    img => img.colorName && img.colorName.trim().toLowerCase() === selectedColor?.trim().toLowerCase()
+  );
+  const productPreviewImage = matchingImage?.url || selectedProduct.image;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-6 lg:gap-8">
       <div className="flex flex-col gap-4">
@@ -133,8 +140,36 @@ export function TryOnWorkspace({
         {garmentMode === 'single' ? (
           <div className="flex flex-col gap-4">
             <SelectedProductCard product={selectedProduct} onReplace={() => onOpenCatalog('single')} />
+            {selectedProduct.colors && selectedProduct.colors.length > 0 && onSelectColor && (
+              <div className="flex flex-col gap-2 p-3 bg-[#F9F7F5] rounded-xl border border-[#E5DFD5]">
+                <div className="flex items-center justify-between text-body-sm font-medium text-brand-navy">
+                  <span>Màu sắc:</span>
+                  <span className="font-semibold text-[#5D1C34]">{selectedColor || selectedProduct.colors[0]?.name}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedProduct.colors.map(col => {
+                    const isSelected = (selectedColor || selectedProduct.colors[0]?.name)?.toLowerCase() === col.name.toLowerCase();
+                    return (
+                      <button
+                        key={col.name}
+                        type="button"
+                        onClick={() => onSelectColor(col.name)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-[#5D1C34] bg-white text-[#5D1C34] shadow-xs ring-1 ring-[#5D1C34]'
+                            : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
+                        }`}
+                      >
+                        <span className="w-3 h-3 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: col.hex }} />
+                        <span>{col.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="rounded-xl overflow-hidden border border-[#E5DFD5] bg-white flex items-center justify-center relative aspect-[4/3]">
-              <Image src={selectedProduct.image} alt={selectedProduct.name} fill sizes="(max-width: 1024px) 100vw, 50vw" unoptimized className="object-contain p-4" />
+              <Image src={productPreviewImage} alt={selectedProduct.name} fill sizes="(max-width: 1024px) 100vw, 50vw" unoptimized className="object-contain p-4" />
             </div>
           </div>
         ) : (

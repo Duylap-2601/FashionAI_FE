@@ -9,8 +9,10 @@ export interface TryOnWorkspaceProps {
   inputError: string | null;
   garmentMode: GarmentMode;
   selectedProduct: Product;
+  selectedColor?: string | null;
   upperProduct: Product | null;
   lowerProduct: Product | null;
+  onSelectColor?: (color: string) => void;
   canGenerate: boolean;
   isSubmitting: boolean;
   isBlocked: boolean;

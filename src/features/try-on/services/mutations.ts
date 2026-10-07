@@ -12,6 +12,9 @@ export async function submitTryOn(payload: TryOnRequest) {
       formData.append(`garments[${idx}][category]`, g.garmentCategory);
       if (g.productId) {
         formData.append(`garments[${idx}][productId]`, g.productId);
+        if (g.color) {
+          formData.append(`garments[${idx}][color]`, g.color);
+        }
       } else if (g.garmentImage) {
         formData.append(`garments[${idx}][image]`, g.garmentImage);
       }
@@ -20,10 +23,13 @@ export async function submitTryOn(payload: TryOnRequest) {
     if (payload.garments[0]?.productId) formData.append('productId', payload.garments[0].productId);
     if (payload.garments[0]?.garmentCategory) formData.append('garmentCategory', payload.garments[0].garmentCategory);
     if (payload.garments[0]?.garmentImage) formData.append('garmentImage', payload.garments[0].garmentImage);
+    const primaryColor = payload.garments[0]?.color || payload.color;
+    if (primaryColor) formData.append('color', primaryColor);
   } else {
     if (payload.garmentImage) formData.append('garmentImage', payload.garmentImage);
     if (payload.productId) formData.append('productId', payload.productId);
     if (payload.garmentCategory) formData.append('garmentCategory', payload.garmentCategory);
+    if (payload.color) formData.append('color', payload.color);
   }
 
   return http.post<TryOnResult, FormData>('/try-on', formData, {
@@ -42,8 +48,10 @@ export async function deleteManyTryOnHistory(ids: string[]) {
   return ids;
 }
 
-export async function createLiveTryOnSession(productId: string, idempotencyKey: string, signal?: AbortSignal) {
-  return http.post<LiveTryOnSessionResponse, { productId: string }>('/try-on/live/sessions', { productId }, {
+export async function createLiveTryOnSession(productId: string, idempotencyKey: string, signal?: AbortSignal, color?: string) {
+  const body: { productId: string; color?: string } = { productId };
+  if (color) body.color = color;
+  return http.post<LiveTryOnSessionResponse, { productId: string; color?: string }>('/try-on/live/sessions', body, {
     headers: { 'Idempotency-Key': idempotencyKey },
     signal,
   });

@@ -11,6 +11,7 @@ export interface AdminProductModalProps {
   productImages: ProductImageItem[];
   handleSelectImages: (files: FileList | File[]) => void;
   handleSetPrimaryImage: (index: number) => void;
+  handleSetImageColor: (index: number, colorName: string | null) => void;
   handleRemoveImage: (itemToRemove: ProductImageItem) => Promise<void>;
   handleSaveProduct: () => Promise<void>;
 }

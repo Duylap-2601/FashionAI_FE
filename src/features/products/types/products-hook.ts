@@ -14,7 +14,7 @@ export interface BackendProduct {
   originalPrice?: string | number | null;
   soldCount?: number | null;
   garmentUrl?: string | null;
-  images?: ({ imageUrl?: string; url?: string; isMain?: boolean } | string)[] | null;
+  images?: ({ id?: string; imageUrl?: string; url?: string; isMain?: boolean; colorName?: string | null } | string)[] | null;
   avgRating?: number | string | null;
   reviewCount?: number | null;
 }

@@ -297,3 +297,84 @@ test('order mapping preserves userId and measurementDisplay, and admin user meas
   assert.equal(JSON.stringify(measurementKeys.userMeasurements('user-456')), JSON.stringify(['measurements', 'user', 'user-456']));
 });
 
+test('Sprint 3: try-on and live try-on preserve garment color and product mapping preserves image colorName', async () => {
+  const calls = [];
+  const load = createSourceLoader({ mocks: {
+    '@/lib/http': {
+      http: {
+        get: async (...args) => { calls.push(['get', ...args]); return { productId: 'p1', color: 'Đen' }; },
+        post: async (...args) => { calls.push(['post', ...args]); return { id: 'result' }; },
+      },
+    },
+  } });
+
+  // 1. Product mapping with colorName
+  const { mapProduct } = load('@/features/products/services/products-utils');
+  const mapped = mapProduct({
+    id: 'p-color',
+    name: 'Áo sơ mi',
+    category: 'UPPER',
+    price: 350000,
+    colors: [{ name: 'Trắng', hex: '#FFFFFF' }, { name: 'Đen', hex: '#000000' }],
+    images: [
+      { id: 'img-1', imageUrl: 'https://example.com/trang.jpg', isMain: true, colorName: 'Trắng' },
+      { id: 'img-2', imageUrl: 'https://example.com/den.jpg', isMain: false, colorName: 'Đen' },
+    ],
+  });
+  assert.equal(mapped.imageItems?.length, 2);
+  assert.equal(mapped.imageItems?.[0].colorName, 'Trắng');
+  assert.equal(mapped.imageItems?.[1].colorName, 'Đen');
+
+  // 2. Submit Try-On with color
+  const { submitTryOn } = load('@/features/try-on/services/mutations');
+  const humanImage = new File(['human'], 'human.png', { type: 'image/png' });
+  await submitTryOn({
+    humanImage,
+    garments: [{ garmentCategory: 'UPPER', productId: 'p-color', color: 'Trắng' }],
+  });
+  const tryOnFormData = calls[0][2];
+  assert.equal(tryOnFormData.get('garments[0][color]'), 'Trắng');
+  assert.equal(tryOnFormData.get('color'), 'Trắng');
+
+  // 3. Live Try-On garment & session with color
+  const queries = load('@/features/try-on/services/queries');
+  const mutations = load('@/features/try-on/services/mutations');
+  const signal = new AbortController().signal;
+
+  await queries.fetchLiveTryOnGarment('p-color', signal, 'Đen');
+  await mutations.createLiveTryOnSession('p-color', 'idempotency-key-1', signal, 'Đen');
+
+  assert.equal(calls[1][0], 'get');
+  assert.equal(calls[1][1], '/try-on/live/garments/p-color');
+  assert.equal(JSON.stringify(calls[1][2].params), JSON.stringify({ color: 'Đen' }));
+
+  assert.equal(calls[2][0], 'post');
+  assert.equal(calls[2][1], '/try-on/live/sessions');
+  assert.equal(JSON.stringify(calls[2][2]), JSON.stringify({ productId: 'p-color', color: 'Đen' }));
+
+  // 4. Order mapping prioritizes productImageSnapshot
+  const { mapOrder } = load('@/features/orders/services/orders-utils');
+  const orderMapped = mapOrder({
+    id: 'ord-1',
+    code: 'ORD-1',
+    orderCode: 1001,
+    status: 'PENDING',
+    items: [
+      {
+        id: 'item-1',
+        productId: 'p-color',
+        quantity: 1,
+        price: '350000',
+        color: 'Đen',
+        productImageSnapshot: 'https://example.com/snapshot-den.jpg',
+        product: {
+          name: 'Áo sơ mi live',
+          images: [{ imageUrl: 'https://example.com/live-main.jpg' }],
+        },
+      },
+    ],
+  });
+  assert.equal(orderMapped.items[0].product?.images[0], 'https://example.com/snapshot-den.jpg');
+});
+
+

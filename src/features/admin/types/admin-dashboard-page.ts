@@ -46,6 +46,7 @@ export interface AdminProductImage {
   id: string;
   imageUrl: string;
   isMain?: boolean;
+  colorName?: string | null;
 }
 
 export interface AdminProduct {
@@ -219,4 +220,5 @@ export interface ProductImageItem {
   isMain?: boolean;
   file?: File;
   isExisting?: boolean;
+  colorName?: string | null;
 }

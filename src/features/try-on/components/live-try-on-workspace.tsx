@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import type { Product } from '@/features/products/types/products';
 import { useLiveTryOnQuota } from '@/features/subscription/hooks/useQuota';
@@ -11,6 +11,7 @@ interface LiveTryOnWorkspaceProps {
   selectedProduct: Product;
   upperProduct: Product | null;
   lowerProduct: Product | null;
+  selectedColor?: string | null;
   onOpenUpperCatalog: () => void;
   onOpenLowerCatalog: () => void;
   onOpenCatalog: () => void;
@@ -19,7 +20,7 @@ interface LiveTryOnWorkspaceProps {
 
 const buttonFocus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D1C34] focus-visible:ring-offset-4 disabled:cursor-not-allowed disabled:opacity-45';
 
-export function LiveTryOnWorkspace({ selectedProduct, upperProduct, lowerProduct, onOpenUpperCatalog, onOpenLowerCatalog, onOpenCatalog, onSwitchToPhoto }: LiveTryOnWorkspaceProps) {
+export function LiveTryOnWorkspace({ selectedProduct, upperProduct, lowerProduct, selectedColor, onOpenUpperCatalog, onOpenLowerCatalog, onOpenCatalog, onSwitchToPhoto }: LiveTryOnWorkspaceProps) {
   const [outfitMode, setOutfitMode] = useState(false);
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -67,7 +68,7 @@ export function LiveTryOnWorkspace({ selectedProduct, upperProduct, lowerProduct
   }, [live.status, refetch]);
 
   const start = () => {
-    if (primaryProduct && canStart) void live.start(primaryProduct.id, resumeId, outfitMode ? lowerProduct?.id : undefined);
+    if (primaryProduct && canStart) void live.start(primaryProduct.id, resumeId, outfitMode ? lowerProduct?.id : undefined, selectedColor || undefined);
   };
 
   return (
@@ -121,7 +122,7 @@ export function LiveTryOnWorkspace({ selectedProduct, upperProduct, lowerProduct
               ))}
             </div>
             <div className={outfitMode ? 'grid grid-cols-1 min-[380px]:grid-cols-2 gap-3' : ''}>
-              {outfitMode ? <><GarmentCard label="Áo" product={upperProduct} onSelect={onOpenUpperCatalog} disabled={selectionLocked} /><GarmentCard label="Quần" product={lowerProduct} onSelect={onOpenLowerCatalog} disabled={selectionLocked} /></> : <GarmentCard label="Trang phục" product={selectedProduct} onSelect={onOpenCatalog} disabled={selectionLocked} horizontal />}
+              {outfitMode ? <><GarmentCard label="Áo" product={upperProduct} onSelect={onOpenUpperCatalog} disabled={selectionLocked} color={selectedColor} /><GarmentCard label="Quần" product={lowerProduct} onSelect={onOpenLowerCatalog} disabled={selectionLocked} /></> : <GarmentCard label="Trang phục" product={selectedProduct} onSelect={onOpenCatalog} disabled={selectionLocked} horizontal color={selectedColor} />}
             </div>
             <p className={`mt-4 flex items-start gap-2 text-[12px] leading-5 ${isPaused ? 'text-[#5D1C34]' : 'text-[#8A7871]'}`}>
               {isPaused ? <RefreshCw size={14} className="mt-0.5 shrink-0" /> : <CirclePause size={14} className="mt-0.5 shrink-0" />}
@@ -159,11 +160,18 @@ export function LiveTryOnWorkspace({ selectedProduct, upperProduct, lowerProduct
   );
 }
 
-function GarmentCard({ label, product, onSelect, disabled, horizontal = false }: { label: string; product: Product | null; onSelect: () => void; disabled: boolean; horizontal?: boolean }) {
+function GarmentCard({ label, product, onSelect, disabled, horizontal = false, color }: { label: string; product: Product | null; onSelect: () => void; disabled: boolean; horizontal?: boolean; color?: string | null }) {
+  const matchingImage = color
+    ? product?.imageItems?.find(
+        img => img.colorName && img.colorName.trim().toLowerCase() === color.trim().toLowerCase()
+      )
+    : undefined;
+  const displayImage = matchingImage?.url || product?.image;
+
   return (
     <button type="button" onClick={onSelect} disabled={disabled} aria-label={`${product ? 'Đổi' : 'Chọn'} ${label.toLowerCase()}${product ? `: ${product.name}` : ''}`} className={`group w-full min-w-0 overflow-hidden rounded-2xl border border-[#E8DED6] bg-[#FCFAF7] text-left transition-colors hover:border-[#B49789] ${buttonFocus} ${horizontal ? 'flex items-center gap-4 p-3' : 'p-2.5 max-[379px]:flex max-[379px]:items-center max-[379px]:gap-3'}`}>
       <div className={`relative flex items-center justify-center rounded-xl bg-[#F1EBE5] ${horizontal ? 'h-28 w-24 shrink-0' : 'mb-3 aspect-[4/3] w-full max-[379px]:mb-0 max-[379px]:h-24 max-[379px]:w-20 max-[379px]:shrink-0'}`}>
-        {product ? <Image src={product.image} alt={product.name} fill sizes={horizontal ? '96px' : '(max-width: 640px) 40vw, 180px'} unoptimized className="object-contain p-2 mix-blend-multiply" /> : <Plus size={24} strokeWidth={1.2} className="text-[#AC9185]" />}
+        {product && displayImage ? <Image src={displayImage} alt={product.name} fill sizes={horizontal ? '96px' : '(max-width: 640px) 40vw, 180px'} unoptimized className="object-contain p-2 mix-blend-multiply" /> : <Plus size={24} strokeWidth={1.2} className="text-[#AC9185]" />}
       </div>
       <div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[#987C70]">{label}</p><p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-[#43312C]">{product?.name ?? `Chọn ${label.toLowerCase()} của bạn`}</p><span className="mt-2 inline-flex min-h-6 items-center gap-1 text-[11px] font-medium text-[#6C3045]">{product ? 'Đổi món' : 'Chọn ngay'}<ArrowRight size={12} /></span></div>
     </button>

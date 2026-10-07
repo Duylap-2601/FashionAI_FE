@@ -1,8 +1,8 @@
 import type { Product } from '@/features/products/types/products';
 import type { BackendProduct } from '@/features/products/types/products-hook';
 
-export function parseImages(product: BackendProduct): string[] {
-  const list: string[] = [];
+export function parseProductImageItems(product: BackendProduct): { url: string; colorName?: string | null; isMain?: boolean }[] {
+  const list: { url: string; colorName?: string | null; isMain?: boolean }[] = [];
   if (Array.isArray(product.images) && product.images.length > 0) {
     // isMain lên đầu để ảnh đại diện (gallery[0]) luôn đúng, tránh rơi vào ảnh
     // placeholder cũ (raw.githubusercontent) nằm trước ảnh isMain trong mảng gốc.
@@ -13,20 +13,24 @@ export function parseImages(product: BackendProduct): string[] {
     });
     sorted.forEach((item) => {
       if (typeof item === 'string') {
-        list.push(item);
+        list.push({ url: item, colorName: null, isMain: false });
       } else if (item && typeof item === 'object') {
         const url = item.imageUrl || item.url;
-        if (url) list.push(url);
+        if (url) list.push({ url, colorName: item.colorName ?? null, isMain: Boolean(item.isMain) });
       }
     });
   }
   if (list.length === 0 && product.garmentUrl) {
-    list.push(product.garmentUrl);
+    list.push({ url: product.garmentUrl, colorName: null, isMain: true });
   }
   if (list.length === 0) {
-    list.push('/images/731163514_999523332788054_1114320478812927640_n.png');
+    list.push({ url: '/images/731163514_999523332788054_1114320478812927640_n.png', colorName: null, isMain: true });
   }
   return list;
+}
+
+export function parseImages(product: BackendProduct): string[] {
+  return parseProductImageItems(product).map(item => item.url);
 }
 
 export function parseColors(product: BackendProduct): { name: string; hex: string }[] {
@@ -48,7 +52,8 @@ export function parseColors(product: BackendProduct): { name: string; hex: strin
 }
 
 export function mapProduct(product: BackendProduct): Product {
-  const gallery = parseImages(product);
+  const imageItems = parseProductImageItems(product);
+  const gallery = imageItems.map(i => i.url);
   const mainImage = gallery[0];
   const priceNumber = Number(product.price);
   const origPriceNumber = product.originalPrice ? Number(product.originalPrice) : undefined;
@@ -67,6 +72,7 @@ export function mapProduct(product: BackendProduct): Product {
     garmentType: (product.garmentType as import('@/features/products/types/products').GarmentType) || undefined,
     image: mainImage,
     gallery,
+    imageItems,
     colors,
     isGuest: false,
     description: product.description || undefined,

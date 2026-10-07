@@ -25,7 +25,7 @@ const GARMENT_TYPES_BY_CATEGORY: Record<GarmentCategory, { value: GarmentType; l
   ],
 };
 
-export function AdminProductModal({ closeProductEditor, editingProduct, setEditingProduct, addColor, updateColor, removeColor, productImages, handleSelectImages, handleSetPrimaryImage, handleRemoveImage, handleSaveProduct }: AdminProductModalProps) {
+export function AdminProductModal({ closeProductEditor, editingProduct, setEditingProduct, addColor, updateColor, removeColor, productImages, handleSelectImages, handleSetPrimaryImage, handleSetImageColor, handleRemoveImage, handleSaveProduct }: AdminProductModalProps) {
   const currentCategory = (editingProduct.category || 'UPPER') as GarmentCategory;
   const availableGarmentTypes = GARMENT_TYPES_BY_CATEGORY[currentCategory] || [];
 
@@ -208,71 +208,99 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
                 const isOnlyImage = productImages.length === 1;
 
                 return (
-                  <div
-                    key={img.id}
-                    className={`relative group rounded-xl border bg-neutral-50 overflow-hidden aspect-square flex items-center justify-center shadow-2xs transition-all ${isPrimary ? 'border-brand-navy ring-2 ring-brand-navy/30' : 'border-neutral-200'
-                      }`}
-                  >
-                    <img
-                      src={img.url}
-                      alt={`Ảnh ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                    />
+                  <div key={img.id} className="flex flex-col gap-1">
+                    <div
+                      className={`relative group rounded-xl border bg-neutral-50 overflow-hidden aspect-square flex items-center justify-center shadow-2xs transition-all ${isPrimary ? 'border-brand-navy ring-2 ring-brand-navy/30' : 'border-neutral-200'
+                        }`}
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Ảnh ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
 
-                    {/* Primary Badge or Set Primary Button */}
-                    {isPrimary ? (
-                      <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-brand-navy/95 text-white text-[9px] font-bold rounded shadow-xs">
-                        Ảnh chính
-                      </span>
-                    ) : (
+                      {/* Primary Badge or Set Primary Button */}
+                      {isPrimary ? (
+                        <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-brand-navy/95 text-white text-[9px] font-bold rounded shadow-xs z-10">
+                          Ảnh chính
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryImage(idx)}
+                          className="absolute top-1 left-1 px-1.5 py-0.5 bg-white/90 hover:bg-white text-neutral-800 text-[9px] font-semibold rounded shadow-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-0 z-10"
+                          title="Đặt làm ảnh chính"
+                        >
+                          Đặt chính
+                        </button>
+                      )}
+
+                      {/* Color Tag if assigned */}
+                      {img.colorName && (
+                        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/75 backdrop-blur-xs text-white text-[9px] font-medium rounded shadow-xs max-w-[85%] truncate z-10">
+                          {img.colorName}
+                        </span>
+                      )}
+
+                      {/* Remove Image Button */}
                       <button
                         type="button"
-                        onClick={() => handleSetPrimaryImage(idx)}
-                        className="absolute top-1 left-1 px-1.5 py-0.5 bg-white/90 hover:bg-white text-neutral-800 text-[9px] font-semibold rounded shadow-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-0"
-                        title="Đặt làm ảnh chính"
+                        disabled={isOnlyImage}
+                        onClick={() => handleRemoveImage(img)}
+                        className={`absolute top-1 right-1 w-6 h-6 rounded flex items-center justify-center transition-opacity border-0 cursor-pointer z-10 ${isOnlyImage
+                          ? 'bg-neutral-400/80 text-white cursor-not-allowed opacity-0 group-hover:opacity-60'
+                          : 'bg-red-600/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100'
+                          }`}
+                        title={isOnlyImage ? 'Sản phẩm phải có ít nhất 1 ảnh' : 'Xóa ảnh này'}
                       >
-                        Đặt chính
+                        <X className="w-3.5 h-3.5" />
                       </button>
-                    )}
+                    </div>
 
-                    {/* Remove Image Button */}
-                    <button
-                      type="button"
-                      disabled={isOnlyImage}
-                      onClick={() => handleRemoveImage(img)}
-                      className={`absolute top-1 right-1 w-6 h-6 rounded flex items-center justify-center transition-opacity border-0 cursor-pointer ${isOnlyImage
-                        ? 'bg-neutral-400/80 text-white cursor-not-allowed opacity-0 group-hover:opacity-60'
-                        : 'bg-red-600/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100'
-                        }`}
-                      title={isOnlyImage ? 'Sản phẩm phải có ít nhất 1 ảnh' : 'Xóa ảnh này'}
+                    {/* Color selector dropdown */}
+                    <select
+                      value={img.colorName || ''}
+                      onChange={e => handleSetImageColor(idx, e.target.value || null)}
+                      className="w-full text-[10px] h-6 px-1 rounded border border-neutral-200 bg-white text-neutral-700 focus:outline-none focus:ring-1 focus:ring-brand-navy truncate"
+                      title="Gắn màu cho ảnh này"
                     >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                      <option value="">Ảnh chung</option>
+                      {(editingProduct.colors || [])
+                        .filter(c => c.name && c.name.trim())
+                        .map(c => (
+                          <option key={c.name} value={c.name.trim()}>
+                            {c.name.trim()}
+                          </option>
+                        ))}
+                    </select>
                   </div>
                 );
               })}
 
               {/* Add More Dropzone / Card */}
-              <label className="border-2 border-dashed border-neutral-300 hover:border-brand-navy/60 hover:bg-neutral-100/50 rounded-xl aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer transition-all text-neutral-400 hover:text-brand-navy">
-                <Package className="w-5 h-5" />
-                <span className="text-[11px] font-semibold">+ Thêm</span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={e => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      handleSelectImages(e.target.files);
-                    }
-                    e.target.value = '';
-                  }}
-                  className="hidden"
-                />
-              </label>
+              <div className="flex flex-col gap-1">
+                <label className="border-2 border-dashed border-neutral-300 hover:border-brand-navy/60 hover:bg-neutral-100/50 rounded-xl aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer transition-all text-neutral-400 hover:text-brand-navy">
+                  <Package className="w-5 h-5" />
+                  <span className="text-[11px] font-semibold">+ Thêm</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={e => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleSelectImages(e.target.files);
+                      }
+                      e.target.value = '';
+                    }}
+                    className="hidden"
+                  />
+                </label>
+                <div className="h-6" />
+              </div>
             </div>
 
             <p className="text-label-sm text-neutral-400">
-              JPG, PNG hoặc WEBP · Tải lên nhiều ảnh cùng lúc · Ảnh đầu tiên là ảnh đại diện (nhấn &quot;Đặt chính&quot; để đổi).
+              JPG, PNG hoặc WEBP · Chọn màu tương ứng dưới mỗi ảnh để kích hoạt đổi ảnh theo màu.
             </p>
           </div>
 

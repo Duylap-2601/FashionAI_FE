@@ -7,6 +7,7 @@ export interface LiveTryOnGarment {
   imageUrl: string;
   prompt: string;
   category: 'UPPER' | 'LOWER' | 'FULL_BODY';
+  color?: string | null;
 }
 
 export interface LiveTryOnSessionResponse {

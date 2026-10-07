@@ -12,8 +12,11 @@ export function fetchTryOnImage(url: string) {
   return fetch(url);
 }
 
-export async function fetchLiveTryOnGarment(productId: string, signal?: AbortSignal) {
-  return http.get<LiveTryOnGarment>(`/try-on/live/garments/${productId}`, { signal });
+export async function fetchLiveTryOnGarment(productId: string, signal?: AbortSignal, color?: string) {
+  return http.get<LiveTryOnGarment>(`/try-on/live/garments/${productId}`, {
+    signal,
+    ...(color ? { params: { color } } : {}),
+  });
 }
 
 export async function fetchLiveTryOnSession(sessionId: string, signal?: AbortSignal) {

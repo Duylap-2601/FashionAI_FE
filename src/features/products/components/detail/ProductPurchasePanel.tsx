@@ -196,7 +196,7 @@ export function ProductPurchasePanel({
       <div className="flex flex-col gap-3 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Link
-            href={`/try-on?productId=${product.id}`}
+            href={selectedColor ? `/try-on?productId=${product.id}&color=${encodeURIComponent(selectedColor)}` : `/try-on?productId=${product.id}`}
             className="h-[48px] bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2"
           >
             Thử đồ ảo ngay
