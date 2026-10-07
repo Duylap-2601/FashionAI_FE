@@ -28,7 +28,7 @@ export default function OrderDetailPage() {
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  const statusInfo = STATUS_MAP[order?.status || 'PENDING'] || STATUS_MAP.PENDING;
+  const statusInfo = STATUS_MAP[order?.status || 'CREATED'] || STATUS_MAP.CREATED;
 
   const handleCancel = () => {
     if (!order?.id) return;
@@ -138,7 +138,7 @@ export default function OrderDetailPage() {
                   Đơn hàng #{orderCode}
                 </h1>
                 <span className={`px-3 py-1 rounded-full text-label-sm font-bold border ${statusInfo.color}`}>
-                  {statusInfo.label}
+                  {order.displayStatus?.label ?? statusInfo.label}
                 </span>
               </div>
               <p className="text-[13px] text-neutral-500">
@@ -147,7 +147,7 @@ export default function OrderDetailPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              {order.status === 'PENDING' && (
+              {order.allowedActions?.cancel && (
                   <button
                   type="button"
                   onClick={() => setShowCancelConfirm(true)}
@@ -156,7 +156,7 @@ export default function OrderDetailPage() {
                   Hủy đơn hàng
                 </button>
               )}
-              {order.status === 'DELIVERED' && (
+              {order.allowedActions?.confirmDelivery && (
                 <button
                   type="button"
                   onClick={handleConfirmDelivery}
@@ -218,8 +218,8 @@ export default function OrderDetailPage() {
           </div>
           <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
             <p className="text-[12px] font-semibold uppercase tracking-wide text-neutral-500">Vận chuyển</p>
-            <p className="mt-1 text-body-md font-bold text-brand-navy">{order.shipment?.status || 'Chưa tạo vận đơn'}</p>
-            <p className="text-[12px] text-neutral-500">{order.shipment?.providerOrderCode ? `Mã: ${order.shipment.providerOrderCode}` : 'Chờ shop bàn giao'}</p>
+            <p className="mt-1 text-body-md font-bold text-brand-navy">{order.displayStatus?.source !== 'ORDER' ? order.displayStatus?.label : order.currentShipment?.status || 'Chưa tạo vận đơn'}</p>
+            <p className="text-[12px] text-neutral-500">{order.currentShipment?.providerOrderCode ? `Mã: ${order.currentShipment.providerOrderCode}` : 'Chờ shop bàn giao'}</p>
           </div>
           <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
             <p className="text-[12px] font-semibold uppercase tracking-wide text-neutral-500">Cập nhật</p>
@@ -345,7 +345,7 @@ export default function OrderDetailPage() {
                 <CreditCard className="w-4 h-4 text-brand-navy" /> Thanh toán
               </h3>
 
-              {order.status === 'PENDING' && (
+              {order.status === 'CREATED' && order.paymentStatus === 'PENDING' && (
                 <div className="bg-brand-navy/5 border border-brand-navy/20 rounded-xl p-4 mb-4">
                   <p className="text-label-sm text-neutral-600 mb-1">Nội dung chuyển khoản</p>
                   <p className="text-body-lg font-bold text-brand-navy font-mono">FAI{order.orderCode}</p>
