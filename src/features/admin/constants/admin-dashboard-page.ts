@@ -30,7 +30,7 @@ export const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon
   MEASUREMENT_REVIEW: { label: 'Kiểm tra số đo', cls: 'bg-purple-50 text-purple-700 border border-purple-200', icon: Scissors },
   MEASUREMENT_CONFIRMED: { label: 'Chốt số đo', cls: 'bg-purple-50 text-purple-700 border border-purple-200', icon: CheckCircle2 },
   TAILORING: { label: 'Đang may', cls: 'bg-indigo-50 text-indigo-700 border border-indigo-200', icon: Scissors },
-  QUALITY_CHECK: { label: 'QC', cls: 'bg-cyan-50 text-cyan-700 border border-cyan-200', icon: CheckCircle2 },
+  QUALITY_CHECK: { label: 'Kiểm tra chất lượng', cls: 'bg-cyan-50 text-cyan-700 border border-cyan-200', icon: CheckCircle2 },
   READY_TO_SHIP: { label: 'Sẵn sàng giao', cls: 'bg-sky-50 text-sky-700 border border-sky-200', icon: Truck },
   SHIPPING: { label: 'Đang giao', cls: 'bg-brand-navy/8 text-brand-navy border border-brand-navy/20', icon: Truck },
   DELIVERED: { label: 'Đã giao hàng', cls: 'bg-blue-50 text-blue-700 border border-blue-200', icon: CheckCircle2 },

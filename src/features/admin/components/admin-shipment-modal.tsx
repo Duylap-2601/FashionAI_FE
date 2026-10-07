@@ -1,6 +1,6 @@
 'use client';
 
-import { fmt } from '@/features/admin/services/format';
+import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import type { AdminShipmentModalProps } from '@/features/admin/types/admin-shipment-modal';
 import { ExternalLink, RefreshCw, X } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -28,7 +28,7 @@ export function AdminShipmentModal({ shipment, onClose, onSync, onCancel, onSimu
             <p className="text-label-sm text-neutral-500 font-semibold uppercase">{shipment.provider}</p>
             <h2 className="text-body-lg font-bold text-neutral-900 font-mono">{shipment.providerOrderCode || 'Chưa có mã GHN'}</h2>
             <div className="flex flex-wrap gap-2 mt-2">
-              <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 text-label-sm font-semibold">{shipment.status}</span>
+              <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 text-label-sm font-semibold">{shipmentStatusLabel(shipment.status, shipment.rawStatus)}</span>
               {shipment.rawStatus && <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-label-sm font-semibold">{shipment.rawStatus}</span>}
             </div>
           </div>

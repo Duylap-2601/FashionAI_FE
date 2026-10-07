@@ -2,7 +2,7 @@
 
 import { AdminGuard } from '@/features/auth/components/AdminGuard';
 import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
-import { fmt } from '@/features/admin/services/format';
+import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import {
   confirmManualPayment,
   createShipment,
@@ -26,17 +26,14 @@ import {
   Loader2,
   Mail,
   MapPin,
-  Package,
   Phone,
   Printer,
   Receipt,
   RefreshCw,
   Scissors,
-  ShieldCheck,
   Truck,
   User,
   UserCheck,
-  XCircle,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -54,7 +51,7 @@ const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
   MEASUREMENT_REVIEW: 'Kiểm tra số đo',
   MEASUREMENT_CONFIRMED: 'Chốt số đo',
   TAILORING: 'Đang may',
-  QUALITY_CHECK: 'QC',
+  QUALITY_CHECK: 'Kiểm tra chất lượng',
   READY_TO_SHIP: 'Sẵn sàng giao',
   SHIPPING: 'Đang giao hàng',
   DELIVERED: 'Đã giao hàng',
@@ -68,21 +65,23 @@ const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
   FAILED: 'Thất bại',
 };
 
-const NEXT_ORDER_STATUSES: Partial<Record<BackendOrderStatus, BackendOrderStatus[]>> = {
-  PENDING: ['CANCELLED', 'EXPIRED', 'FAILED'],
-  PAID: ['MEASUREMENT_REVIEW', 'CANCELLED'],
-  MEASUREMENT_REVIEW: ['MEASUREMENT_CONFIRMED', 'CANCELLED'],
-  MEASUREMENT_CONFIRMED: ['TAILORING', 'CANCELLED'],
-  TAILORING: ['QUALITY_CHECK'],
-  QUALITY_CHECK: ['READY_TO_SHIP', 'TAILORING'],
-  READY_TO_SHIP: ['CANCELLED'],
-  SHIPPING: ['RETURN_REQUESTED', 'RETURNING', 'RETURNED'],
-  DELIVERED: ['COMPLETED', 'RETURN_REQUESTED', 'RETURNING', 'RETURNED'],
-  COMPLETED: ['RETURN_REQUESTED'],
-  RETURN_REQUESTED: ['RETURN_APPROVED', 'RETURNING', 'RETURNED', 'CANCELLED'],
-  RETURN_APPROVED: ['RETURNING', 'RETURNED'],
-  RETURNING: ['RETURNED'],
-};
+const ADMIN_ORDER_STATUS_OPTIONS: BackendOrderStatus[] = [
+  'CREATED',
+  'PENDING',
+  'MEASUREMENT_REVIEW',
+  'MEASUREMENT_CONFIRMED',
+  'TAILORING',
+  'READY_TO_SHIP',
+  'SHIPPING',
+  'DELIVERED',
+  'COMPLETED',
+  'CANCELLED',
+  'RETURN_REQUESTED',
+  'RETURNING',
+  'RETURNED',
+  'EXPIRED',
+  'FAILED',
+];
 
 export default function AdminOrderMeasurementsPage() {
   const params = useParams();
@@ -100,12 +99,25 @@ export default function AdminOrderMeasurementsPage() {
   const [refundNote, setRefundNote] = useState('');
   const [submittingRefund, setSubmittingRefund] = useState(false);
   const [creatingShipment, setCreatingShipment] = useState(false);
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const createShipmentAbortRef = useRef<AbortController | null>(null);
+  const statusMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     return () => {
       createShipmentAbortRef.current?.abort();
     };
+  }, []);
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!statusMenuRef.current?.contains(event.target as Node)) {
+        setStatusMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, []);
 
   const toggleSnapshot = (itemId: string) => {
@@ -223,7 +235,7 @@ export default function AdminOrderMeasurementsPage() {
             <h2 className="text-body-lg font-bold text-neutral-900 mb-1">Không tìm thấy đơn hàng</h2>
             <p className="text-body-sm text-neutral-500 mb-6">Mã đơn hàng không tồn tại hoặc bạn không có quyền truy cập.</p>
             <Link
-              href="/admin/dashboard"
+              href="/admin/dashboard?tab=orders"
               className="inline-flex items-center gap-2 px-4 py-2 bg-brand-navy text-white text-xs font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors no-underline"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -239,7 +251,16 @@ export default function AdminOrderMeasurementsPage() {
   const refundRequired = order.refundStatus === 'REQUIRED' || order.refundStatus === 'PROCESSING';
   const refundCompleted = order.refundStatus === 'COMPLETED';
   const canCreateShipment = order.status === 'READY_TO_SHIP' && order.paymentStatus === 'PAID' && !order.shipment;
-  const statusOptions = [order.status, ...(NEXT_ORDER_STATUSES[order.status] ?? [])];
+  const statusOptions = ADMIN_ORDER_STATUS_OPTIONS.includes(order.status)
+    ? ADMIN_ORDER_STATUS_OPTIONS
+    : [order.status, ...ADMIN_ORDER_STATUS_OPTIONS];
+  const shipmentBlockedReason = order.shipment
+    ? null
+    : order.paymentStatus !== 'PAID'
+      ? 'Cần thanh toán trước khi tạo vận đơn.'
+      : order.status !== 'READY_TO_SHIP'
+        ? 'Chuyển trạng thái sang Sẵn sàng giao để tạo vận đơn.'
+        : null;
 
   const statusCfg = ORDER_STATUS_CFG[order.status] || {
     label: order.status,
@@ -259,7 +280,7 @@ export default function AdminOrderMeasurementsPage() {
           {/* Top Navigation & Actions Bar (Hidden when printing) */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 print:hidden">
             <Link
-              href="/admin/dashboard"
+              href="/admin/dashboard?tab=orders"
               className="inline-flex items-center gap-2 text-body-sm font-semibold text-neutral-600 hover:text-brand-navy transition-colors no-underline"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -267,85 +288,63 @@ export default function AdminOrderMeasurementsPage() {
             </Link>
 
             <div className="flex flex-wrap items-center gap-2.5">
-              {/* Quick Tailor Status Transitions */}
-              {order.status === 'MEASUREMENT_REVIEW' && (
+              <div ref={statusMenuRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => handleStatusChange('MEASUREMENT_CONFIRMED')}
+                  onClick={() => setStatusMenuOpen((open) => !open)}
                   disabled={updatingStatus}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-purple-700 text-white text-xs font-bold rounded-xl hover:bg-purple-800 disabled:opacity-50 transition-colors border-0 cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-3.5 py-2 text-xs font-bold text-neutral-900 shadow-2xs hover:border-brand-navy/40 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 transition-colors cursor-pointer"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Chốt số đo (MEASUREMENT_CONFIRMED)</span>
+                  {updatingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-navy" /> : <StatusIcon className="w-3.5 h-3.5 text-brand-navy" />}
+                  <span className="text-neutral-500 font-semibold hidden sm:inline">Trạng thái</span>
+                  <span>{ORDER_STATUS_OPTIONS[order.status] || order.status}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${statusMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
-              )}
 
-              {order.status === 'MEASUREMENT_CONFIRMED' && (
-                <button
-                  type="button"
-                  onClick={() => handleStatusChange('TAILORING')}
-                  disabled={updatingStatus}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-700 text-white text-xs font-bold rounded-xl hover:bg-indigo-800 disabled:opacity-50 transition-colors border-0 cursor-pointer shadow-xs"
-                >
-                  <Scissors className="w-4 h-4" />
-                  <span>Bắt đầu may (TAILORING)</span>
-                </button>
-              )}
+                {statusMenuOpen && (
+                  <div className="absolute right-0 z-40 mt-2 w-64 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-1.5 shadow-xl">
+                    <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                      Chọn trạng thái đơn
+                    </div>
+                    <div className="max-h-72 overflow-y-auto pr-1">
+                      {statusOptions.map((st) => {
+                        const selected = st === order.status;
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => {
+                              setStatusMenuOpen(false);
+                              void handleStatusChange(st);
+                            }}
+                            className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-colors border-0 cursor-pointer ${
+                              selected
+                                ? 'bg-brand-navy text-white'
+                                : 'bg-transparent text-neutral-700 hover:bg-neutral-100'
+                            }`}
+                          >
+                            <span>{ORDER_STATUS_OPTIONS[st] || st}</span>
+                            {selected && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              {order.status === 'TAILORING' && (
-                <button
-                  type="button"
-                  onClick={() => handleStatusChange('QUALITY_CHECK')}
-                  disabled={updatingStatus}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-cyan-700 text-white text-xs font-bold rounded-xl hover:bg-cyan-800 disabled:opacity-50 transition-colors border-0 cursor-pointer shadow-xs"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Chuyển sang QC</span>
-                </button>
-              )}
-
-              {order.status === 'QUALITY_CHECK' && (
-                <button
-                  type="button"
-                  onClick={() => handleStatusChange('READY_TO_SHIP')}
-                  disabled={updatingStatus}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-700 text-white text-xs font-bold rounded-xl hover:bg-sky-800 disabled:opacity-50 transition-colors border-0 cursor-pointer shadow-xs"
-                >
-                  <Package className="w-4 h-4" />
-                  <span>Sẵn sàng giao (READY_TO_SHIP)</span>
-                </button>
-              )}
-
-              {/* Create GHN Shipment Quick Button */}
-              {canCreateShipment && (
+              {!order.shipment && (
                 <button
                   type="button"
                   onClick={onCreateShipment}
-                  disabled={creatingShipment}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-navy text-white text-xs font-bold rounded-xl hover:bg-brand-navy/90 disabled:opacity-50 transition-colors border-0 cursor-pointer shadow-xs"
+                  disabled={!canCreateShipment || creatingShipment}
+                  title={shipmentBlockedReason || undefined}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-navy text-white text-xs font-bold rounded-xl hover:bg-brand-navy/90 disabled:bg-neutral-200 disabled:text-neutral-500 disabled:cursor-not-allowed transition-colors border-0 cursor-pointer shadow-xs"
                 >
                   {creatingShipment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
                   <span>{creatingShipment ? 'Đang tạo...' : 'Tạo vận đơn GHN'}</span>
                 </button>
               )}
-
-              {/* Status Transition Selector */}
-              <div className="flex items-center gap-2 bg-white border border-neutral-300 rounded-xl px-3 py-1.5 shadow-2xs">
-                <span className="text-xs font-medium text-neutral-500 hidden sm:inline">Trạng thái:</span>
-                <select
-                  value={order.status}
-                  onChange={(e) => handleStatusChange(e.target.value as BackendOrderStatus)}
-                  disabled={updatingStatus}
-                  className="text-xs font-bold text-neutral-800 bg-transparent border-0 focus:outline-none cursor-pointer"
-                >
-                  {statusOptions.map((st) => (
-                    <option key={st} value={st}>
-                      {ORDER_STATUS_OPTIONS[st] || st}
-                    </option>
-                  ))}
-                </select>
-                {updatingStatus && <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-navy" />}
-              </div>
 
               {/* Print Button */}
               <button
@@ -447,7 +446,7 @@ export default function AdminOrderMeasurementsPage() {
               <div>
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#5D1C34] mb-1">
                   <Scissors className="w-4 h-4" />
-                  <span>FashionAI Atelier • Chi tiết đơn hàng & Phiếu may đo</span>
+                  <span>Chi tiết đơn hàng & Phiếu may đo</span>
                 </div>
                 <h1 className="text-2xl md:text-3xl font-extrabold text-neutral-900 tracking-tight">
                   Đơn Hàng #{order.orderCode}
@@ -541,8 +540,7 @@ export default function AdminOrderMeasurementsPage() {
                         </span>
                       </div>
                       <p className="text-xs text-neutral-600">
-                        Trạng thái: <strong className="text-neutral-800">{order.shipment.status}</strong>
-                        {rawShipment?.rawStatus ? ` (${rawShipment.rawStatus})` : ''}
+                        Trạng thái vận đơn: <strong className="text-neutral-800">{shipmentStatusLabel(order.shipment.status, rawShipment?.rawStatus)}</strong>
                       </p>
                       {order.shipment.expectedDeliveryTime && (
                         <p className="text-[11px] text-neutral-500">
@@ -560,20 +558,8 @@ export default function AdminOrderMeasurementsPage() {
                   ) : (
                     <div className="mt-0.5">
                       <p className="text-xs text-neutral-500 italic">Đơn chưa tạo vận đơn GHN.</p>
-                      {canCreateShipment ? (
-                        <button
-                          type="button"
-                          onClick={onCreateShipment}
-                          disabled={creatingShipment}
-                          className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 bg-brand-navy text-white text-xs font-bold rounded-lg hover:bg-brand-navy/90 disabled:opacity-50 transition-colors border-0 cursor-pointer shadow-2xs"
-                        >
-                          <Truck className="w-3.5 h-3.5" />
-                          <span>{creatingShipment ? 'Đang tạo...' : 'Tạo vận đơn ngay'}</span>
-                        </button>
-                      ) : (
-                        <p className="text-[11px] text-neutral-400 mt-1">
-                          (Cần trạng thái Sẵn sàng giao & Đã thanh toán)
-                        </p>
+                      {shipmentBlockedReason && (
+                        <p className="text-[11px] text-neutral-500 mt-1">{shipmentBlockedReason}</p>
                       )}
                     </div>
                   )}
@@ -584,8 +570,8 @@ export default function AdminOrderMeasurementsPage() {
             {/* Main Content Layout: 2 Columns */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-              {/* LEFT: Order Items & Tailor Garment Measurements (7 Cols) */}
-              <div className="lg:col-span-7 space-y-6">
+              {/* LEFT: Order Items & Tailor Garment Measurements */}
+              <div className="lg:col-span-8 space-y-6">
                 <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
                   <div className="flex items-center gap-2">
                     <Scissors className="w-5 h-5 text-purple-700" />
@@ -717,8 +703,8 @@ export default function AdminOrderMeasurementsPage() {
                 )}
               </div>
 
-              {/* RIGHT: Financial Breakdown, History & Customer Profile (5 Cols) */}
-              <div className="lg:col-span-5 space-y-6">
+              {/* RIGHT: Customer Profile & Financial Breakdown */}
+              <div className="lg:col-span-4 space-y-6">
 
                 {/* Payment & Financial Breakdown Card */}
                 <div className="rounded-2xl border border-neutral-200 p-5 bg-white shadow-2xs">
@@ -797,116 +783,6 @@ export default function AdminOrderMeasurementsPage() {
                   </div>
                 </div>
 
-                {/* Payment Transactions List */}
-                {order.payments && order.payments.length > 0 && (
-                  <div className="rounded-2xl border border-neutral-200 p-5 bg-white shadow-2xs">
-                    <div className="flex items-center justify-between border-b border-neutral-100 pb-3 mb-3">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-brand-navy" />
-                        <h3 className="text-body-md font-bold text-neutral-900">Lịch sử giao dịch thanh toán</h3>
-                      </div>
-                      <span className="text-[11px] bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full font-medium">
-                        {order.payments.length} GD
-                      </span>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      {order.payments.map((p, idx) => (
-                        <div key={p.id || idx} className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs space-y-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-neutral-900 uppercase px-2 py-0.5 bg-neutral-200 rounded text-[10px]">
-                                {p.provider || 'SEPAY'}
-                              </span>
-                              {p.transactionId && (
-                                <span className="font-mono text-neutral-500 text-[11px]">
-                                  {p.transactionId}
-                                </span>
-                              )}
-                            </div>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              p.status === 'PAID'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : p.status === 'FAILED'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {p.status || 'PENDING'}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between pt-1">
-                            <span className="text-neutral-500 text-[11px]">
-                              {p.createdAt ? new Date(p.createdAt).toLocaleString('vi-VN') : '—'}
-                            </span>
-                            <span className="font-bold text-brand-navy text-xs">
-                              {p.amountVnd !== undefined ? fmt(p.amountVnd) : '—'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Refund History List */}
-                {order.refunds && order.refunds.length > 0 && (
-                  <div className="rounded-2xl border border-amber-200 p-5 bg-amber-50/40 shadow-2xs">
-                    <div className="flex items-center justify-between border-b border-amber-200/60 pb-3 mb-3">
-                      <div className="flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 text-amber-800" />
-                        <h3 className="text-body-md font-bold text-amber-900">Lịch sử hoàn tiền</h3>
-                      </div>
-                      <span className="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-bold">
-                        {order.refunds.length} lượt
-                      </span>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      {order.refunds.map((r, idx) => (
-                        <div key={r.id || idx} className="p-3 bg-white rounded-xl border border-amber-200 text-xs space-y-1.5 shadow-2xs">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-red-600 text-xs">
-                              -{fmt(r.amountVnd)}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              r.status === 'COMPLETED'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : r.status === 'FAILED'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {r.status}
-                            </span>
-                          </div>
-                          {r.reason && (
-                            <p className="text-neutral-700"><strong>Lý do:</strong> {r.reason}</p>
-                          )}
-                          <div className="flex items-center justify-between text-[11px] text-neutral-500">
-                            <span>Cổng: {r.provider}</span>
-                            <span>Yêu cầu: {new Date(r.requestedAt).toLocaleString('vi-VN')}</span>
-                          </div>
-                          {r.processedAt && (
-                            <p className="text-[11px] text-neutral-500">
-                              Xử lý lúc: {new Date(r.processedAt).toLocaleString('vi-VN')}
-                            </p>
-                          )}
-                          {r.failedReason && (
-                            <p className="text-[11px] text-red-600 font-medium">
-                              Lỗi: {r.failedReason}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {order.refundEvidence && (
-                      <div className="mt-3 text-xs text-amber-900 bg-amber-100/70 p-2.5 rounded-xl border border-amber-200">
-                        <strong>Bằng chứng hoàn tiền:</strong> {order.refundEvidence}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Customer Profile Measurements */}
                 <div className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-2xs space-y-4">
                   <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
@@ -978,18 +854,6 @@ export default function AdminOrderMeasurementsPage() {
                   )}
                 </div>
 
-                {/* Tailor Work Notes Callout */}
-                <div className="bg-amber-50/80 rounded-2xl border border-amber-200 p-5 text-xs text-amber-900 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-amber-950">
-                    <AlertTriangle className="w-4 h-4 text-amber-600" />
-                    <span>Lưu ý dành cho xưởng may</span>
-                  </div>
-                  <ul className="list-disc pl-5 space-y-1 text-amber-800 leading-relaxed">
-                    <li>Ưu tiên may theo các thông số trong bảng <strong>measurementDisplay</strong> của từng món.</li>
-                    <li>Nếu cần đối chiếu thêm chiều dài phụ hoặc độ cử động, xem bảng 16 số đo thô hoặc hồ sơ cá nhân.</li>
-                    <li>Sau khi cắt và hoàn tất rập may, hãy chuyển trạng thái sang <strong>Đang may (TAILORING)</strong>.</li>
-                  </ul>
-                </div>
               </div>
             </div>
 

@@ -33,7 +33,7 @@ import { NotificationBell } from '@/features/notifications/components/Notificati
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 import { AdminReviewTable } from '@/features/reviews/components/AdminReviewTable';
-import { fetchAdminReviewsResponse, fetchReviewStats } from '@/features/reviews/services/queries';
+import { fetchAdminReviewsResponse } from '@/features/reviews/services/queries';
 import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -825,33 +825,8 @@ function AdminDashboardContent() {
       // Backend may not have implemented /products/admin/reviews yet; fallback
     }
 
-    try {
-      // Fallback: Quét review stats từ danh mục sản phẩm nếu admin reviews endpoint bị lỗi
-      const prodRes = await fetchAdminProducts({ params: { page: 1, limit: 100 } });
-      const resObj = prodRes as ApiPaginatedResponse<AdminProductDto> | undefined;
-      const prodList = (Array.isArray(prodRes) ? prodRes : resObj?.items || []) as AdminProductDto[];
-      if (prodList.length > 0) {
-        const results = await Promise.allSettled(
-          prodList.map((p) => fetchReviewStats(p.id))
-        );
-        let totalCount = 0;
-        let weightedRatingSum = 0;
-        for (const item of results) {
-          if (item.status === 'fulfilled') {
-            const s = item.value;
-            const count = Number(s.reviewCount || 0);
-            totalCount += count;
-            weightedRatingSum += Number(s.avgRating || 0) * count;
-          }
-        }
-        setReviewsCount(totalCount);
-        if (totalCount > 0) {
-          setAvgRating(Math.round((weightedRatingSum / totalCount) * 10) / 10);
-        }
-      }
-    } catch (e) {
-      console.warn('Fallback reviews data fetch failed.', e);
-    }
+    setReviewsCount(0);
+    setAvgRating(0);
   }, []);
 
   useEffect(() => {
@@ -1273,7 +1248,7 @@ function AdminDashboardContent() {
       const res = await confirmManualPayment(orderCode, { reference, note });
       const rawData = res as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
       const updatedOrder = rawData?.order || rawData?.data || rawData;
-      const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'PAID') as BackendOrderStatus;
+      const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'MEASUREMENT_REVIEW') as BackendOrderStatus;
 
       setOrders(prev => prev.map(o => {
         if (o.orderCode !== orderCode) return o;
@@ -1375,9 +1350,7 @@ function AdminDashboardContent() {
       const fullDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 
       const dayOrders = orders.filter(o => o.date === dateKey);
-      const dayPaidOrders = dayOrders.filter(
-        o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED' || o.status === 'COMPLETED'
-      );
+      const dayPaidOrders = dayOrders.filter(o => o.paymentStatus === 'PAID');
       const revenue = dayPaidOrders.reduce((sum, o) => sum + o.total, 0);
 
       list.push({
@@ -1611,7 +1584,7 @@ function AdminDashboardContent() {
 
   const totalOrders = stats?.orderCount ?? orders.length;
   const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
-  const shippingOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'CONFIRMED' || o.status === 'READY_TO_SHIP').length;
+  const shippingOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'READY_TO_SHIP').length;
   const deliveredOrders = orders.filter(o => o.status === 'DELIVERED' || o.status === 'COMPLETED').length;
   const cancelledOrders = orders.filter(o => o.status === 'CANCELLED' || o.status === 'FAILED' || o.status === 'RETURNED' || o.status === 'EXPIRED').length;
 
