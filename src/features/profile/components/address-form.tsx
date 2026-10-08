@@ -1,6 +1,6 @@
 'use client';
 
-import { useGhnDistricts, useGhnProvinces, useGhnWards } from '@/features/checkout/hooks/useGhnLocations';
+import { usePostMergerProvinces, usePostMergerWards, useShippingCapabilities } from '@/features/checkout/hooks/useGhnLocations';
 import type { UserAddress, UserAddressInput } from '@/features/profile/types/addresses';
 import React, { useEffect, useState } from 'react';
 
@@ -18,12 +18,12 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
   const [addressLine, setAddressLine] = useState(initial?.addressLine ?? '');
   const [label, setLabel] = useState(initial?.label ?? '');
   const [isDefault, setIsDefault] = useState(initial?.isDefault ?? false);
-  const [provinceId, setProvinceId] = useState<number | ''>(initial?.ghnProvinceId ?? '');
-  const [districtId, setDistrictId] = useState<number | ''>(initial?.ghnDistrictId ?? '');
-  const [wardCode, setWardCode] = useState(initial?.ghnWardCode ?? '');
-  const { provinces, isLoading: loadingProvinces } = useGhnProvinces();
-  const { districts, isLoading: loadingDistricts } = useGhnDistricts(provinceId);
-  const { wards, isLoading: loadingWards } = useGhnWards(districtId);
+  const [provinceId, setProvinceId] = useState(initial?.ghnProvinceV3Id ?? '');
+  const [wardId, setWardId] = useState(initial?.ghnWardV3Id ?? '');
+  const { catalogRevision, isLoading: loadingCapability } = useShippingCapabilities();
+  const { provinces, isLoading: loadingProvinces } = usePostMergerProvinces(catalogRevision);
+  const { wards, isLoading: loadingWards } = usePostMergerWards(provinceId, catalogRevision);
+  const initialIsLegacy = initial?.ghnAddressModel === 'LEGACY_3_LEVEL' || initial?.addressModel === 'LEGACY_3_LEVEL';
 
   useEffect(() => {
     setRecipientName(initial?.recipientName ?? '');
@@ -31,22 +31,21 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
     setAddressLine(initial?.addressLine ?? '');
     setLabel(initial?.label ?? '');
     setIsDefault(initial?.isDefault ?? false);
-    setProvinceId(initial?.ghnProvinceId ?? '');
-    setDistrictId(initial?.ghnDistrictId ?? '');
-    setWardCode(initial?.ghnWardCode ?? '');
+    setProvinceId(initial?.ghnProvinceV3Id ?? '');
+    setWardId(initial?.ghnWardV3Id ?? '');
   }, [initial]);
 
   const submit = (event?: React.FormEvent) => {
     event?.preventDefault();
-    if (!recipientName.trim() || !phone.trim() || !addressLine.trim() || !provinceId || !districtId || !wardCode) return;
+    if (!recipientName.trim() || !phone.trim() || !addressLine.trim() || !provinceId || !wardId) return;
     onSubmit({
+      addressModel: 'POST_MERGER_2_LEVEL',
       recipientName,
       phone,
       addressLine,
       label: label || undefined,
-      ghnProvinceId: provinceId,
-      ghnDistrictId: districtId,
-      ghnWardCode: wardCode,
+      ghnProvinceV3Id: provinceId,
+      ghnWardV3Id: wardId,
       isDefault,
       expectedVersion: initial?.version,
     });
@@ -62,18 +61,19 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
         <input className="h-11 rounded-xl border border-neutral-200 px-3" placeholder="Số điện thoại" value={phone} onChange={(e) => setPhone(e.target.value)} required />
       </div>
       <input className="h-11 w-full rounded-xl border border-neutral-200 px-3" placeholder="Số nhà, tên đường" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} required />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <select className="h-11 rounded-xl border border-neutral-200 px-3" value={provinceId} onChange={(e) => { setProvinceId(Number(e.target.value) || ''); setDistrictId(''); setWardCode(''); }} required>
-          <option value="">{loadingProvinces ? 'Đang tải...' : 'Tỉnh/Thành'}</option>
+      {initialIsLegacy && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Địa chỉ cũ cần chọn lại Tỉnh/Thành và Phường/Xã sau sáp nhập trước khi lưu.
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <select className="h-11 rounded-xl border border-neutral-200 px-3" value={provinceId} onChange={(e) => { setProvinceId(e.target.value); setWardId(''); }} required disabled={!catalogRevision || loadingCapability}>
+          <option value="">{loadingCapability || loadingProvinces ? 'Đang tải...' : 'Tỉnh/Thành sau sáp nhập'}</option>
           {provinces.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
-        <select className="h-11 rounded-xl border border-neutral-200 px-3" value={districtId} onChange={(e) => { setDistrictId(Number(e.target.value) || ''); setWardCode(''); }} required disabled={!provinceId}>
-          <option value="">{loadingDistricts ? 'Đang tải...' : 'Quận/Huyện'}</option>
-          {districts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-        </select>
-        <select className="h-11 rounded-xl border border-neutral-200 px-3" value={wardCode} onChange={(e) => setWardCode(e.target.value)} required disabled={!districtId}>
+        <select className="h-11 rounded-xl border border-neutral-200 px-3" value={wardId} onChange={(e) => setWardId(e.target.value)} required disabled={!provinceId}>
           <option value="">{loadingWards ? 'Đang tải...' : 'Phường/Xã'}</option>
-          {wards.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
+          {wards.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">

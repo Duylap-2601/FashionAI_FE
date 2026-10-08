@@ -8,6 +8,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+function formatAddress(address: UserAddress) {
+  return [address.addressLine, address.wardName, address.districtName, address.provinceName].filter(Boolean).join(', ');
+}
+
 export function AddressesPage() {
   const { data: addresses = [], isLoading, isError, refetch } = useUserAddresses();
   const { createAddress, updateAddress, deleteAddress, setDefaultAddress } = useAddressMutations();
@@ -54,8 +58,9 @@ export function AddressesPage() {
                     <span className="text-sm text-neutral-700">{address.phone}</span>
                     {address.label && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">{address.label}</span>}
                     {address.isDefault && <span className="rounded-full bg-brand-navy/10 px-2 py-0.5 text-xs font-semibold text-brand-navy">Mặc định</span>}
+                    {(address.ghnAddressModel === 'LEGACY_3_LEVEL' || address.addressModel === 'LEGACY_3_LEVEL') && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Địa chỉ cũ</span>}
                   </div>
-                  <p className="mt-2 text-sm text-neutral-700">{address.addressLine}, {address.wardName}, {address.districtName}, {address.provinceName}</p>
+                  <p className="mt-2 text-sm text-neutral-700">{formatAddress(address)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {!address.isDefault && <button onClick={() => setDefaultAddress.mutate(address.id)} className="text-sm font-semibold text-brand-navy">Đặt mặc định</button>}

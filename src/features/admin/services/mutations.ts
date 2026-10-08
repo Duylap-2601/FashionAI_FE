@@ -56,7 +56,7 @@ export function resolveWebhookFailure(id: string) {
   return http.patch(`/payments/admin/webhook-failures/${id}/resolve`);
 }
 
-export function updateGhnPickupSettings(payload: { provinceId: number; districtId: number; wardCode: string }) {
+export function updateGhnPickupSettings(payload: { addressModel: 'POST_MERGER_2_LEVEL'; provinceV3Id: string; wardV3Id: string } | { addressModel: 'LEGACY_3_LEVEL'; provinceId: number; districtId: number; wardCode: string }) {
   return api.put('/admin/settings/ghn-pickup', payload);
 }
 

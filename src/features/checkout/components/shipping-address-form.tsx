@@ -13,12 +13,8 @@ export function ShippingAddressForm({
   setProvinceId,
   provinces,
   isLoadingProvinces,
-  districtId,
-  setDistrictId,
-  districts,
-  isLoadingDistricts,
-  wardCode,
-  setWardCode,
+  wardId,
+  setWardId,
   wards,
   isLoadingWards,
   notes,
@@ -48,7 +44,8 @@ export function ShippingAddressForm({
             required
             value={provinceId}
             onChange={e => {
-              setProvinceId(Number(e.target.value) || '');
+              setProvinceId(e.target.value);
+              setWardId('');
             }}
             disabled={isLoadingProvinces || provinces.length === 0}
             className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
@@ -61,36 +58,18 @@ export function ShippingAddressForm({
           </select>
         </div>
         <div>
-          <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Quận/Huyện *</label>
-          <select
-            required
-            value={districtId}
-            onChange={e => {
-              setDistrictId(Number(e.target.value) || '');
-            }}
-            disabled={isLoadingDistricts || districts.length === 0}
-            className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
-          >
-            {isLoadingDistricts && <option value="">Đang tải Quận/Huyện...</option>}
-            {!isLoadingDistricts && districts.length === 0 && <option value="">Không có dữ liệu Quận/Huyện</option>}
-            {districts.map(d => (
-              <option key={d.id} value={d.id}>{d.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
           <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Phường/Xã *</label>
           <select
             required
-            value={wardCode}
-            onChange={e => setWardCode(e.target.value)}
+            value={wardId}
+            onChange={e => setWardId(e.target.value)}
             disabled={isLoadingWards || wards.length === 0}
             className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
           >
             {isLoadingWards && <option value="">Đang tải Phường/Xã...</option>}
             {!isLoadingWards && wards.length === 0 && <option value="">Không có dữ liệu Phường/Xã</option>}
             {wards.map(w => (
-              <option key={w.code} value={w.code}>{w.name}</option>
+              <option key={w.id} value={w.id}>{w.name}</option>
             ))}
           </select>
         </div>
