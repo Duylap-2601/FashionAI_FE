@@ -109,8 +109,8 @@ export function AdminShippingSettingsPanel() {
     }
     setIsSaving(true);
     try {
-      const res = await updateGhnPickupSettings({ addressModel: 'POST_MERGER_2_LEVEL', provinceV3Id: provinceId, wardV3Id: wardId });
-      const updated = unwrapData<GhnPickupSettings>(res) || { addressModel: 'POST_MERGER_2_LEVEL', provinceV3Id: provinceId, wardV3Id: wardId, source: 'database' };
+      const res = await updateGhnPickupSettings({ provinceV3Id: provinceId, wardV3Id: wardId });
+      const updated = unwrapData<GhnPickupSettings>(res) || { provinceV3Id: provinceId, wardV3Id: wardId, source: 'database' };
       setSettings(updated);
       toast.success('Đã lưu cấu hình lấy hàng GHN');
     } catch (error: unknown) {
@@ -132,7 +132,7 @@ export function AdminShippingSettingsPanel() {
           <Truck className="w-4 h-4 text-brand-navy" />
           <h2 className="text-body-sm font-bold text-neutral-800">Địa chỉ lấy hàng</h2>
           <span className="ml-auto text-label-xs text-neutral-400">
-            Nguồn: {settings?.source === 'database' ? 'Admin setting' : settings?.source === 'env' ? '.env fallback' : 'Chưa cấu hình'}
+            Nguồn: {settings?.source === 'database' ? 'Admin setting' : 'Chưa cấu hình'}
           </span>
         </div>
 

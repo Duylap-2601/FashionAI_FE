@@ -23,7 +23,6 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
   const { catalogRevision, isLoading: loadingCapability } = useShippingCapabilities();
   const { provinces, isLoading: loadingProvinces } = usePostMergerProvinces(catalogRevision);
   const { wards, isLoading: loadingWards } = usePostMergerWards(provinceId, catalogRevision);
-  const initialIsLegacy = initial?.ghnAddressModel === 'LEGACY_3_LEVEL' || initial?.addressModel === 'LEGACY_3_LEVEL';
 
   useEffect(() => {
     setRecipientName(initial?.recipientName ?? '');
@@ -39,7 +38,6 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
     event?.preventDefault();
     if (!recipientName.trim() || !phone.trim() || !addressLine.trim() || !provinceId || !wardId) return;
     onSubmit({
-      addressModel: 'POST_MERGER_2_LEVEL',
       recipientName,
       phone,
       addressLine,
@@ -61,11 +59,6 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
         <input className="h-11 rounded-xl border border-neutral-200 px-3" placeholder="Số điện thoại" value={phone} onChange={(e) => setPhone(e.target.value)} required />
       </div>
       <input className="h-11 w-full rounded-xl border border-neutral-200 px-3" placeholder="Số nhà, tên đường" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} required />
-      {initialIsLegacy && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          Địa chỉ cũ cần chọn lại Tỉnh/Thành và Phường/Xã sau sáp nhập trước khi lưu.
-        </div>
-      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <select className="h-11 rounded-xl border border-neutral-200 px-3" value={provinceId} onChange={(e) => { setProvinceId(e.target.value); setWardId(''); }} required disabled={!catalogRevision || loadingCapability}>
           <option value="">{loadingCapability || loadingProvinces ? 'Đang tải...' : 'Tỉnh/Thành sau sáp nhập'}</option>

@@ -10,13 +10,11 @@ export interface ShippingInfo {
   phone: string;
   address: string;
   provinceName?: string;
-  districtName?: string;
   wardName?: string;
   notes?: string;
   note?: string;
-  ghnProvinceId?: number;
-  ghnDistrictId?: number;
-  ghnWardCode?: string;
+  ghnProvinceV3Id?: string;
+  ghnWardV3Id?: string;
 }
 
 export interface CreateOrderRequest {
