@@ -1,4 +1,5 @@
 import type { GarmentCategory, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
+import type { OrderDisplayStatus } from '@/features/orders/types/orders';
 import type { LucideIcon } from 'lucide-react';
 import {
   CheckCircle2,
@@ -40,3 +41,20 @@ export const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon
   EXPIRED: { label: 'Hết hạn', cls: 'bg-neutral-100 text-neutral-500 border border-neutral-300', icon: XCircle },
   FAILED: { label: 'Thất bại', cls: 'bg-red-50 text-red-600 border border-red-200', icon: XCircle },
 };
+
+export function resolveOrderStatusCfg(
+  status: string,
+  displayStatus?: OrderDisplayStatus | null
+): { label: string; cls: string; icon: LucideIcon } {
+  const base = ORDER_STATUS_CFG[status] || ORDER_STATUS_CFG.PENDING;
+  if (!displayStatus || displayStatus.source === 'ORDER') return base;
+
+  const code = (displayStatus.code || '').toLowerCase();
+  let visual = ORDER_STATUS_CFG.SHIPPING;
+  if (code === 'delivered') visual = ORDER_STATUS_CFG.DELIVERED;
+  else if (code === 'cancel') visual = ORDER_STATUS_CFG.CANCELLED;
+  else if (displayStatus.issue) visual = ORDER_STATUS_CFG.FAILED;
+  else if (code.startsWith('return')) visual = ORDER_STATUS_CFG.RETURNED;
+
+  return { ...visual, label: displayStatus.label };
+}

@@ -46,15 +46,7 @@ const ADMIN_ORDER_STATUS_OPTIONS: BackendOrderStatus[] = [
   'MEASUREMENT_CONFIRMED',
   'TAILORING',
   'READY_TO_SHIP',
-  'SHIPPING',
-  'DELIVERED',
-  'COMPLETED',
   'CANCELLED',
-  'RETURN_REQUESTED',
-  'RETURNING',
-  'RETURNED',
-  'EXPIRED',
-  'FAILED',
 ];
 
 export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus, handleConfirmManualPayment, handleUpdateRefund, handleCreateShipment }: AdminOrderModalProps) {

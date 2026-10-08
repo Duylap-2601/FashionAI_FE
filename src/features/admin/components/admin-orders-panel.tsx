@@ -1,6 +1,6 @@
 'use client';
 
-import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
+import { resolveOrderStatusCfg } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import type { AdminOrdersPanelProps } from '@/features/admin/types/admin-orders-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
@@ -143,7 +143,7 @@ export function AdminOrdersPanel({
             {/* Scrollable Data Body */}
             <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
               {orders.map((o) => {
-                const cfg = ORDER_STATUS_CFG[o.status] || ORDER_STATUS_CFG.PENDING;
+                const cfg = resolveOrderStatusCfg(o.status, o.displayStatus);
                 const Icon = cfg.icon;
                 return (
                   <div

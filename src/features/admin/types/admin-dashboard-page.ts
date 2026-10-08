@@ -1,4 +1,4 @@
-import type { BackendOrderStatus, OrderPayment, OrderRefund } from '@/features/orders/types/orders';
+import type { BackendOrderStatus, OrderDisplayStatus, OrderPayment, OrderRefund } from '@/features/orders/types/orders';
 
 export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'coupons' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
 
@@ -93,6 +93,7 @@ export interface AdminOrder {
   amountPaidVnd?: number;
   amountRefundedVnd?: number;
   status: BackendOrderStatus;
+  displayStatus?: OrderDisplayStatus;
   paymentStatus?: string;
   refundStatus?: 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
   date: string;

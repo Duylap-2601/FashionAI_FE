@@ -1,7 +1,7 @@
 'use client';
 
 import { AdminGuard } from '@/features/auth/components/AdminGuard';
-import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
+import { resolveOrderStatusCfg } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import {
   confirmManualPayment,
@@ -22,7 +22,6 @@ import {
   ChevronUp,
   CreditCard,
   ExternalLink,
-  FileText,
   Loader2,
   Mail,
   MapPin,
@@ -72,15 +71,7 @@ const ADMIN_ORDER_STATUS_OPTIONS: BackendOrderStatus[] = [
   'MEASUREMENT_CONFIRMED',
   'TAILORING',
   'READY_TO_SHIP',
-  'SHIPPING',
-  'DELIVERED',
-  'COMPLETED',
   'CANCELLED',
-  'RETURN_REQUESTED',
-  'RETURNING',
-  'RETURNED',
-  'EXPIRED',
-  'FAILED',
 ];
 
 export default function AdminOrderMeasurementsPage() {
@@ -262,11 +253,7 @@ export default function AdminOrderMeasurementsPage() {
         ? 'Chuyển trạng thái sang Sẵn sàng giao để tạo vận đơn.'
         : null;
 
-  const statusCfg = ORDER_STATUS_CFG[order.status] || {
-    label: order.status,
-    cls: 'bg-neutral-100 text-neutral-700 border border-neutral-200',
-    icon: FileText,
-  };
+  const statusCfg = resolveOrderStatusCfg(order.status, order.displayStatus);
   const StatusIcon = statusCfg.icon;
 
   const customerEmail = (order as unknown as { user?: { email?: string } })?.user?.email;
@@ -297,7 +284,7 @@ export default function AdminOrderMeasurementsPage() {
                 >
                   {updatingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-navy" /> : <StatusIcon className="w-3.5 h-3.5 text-brand-navy" />}
                   <span className="text-neutral-500 font-semibold hidden sm:inline">Trạng thái</span>
-                  <span>{ORDER_STATUS_OPTIONS[order.status] || order.status}</span>
+                  <span>{statusCfg.label}</span>
                   <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${statusMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -309,6 +296,7 @@ export default function AdminOrderMeasurementsPage() {
                     <div className="max-h-72 overflow-y-auto pr-1">
                       {statusOptions.map((st) => {
                         const selected = st === order.status;
+                        const optionLabel = selected ? statusCfg.label : (ORDER_STATUS_OPTIONS[st] || st);
                         return (
                           <button
                             key={st}
@@ -323,7 +311,7 @@ export default function AdminOrderMeasurementsPage() {
                                 : 'bg-transparent text-neutral-700 hover:bg-neutral-100'
                             }`}
                           >
-                            <span>{ORDER_STATUS_OPTIONS[st] || st}</span>
+                            <span>{optionLabel}</span>
                             {selected && <CheckCircle2 className="w-4 h-4 shrink-0" />}
                           </button>
                         );

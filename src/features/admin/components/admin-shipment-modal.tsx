@@ -1,5 +1,6 @@
 'use client';
 
+import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import type { AdminShipmentModalProps } from '@/features/admin/types/admin-shipment-modal';
 import { ExternalLink, RefreshCw, X } from 'lucide-react';
@@ -40,7 +41,7 @@ export function AdminShipmentModal({ shipment, onClose, onSync, onCancel, onSimu
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-label-sm font-semibold text-neutral-500 uppercase">Đơn hàng</p>
-                <p className="text-body-sm font-bold text-neutral-900">#{shipment.order.orderCode} · {shipment.order.status}</p>
+                <p className="text-body-sm font-bold text-neutral-900">#{shipment.order.orderCode} · {ORDER_STATUS_CFG[shipment.order.status]?.label || shipment.order.status}</p>
                 <p className="text-body-sm text-neutral-600 mt-1">Thanh toán: {shipment.order.paymentStatus || '—'} · Tổng: {fmt(shipment.order.totalVnd ?? shipment.order.amount)}</p>
               </div>
               <button onClick={() => onOpenOrder(shipment.order.orderCode)} className="inline-flex items-center gap-1.5 text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"><ExternalLink className="w-4 h-4" /> Mở đơn</button>

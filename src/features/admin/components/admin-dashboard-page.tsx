@@ -475,6 +475,7 @@ function AdminDashboardContent() {
           amountPaidVnd: o.amountPaidVnd !== undefined && o.amountPaidVnd !== null ? Number(o.amountPaidVnd) : undefined,
           amountRefundedVnd: o.amountRefundedVnd !== undefined && o.amountRefundedVnd !== null ? Number(o.amountRefundedVnd) : undefined,
           status: o.status as BackendOrderStatus,
+          displayStatus: o.displayStatus,
           paymentStatus: o.paymentStatus,
           refundStatus: o.refundStatus,
           date: o.createdAt?.substring(0, 10) || '',
@@ -778,6 +779,21 @@ function AdminDashboardContent() {
     fetchShipments(1, size, shipmentFilters);
   }, [fetchShipments, shipmentFilters]);
 
+  const handleShipmentFiltersChange = useCallback((action: React.SetStateAction<AdminShipmentFilters>) => {
+    setShipmentFilters(prev => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      setShipmentPagination(p => ({ ...p, page: 1 }));
+      fetchShipments(1, shipmentPagination.pageSize, next);
+      return next;
+    });
+  }, [fetchShipments, shipmentPagination.pageSize]);
+
+  const handleShipmentFiltersChangeRef = React.useRef(handleShipmentFiltersChange);
+
+  useEffect(() => {
+    handleShipmentFiltersChangeRef.current = handleShipmentFiltersChange;
+  }, [handleShipmentFiltersChange]);
+
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetchAdminStats();
@@ -901,24 +917,33 @@ function AdminDashboardContent() {
         setActiveTab(tabParam);
       }
       const orderCodeParam = sp.get('orderCode');
-      if (orderCodeParam) {
+      if (orderCodeParam && tabParam !== 'shipments') {
         setSearchQuery(orderCodeParam);
       }
       const shipmentCodeParam = sp.get('shipmentCode');
       if (shipmentCodeParam) {
-        setShipmentFilters(prev => ({ ...prev, providerOrderCode: shipmentCodeParam }));
+        handleShipmentFiltersChangeRef.current({ providerOrderCode: shipmentCodeParam });
+      } else if (tabParam === 'shipments' && orderCodeParam) {
+        handleShipmentFiltersChangeRef.current({ orderCode: orderCodeParam });
       }
     }
 
     const handleAdminNavigate = (e: Event) => {
       const customEvent = e as CustomEvent;
-      if (customEvent.detail?.tab) {
-        setActiveTab(customEvent.detail.tab);
-        if (customEvent.detail.orderCode) {
+      const targetTab = customEvent.detail?.tab as AdminPage | undefined;
+      if (targetTab) {
+        setActiveTab(targetTab);
+        if (targetTab === 'orders' && customEvent.detail.orderCode) {
           setSearchQuery(String(customEvent.detail.orderCode));
         }
-        if (customEvent.detail.shipmentCode) {
-          setShipmentFilters(prev => ({ ...prev, providerOrderCode: String(customEvent.detail.shipmentCode) }));
+        if (targetTab === 'shipments') {
+          setSelectedOrder(null);
+          setSelectedShipment(null);
+          if (customEvent.detail.shipmentCode) {
+            handleShipmentFiltersChangeRef.current({ providerOrderCode: String(customEvent.detail.shipmentCode) });
+          } else if (customEvent.detail.orderCode) {
+            handleShipmentFiltersChangeRef.current({ orderCode: String(customEvent.detail.orderCode) });
+          }
         }
       }
     };
@@ -1100,6 +1125,7 @@ function AdminDashboardContent() {
         return {
           ...o,
           status: targetStatus,
+          displayStatus: updatedOrder?.displayStatus || o.displayStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
           paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
@@ -1117,6 +1143,7 @@ function AdminDashboardContent() {
           return {
             ...prev,
             status: targetStatus,
+            displayStatus: updatedOrder?.displayStatus || prev.displayStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
             paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
@@ -1148,12 +1175,14 @@ function AdminDashboardContent() {
         return {
           ...o,
           status: targetStatus,
+          displayStatus: updatedOrder?.displayStatus || o.displayStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
           paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
           email: updatedOrder?.user?.email || ship?.phone || o.email,
           address: ship?.address || o.address,
           phone: ship?.phone || o.phone,
+          shipment: updatedOrder?.shipment || o.shipment,
         };
       }));
 
@@ -1164,6 +1193,7 @@ function AdminDashboardContent() {
           return {
             ...prev,
             status: targetStatus,
+            displayStatus: updatedOrder?.displayStatus || prev.displayStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
             paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
@@ -1203,6 +1233,22 @@ function AdminDashboardContent() {
       toast.success('Đã đồng bộ GHN');
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể đồng bộ vận đơn.'));
+    }
+  };
+
+  const handleSimulatePickedShipment = async (id: string) => {
+    try {
+      await simulateAdminShipmentStatus(id, {
+        status: 'PICKED',
+        reason: 'Admin staging pickup simulation',
+      });
+      const detailRes = await fetchAdminShipmentDetail(id);
+      const detail = (detailRes && typeof detailRes === 'object' && 'data' in detailRes ? detailRes.data : detailRes) as AdminShipmentDetailDto;
+      setSelectedShipment(prev => prev?.id === id ? detail : prev);
+      await Promise.all([fetchShipments(), fetchOrders()]);
+      toast.success('Đã giả lập shipper lấy hàng thành công');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể giả lập đã lấy hàng.'));
     }
   };
 
@@ -1256,6 +1302,7 @@ function AdminDashboardContent() {
         return {
           ...o,
           status: targetStatus,
+          displayStatus: updatedOrder?.displayStatus || o.displayStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
           paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
@@ -1272,6 +1319,7 @@ function AdminDashboardContent() {
           return {
             ...prev,
             status: targetStatus,
+            displayStatus: updatedOrder?.displayStatus || prev.displayStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
             paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
@@ -1839,9 +1887,9 @@ function AdminDashboardContent() {
               <AdminShipmentsPanel
                 shipments={shipments}
                 filters={shipmentFilters}
-                setFilters={setShipmentFilters}
+                setFilters={handleShipmentFiltersChange}
                 onView={handleViewShipment}
-                onSync={handleSyncShipment}
+                onSimulatePicked={handleSimulatePickedShipment}
                 onCancel={handleCancelShipment}
                 onOpenOrder={handleOpenOrderFromShipment}
                 currentPage={shipmentPagination.page}
