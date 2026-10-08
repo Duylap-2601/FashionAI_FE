@@ -89,7 +89,12 @@ export default function CheckoutPage() {
         console.error('Failed to quote order:', error);
         setOrderQuote(null);
         setDiscount(0);
-        const errMsg = getErrorMessage(error, 'Không thể tính tổng đơn hàng. Vui lòng kiểm tra địa chỉ hoặc mã giảm giá.');
+        const errorData = getErrorData(error);
+        const errorCode = typeof errorData.code === 'string' ? errorData.code : '';
+        const errMsg =
+          errorCode === 'ADDRESS_RECONFIRM_REQUIRED' || errorCode === 'SHIPPING_ROUTE_UNAVAILABLE'
+            ? 'GHN báo địa chỉ này không giao được. Vui lòng kiểm tra số nhà/tên đường và Phường/Xã rồi thử lại.'
+            : getErrorMessage(error, 'Không thể tính tổng đơn hàng. Vui lòng kiểm tra địa chỉ hoặc mã giảm giá.');
         setPricingError(errMsg);
         if (appliedCoupon) {
           toast.error(errMsg);
