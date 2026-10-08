@@ -20,6 +20,14 @@ import { QRCodeSVG } from 'qrcode.react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+function formatCheckoutAddress(address: { addressLine: string; wardName: string; districtName?: string | null; provinceName: string }) {
+  return [address.addressLine, address.wardName, address.districtName, address.provinceName].filter(Boolean).join(', ');
+}
+
+function isPostMergerAddress(address: { ghnAddressModel?: string; addressModel?: string }) {
+  return (address.ghnAddressModel ?? address.addressModel) === 'POST_MERGER_2_LEVEL';
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems: items, totalPrice, clearCart } = useCart();
@@ -46,15 +54,20 @@ export default function CheckoutPage() {
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId) ?? null;
 
   useEffect(() => {
-    if (selectedAddressId || addresses.length === 0) return;
-    setSelectedAddressId((addresses.find((address) => address.isDefault) ?? addresses[0]).id);
+    const eligibleAddresses = addresses.filter(isPostMergerAddress);
+    if (eligibleAddresses.length === 0) {
+      if (selectedAddressId) setSelectedAddressId(null);
+      return;
+    }
+    if (selectedAddressId && eligibleAddresses.some((address) => address.id === selectedAddressId)) return;
+    setSelectedAddressId((eligibleAddresses.find((address) => address.isDefault) ?? eligibleAddresses[0]).id);
   }, [addresses, selectedAddressId]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadQuote() {
-      if (!selectedAddress || items.length === 0) {
+      if (!selectedAddress || !isPostMergerAddress(selectedAddress) || items.length === 0) {
         setOrderQuote(null);
         setDiscount(0);
         setPricingError(null);
@@ -370,17 +383,19 @@ export default function CheckoutPage() {
               {addresses.length > 0 && (
                 <div className="space-y-3">
                   {addresses.map((address) => (
-                    <label key={address.id} className={`block rounded-xl border p-4 cursor-pointer ${selectedAddressId === address.id ? 'border-brand-navy bg-brand-navy/5' : 'border-neutral-200'}`}>
+                    <label key={address.id} className={`block rounded-xl border p-4 ${isPostMergerAddress(address) ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'} ${selectedAddressId === address.id ? 'border-brand-navy bg-brand-navy/5' : 'border-neutral-200'}`}>
                       <div className="flex gap-3">
-                        <input type="radio" checked={selectedAddressId === address.id} onChange={() => setSelectedAddressId(address.id)} className="mt-1" />
+                        <input type="radio" checked={selectedAddressId === address.id} disabled={!isPostMergerAddress(address)} onChange={() => setSelectedAddressId(address.id)} className="mt-1" />
                         <div>
                           <div className="flex flex-wrap items-center gap-2 text-sm">
                             <span className="font-bold text-brand-navy">{address.recipientName}</span>
                             <span className="text-neutral-300">|</span>
                             <span>{address.phone}</span>
                             {address.isDefault && <span className="rounded-full bg-brand-navy/10 px-2 py-0.5 text-xs font-semibold text-brand-navy">Mặc định</span>}
+                            {!isPostMergerAddress(address) && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Cần cập nhật</span>}
                           </div>
-                          <p className="mt-1 text-sm text-neutral-700">{address.addressLine}, {address.wardName}, {address.districtName}, {address.provinceName}</p>
+                          <p className="mt-1 text-sm text-neutral-700">{formatCheckoutAddress(address)}</p>
+                          {!isPostMergerAddress(address) && <p className="mt-1 text-xs text-amber-700">Địa chỉ này còn theo danh mục cũ. Vui lòng sửa trong Sổ địa chỉ hoặc thêm địa chỉ mới.</p>}
                         </div>
                       </div>
                     </label>

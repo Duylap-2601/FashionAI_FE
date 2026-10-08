@@ -65,6 +65,12 @@ interface ApiPaginatedResponse<T = unknown> {
   pagination?: { total?: number; totalPages?: number; page?: number };
 }
 
+const ADMIN_PAGES: AdminPage[] = ['dashboard', 'products', 'collections', 'users', 'orders', 'shipments', 'coupons', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
+
+function isAdminPage(value: string | null): value is AdminPage {
+  return Boolean(value && ADMIN_PAGES.includes(value as AdminPage));
+}
+
 function AdminDashboardContent() {
   const { logout, currentUser } = useAuth();
   const adminName = currentUser.name && currentUser.name !== 'Khách' ? currentUser.name : 'Admin FashionAI';
@@ -73,6 +79,26 @@ function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState<AdminPage>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const navigateAdminTab = useCallback((tab: AdminPage, options?: { orderCode?: string; shipmentCode?: string }) => {
+    setActiveTab(tab);
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    url.searchParams.delete('orderCode');
+    url.searchParams.delete('shipmentCode');
+    if (tab === 'orders' && options?.orderCode) url.searchParams.set('orderCode', options.orderCode);
+    if (tab === 'shipments') {
+      if (options?.shipmentCode) url.searchParams.set('shipmentCode', options.shipmentCode);
+      if (options?.orderCode) url.searchParams.set('orderCode', options.orderCode);
+    }
+    window.history.replaceState(null, '', `${url.pathname}?${url.searchParams.toString()}`);
+  }, []);
+
+  const handleDashboardTabChange: React.Dispatch<React.SetStateAction<AdminPage>> = useCallback((value) => {
+    const nextTab = typeof value === 'function' ? value(activeTab) : value;
+    navigateAdminTab(nextTab);
+  }, [activeTab, navigateAdminTab]);
 
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [productFilters, setProductFilters] = useState<AdminProductFilters>({
@@ -912,8 +938,8 @@ function AdminDashboardContent() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const sp = new URLSearchParams(window.location.search);
-      const tabParam = sp.get('tab') as AdminPage | null;
-      if (tabParam) {
+      const tabParam = sp.get('tab');
+      if (isAdminPage(tabParam)) {
         setActiveTab(tabParam);
       }
       const orderCodeParam = sp.get('orderCode');
@@ -931,8 +957,11 @@ function AdminDashboardContent() {
     const handleAdminNavigate = (e: Event) => {
       const customEvent = e as CustomEvent;
       const targetTab = customEvent.detail?.tab as AdminPage | undefined;
-      if (targetTab) {
-        setActiveTab(targetTab);
+      if (targetTab && isAdminPage(targetTab)) {
+        navigateAdminTab(targetTab, {
+          orderCode: customEvent.detail.orderCode ? String(customEvent.detail.orderCode) : undefined,
+          shipmentCode: customEvent.detail.shipmentCode ? String(customEvent.detail.shipmentCode) : undefined,
+        });
         if (targetTab === 'orders' && customEvent.detail.orderCode) {
           setSearchQuery(String(customEvent.detail.orderCode));
         }
@@ -952,7 +981,7 @@ function AdminDashboardContent() {
     return () => {
       window.removeEventListener('admin:navigate', handleAdminNavigate);
     };
-  }, []);
+  }, [navigateAdminTab]);
 
   const handleSaveProduct = async () => {
     if (!editingProduct?.name || !editingProduct?.price) {
@@ -1285,7 +1314,7 @@ function AdminDashboardContent() {
   const handleOpenOrderFromShipment = (orderCode: number) => {
     const order = orders.find(item => item.orderCode === orderCode);
     if (order) setSelectedOrder(order);
-    setActiveTab('orders');
+    navigateAdminTab('orders', { orderCode: String(orderCode) });
     setSearchQuery(String(orderCode));
   };
 
@@ -1693,7 +1722,7 @@ function AdminDashboardContent() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => { setActiveTab(item.id); setSearchQuery(''); setSidebarOpen(false); }}
+                  onClick={() => { navigateAdminTab(item.id); setSearchQuery(''); setSidebarOpen(false); }}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-body-sm font-medium transition-all text-left w-full border-0 cursor-pointer ${active ? 'bg-white text-brand-navy shadow-sm' : 'text-white/70 hover:text-white hover:bg-white/8 bg-transparent'
                     }`}
                 >
@@ -1800,7 +1829,7 @@ function AdminDashboardContent() {
                 memberUsers={memberUsers}
                 vipUsers={vipUsers}
                 users={userSource}
-                setActiveTab={setActiveTab}
+                setActiveTab={handleDashboardTabChange}
                 shippingOrders={shippingOrders}
                 cancelledOrders={cancelledOrders}
                 setChartDays={setChartDays}

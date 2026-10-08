@@ -5,6 +5,21 @@ export interface GhnLocationOption {
   name: string;
 }
 
+export interface GhnCatalogOption {
+  id: string;
+  name: string;
+  aliases?: string[];
+  catalogRevision: string;
+}
+
+export interface ShippingCapabilities {
+  catalogRevision: string | null;
+  catalogEnabled: boolean;
+  newAddressWriteEnabled: boolean;
+  newAddressCheckoutEnabled: boolean;
+  legacyCheckoutAllowed: boolean;
+}
+
 export interface GhnWardOption {
   code: string;
   name: string;
@@ -68,4 +83,22 @@ export async function getGhnDistricts(provinceId: number, signal?: AbortSignal):
 export async function getGhnWards(districtId: number, signal?: AbortSignal): Promise<GhnWardOption[]> {
   const data = await http.get<unknown[]>('/shipping/wards', { params: { districtId }, signal });
   return normalizeList(data, normalizeWardOption);
+}
+
+export async function getShippingCapabilities(signal?: AbortSignal): Promise<ShippingCapabilities> {
+  return http.get<ShippingCapabilities>('/shipping/capabilities', { signal });
+}
+
+export async function getPostMergerProvinces(revision: string, signal?: AbortSignal): Promise<GhnCatalogOption[]> {
+  return http.get<GhnCatalogOption[]>('/shipping/address-catalog/provinces', {
+    params: { model: 'POST_MERGER_2_LEVEL', revision },
+    signal,
+  });
+}
+
+export async function getPostMergerWards(provinceId: string, revision: string, signal?: AbortSignal): Promise<GhnCatalogOption[]> {
+  return http.get<GhnCatalogOption[]>('/shipping/address-catalog/wards', {
+    params: { model: 'POST_MERGER_2_LEVEL', provinceId, revision },
+    signal,
+  });
 }

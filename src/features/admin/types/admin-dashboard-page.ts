@@ -3,9 +3,14 @@ import type { BackendOrderStatus, OrderDisplayStatus, OrderPayment, OrderRefund 
 export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'coupons' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
 
 export interface GhnPickupSettings {
+  addressModel?: 'LEGACY_3_LEVEL' | 'POST_MERGER_2_LEVEL';
   provinceId?: number;
   districtId?: number;
   wardCode?: string;
+  provinceV3Id?: string;
+  wardV3Id?: string;
+  provinceName?: string;
+  wardName?: string;
   source: 'database' | 'env' | 'empty';
 }
 
