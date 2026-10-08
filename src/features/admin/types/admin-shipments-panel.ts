@@ -18,7 +18,7 @@ export interface AdminShipmentsPanelProps {
   filters: AdminShipmentFilters;
   setFilters: React.Dispatch<React.SetStateAction<AdminShipmentFilters>>;
   onView: (shipment: AdminShipment) => void;
-  onSync: (id: string) => Promise<void>;
+  onSimulatePicked: (id: string) => Promise<void>;
   onCancel: (shipment: AdminShipment) => Promise<void>;
   onOpenOrder: (orderCode: number) => void;
   currentPage?: number;

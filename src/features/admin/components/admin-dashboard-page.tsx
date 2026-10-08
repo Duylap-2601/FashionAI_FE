@@ -33,7 +33,7 @@ import { NotificationBell } from '@/features/notifications/components/Notificati
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 import { AdminReviewTable } from '@/features/reviews/components/AdminReviewTable';
-import { fetchAdminReviewsResponse, fetchReviewStats } from '@/features/reviews/services/queries';
+import { fetchAdminReviewsResponse } from '@/features/reviews/services/queries';
 import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -475,6 +475,7 @@ function AdminDashboardContent() {
           amountPaidVnd: o.amountPaidVnd !== undefined && o.amountPaidVnd !== null ? Number(o.amountPaidVnd) : undefined,
           amountRefundedVnd: o.amountRefundedVnd !== undefined && o.amountRefundedVnd !== null ? Number(o.amountRefundedVnd) : undefined,
           status: o.status as BackendOrderStatus,
+          displayStatus: o.displayStatus,
           paymentStatus: o.paymentStatus,
           refundStatus: o.refundStatus,
           date: o.createdAt?.substring(0, 10) || '',
@@ -778,6 +779,21 @@ function AdminDashboardContent() {
     fetchShipments(1, size, shipmentFilters);
   }, [fetchShipments, shipmentFilters]);
 
+  const handleShipmentFiltersChange = useCallback((action: React.SetStateAction<AdminShipmentFilters>) => {
+    setShipmentFilters(prev => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      setShipmentPagination(p => ({ ...p, page: 1 }));
+      fetchShipments(1, shipmentPagination.pageSize, next);
+      return next;
+    });
+  }, [fetchShipments, shipmentPagination.pageSize]);
+
+  const handleShipmentFiltersChangeRef = React.useRef(handleShipmentFiltersChange);
+
+  useEffect(() => {
+    handleShipmentFiltersChangeRef.current = handleShipmentFiltersChange;
+  }, [handleShipmentFiltersChange]);
+
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetchAdminStats();
@@ -825,33 +841,8 @@ function AdminDashboardContent() {
       // Backend may not have implemented /products/admin/reviews yet; fallback
     }
 
-    try {
-      // Fallback: Quét review stats từ danh mục sản phẩm nếu admin reviews endpoint bị lỗi
-      const prodRes = await fetchAdminProducts({ params: { page: 1, limit: 100 } });
-      const resObj = prodRes as ApiPaginatedResponse<AdminProductDto> | undefined;
-      const prodList = (Array.isArray(prodRes) ? prodRes : resObj?.items || []) as AdminProductDto[];
-      if (prodList.length > 0) {
-        const results = await Promise.allSettled(
-          prodList.map((p) => fetchReviewStats(p.id))
-        );
-        let totalCount = 0;
-        let weightedRatingSum = 0;
-        for (const item of results) {
-          if (item.status === 'fulfilled') {
-            const s = item.value;
-            const count = Number(s.reviewCount || 0);
-            totalCount += count;
-            weightedRatingSum += Number(s.avgRating || 0) * count;
-          }
-        }
-        setReviewsCount(totalCount);
-        if (totalCount > 0) {
-          setAvgRating(Math.round((weightedRatingSum / totalCount) * 10) / 10);
-        }
-      }
-    } catch (e) {
-      console.warn('Fallback reviews data fetch failed.', e);
-    }
+    setReviewsCount(0);
+    setAvgRating(0);
   }, []);
 
   useEffect(() => {
@@ -926,24 +917,33 @@ function AdminDashboardContent() {
         setActiveTab(tabParam);
       }
       const orderCodeParam = sp.get('orderCode');
-      if (orderCodeParam) {
+      if (orderCodeParam && tabParam !== 'shipments') {
         setSearchQuery(orderCodeParam);
       }
       const shipmentCodeParam = sp.get('shipmentCode');
       if (shipmentCodeParam) {
-        setShipmentFilters(prev => ({ ...prev, providerOrderCode: shipmentCodeParam }));
+        handleShipmentFiltersChangeRef.current({ providerOrderCode: shipmentCodeParam });
+      } else if (tabParam === 'shipments' && orderCodeParam) {
+        handleShipmentFiltersChangeRef.current({ orderCode: orderCodeParam });
       }
     }
 
     const handleAdminNavigate = (e: Event) => {
       const customEvent = e as CustomEvent;
-      if (customEvent.detail?.tab) {
-        setActiveTab(customEvent.detail.tab);
-        if (customEvent.detail.orderCode) {
+      const targetTab = customEvent.detail?.tab as AdminPage | undefined;
+      if (targetTab) {
+        setActiveTab(targetTab);
+        if (targetTab === 'orders' && customEvent.detail.orderCode) {
           setSearchQuery(String(customEvent.detail.orderCode));
         }
-        if (customEvent.detail.shipmentCode) {
-          setShipmentFilters(prev => ({ ...prev, providerOrderCode: String(customEvent.detail.shipmentCode) }));
+        if (targetTab === 'shipments') {
+          setSelectedOrder(null);
+          setSelectedShipment(null);
+          if (customEvent.detail.shipmentCode) {
+            handleShipmentFiltersChangeRef.current({ providerOrderCode: String(customEvent.detail.shipmentCode) });
+          } else if (customEvent.detail.orderCode) {
+            handleShipmentFiltersChangeRef.current({ orderCode: String(customEvent.detail.orderCode) });
+          }
         }
       }
     };
@@ -1125,6 +1125,7 @@ function AdminDashboardContent() {
         return {
           ...o,
           status: targetStatus,
+          displayStatus: updatedOrder?.displayStatus || o.displayStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
           paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
@@ -1142,6 +1143,7 @@ function AdminDashboardContent() {
           return {
             ...prev,
             status: targetStatus,
+            displayStatus: updatedOrder?.displayStatus || prev.displayStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
             paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
@@ -1173,12 +1175,14 @@ function AdminDashboardContent() {
         return {
           ...o,
           status: targetStatus,
+          displayStatus: updatedOrder?.displayStatus || o.displayStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
           paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
           email: updatedOrder?.user?.email || ship?.phone || o.email,
           address: ship?.address || o.address,
           phone: ship?.phone || o.phone,
+          shipment: updatedOrder?.shipment || o.shipment,
         };
       }));
 
@@ -1189,6 +1193,7 @@ function AdminDashboardContent() {
           return {
             ...prev,
             status: targetStatus,
+            displayStatus: updatedOrder?.displayStatus || prev.displayStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
             paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
@@ -1228,6 +1233,22 @@ function AdminDashboardContent() {
       toast.success('Đã đồng bộ GHN');
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể đồng bộ vận đơn.'));
+    }
+  };
+
+  const handleSimulatePickedShipment = async (id: string) => {
+    try {
+      await simulateAdminShipmentStatus(id, {
+        status: 'PICKED',
+        reason: 'Admin staging pickup simulation',
+      });
+      const detailRes = await fetchAdminShipmentDetail(id);
+      const detail = (detailRes && typeof detailRes === 'object' && 'data' in detailRes ? detailRes.data : detailRes) as AdminShipmentDetailDto;
+      setSelectedShipment(prev => prev?.id === id ? detail : prev);
+      await Promise.all([fetchShipments(), fetchOrders()]);
+      toast.success('Đã giả lập shipper lấy hàng thành công');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể giả lập đã lấy hàng.'));
     }
   };
 
@@ -1273,7 +1294,7 @@ function AdminDashboardContent() {
       const res = await confirmManualPayment(orderCode, { reference, note });
       const rawData = res as { order?: AdminOrderDto; data?: AdminOrderDto } & AdminOrderDto;
       const updatedOrder = rawData?.order || rawData?.data || rawData;
-      const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'PAID') as BackendOrderStatus;
+      const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'MEASUREMENT_REVIEW') as BackendOrderStatus;
 
       setOrders(prev => prev.map(o => {
         if (o.orderCode !== orderCode) return o;
@@ -1281,6 +1302,7 @@ function AdminDashboardContent() {
         return {
           ...o,
           status: targetStatus,
+          displayStatus: updatedOrder?.displayStatus || o.displayStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
           paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
@@ -1297,6 +1319,7 @@ function AdminDashboardContent() {
           return {
             ...prev,
             status: targetStatus,
+            displayStatus: updatedOrder?.displayStatus || prev.displayStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
             paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
@@ -1375,9 +1398,7 @@ function AdminDashboardContent() {
       const fullDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 
       const dayOrders = orders.filter(o => o.date === dateKey);
-      const dayPaidOrders = dayOrders.filter(
-        o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'SHIPPING' || o.status === 'CONFIRMED' || o.status === 'COMPLETED'
-      );
+      const dayPaidOrders = dayOrders.filter(o => o.paymentStatus === 'PAID');
       const revenue = dayPaidOrders.reduce((sum, o) => sum + o.total, 0);
 
       list.push({
@@ -1611,7 +1632,7 @@ function AdminDashboardContent() {
 
   const totalOrders = stats?.orderCount ?? orders.length;
   const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
-  const shippingOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'CONFIRMED' || o.status === 'READY_TO_SHIP').length;
+  const shippingOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'READY_TO_SHIP').length;
   const deliveredOrders = orders.filter(o => o.status === 'DELIVERED' || o.status === 'COMPLETED').length;
   const cancelledOrders = orders.filter(o => o.status === 'CANCELLED' || o.status === 'FAILED' || o.status === 'RETURNED' || o.status === 'EXPIRED').length;
 
@@ -1866,9 +1887,9 @@ function AdminDashboardContent() {
               <AdminShipmentsPanel
                 shipments={shipments}
                 filters={shipmentFilters}
-                setFilters={setShipmentFilters}
+                setFilters={handleShipmentFiltersChange}
                 onView={handleViewShipment}
-                onSync={handleSyncShipment}
+                onSimulatePicked={handleSimulatePickedShipment}
                 onCancel={handleCancelShipment}
                 onOpenOrder={handleOpenOrderFromShipment}
                 currentPage={shipmentPagination.page}

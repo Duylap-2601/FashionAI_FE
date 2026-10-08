@@ -1,18 +1,19 @@
 'use client';
 
-import { fmt } from '@/features/admin/services/format';
+import { shipmentStatusLabel, fmt } from '@/features/admin/services/format';
 import type { AdminShipmentsPanelProps } from '@/features/admin/types/admin-shipments-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
-import { RefreshCw, RotateCcw, Search, XCircle } from 'lucide-react';
+import { PackageCheck, RotateCcw, Search, XCircle } from 'lucide-react';
 
 const STATUS_OPTIONS = ['READY_TO_PICK', 'CREATED', 'PICKING', 'PICKED', 'SHIPPING', 'IN_TRANSIT', 'DELIVERING', 'DELIVERED', 'DELIVERY_FAILED', 'RETURNING', 'RETURNED', 'CANCELLED', 'FAILED'];
+const PICKABLE_STATUSES = ['READY_TO_PICK', 'CREATED', 'PICKING'];
 
 export function AdminShipmentsPanel({
   shipments,
   filters,
   setFilters,
   onView,
-  onSync,
+  onSimulatePicked,
   onCancel,
   onOpenOrder,
   currentPage = 1,
@@ -155,7 +156,7 @@ export function AdminShipmentsPanel({
                   <div className="px-4 py-3.5 truncate">{shipment.provider}</div>
                   <div className="px-4 py-3.5">
                     <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 font-semibold text-label-sm">
-                      {shipment.status}
+                      {shipmentStatusLabel(shipment.status, shipment.rawStatus)}
                     </span>
                   </div>
                   <div className="px-4 py-3.5 text-neutral-500 truncate">{shipment.rawStatus || '—'}</div>
@@ -167,7 +168,16 @@ export function AdminShipmentsPanel({
                   <div className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => onView(shipment)} className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer">Chi tiết</button>
-                      <button onClick={() => onSync(shipment.id)} title="Sync GHN" className="p-1.5 rounded-lg hover:bg-neutral-100 border-0 bg-transparent cursor-pointer"><RefreshCw className="w-4 h-4" /></button>
+                      {PICKABLE_STATUSES.includes(shipment.status) && (
+                        <button
+                          onClick={() => onSimulatePicked(shipment.id)}
+                          title="Giả lập shipper đã lấy hàng (staging)"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-0 cursor-pointer text-label-sm font-semibold"
+                        >
+                          <PackageCheck className="w-3.5 h-3.5" />
+                          Đã lấy hàng
+                        </button>
+                      )}
                       {shipment.canCancel && <button onClick={() => onCancel(shipment)} title="Hủy vận đơn" className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 border-0 bg-transparent cursor-pointer"><XCircle className="w-4 h-4" /></button>}
                     </div>
                   </div>

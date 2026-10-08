@@ -1,7 +1,7 @@
 'use client';
 
-import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
-import { fmt } from '@/features/admin/services/format';
+import { resolveOrderStatusCfg } from '@/features/admin/constants/admin-dashboard-page';
+import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import type { AdminOrdersPanelProps } from '@/features/admin/types/admin-orders-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
 import { Calendar, Eye, RotateCcw, Search } from 'lucide-react';
@@ -60,24 +60,21 @@ export function AdminOrdersPanel({
               className="px-3 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm text-neutral-700 focus:outline-none focus:border-brand-navy cursor-pointer"
             >
               <option value="ALL">Tất cả trạng thái đơn</option>
-              <option value="PENDING">Chờ xử lý (PENDING)</option>
-              <option value="PAID">Đã thanh toán (PAID)</option>
-              <option value="CONFIRMED">Đã xác nhận (CONFIRMED)</option>
+              <option value="CREATED">Đã tạo</option>
+              <option value="PENDING">Chờ xử lý</option>
               <option value="MEASUREMENT_REVIEW">Kiểm tra số đo</option>
               <option value="MEASUREMENT_CONFIRMED">Chốt số đo</option>
-              <option value="TAILORING">Đang may (TAILORING)</option>
-              <option value="QUALITY_CHECK">QC kiểm tra</option>
+              <option value="TAILORING">Đang may</option>
               <option value="READY_TO_SHIP">Sẵn sàng giao</option>
-              <option value="SHIPPING">Đang giao (SHIPPING)</option>
-              <option value="DELIVERED">Đã giao (DELIVERED)</option>
-              <option value="COMPLETED">Hoàn tất (COMPLETED)</option>
-              <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+              <option value="SHIPPING">Đang giao</option>
+              <option value="DELIVERED">Đã giao</option>
+              <option value="COMPLETED">Hoàn tất</option>
+              <option value="CANCELLED">Đã hủy</option>
               <option value="RETURN_REQUESTED">Yêu cầu hoàn trả</option>
-              <option value="RETURN_APPROVED">Duyệt hoàn trả</option>
               <option value="RETURNING">Đang hoàn trả</option>
               <option value="RETURNED">Đã hoàn trả</option>
-              <option value="EXPIRED">Hết hạn (EXPIRED)</option>
-              <option value="FAILED">Thất bại (FAILED)</option>
+              <option value="EXPIRED">Hết hạn</option>
+              <option value="FAILED">Thất bại</option>
             </select>
 
             {/* Payment Status Filter */}
@@ -146,7 +143,7 @@ export function AdminOrdersPanel({
             {/* Scrollable Data Body */}
             <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
               {orders.map((o) => {
-                const cfg = ORDER_STATUS_CFG[o.status] || ORDER_STATUS_CFG.PENDING;
+                const cfg = resolveOrderStatusCfg(o.status, o.displayStatus);
                 const Icon = cfg.icon;
                 return (
                   <div
@@ -168,8 +165,7 @@ export function AdminOrdersPanel({
                             {o.shipment.providerOrderCode || '—'}
                           </span>
                           <span className="text-label-sm text-neutral-500 truncate">
-                            {o.shipment.status}
-                            {o.shipment.rawStatus ? ` · ${o.shipment.rawStatus}` : ''}
+                            {shipmentStatusLabel(o.shipment.status, o.shipment.rawStatus)}
                           </span>
                         </div>
                       ) : (

@@ -1,6 +1,6 @@
 'use client';
 
-import { CATEGORY_LABEL, ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
+import { CATEGORY_LABEL, resolveOrderStatusCfg } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt } from '@/features/admin/services/format';
 import type { DashboardOverviewProps } from '@/features/admin/types/dashboard-overview';
 import {
@@ -420,7 +420,7 @@ export function DashboardOverview({
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {orders.slice(0, 5).map(o => {
-                  const cfg = ORDER_STATUS_CFG[o.status] || ORDER_STATUS_CFG.PENDING;
+                  const cfg = resolveOrderStatusCfg(o.status, o.displayStatus);
                   const Icon = cfg.icon;
                   return (
                     <tr key={o.id} className="hover:bg-neutral-50/80 transition-colors">

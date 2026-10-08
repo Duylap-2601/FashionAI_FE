@@ -1,6 +1,6 @@
 'use client';
 
-import { fmt } from '@/features/admin/services/format';
+import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import type { AdminOrderModalProps } from '@/features/admin/types/admin-order-modal';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
@@ -25,7 +25,7 @@ const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
   MEASUREMENT_REVIEW: 'Kiểm tra số đo',
   MEASUREMENT_CONFIRMED: 'Chốt số đo',
   TAILORING: 'Đang may',
-  QUALITY_CHECK: 'QC',
+  QUALITY_CHECK: 'Kiểm tra chất lượng',
   READY_TO_SHIP: 'Sẵn sàng giao',
   SHIPPING: 'Đang giao hàng',
   DELIVERED: 'Đã giao hàng',
@@ -39,21 +39,15 @@ const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
   FAILED: 'Thất bại',
 };
 
-const NEXT_ORDER_STATUSES: Partial<Record<BackendOrderStatus, BackendOrderStatus[]>> = {
-  PENDING: ['CANCELLED', 'EXPIRED', 'FAILED'],
-  PAID: ['MEASUREMENT_REVIEW', 'CANCELLED'],
-  MEASUREMENT_REVIEW: ['MEASUREMENT_CONFIRMED', 'CANCELLED'],
-  MEASUREMENT_CONFIRMED: ['TAILORING', 'CANCELLED'],
-  TAILORING: ['QUALITY_CHECK'],
-  QUALITY_CHECK: ['READY_TO_SHIP', 'TAILORING'],
-  READY_TO_SHIP: ['CANCELLED'],
-  SHIPPING: ['RETURN_REQUESTED', 'RETURNING', 'RETURNED'],
-  DELIVERED: ['COMPLETED', 'RETURN_REQUESTED', 'RETURNING', 'RETURNED'],
-  COMPLETED: ['RETURN_REQUESTED'],
-  RETURN_REQUESTED: ['RETURN_APPROVED', 'RETURNING', 'RETURNED', 'CANCELLED'],
-  RETURN_APPROVED: ['RETURNING', 'RETURNED'],
-  RETURNING: ['RETURNED'],
-};
+const ADMIN_ORDER_STATUS_OPTIONS: BackendOrderStatus[] = [
+  'CREATED',
+  'PENDING',
+  'MEASUREMENT_REVIEW',
+  'MEASUREMENT_CONFIRMED',
+  'TAILORING',
+  'READY_TO_SHIP',
+  'CANCELLED',
+];
 
 export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus, handleConfirmManualPayment, handleUpdateRefund, handleCreateShipment }: AdminOrderModalProps) {
   const { order: orderDetail, isLoading: isLoadingDetail } = useOrder(selectedOrder.id);
@@ -70,7 +64,9 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
   const isPending = selectedOrder.status === 'PENDING';
   const refundRequired = selectedOrder.refundStatus === 'REQUIRED' || selectedOrder.refundStatus === 'PROCESSING';
   const refundCompleted = selectedOrder.refundStatus === 'COMPLETED';
-  const statusOptions = [selectedOrder.status, ...(NEXT_ORDER_STATUSES[selectedOrder.status] ?? [])];
+  const statusOptions = ADMIN_ORDER_STATUS_OPTIONS.includes(selectedOrder.status)
+    ? ADMIN_ORDER_STATUS_OPTIONS
+    : [selectedOrder.status, ...ADMIN_ORDER_STATUS_OPTIONS];
   const canCreateShipment = selectedOrder.status === 'READY_TO_SHIP' && selectedOrder.paymentStatus === 'PAID' && !selectedOrder.shipment;
 
   useEffect(() => {
@@ -415,7 +411,7 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
               <div className="text-body-sm text-neutral-700 space-y-1">
                 <p>Provider: <span className="font-semibold">{selectedOrder.shipment.provider}</span></p>
                 <p>Mã GHN: <span className="font-mono font-semibold">{selectedOrder.shipment.providerOrderCode || '—'}</span></p>
-                <p>Trạng thái: {selectedOrder.shipment.status}{selectedOrder.shipment.rawStatus ? ` · ${selectedOrder.shipment.rawStatus}` : ''}</p>
+                <p>Trạng thái: {shipmentStatusLabel(selectedOrder.shipment.status, selectedOrder.shipment.rawStatus)}</p>
                 <p>Dự kiến giao: {selectedOrder.shipment.expectedDeliveryTime?.substring(0, 16).replace('T', ' ') || '—'}</p>
                 <p>Sync cuối: {selectedOrder.shipment.lastSyncedAt?.substring(0, 16).replace('T', ' ') || '—'}</p>
                 <button
