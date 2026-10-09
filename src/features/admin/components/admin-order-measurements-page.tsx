@@ -255,9 +255,14 @@ export default function AdminOrderMeasurementsPage() {
   const refundRequired = order.refundStatus === 'REQUIRED' || order.refundStatus === 'PROCESSING';
   const refundCompleted = order.refundStatus === 'COMPLETED';
   const canCreateShipment = order.status === 'READY_TO_SHIP' && order.paymentStatus === 'PAID' && !order.shipment;
-  const statusOptions = ADMIN_ORDER_STATUS_OPTIONS.includes(order.status)
-    ? ADMIN_ORDER_STATUS_OPTIONS
-    : [order.status, ...ADMIN_ORDER_STATUS_OPTIONS];
+  const isTerminalStatus = order.status === 'CANCELLED' || order.status === 'COMPLETED' || order.status === 'RETURNED' || order.status === 'FAILED';
+  const statusOptions = Array.from(
+    new Set(
+      ADMIN_ORDER_STATUS_OPTIONS.includes(order.status)
+        ? ADMIN_ORDER_STATUS_OPTIONS
+        : [order.status, ...ADMIN_ORDER_STATUS_OPTIONS]
+    )
+  );
   const shipmentBlockedReason = order.shipment
     ? null
     : order.paymentStatus !== 'PAID'
@@ -288,21 +293,24 @@ export default function AdminOrderMeasurementsPage() {
             </Link>
 
             <div className="flex flex-wrap items-center gap-2.5">
-              {/* Status Switcher Dropdown */}
+              {/* Status Switcher Dropdown (Disabled if order is in terminal state like CANCELLED/COMPLETED) */}
               <div ref={statusMenuRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => setStatusMenuOpen((open) => !open)}
-                  disabled={updatingStatus}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#E5DFD5] bg-white px-4 py-2 text-xs font-bold text-neutral-900 shadow-2xs hover:border-brand-navy/40 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
+                  onClick={() => !isTerminalStatus && setStatusMenuOpen((open) => !open)}
+                  disabled={updatingStatus || isTerminalStatus}
+                  title={isTerminalStatus ? `Đơn hàng đã ở trạng thái "${statusCfg.label}", không thể thay đổi` : undefined}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#E5DFD5] bg-white px-4 py-2 text-xs font-bold text-neutral-900 shadow-2xs hover:border-brand-navy/40 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-75 disabled:hover:border-[#E5DFD5] disabled:hover:bg-white transition-all cursor-pointer"
                 >
                   {updatingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-navy" /> : <StatusIcon className="w-3.5 h-3.5 text-brand-navy" />}
                   <span className="text-neutral-500 font-semibold hidden sm:inline">Trạng thái:</span>
                   <span className="text-brand-navy">{statusCfg.label}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${statusMenuOpen ? 'rotate-180' : ''}`} />
+                  {!isTerminalStatus && (
+                    <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${statusMenuOpen ? 'rotate-180' : ''}`} />
+                  )}
                 </button>
 
-                {statusMenuOpen && (
+                {statusMenuOpen && !isTerminalStatus && (
                   <div className="absolute right-0 z-40 mt-2 w-64 overflow-hidden rounded-2xl border border-[#E5DFD5] bg-white p-1.5 shadow-xl">
                     <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[#8B8880]">
                       Chọn trạng thái đơn
@@ -310,7 +318,7 @@ export default function AdminOrderMeasurementsPage() {
                     <div className="max-h-72 overflow-y-auto custom-scrollbar pr-1">
                       {statusOptions.map((st) => {
                         const selected = st === order.status;
-                        const optionLabel = selected ? statusCfg.label : (ORDER_STATUS_OPTIONS[st] || st);
+                        const optionLabel = ORDER_STATUS_OPTIONS[st] || (selected ? statusCfg.label : st);
                         return (
                           <button
                             key={st}

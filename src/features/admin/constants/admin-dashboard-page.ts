@@ -37,6 +37,7 @@ export const PRODUCT_STATUS_CFG: Record<ProductStatus, { label: string; cls: str
 };
 
 export const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon: LucideIcon }> = {
+  CREATED: { label: 'Đã tạo', cls: 'bg-slate-500/10 text-slate-800 border border-slate-500/20', icon: Clock },
   PENDING: { label: 'Chờ xác nhận', cls: 'bg-amber-500/10 text-amber-900 border border-amber-500/20', icon: Clock },
   PAID: { label: 'Đã thanh toán', cls: 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20', icon: CheckCircle2 },
   CONFIRMED: { label: 'Đã xác nhận', cls: 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20', icon: CheckCircle2 },

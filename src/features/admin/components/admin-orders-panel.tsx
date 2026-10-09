@@ -62,7 +62,7 @@ export function AdminOrdersPanel({
               >
                 <option value="ALL">Tất cả trạng thái đơn</option>
                 <option value="CREATED">Đã tạo</option>
-                <option value="PENDING">Chờ xử lý</option>
+                <option value="PENDING">Chờ xác nhận</option>
                 <option value="MEASUREMENT_REVIEW">Kiểm tra số đo</option>
                 <option value="MEASUREMENT_CONFIRMED">Chốt số đo</option>
                 <option value="TAILORING">Đang may</option>
@@ -190,6 +190,8 @@ export function AdminOrdersPanel({
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-40" />
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.35)]" />
                           </span>
+                        ) : o.status === 'CREATED' ? (
+                          <span className="inline-flex rounded-full h-2 w-2 bg-slate-400 shrink-0" />
                         ) : o.status === 'PAID' || o.status === 'CONFIRMED' || o.status === 'COMPLETED' || o.status === 'DELIVERED' ? (
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.35)] shrink-0" />
                         ) : o.status === 'SHIPPING' || o.status === 'READY_TO_SHIP' ? (

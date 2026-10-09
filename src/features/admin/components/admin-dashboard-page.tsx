@@ -536,13 +536,50 @@ function AdminDashboardContent() {
       const serverTotal = typeof meta?.total === 'number' ? meta.total : typeof resObj?.total === 'number' ? resObj.total : undefined;
 
       if (serverTotal !== undefined) {
-        setOrders(mappedList);
+        let effectiveList = mappedList;
+        if (filters.status && filters.status !== 'ALL') {
+          const hasMismatchedStatus = effectiveList.some(o => o.status !== filters.status);
+          if (hasMismatchedStatus) {
+            effectiveList = effectiveList.filter(o => o.status === filters.status);
+          }
+        }
+        if (filters.paymentStatus && filters.paymentStatus !== 'ALL') {
+          const hasMismatchedPayment = effectiveList.some(o => o.paymentStatus !== filters.paymentStatus);
+          if (hasMismatchedPayment) {
+            effectiveList = effectiveList.filter(o => o.paymentStatus === filters.paymentStatus);
+          }
+        }
+        if (filters.search?.trim()) {
+          const q = filters.search.trim().toLowerCase();
+          const hasMismatchedSearch = effectiveList.some(o =>
+            !o.code.toLowerCase().includes(q) &&
+            !o.customer.toLowerCase().includes(q) &&
+            !o.email.toLowerCase().includes(q) &&
+            !(o.phone && o.phone.includes(q))
+          );
+          if (hasMismatchedSearch) {
+            effectiveList = effectiveList.filter(o =>
+              o.code.toLowerCase().includes(q) ||
+              o.customer.toLowerCase().includes(q) ||
+              o.email.toLowerCase().includes(q) ||
+              (o.phone && o.phone.includes(q))
+            );
+          }
+        }
+
+        const isClientFiltered = effectiveList.length !== mappedList.length;
+        const total = isClientFiltered ? effectiveList.length : serverTotal;
+        const totalPages = isClientFiltered
+          ? (Math.ceil(total / limit) || 1)
+          : (typeof meta?.totalPages === 'number' ? meta.totalPages : Math.ceil(serverTotal / limit) || 1);
+
+        setOrders(effectiveList);
         setOrderPagination(prev => ({
           ...prev,
           page,
           pageSize: limit,
-          total: serverTotal,
-          totalPages: typeof meta?.totalPages === 'number' ? meta.totalPages : Math.ceil(serverTotal / limit) || 1,
+          total,
+          totalPages,
         }));
       } else {
         let filtered = mappedList;
