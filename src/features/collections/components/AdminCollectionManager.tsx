@@ -18,6 +18,7 @@ import {
 import { Collection } from '@/features/collections/types/collection';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import {
+  ChevronDown,
   ExternalLink,
   Eye, EyeOff,
   Image as ImageIcon,
@@ -267,18 +268,21 @@ export function AdminCollectionManager() {
             />
           </div>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value as 'all' | 'published' | 'draft');
-              setCurrentPage(1);
-            }}
-            className="h-10 px-3 border border-neutral-200 rounded-xl bg-white text-body-sm text-neutral-700 focus:outline-none focus:border-[#5D1C34] cursor-pointer"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="published">Đang hiển thị (Live)</option>
-            <option value="draft">Bản nháp (Ẩn)</option>
-          </select>
+          <div className="relative">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as 'all' | 'published' | 'draft');
+                setCurrentPage(1);
+              }}
+              className="appearance-none h-10 pl-3.5 pr-8 border border-neutral-200/90 rounded-xl bg-white text-xs font-medium text-neutral-700 hover:border-neutral-300 focus:outline-none focus:border-[#5D1C34] focus:ring-1 focus:ring-[#5D1C34]/10 transition-colors cursor-pointer shadow-2xs"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="published">Đang hiển thị (Live)</option>
+              <option value="draft">Bản nháp (Ẩn)</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
 
           {isFiltered && (
             <button
@@ -407,33 +411,38 @@ export function AdminCollectionManager() {
                       <button
                         type="button"
                         onClick={() => setManagingProductsCollection(col)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-[#5D1C34]/10 hover:text-[#5D1C34] text-xs font-semibold text-neutral-700 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-neutral-100 text-xs font-medium text-neutral-600 hover:text-brand-navy transition-colors cursor-pointer group"
                         title="Bấm để xem và quản lý sản phẩm trong BST"
                       >
-                        <Package className="w-3.5 h-3.5" />
-                        <span>{col.itemCount ?? col._count?.products ?? 0} sản phẩm</span>
+                        <Package className="w-3.5 h-3.5 text-neutral-400 group-hover:text-brand-navy transition-colors" />
+                        <span className="group-hover:underline">{col.itemCount ?? col._count?.products ?? 0} sản phẩm</span>
                       </button>
                     </div>
 
-                    {/* Publish Status Toggle */}
+                    {/* Publish Status Toggle - Minimalist Atelier (Micro-dot + Refined Typography) */}
                     <div className="py-3 px-4">
                       <button
+                        type="button"
                         onClick={() => handleTogglePublish(col.id, col.isPublished)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${col.isPublished
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                            : 'bg-neutral-100 text-neutral-500 border border-neutral-200 hover:bg-neutral-200'
-                          }`}
-                        title={col.isPublished ? 'Bấm để ẩn khỏi Landing Page' : 'Bấm để xuất bản lên Landing Page'}
+                        className="inline-flex items-center gap-2 py-1 px-2.5 -ml-2 rounded-lg hover:bg-neutral-100/80 transition-colors cursor-pointer group text-left"
+                        title={col.isPublished ? 'Đang hiển thị trên Landing Page. Bấm để chuyển về Bản nháp' : 'Bản nháp ẩn. Bấm để xuất bản lên Landing Page'}
                       >
                         {col.isPublished ? (
                           <>
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>ĐÃ XUẤT BẢN (LIVE)</span>
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.35)]" />
+                            </span>
+                            <span className="text-xs font-medium text-neutral-800 tracking-tight group-hover:text-[#5D1C34]">
+                              Đang hiển thị
+                            </span>
                           </>
                         ) : (
                           <>
-                            <EyeOff className="w-3.5 h-3.5" />
-                            <span>BẢN NHÁP (ẨN)</span>
+                            <span className="inline-flex rounded-full h-2 w-2 bg-neutral-300 shrink-0" />
+                            <span className="text-xs font-medium text-neutral-500 tracking-tight group-hover:text-neutral-700">
+                              Bản nháp
+                            </span>
                           </>
                         )}
                       </button>
