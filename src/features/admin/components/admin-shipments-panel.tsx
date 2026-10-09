@@ -117,22 +117,18 @@ export function AdminShipmentsPanel({
       </div>
 
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
-          <div className="min-w-[1240px] flex-1 flex flex-col min-h-0">
+        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col custom-scrollbar">
+          <div className="min-w-[860px] flex-1 flex flex-col min-h-0">
             {/* Fixed Header */}
             <div className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase shrink-0 select-none shadow-2xs">
-              <div className="grid grid-cols-[140px_100px_minmax(140px,1fr)_110px_90px_120px_100px_100px_110px_130px_110px] items-center">
+              <div className="grid grid-cols-[130px_100px_minmax(140px,1fr)_140px_100px_150px_110px] items-center">
                 <div className="px-5 py-3">Mã GHN</div>
-                <div className="px-4 py-3">Mã đơn</div>
+                <div className="px-3 py-3">Mã đơn</div>
                 <div className="px-4 py-3">Khách hàng</div>
-                <div className="px-4 py-3">Điện thoại</div>
-                <div className="px-4 py-3">Provider</div>
-                <div className="px-4 py-3">Trạng thái</div>
-                <div className="px-4 py-3">Raw</div>
-                <div className="px-4 py-3 text-right">Phí</div>
-                <div className="px-4 py-3">Dự kiến giao</div>
-                <div className="px-4 py-3">Sync cuối</div>
-                <div className="px-5 py-3"></div>
+                <div className="px-3 py-3">Trạng thái</div>
+                <div className="px-3 py-3 text-right">Phí vận chuyển</div>
+                <div className="px-4 py-3">Thời gian</div>
+                <div className="px-5 py-3 text-right">Thao tác</div>
               </div>
             </div>
 
@@ -141,44 +137,105 @@ export function AdminShipmentsPanel({
               {shipments.map(shipment => (
                 <div
                   key={shipment.id}
-                  className={`grid grid-cols-[140px_100px_minmax(140px,1fr)_110px_90px_120px_100px_100px_110px_130px_110px] items-center ${
+                  className={`grid grid-cols-[130px_100px_minmax(140px,1fr)_140px_100px_150px_110px] items-center ${
                     shipment.issue ? 'bg-red-50/40 hover:bg-red-50' : 'hover:bg-neutral-50'
                   } transition-colors`}
                 >
-                  <div className="px-5 py-3.5 font-mono font-semibold text-neutral-800 truncate">{shipment.providerOrderCode || '—'}</div>
-                  <div className="px-4 py-3.5 truncate">
-                    <button onClick={() => onOpenOrder(shipment.order.orderCode)} className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer">
+                  {/* Mã GHN & Provider */}
+                  <div className="px-5 py-3.5 min-w-0">
+                    <span className="font-mono font-semibold text-neutral-800 block truncate">
+                      {shipment.providerOrderCode || '—'}
+                    </span>
+                    <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mt-0.5">
+                      {shipment.provider || 'GHN'}
+                    </span>
+                  </div>
+
+                  {/* Mã đơn nội bộ */}
+                  <div className="px-3 py-3.5 truncate">
+                    <button
+                      type="button"
+                      onClick={() => onOpenOrder(shipment.order.orderCode)}
+                      className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
+                    >
                       #{shipment.order.orderCode}
                     </button>
                   </div>
-                  <div className="px-4 py-3.5 truncate">{shipment.customer.name || shipment.receiver.name || shipment.customer.email}</div>
-                  <div className="px-4 py-3.5 text-neutral-600 truncate">{shipment.receiver.phone || shipment.customer.phone || '—'}</div>
-                  <div className="px-4 py-3.5 truncate">{shipment.provider}</div>
-                  <div className="px-4 py-3.5">
-                    <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 font-semibold text-label-sm">
+
+                  {/* Khách hàng & SĐT */}
+                  <div className="px-4 py-3.5 min-w-0">
+                    <div className="font-medium text-neutral-900 truncate">
+                      {shipment.customer.name || shipment.receiver.name || shipment.customer.email}
+                    </div>
+                    <div className="text-[11px] text-neutral-500 font-mono mt-0.5 truncate">
+                      {shipment.receiver.phone || shipment.customer.phone || '—'}
+                    </div>
+                  </div>
+
+                  {/* Trạng thái & Raw Status */}
+                  <div className="px-3 py-3.5 min-w-0">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-700 font-semibold text-[11px] truncate max-w-full">
                       {shipmentStatusLabel(shipment.status, shipment.rawStatus)}
                     </span>
+                    {shipment.rawStatus && (
+                      <span className="text-[10px] text-neutral-400 font-mono block mt-0.5 truncate">
+                        {shipment.rawStatus}
+                      </span>
+                    )}
                   </div>
-                  <div className="px-4 py-3.5 text-neutral-500 truncate">{shipment.rawStatus || '—'}</div>
-                  <div className="px-4 py-3.5 text-right font-semibold truncate">
+
+                  {/* Phí vận chuyển */}
+                  <div className="px-3 py-3.5 text-right font-semibold text-neutral-800 truncate">
                     {fmt(shipment.shippingFeeVnd ?? shipment.actualShippingFee ?? shipment.shippingFee ?? 0)}
                   </div>
-                  <div className="px-4 py-3.5 text-neutral-500 truncate">{shipment.expectedDeliveryTime?.substring(0, 10) || '—'}</div>
-                  <div className="px-4 py-3.5 text-neutral-500 truncate">{shipment.lastSyncedAt?.substring(0, 16).replace('T', ' ') || '—'}</div>
-                  <div className="px-5 py-3.5">
+
+                  {/* Thời gian: Dự kiến & Sync cuối */}
+                  <div className="px-4 py-3.5 min-w-0 text-[12px]">
+                    <div className="text-neutral-700 truncate">
+                      {shipment.expectedDeliveryTime ? (
+                        <>Dự kiến: <span className="font-medium">{shipment.expectedDeliveryTime.substring(0, 10)}</span></>
+                      ) : (
+                        '—'
+                      )}
+                    </div>
+                    {shipment.lastSyncedAt && (
+                      <div className="text-[11px] text-neutral-400 mt-0.5 truncate">
+                        Sync: {shipment.lastSyncedAt.substring(5, 16).replace('T', ' ')}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="px-5 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => onView(shipment)} className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer">Chi tiết</button>
+                      <button
+                        type="button"
+                        onClick={() => onView(shipment)}
+                        className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer text-body-sm"
+                      >
+                        Chi tiết
+                      </button>
                       {PICKABLE_STATUSES.includes(shipment.status) && (
                         <button
+                          type="button"
                           onClick={() => onSimulatePicked(shipment.id)}
                           title="Giả lập shipper đã lấy hàng (staging)"
                           className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-0 cursor-pointer text-label-sm font-semibold"
                         >
                           <PackageCheck className="w-3.5 h-3.5" />
-                          Đã lấy hàng
+                          <span>Lấy hàng</span>
                         </button>
                       )}
-                      {shipment.canCancel && <button onClick={() => onCancel(shipment)} title="Hủy vận đơn" className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 border-0 bg-transparent cursor-pointer"><XCircle className="w-4 h-4" /></button>}
+                      {shipment.canCancel && (
+                        <button
+                          type="button"
+                          onClick={() => onCancel(shipment)}
+                          title="Hủy vận đơn"
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 border-0 bg-transparent cursor-pointer"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

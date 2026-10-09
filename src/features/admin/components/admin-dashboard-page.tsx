@@ -1782,14 +1782,14 @@ function AdminDashboardContent() {
 
         {/* SIDEBAR */}
         <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[240px] shrink-0 bg-brand-navy flex flex-col h-screen lg:h-full transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-          <div className="px-6 pt-7 pb-6 border-b border-white/10 flex flex-col gap-1 shrink-0">
+          <div className="px-5 pt-6 pb-5 border-b border-white/10 flex flex-col gap-1 shrink-0">
             <span className="text-white font-bold text-heading-h3 tracking-wide">FashionAI</span>
             <span className="inline-flex items-center self-start px-2 py-0.5 bg-brand-gold text-brand-navy text-[9px] font-bold tracking-widest rounded-full uppercase">
               Admin Panel
             </span>
           </div>
 
-          <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto min-h-0">
+          <nav className="flex-1 px-3 py-3 flex flex-col gap-0.5 overflow-y-auto min-h-0 no-scrollbar">
             {([
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
               { id: 'products', label: 'Sản phẩm', icon: Package },
@@ -1813,11 +1813,11 @@ function AdminDashboardContent() {
                 <button
                   key={item.id}
                   onClick={() => { navigateAdminTab(item.id); setSearchQuery(''); setSidebarOpen(false); }}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-body-sm font-medium transition-all text-left w-full border-0 cursor-pointer ${active ? 'bg-white text-brand-navy shadow-sm' : 'text-white/70 hover:text-white hover:bg-white/8 bg-transparent'
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-body-sm font-medium transition-all text-left w-full border-0 cursor-pointer ${active ? 'bg-white text-brand-navy shadow-xs font-semibold' : 'text-white/75 hover:text-white hover:bg-white/10 bg-transparent'
                     }`}
                 >
                   <IconComponent className="w-4 h-4 shrink-0" />
-                  {item.label}
+                  <span className="truncate">{item.label}</span>
                   {unresolvedCount > 0 && (
                     <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold">
                       {unresolvedCount}
@@ -1828,10 +1828,10 @@ function AdminDashboardContent() {
             })}
           </nav>
 
-          <div className="px-3 pb-6 flex flex-col gap-2 border-t border-white/10 pt-4 shrink-0">
+          <div className="px-3 pb-5 flex flex-col gap-2 border-t border-white/10 pt-3 shrink-0">
             <button
               onClick={() => logout()}
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-body-sm font-medium text-white/60 hover:text-white hover:bg-white/8 transition-colors w-full border-0 bg-transparent cursor-pointer"
+              className="flex items-center gap-3 px-3 py-2 rounded-xl text-body-sm font-medium text-white/60 hover:text-white hover:bg-white/8 transition-colors w-full border-0 bg-transparent cursor-pointer"
             >
               <LogOut className="w-4 h-4" /> Đăng xuất
             </button>
@@ -1904,7 +1904,7 @@ function AdminDashboardContent() {
           </header>
 
           {/* MAIN CONTENT AREA */}
-          <main className="flex-1 min-h-0 p-6 md:p-8 flex flex-col overflow-y-auto">
+          <main className="flex-1 min-h-0 p-6 md:p-8 flex flex-col overflow-y-auto custom-scrollbar">
 
             {/* ─── TAB: DASHBOARD ─────────────────────────────────────────────────── */}
             {activeTab === 'dashboard' && (

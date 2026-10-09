@@ -77,8 +77,8 @@ export function OrderIssuesList({ orderId }: OrderIssuesListProps) {
   }
 
   return (
-    <div id="order-issues" className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-      <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+    <div id="order-issues" className="bg-white border border-[#E5DFD5] rounded-2xl sm:rounded-3xl p-6 md:p-7 shadow-[0_2px_16px_rgba(93,28,52,0.03)] flex flex-col gap-4">
+      <div className="flex items-center justify-between pb-3.5 border-b border-[#E5DFD5]/80">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
             <AlertTriangle className="w-4 h-4" />

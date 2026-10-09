@@ -199,6 +199,15 @@
 }
 
 @layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: rgba(139, 136, 128, 0.4) transparent;

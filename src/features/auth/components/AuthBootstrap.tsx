@@ -8,7 +8,7 @@ import { toAuthSession } from '@/features/auth/services/session';
 import { clearAuthMarker, hasAuthMarker, useAuthStore } from '@/features/auth/store/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function AuthBootstrap() {
   const queryClient = useQueryClient();
@@ -17,14 +17,23 @@ export function AuthBootstrap() {
   const searchParams = useSearchParams();
   const search = searchParams.toString();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasBootstrappedRef = useRef(false);
 
   useEffect(() => {
+    // If already bootstrapped in this lifecycle, or if user already has an authenticated state, skip!
+    if (hasBootstrappedRef.current) return;
+    if (useAuthStore.getState().status === 'authenticated') {
+      hasBootstrappedRef.current = true;
+      return;
+    }
+
     let isMounted = true;
     const store = useAuthStore.getState();
 
     async function bootstrap() {
       if (!hasAuthMarker()) {
         store.clearSession();
+        hasBootstrappedRef.current = true;
         return;
       }
 
@@ -52,6 +61,7 @@ export function AuthBootstrap() {
           redirectIfProtected(pathname, search, router);
         }
       } finally {
+        hasBootstrappedRef.current = true;
         if (isMounted) setIsRefreshing(false);
       }
     }
