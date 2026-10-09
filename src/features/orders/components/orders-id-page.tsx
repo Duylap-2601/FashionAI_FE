@@ -3,6 +3,9 @@
 import { STATUS_MAP, TAILORING_STEPS } from '@/features/orders/constants/orders-id-page';
 import { useCart } from '@/features/cart/store/cartStore';
 import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
+import { OrderIssuesList } from '@/features/orders/components/order-issues-list';
+import { ReportIssueModal } from '@/features/orders/components/report-issue-modal';
+import type { OrderItem } from '@/features/orders/types/orders';
 import {
   AlertTriangle,
   ChevronLeft,
@@ -19,6 +22,25 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+const ISSUE_HISTORY_CONFIG: Record<string, { label: string; badgeClass: string }> = {
+  ORDER_ISSUE_REJECTED: {
+    label: 'Yêu cầu báo lỗi bị từ chối',
+    badgeClass: 'text-red-600 font-semibold',
+  },
+  ORDER_ISSUE_REFUND_APPROVED: {
+    label: 'Admin duyệt hoàn tiền cho báo lỗi',
+    badgeClass: 'text-emerald-700 font-semibold',
+  },
+  ORDER_ISSUE_EXCHANGE_APPROVED: {
+    label: 'Admin duyệt đổi hàng 1-1 (Đang xử lý)',
+    badgeClass: 'text-blue-700 font-semibold',
+  },
+  ORDER_ISSUE_EXCHANGE_RESOLVED: {
+    label: 'Đổi hàng 1-1 đã hoàn tất',
+    badgeClass: 'text-emerald-700 font-semibold',
+  },
+};
+
 export default function OrderDetailPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -27,8 +49,20 @@ export default function OrderDetailPage() {
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [reportingItem, setReportingItem] = useState<OrderItem | null>(null);
 
   const statusInfo = STATUS_MAP[order?.status || 'CREATED'] || STATUS_MAP.CREATED;
+
+  const isCompleted = order?.status === 'COMPLETED';
+  const completedEvent = order?.history
+    ?.filter((e) => e.toStatus === 'COMPLETED')
+    .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())[0];
+  const completedAt = completedEvent?.occurredAt || (isCompleted ? order?.updatedAt : undefined);
+  const within7Days = Boolean(
+    completedAt &&
+    Date.now() - new Date(completedAt).getTime() <= 7 * 24 * 60 * 60 * 1000
+  );
+  const canReportIssue = isCompleted && within7Days;
 
   const handleCancel = () => {
     if (!order?.id) return;
@@ -291,8 +325,20 @@ export default function OrderDetailPage() {
                           {item.measurementSnapshot.height && <span>Cao: {item.measurementSnapshot.height}cm</span>}
                         </div>
                       ) : null}
-                      <div className="text-[13px] text-neutral-500 mt-0.5">
-                        Số lượng: <strong className="text-brand-navy">{item.quantity}</strong>
+                      <div className="flex flex-wrap items-center justify-between gap-2 mt-1">
+                        <div className="text-[13px] text-neutral-500">
+                          Số lượng: <strong className="text-brand-navy">{item.quantity}</strong>
+                        </div>
+                        {canReportIssue && (
+                          <button
+                            type="button"
+                            onClick={() => setReportingItem(item)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-800 text-[11px] font-semibold transition-colors cursor-pointer"
+                          >
+                            <AlertTriangle className="w-3 h-3 text-amber-600" />
+                            <span>Báo lỗi sản phẩm</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -310,6 +356,9 @@ export default function OrderDetailPage() {
               })}
             </div>
           </div>
+
+          {/* Left Column: Order Issues List */}
+          <OrderIssuesList orderId={order.id} />
 
           {/* RIGHT: Delivery info & Totals */}
           <div className="flex flex-col gap-6">
@@ -428,12 +477,25 @@ export default function OrderDetailPage() {
               <h3 className="text-[16px] font-bold text-brand-navy mb-4">Lịch sử đơn hàng</h3>
               {order.history && order.history.length > 0 ? (
                 <div className="flex flex-col gap-3">
-                  {order.history.map(event => (
-                    <div key={event.id} className="border-l-2 border-brand-navy/20 pl-3">
-                      <p className="text-body-sm font-semibold text-brand-navy">{event.publicMessage || event.toStatus || event.type}</p>
-                      <p className="text-[12px] text-neutral-500">{new Date(event.occurredAt).toLocaleString('vi-VN')}</p>
-                    </div>
-                  ))}
+                  {order.history.map(event => {
+                    const issueCfg = ISSUE_HISTORY_CONFIG[event.type];
+                    const issueId = (event.metadata as { issueId?: string } | undefined)?.issueId;
+                    return (
+                      <div key={event.id} className="border-l-2 border-brand-navy/20 pl-3">
+                        <p className={`text-body-sm font-semibold ${issueCfg ? issueCfg.badgeClass : 'text-brand-navy'}`}>
+                          {event.publicMessage || issueCfg?.label || event.toStatus || event.type}
+                        </p>
+                        <div className="flex items-center justify-between text-[12px] text-neutral-500 mt-0.5">
+                          <span>{new Date(event.occurredAt).toLocaleString('vi-VN')}</span>
+                          {issueId && (
+                            <a href="#order-issues" className="text-brand-navy hover:underline text-[11px] font-medium">
+                              Xem báo lỗi →
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-body-sm text-neutral-500">Chưa có lịch sử chi tiết.</p>
@@ -477,6 +539,15 @@ export default function OrderDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Report Issue Modal */}
+      <ReportIssueModal
+        isOpen={Boolean(reportingItem)}
+        onClose={() => setReportingItem(null)}
+        orderId={order.id}
+        orderItem={reportingItem}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 }

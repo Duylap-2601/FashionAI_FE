@@ -6,6 +6,8 @@ import type { AdminImageDto, AdminProductDto, AdminOrderDto, AdminShipmentDetail
 import { AdminOrderModal } from '@/features/admin/components/admin-order-modal';
 import { AdminLiveTryOnSettingsPanel } from '@/features/admin/components/admin-live-try-on-settings-panel';
 import { AdminOrdersPanel } from '@/features/admin/components/admin-orders-panel';
+import { AdminOrderIssuesPanel } from '@/features/admin/components/admin-order-issues-panel';
+import { AdminOrderIssueModal } from '@/features/admin/components/admin-order-issue-modal';
 import { AdminCouponsPanel } from '@/features/admin/components/admin-coupons-panel';
 import { AdminProductModal } from '@/features/admin/components/admin-product-modal';
 import { AdminProductsPanel } from '@/features/admin/components/admin-products-panel';
@@ -20,18 +22,19 @@ import { DashboardOverview } from '@/features/admin/components/dashboard-overvie
 import { fmt } from '@/features/admin/services/format';
 import type { ProductImageItem } from '@/features/admin/types/admin-dashboard-page';
 import { cancelAdminShipment, confirmManualPayment, createProduct, createShipment, deleteProduct, deleteProductImage, resolveWebhookFailure, simulateAdminShipmentStatus, syncAdminShipment, updateOrderRefund, updateOrderStatus, updateProduct, updateUser, uploadProductImage } from '@/features/admin/services/mutations';
-import { fetchAdminOrders, fetchAdminProducts, fetchAdminShipmentDetail, fetchAdminShipments, fetchAdminStats, fetchAdminUsers, fetchWebhookFailures } from '@/features/admin/services/queries';
+import { fetchAdminOrderIssues, fetchAdminOrders, fetchAdminProducts, fetchAdminShipmentDetail, fetchAdminShipments, fetchAdminStats, fetchAdminUsers, fetchWebhookFailures } from '@/features/admin/services/queries';
 import type { AdminOrder, AdminPage, AdminProduct, AdminProductImage, AdminShipment, AdminShipmentDetail, AdminStats, AdminUser, AdminWebhookFailure, GarmentCategory, ProductStatus, UserRole, UserTier } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminShipmentFilters } from '@/features/admin/types/admin-shipments-panel';
 import type { AdminProductFilters } from '@/features/admin/types/admin-products-panel';
 import type { AdminOrderFilters } from '@/features/admin/types/admin-orders-panel';
 import type { AdminUserFilters } from '@/features/admin/types/admin-users-panel';
+import type { AdminOrderIssueFilters } from '@/features/admin/types/admin-order-issues-panel';
 import { AdminGuard } from '@/features/auth/components/AdminGuard';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AdminCollectionManager } from '@/features/collections/components/AdminCollectionManager';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
-import type { BackendOrderStatus } from '@/features/orders/types/orders';
+import type { BackendOrderStatus, OrderIssue, OrderIssueListMeta, OrderIssueListParams, OrderIssueReason, OrderIssueStatus } from '@/features/orders/types/orders';
 import { AdminReviewTable } from '@/features/reviews/components/AdminReviewTable';
 import { fetchAdminReviewsResponse } from '@/features/reviews/services/queries';
 import { getRealtimeSocket } from '@/lib/realtimeSocket';
@@ -47,6 +50,7 @@ import {
   Radio,
   RefreshCw,
   Settings,
+  ShieldAlert,
   ShoppingBag,
   Tag,
   Truck,
@@ -65,7 +69,7 @@ interface ApiPaginatedResponse<T = unknown> {
   pagination?: { total?: number; totalPages?: number; page?: number };
 }
 
-const ADMIN_PAGES: AdminPage[] = ['dashboard', 'products', 'collections', 'users', 'orders', 'shipments', 'coupons', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
+const ADMIN_PAGES: AdminPage[] = ['dashboard', 'products', 'collections', 'users', 'orders', 'shipments', 'order-issues', 'coupons', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
 
 function isAdminPage(value: string | null): value is AdminPage {
   return Boolean(value && ADMIN_PAGES.includes(value as AdminPage));
@@ -155,6 +159,20 @@ function AdminDashboardContent() {
     totalPages: 1,
   });
   const [isShipmentsFetching, setIsShipmentsFetching] = useState(false);
+
+  const [issues, setIssues] = useState<OrderIssue[]>([]);
+  const [issueFilters, setIssueFilters] = useState<AdminOrderIssueFilters>({
+    status: '',
+    reason: '',
+  });
+  const [issuePagination, setIssuePagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 1,
+  });
+  const [isIssuesFetching, setIsIssuesFetching] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<OrderIssue | null>(null);
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [reviewsCount, setReviewsCount] = useState<number>(0);
@@ -819,6 +837,77 @@ function AdminDashboardContent() {
   useEffect(() => {
     handleShipmentFiltersChangeRef.current = handleShipmentFiltersChange;
   }, [handleShipmentFiltersChange]);
+
+  const fetchIssues = useCallback(async (
+    page = issuePagination.page,
+    limit = issuePagination.pageSize,
+    filters = issueFilters
+  ) => {
+    setIsIssuesFetching(true);
+    try {
+      const params: OrderIssueListParams = {
+        page,
+        limit,
+        status: (filters.status || undefined) as OrderIssueStatus | undefined,
+        reason: (filters.reason || undefined) as OrderIssueReason | undefined,
+      };
+      const res = await fetchAdminOrderIssues(params);
+      const resObj = res as { data?: OrderIssue[]; meta?: OrderIssueListMeta; items?: OrderIssue[]; total?: number } | undefined;
+      const list: OrderIssue[] = Array.isArray(res)
+        ? res
+        : resObj?.data || resObj?.items || [];
+      const meta = (res as { __meta?: OrderIssueListMeta }).__meta || resObj?.meta;
+      const total = typeof meta?.total === 'number'
+        ? meta.total
+        : typeof resObj?.total === 'number'
+          ? resObj.total
+          : list.length;
+      const totalPages = typeof meta?.totalPages === 'number'
+        ? meta.totalPages
+        : Math.ceil(total / limit) || 1;
+
+      setIssues(list);
+      setIssuePagination(prev => ({
+        ...prev,
+        page,
+        pageSize: limit,
+        total,
+        totalPages,
+      }));
+    } catch (e) {
+      console.error('Fetch order issues failed:', e);
+      toast.error('Không thể tải danh sách báo lỗi đơn hàng.');
+    } finally {
+      setIsIssuesFetching(false);
+    }
+  }, [issuePagination.page, issuePagination.pageSize, issueFilters]);
+
+  const handleIssuePageChange = useCallback((page: number) => {
+    fetchIssues(page, issuePagination.pageSize, issueFilters);
+  }, [fetchIssues, issuePagination.pageSize, issueFilters]);
+
+  const handleIssuePageSizeChange = useCallback((size: number) => {
+    fetchIssues(1, size, issueFilters);
+  }, [fetchIssues, issueFilters]);
+
+  const handleIssueFilterChange = useCallback((patch: Partial<AdminOrderIssueFilters>) => {
+    setIssueFilters(prev => {
+      const next = { ...prev, ...patch };
+      fetchIssues(1, issuePagination.pageSize, next);
+      return next;
+    });
+  }, [fetchIssues, issuePagination.pageSize]);
+
+  const handleResetIssueFilters = useCallback(() => {
+    setIssueFilters({ status: '', reason: '' });
+    fetchIssues(1, issuePagination.pageSize, { status: '', reason: '' });
+  }, [fetchIssues, issuePagination.pageSize]);
+
+  useEffect(() => {
+    if (activeTab === 'order-issues') {
+      fetchIssues();
+    }
+  }, [activeTab, fetchIssues]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -1708,6 +1797,7 @@ function AdminDashboardContent() {
               { id: 'users', label: 'Người dùng', icon: Users },
               { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
               { id: 'shipments', label: 'Vận đơn', icon: Truck },
+              { id: 'order-issues', label: 'Báo lỗi & Đổi trả', icon: ShieldAlert },
               { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
               { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
               { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
@@ -1768,10 +1858,11 @@ function AdminDashboardContent() {
                       activeTab === 'users' ? 'Quản lý người dùng' :
                         activeTab === 'orders' ? 'Quản lý đơn hàng' :
                           activeTab === 'shipments' ? 'Quản lý vận đơn' :
-                            activeTab === 'coupons' ? 'Quản lý mã giảm giá' :
-                              (activeTab === 'webhook-failures' || activeTab === 'reconciliation') ? 'Đối soát giao dịch lạ' :
-                                activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
-                                  activeTab === 'shipping-settings' ? 'Cài đặt GHN' : 'Cài đặt Live Try-On'}
+                            activeTab === 'order-issues' ? 'Quản lý Báo lỗi & Đổi trả' :
+                              activeTab === 'coupons' ? 'Quản lý mã giảm giá' :
+                                (activeTab === 'webhook-failures' || activeTab === 'reconciliation') ? 'Đối soát giao dịch lạ' :
+                                  activeTab === 'reviews' ? 'Quản lý đánh giá sản phẩm' :
+                                    activeTab === 'shipping-settings' ? 'Cài đặt GHN' : 'Cài đặt Live Try-On'}
               </span>
             </div>
 
@@ -1931,6 +2022,24 @@ function AdminDashboardContent() {
               />
             )}
 
+            {/* ─── TAB: ORDER ISSUES ─────────────────────────────────────────────── */}
+            {activeTab === 'order-issues' && (
+              <AdminOrderIssuesPanel
+                issues={issues}
+                filters={issueFilters}
+                onFilterChange={handleIssueFilterChange}
+                onResetFilters={handleResetIssueFilters}
+                currentPage={issuePagination.page}
+                totalPages={issuePagination.totalPages}
+                totalItems={issuePagination.total}
+                pageSize={issuePagination.pageSize}
+                onPageChange={handleIssuePageChange}
+                onPageSizeChange={handleIssuePageSizeChange}
+                isFetching={isIssuesFetching}
+                onSelectIssue={(issue) => setSelectedIssue(issue)}
+              />
+            )}
+
             {/* ─── TAB: RECONCILIATION / WEBHOOK FAILURES ─────────────────────────── */}
             {(activeTab === 'reconciliation' || activeTab === 'webhook-failures') && (
               <AdminReconciliationPanel onStatsRefresh={() => fetchStats()} />
@@ -2000,6 +2109,17 @@ function AdminDashboardContent() {
               />
             )}
           </AnimatePresence>
+
+          {/* ─── DIALOG: ORDER ISSUE DETAIL ──────────────────────────────────────── */}
+          <AdminOrderIssueModal
+            issue={selectedIssue}
+            isOpen={Boolean(selectedIssue)}
+            onClose={() => setSelectedIssue(null)}
+            onSuccess={() => {
+              fetchIssues();
+              fetchOrders();
+            }}
+          />
 
         </div>
     </div>

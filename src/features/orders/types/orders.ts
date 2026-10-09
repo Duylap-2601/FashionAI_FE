@@ -330,3 +330,81 @@ export interface OrdersListResult {
   orders: Order[];
   meta: OrdersListMeta;
 }
+
+export type OrderIssueReason =
+  | 'WRONG_SIZE'
+  | 'WRONG_COLOR'
+  | 'QUALITY_MISMATCH'
+  | 'OTHER';
+
+export type OrderIssueDesiredResolution = 'REFUND' | 'EXCHANGE';
+
+export type OrderIssueStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'RESOLVED'
+  | 'REJECTED';
+
+export interface OrderIssueOrderItem {
+  id: string;
+  productId: string;
+  quantity: number;
+  color?: string | null;
+  productNameSnapshot?: string | null;
+  productImageSnapshot?: string | null;
+}
+
+export interface OrderIssueOrderSummary {
+  id: string;
+  orderCode: number;
+  status: BackendOrderStatus;
+}
+
+export interface OrderIssue {
+  id: string;
+  orderId: string;
+  orderItemId: string;
+  userId: string;
+  reason: OrderIssueReason;
+  description: string;
+  desiredResolution: OrderIssueDesiredResolution;
+  approvedResolution: OrderIssueDesiredResolution | null;
+  evidenceImages: string[];
+  status: OrderIssueStatus;
+  adminNote: string | null;
+  adminId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  order?: OrderIssueOrderSummary;
+  orderItem?: OrderIssueOrderItem;
+  user?: { id: string; name?: string; email?: string };
+}
+
+export interface OrderIssueListParams {
+  status?: OrderIssueStatus;
+  reason?: OrderIssueReason;
+  page?: number;
+  limit?: number;
+}
+
+export interface OrderIssueListMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface CreateOrderIssuePayload {
+  orderId: string;
+  orderItemId: string;
+  reason: OrderIssueReason;
+  description: string;
+  desiredResolution: OrderIssueDesiredResolution;
+  evidenceImages?: File[];
+}
+
+export interface OrderIssuesResponse {
+  data: OrderIssue[];
+  meta: OrderIssueListMeta;
+}
+

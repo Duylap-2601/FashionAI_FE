@@ -2,6 +2,7 @@ import { http, type HttpOptions } from '@/lib/http';
 import type { LiveTryOnSettings } from '@/features/admin/types/admin-dashboard-page';
 import type { UnmatchedTransaction, UnmatchedTransactionsResponse } from '@/features/admin/types/admin-reconciliation';
 import type { AdminCoupon, AdminCouponsResponse } from '@/features/admin/types/admin-coupons';
+import type { OrderIssue, OrderIssueListMeta, OrderIssueListParams } from '@/features/orders/types/orders';
 
 export function fetchAdminProducts(config: HttpOptions) {
   return http.get('/products', config);
@@ -61,4 +62,16 @@ export function fetchAdminCoupons(config?: HttpOptions) {
 export function fetchAdminCouponDetail(id: string, config?: HttpOptions) {
   return http.get<AdminCoupon>(`/coupons/${id}`, config);
 }
+
+export function fetchAdminOrderIssues(params?: OrderIssueListParams, config?: HttpOptions<OrderIssueListParams>) {
+  return http.get<{ data: OrderIssue[]; meta: OrderIssueListMeta } | OrderIssue[], OrderIssueListParams>('/order-issues', {
+    ...config,
+    params: params ?? config?.params,
+  });
+}
+
+export function fetchAdminOrderIssue(issueId: string, config?: HttpOptions) {
+  return http.get<OrderIssue>(`/order-issues/${issueId}`, config);
+}
+
 

@@ -1,6 +1,7 @@
 import type { UpdateLiveTryOnSettingsInput } from '@/features/admin/types/admin-dashboard-page';
 import type { PatchOrdersStatusInput, PatchUsersInput, PutProductsInput } from '@/features/admin/types/requests';
 import type { AdminCoupon, CreateCouponPayload, UpdateCouponPayload } from '@/features/admin/types/admin-coupons';
+import type { OrderIssue } from '@/features/orders/types/orders';
 import { api } from '@/lib/api';
 import { http, type HttpOptions } from '@/lib/http';
 
@@ -79,4 +80,25 @@ export function updateAdminCoupon(id: string, payload: UpdateCouponPayload, conf
 export function deleteAdminCoupon(id: string, config?: HttpOptions) {
   return http.delete<{ success?: boolean }>(`/coupons/${id}`, config);
 }
+
+export type ReviewOrderIssueInput =
+  | { decision: 'REJECT'; adminNote: string }
+  | { decision: 'APPROVE'; approvedResolution: 'REFUND' | 'EXCHANGE'; adminNote?: string };
+
+export function reviewOrderIssue(
+  issueId: string,
+  payload: ReviewOrderIssueInput,
+  config?: HttpOptions,
+) {
+  return http.patch<OrderIssue>(`/order-issues/${issueId}/review`, payload, config);
+}
+
+export function resolveOrderIssue(
+  issueId: string,
+  payload?: { note?: string },
+  config?: HttpOptions,
+) {
+  return http.patch<OrderIssue>(`/order-issues/${issueId}/resolve`, payload ?? {}, config);
+}
+
 

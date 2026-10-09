@@ -1,6 +1,6 @@
 import type { BackendOrderStatus, OrderDisplayStatus, OrderPayment, OrderRefund } from '@/features/orders/types/orders';
 
-export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'coupons' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
+export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'order-issues' | 'coupons' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
 
 export interface GhnPickupSettings {
   provinceV3Id?: string;

@@ -1,4 +1,4 @@
-import type { BackendOrder, CreateOrderRequest, OrderQuote } from '@/features/orders/types/orders';
+import type { BackendOrder, CreateOrderIssuePayload, CreateOrderRequest, OrderIssue, OrderQuote } from '@/features/orders/types/orders';
 import { http } from '@/lib/http';
 
 function toCreateOrderBody(payload: CreateOrderRequest) {
@@ -46,6 +46,23 @@ export async function cancelOrder(id: string) {
 
 export async function confirmDelivery({ id, note }: { id: string; note?: string }) {
   return http.post<BackendOrder>(`/orders/${id}/confirm-delivery`, { note });
+}
+
+export async function createOrderIssue(payload: CreateOrderIssuePayload): Promise<OrderIssue> {
+  const fd = new FormData();
+  fd.append('reason', payload.reason);
+  fd.append('description', payload.description);
+  fd.append('desiredResolution', payload.desiredResolution);
+  if (payload.evidenceImages) {
+    for (const file of payload.evidenceImages) {
+      fd.append('evidenceImages', file);
+    }
+  }
+  return http.post<OrderIssue>(
+    `/orders/${payload.orderId}/items/${payload.orderItemId}/issues`,
+    fd,
+    { timeout: 30000 }
+  );
 }
 
 export { mutationKeys } from './mutation-keys';
