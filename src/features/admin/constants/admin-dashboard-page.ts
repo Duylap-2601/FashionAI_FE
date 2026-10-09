@@ -18,28 +18,40 @@ export const CATEGORY_LABEL: Record<GarmentCategory, string> = {
 
 export const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL', 'Free'];
 
-export const PRODUCT_STATUS_CFG: Record<ProductStatus, { label: string; cls: string }> = {
-  ACTIVE: { label: 'Đang bán', cls: 'bg-green-50 text-green-700 border border-green-200' },
-  DRAFT: { label: 'Bản nháp', cls: 'bg-neutral-100 text-neutral-600 border border-neutral-200' },
-  ARCHIVED: { label: 'Ngừng bán', cls: 'bg-red-50 text-red-600 border border-red-200' },
+export const PRODUCT_STATUS_CFG: Record<ProductStatus, { label: string; cls: string; dotCls: string }> = {
+  ACTIVE: {
+    label: 'Đang bán',
+    cls: 'text-neutral-900',
+    dotCls: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.45)]',
+  },
+  DRAFT: {
+    label: 'Bản nháp',
+    cls: 'text-neutral-500',
+    dotCls: 'bg-neutral-300',
+  },
+  ARCHIVED: {
+    label: 'Ngừng bán',
+    cls: 'text-neutral-400',
+    dotCls: 'bg-stone-400',
+  },
 };
 
 export const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon: LucideIcon }> = {
-  PENDING: { label: 'Chờ xác nhận', cls: 'bg-amber-50 text-amber-700 border border-amber-200', icon: Clock },
-  PAID: { label: 'Đã thanh toán', cls: 'bg-blue-50 text-blue-700 border border-blue-200', icon: CheckCircle2 },
-  CONFIRMED: { label: 'Đã xác nhận', cls: 'bg-blue-50 text-blue-700 border border-blue-200', icon: CheckCircle2 },
-  MEASUREMENT_REVIEW: { label: 'Kiểm tra số đo', cls: 'bg-purple-50 text-purple-700 border border-purple-200', icon: Scissors },
-  MEASUREMENT_CONFIRMED: { label: 'Chốt số đo', cls: 'bg-purple-50 text-purple-700 border border-purple-200', icon: CheckCircle2 },
-  TAILORING: { label: 'Đang may', cls: 'bg-indigo-50 text-indigo-700 border border-indigo-200', icon: Scissors },
-  QUALITY_CHECK: { label: 'Kiểm tra chất lượng', cls: 'bg-cyan-50 text-cyan-700 border border-cyan-200', icon: CheckCircle2 },
-  READY_TO_SHIP: { label: 'Sẵn sàng giao', cls: 'bg-sky-50 text-sky-700 border border-sky-200', icon: Truck },
-  SHIPPING: { label: 'Đang giao', cls: 'bg-brand-navy/8 text-brand-navy border border-brand-navy/20', icon: Truck },
-  DELIVERED: { label: 'Đã giao hàng', cls: 'bg-blue-50 text-blue-700 border border-blue-200', icon: CheckCircle2 },
-  COMPLETED: { label: 'Hoàn thành', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200', icon: CheckCircle2 },
-  CANCELLED: { label: 'Đã hủy', cls: 'bg-red-50 text-red-600 border border-red-200', icon: XCircle },
-  RETURNED: { label: 'Hoàn trả', cls: 'bg-neutral-100 text-neutral-600 border border-neutral-300', icon: RotateCcw },
-  EXPIRED: { label: 'Hết hạn', cls: 'bg-neutral-100 text-neutral-500 border border-neutral-300', icon: XCircle },
-  FAILED: { label: 'Thất bại', cls: 'bg-red-50 text-red-600 border border-red-200', icon: XCircle },
+  PENDING: { label: 'Chờ xác nhận', cls: 'bg-amber-500/10 text-amber-900 border border-amber-500/20', icon: Clock },
+  PAID: { label: 'Đã thanh toán', cls: 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20', icon: CheckCircle2 },
+  CONFIRMED: { label: 'Đã xác nhận', cls: 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20', icon: CheckCircle2 },
+  MEASUREMENT_REVIEW: { label: 'Kiểm tra số đo', cls: 'bg-brand-navy/8 text-brand-navy border border-brand-navy/15', icon: Scissors },
+  MEASUREMENT_CONFIRMED: { label: 'Chốt số đo', cls: 'bg-brand-navy/10 text-brand-navy border border-brand-navy/20', icon: CheckCircle2 },
+  TAILORING: { label: 'Đang may', cls: 'bg-[#5D1C34]/10 text-[#5D1C34] border border-[#5D1C34]/20', icon: Scissors },
+  QUALITY_CHECK: { label: 'Kiểm tra chất lượng', cls: 'bg-brand-gold/15 text-brand-navy border border-brand-gold/30', icon: CheckCircle2 },
+  READY_TO_SHIP: { label: 'Sẵn sàng giao', cls: 'bg-sky-500/10 text-sky-900 border border-sky-500/20', icon: Truck },
+  SHIPPING: { label: 'Đang giao', cls: 'bg-brand-navy/10 text-brand-navy border border-brand-navy/20', icon: Truck },
+  DELIVERED: { label: 'Đã giao hàng', cls: 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20', icon: CheckCircle2 },
+  COMPLETED: { label: 'Hoàn thành', cls: 'bg-emerald-500/12 text-emerald-950 border border-emerald-600/25', icon: CheckCircle2 },
+  CANCELLED: { label: 'Đã hủy', cls: 'bg-rose-500/10 text-rose-900 border border-rose-500/20', icon: XCircle },
+  RETURNED: { label: 'Hoàn trả', cls: 'bg-neutral-100 text-neutral-700 border border-neutral-200', icon: RotateCcw },
+  EXPIRED: { label: 'Hết hạn', cls: 'bg-neutral-100 text-neutral-500 border border-neutral-200', icon: XCircle },
+  FAILED: { label: 'Thất bại', cls: 'bg-rose-500/10 text-rose-900 border border-rose-500/20', icon: XCircle },
 };
 
 export function resolveOrderStatusCfg(

@@ -431,8 +431,8 @@ export function DashboardOverview({
                       </td>
                       <td className="px-4 py-3.5 text-right font-bold text-brand-navy">{fmt(o.total)}</td>
                       <td className="px-4 py-3.5">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${cfg.cls}`}>
-                          <Icon className="w-3 h-3" />
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium tracking-tight ${cfg.cls}`}>
+                          <Icon className="w-3.5 h-3.5 opacity-80" />
                           {cfg.label}
                         </span>
                       </td>

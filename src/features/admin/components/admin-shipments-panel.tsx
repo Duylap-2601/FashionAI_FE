@@ -174,9 +174,17 @@ export function AdminShipmentsPanel({
 
                   {/* Trạng thái & Raw Status */}
                   <div className="px-3 py-3.5 min-w-0">
-                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-700 font-semibold text-[11px] truncate max-w-full">
-                      {shipmentStatusLabel(shipment.status, shipment.rawStatus)}
-                    </span>
+                    <div className="inline-flex items-center gap-1.5 py-0.5 truncate max-w-full">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        shipment.issue ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.4)]' :
+                        shipment.status === 'DELIVERED' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]' :
+                        shipment.status === 'SHIPPING' ? 'bg-brand-navy shadow-[0_0_6px_rgba(26,54,93,0.3)]' :
+                        'bg-neutral-300'
+                      }`} />
+                      <span className="text-xs font-medium text-neutral-800 truncate">
+                        {shipmentStatusLabel(shipment.status, shipment.rawStatus)}
+                      </span>
+                    </div>
                     {shipment.rawStatus && (
                       <span className="text-[10px] text-neutral-400 font-mono block mt-0.5 truncate">
                         {shipment.rawStatus}

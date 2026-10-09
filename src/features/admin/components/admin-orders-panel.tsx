@@ -174,8 +174,8 @@ export function AdminOrdersPanel({
                     </div>
                     <div className="px-4 py-3.5 text-neutral-500 truncate">{o.date}</div>
                     <div className="px-4 py-3.5">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-semibold ${cfg.cls}`}>
-                        <Icon className="w-3 h-3" />
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium tracking-tight ${cfg.cls}`}>
+                        <Icon className="w-3.5 h-3.5 opacity-80" />
                         {cfg.label}
                       </span>
                     </div>

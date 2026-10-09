@@ -34,31 +34,39 @@ function StatusBadge({ status }: { status: OrderIssueStatus }) {
   switch (status) {
     case 'PENDING':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-          <Clock className="w-3 h-3" /> Chờ duyệt
+        <span className="inline-flex items-center gap-1.5 py-0.5 text-xs font-medium text-neutral-800">
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-40" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.35)]" />
+          </span>
+          Chờ duyệt
         </span>
       );
     case 'APPROVED':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold bg-blue-50 text-blue-800 border border-blue-200">
-          <RefreshCw className="w-3 h-3" /> Đang đổi hàng
+        <span className="inline-flex items-center gap-1.5 py-0.5 text-xs font-medium text-neutral-800">
+          <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.35)] shrink-0" />
+          Đang đổi hàng
         </span>
       );
     case 'RESOLVED':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-          <CheckCircle2 className="w-3 h-3" /> Hoàn tất
+        <span className="inline-flex items-center gap-1.5 py-0.5 text-xs font-medium text-neutral-800">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.35)] shrink-0" />
+          Hoàn tất
         </span>
       );
     case 'REJECTED':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold bg-red-50 text-red-800 border border-red-200">
-          <XCircle className="w-3 h-3" /> Từ chối
+        <span className="inline-flex items-center gap-1.5 py-0.5 text-xs font-medium text-neutral-500">
+          <span className="w-2 h-2 rounded-full bg-stone-400 shrink-0" />
+          Từ chối
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[12px] bg-neutral-100 text-neutral-600">
+        <span className="inline-flex items-center gap-1.5 py-0.5 text-xs font-medium text-neutral-500">
+          <span className="w-2 h-2 rounded-full bg-neutral-300 shrink-0" />
           {status}
         </span>
       );

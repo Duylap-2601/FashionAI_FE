@@ -129,26 +129,27 @@ export function AdminUsersPanel({
                   </div>
                   <div className="px-4 py-3.5 text-neutral-600 truncate">{u.email}</div>
                   <div className="px-4 py-3.5">
-                    <span className={`px-2 py-0.5 rounded-full text-label-sm font-semibold ${
-                      u.role === 'ADMIN' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-neutral-100 text-neutral-600'
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium font-mono ${
+                      u.role === 'ADMIN' ? 'bg-brand-navy/10 text-brand-navy border border-brand-navy/20' : 'bg-neutral-100 text-neutral-600'
                     }`}>
                       {u.role}
                     </span>
                   </div>
                   <div className="px-4 py-3.5">
-                    <span className={`px-2 py-0.5 rounded-full text-label-sm font-bold capitalize ${
-                      u.tier === 'VIP' ? 'bg-amber-100 text-amber-700' : u.tier === 'MEMBER' ? 'bg-purple-100 text-purple-700' : 'bg-neutral-100 text-neutral-700'
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold capitalize ${
+                      u.tier === 'VIP' ? 'bg-brand-gold/20 text-brand-navy border border-brand-gold/30' : u.tier === 'MEMBER' ? 'bg-neutral-100 text-neutral-700 border border-neutral-200' : 'bg-neutral-50 text-neutral-500'
                     }`}>
                       {u.tier}
                     </span>
                   </div>
                   <div className="px-4 py-3.5 text-right font-medium text-neutral-700">{u.tryOns} lượt</div>
                   <div className="px-4 py-3.5">
-                    <span className={`px-2 py-0.5 rounded-full text-label-sm font-semibold ${
-                      u.isVerified ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
-                    }`}>
-                      {u.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                    </span>
+                    <div className="inline-flex items-center gap-1.5 py-0.5">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${u.isVerified ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.35)]' : 'bg-neutral-300'}`} />
+                      <span className="text-xs font-medium text-neutral-800">
+                        {u.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
+                      </span>
+                    </div>
                   </div>
                   <div className="px-6 py-3.5 text-right">
                     <button

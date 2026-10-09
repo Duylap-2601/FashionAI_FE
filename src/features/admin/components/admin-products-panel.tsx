@@ -5,6 +5,7 @@ import { fmt } from '@/features/admin/services/format';
 import type { AdminProductsPanelProps } from '@/features/admin/types/admin-products-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
 import {
+  ChevronDown,
   Pencil,
   RotateCcw,
   Search,
@@ -72,28 +73,34 @@ export function AdminProductsPanel({
             </div>
 
             {/* Category Filter */}
-            <select
-              value={filters.category || 'ALL'}
-              onChange={(e) => onFilterChange?.({ category: e.target.value === 'ALL' ? '' : e.target.value })}
-              className="px-3 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm text-neutral-700 focus:outline-none focus:border-brand-navy cursor-pointer"
-            >
-              <option value="ALL">Tất cả danh mục</option>
-              <option value="UPPER">Áo (UPPER)</option>
-              <option value="LOWER">Quần & Váy (LOWER)</option>
-              <option value="FULL_BODY">Suit đầy đủ (FULL_BODY)</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filters.category || 'ALL'}
+                onChange={(e) => onFilterChange?.({ category: e.target.value === 'ALL' ? '' : e.target.value })}
+                className="appearance-none pl-3.5 pr-8 py-2 border border-neutral-200/90 rounded-xl bg-white text-xs font-medium text-neutral-700 hover:border-neutral-300 focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/10 transition-colors cursor-pointer shadow-2xs"
+              >
+                <option value="ALL">Tất cả danh mục</option>
+                <option value="UPPER">Áo (UPPER)</option>
+                <option value="LOWER">Quần & Váy (LOWER)</option>
+                <option value="FULL_BODY">Suit đầy đủ (FULL_BODY)</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
 
             {/* Status Filter */}
-            <select
-              value={filters.status || 'ALL'}
-              onChange={(e) => onFilterChange?.({ status: e.target.value === 'ALL' ? '' : e.target.value })}
-              className="px-3 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm text-neutral-700 focus:outline-none focus:border-brand-navy cursor-pointer"
-            >
-              <option value="ALL">Tất cả trạng thái</option>
-              <option value="ACTIVE">Đang bán (ACTIVE)</option>
-              <option value="DRAFT">Bản nháp (DRAFT)</option>
-              <option value="ARCHIVED">Đã lưu trữ (ARCHIVED)</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filters.status || 'ALL'}
+                onChange={(e) => onFilterChange?.({ status: e.target.value === 'ALL' ? '' : e.target.value })}
+                className="appearance-none pl-3.5 pr-8 py-2 border border-neutral-200/90 rounded-xl bg-white text-xs font-medium text-neutral-700 hover:border-neutral-300 focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/10 transition-colors cursor-pointer shadow-2xs"
+              >
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="ACTIVE">Đang bán (ACTIVE)</option>
+                <option value="DRAFT">Bản nháp (DRAFT)</option>
+                <option value="ARCHIVED">Đã lưu trữ (ARCHIVED)</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
 
           {/* Reset button */}
@@ -166,15 +173,37 @@ export function AdminProductsPanel({
                   </div>
 
                   {/* Giá bán */}
-                  <div className="px-4 py-3.5 text-right font-semibold text-brand-navy">
+                  <div className="px-4 py-3.5 text-right font-mono font-bold text-neutral-900 tracking-tight">
                     {fmt(p.price)}
                   </div>
 
-                  {/* Trạng thái */}
+                  {/* Trạng thái - Minimalist Atelier (Micro-dot + Refined Typography) */}
                   <div className="px-4 py-3.5">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-label-sm font-semibold ${PRODUCT_STATUS_CFG[p.status]?.cls || ''}`}>
-                      {PRODUCT_STATUS_CFG[p.status]?.label || p.status}
-                    </span>
+                    {p.status === 'ACTIVE' ? (
+                      <div className="inline-flex items-center gap-2 py-0.5" title="Sản phẩm đang được mở bán">
+                        <span className="relative flex h-2 w-2 shrink-0">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.35)]" />
+                        </span>
+                        <span className="text-xs font-medium text-neutral-800 tracking-tight">
+                          {PRODUCT_STATUS_CFG[p.status]?.label || p.status}
+                        </span>
+                      </div>
+                    ) : p.status === 'DRAFT' ? (
+                      <div className="inline-flex items-center gap-2 py-0.5" title="Sản phẩm ở trạng thái nháp">
+                        <span className="inline-flex rounded-full h-2 w-2 bg-neutral-300 shrink-0" />
+                        <span className="text-xs font-medium text-neutral-500 tracking-tight">
+                          {PRODUCT_STATUS_CFG[p.status]?.label || p.status}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-2 py-0.5" title="Sản phẩm đã ngừng kinh doanh">
+                        <span className="inline-flex rounded-full h-2 w-2 bg-stone-400 shrink-0" />
+                        <span className="text-xs font-medium text-neutral-500 tracking-tight">
+                          {PRODUCT_STATUS_CFG[p.status]?.label || p.status}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Thao tác */}
