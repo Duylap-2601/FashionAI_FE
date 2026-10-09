@@ -53,16 +53,15 @@ export default function OrderDetailPage() {
 
   const statusInfo = STATUS_MAP[order?.status || 'CREATED'] || STATUS_MAP.CREATED;
 
-  const isCompleted = order?.status === 'COMPLETED';
+  const isCompleted = order?.status?.toUpperCase() === 'COMPLETED';
   const completedEvent = order?.history
-    ?.filter((e) => e.toStatus === 'COMPLETED')
+    ?.filter((e) => e.toStatus === 'COMPLETED' || e.type === 'COMPLETED' || e.type?.includes('COMPLETED'))
     .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())[0];
-  const completedAt = completedEvent?.occurredAt || (isCompleted ? order?.updatedAt : undefined);
-  const within7Days = Boolean(
-    completedAt &&
-    Date.now() - new Date(completedAt).getTime() <= 7 * 24 * 60 * 60 * 1000
-  );
-  const canReportIssue = isCompleted && within7Days;
+  const completedAt = completedEvent?.occurredAt || order?.updatedAt || order?.createdAt;
+  const isExpired = completedAt
+    ? (Date.now() - new Date(completedAt).getTime()) > 7 * 24 * 60 * 60 * 1000
+    : false;
+  const canReportIssue = isCompleted && !isExpired;
 
   const handleCancel = () => {
     if (!order?.id) return;
@@ -200,6 +199,21 @@ export default function OrderDetailPage() {
                   {isConfirmingDelivery ? 'Đang xác nhận...' : 'Tôi đã nhận hàng'}
                 </button>
               )}
+              {canReportIssue && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (order.items && order.items.length === 1) {
+                      setReportingItem(order.items[0]);
+                    } else {
+                      document.getElementById('order-items')?.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="px-4 py-2 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-body-sm font-semibold rounded-xl transition-colors flex items-center gap-2 cursor-pointer shadow-2xs"
+                >
+                  <AlertTriangle className="w-4 h-4 text-amber-600" /> Báo lỗi sản phẩm
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleReorder}
@@ -265,7 +279,7 @@ export default function OrderDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
 
           {/* LEFT: Products List */}
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+          <div id="order-items" className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
               <h3 className="text-[18px] font-bold text-brand-navy pb-3 border-b border-neutral-100">
                 Sản phẩm trong đơn ({order.items.reduce((acc, i) => acc + i.quantity, 0)})
               </h3>
@@ -325,7 +339,7 @@ export default function OrderDetailPage() {
                           {item.measurementSnapshot.height && <span>Cao: {item.measurementSnapshot.height}cm</span>}
                         </div>
                       ) : null}
-                      <div className="flex flex-wrap items-center justify-between gap-2 mt-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-neutral-100">
                         <div className="text-[13px] text-neutral-500">
                           Số lượng: <strong className="text-brand-navy">{item.quantity}</strong>
                         </div>
@@ -333,9 +347,9 @@ export default function OrderDetailPage() {
                           <button
                             type="button"
                             onClick={() => setReportingItem(item)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-800 text-[11px] font-semibold transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-[12px] font-bold transition-all cursor-pointer shadow-2xs"
                           >
-                            <AlertTriangle className="w-3 h-3 text-amber-600" />
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                             <span>Báo lỗi sản phẩm</span>
                           </button>
                         )}
