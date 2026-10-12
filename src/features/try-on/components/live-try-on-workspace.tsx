@@ -1,6 +1,7 @@
 'use client';
 
 import type { Product } from '@/features/products/types/products';
+import { getValidProductColors, normalizeProductColorName, resolveProductImageForColor } from '@/features/products/services/products-utils';
 import { useLiveTryOnQuota } from '@/features/subscription/hooks/useQuota';
 import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
 import { ArrowRight, Camera, Check, ChevronDown, CirclePause, Expand, Image as ImageIcon, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer } from 'lucide-react';
@@ -17,6 +18,9 @@ interface LiveTryOnWorkspaceProps {
   onOpenUpperCatalog: () => void;
   onOpenLowerCatalog: () => void;
   onOpenCatalog: () => void;
+  onSelectColor: (color: string) => void;
+  onSelectUpperColor: (color: string) => void;
+  onSelectLowerColor: (color: string) => void;
   onSwitchToPhoto: () => void;
 }
 
@@ -32,6 +36,9 @@ export function LiveTryOnWorkspace({
   onOpenUpperCatalog,
   onOpenLowerCatalog,
   onOpenCatalog,
+  onSelectColor,
+  onSelectUpperColor,
+  onSelectLowerColor,
   onSwitchToPhoto,
 }: LiveTryOnWorkspaceProps) {
   const [outfitMode, setOutfitMode] = useState(false);
@@ -81,7 +88,8 @@ export function LiveTryOnWorkspace({
   }, [live.status, refetch]);
 
   const start = () => {
-    if (primaryProduct && canStart) void live.start(primaryProduct.id, resumeId, outfitMode ? lowerProduct?.id : undefined, selectedColor || undefined);
+    const primaryColor = outfitMode ? upperColor : selectedColor;
+    if (primaryProduct && canStart) void live.start(primaryProduct.id, resumeId, outfitMode ? lowerProduct?.id : undefined, primaryColor || undefined, outfitMode ? lowerColor || undefined : undefined);
   };
 
   return (
@@ -135,8 +143,16 @@ export function LiveTryOnWorkspace({
               ))}
             </div>
             <div className={outfitMode ? 'grid grid-cols-1 min-[380px]:grid-cols-2 gap-3' : ''}>
-              {outfitMode ? <><GarmentCard label="Áo" product={upperProduct} onSelect={onOpenUpperCatalog} disabled={selectionLocked} color={upperColor || selectedColor} /><GarmentCard label="Quần" product={lowerProduct} onSelect={onOpenLowerCatalog} disabled={selectionLocked} color={lowerColor} /></> : <GarmentCard label="Trang phục" product={selectedProduct} onSelect={onOpenCatalog} disabled={selectionLocked} horizontal color={selectedColor} />}
+              {outfitMode ? <><GarmentCard label="Áo" product={upperProduct} onSelect={onOpenUpperCatalog} disabled={selectionLocked} color={upperColor} /><GarmentCard label="Quần" product={lowerProduct} onSelect={onOpenLowerCatalog} disabled={selectionLocked} color={lowerColor} /></> : <GarmentCard label="Trang phục" product={selectedProduct} onSelect={onOpenCatalog} disabled={selectionLocked} horizontal color={selectedColor} />}
             </div>
+            {outfitMode ? (
+              <div className="mt-4 grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
+                <ColorSelector product={upperProduct} selectedColor={upperColor} onSelectColor={onSelectUpperColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu áo" />
+                <ColorSelector product={lowerProduct} selectedColor={lowerColor} onSelectColor={onSelectLowerColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu quần" />
+              </div>
+            ) : (
+              <ColorSelector product={selectedProduct} selectedColor={selectedColor} onSelectColor={onSelectColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu trang phục" />
+            )}
             <p className={`mt-4 flex items-start gap-2 text-[12px] leading-5 ${isPaused ? 'text-[#5D1C34]' : 'text-[#8A7871]'}`}>
               {isPaused ? <RefreshCw size={14} className="mt-0.5 shrink-0" /> : <CirclePause size={14} className="mt-0.5 shrink-0" />}
               {isPaused ? 'Chọn lại món bạn thích. Nhấn Tiếp tục để mặc trang phục mới.' : isLive ? 'Muốn đổi đồ? Nhấn Tạm dừng trước khi chọn món mới.' : 'Thử cả bộ vẫn dùng chung thời gian của một phiên.'}
@@ -174,12 +190,8 @@ export function LiveTryOnWorkspace({
 }
 
 function GarmentCard({ label, product, onSelect, disabled, horizontal = false, color }: { label: string; product: Product | null; onSelect: () => void; disabled: boolean; horizontal?: boolean; color?: string | null }) {
-  const matchingImage = color
-    ? product?.imageItems?.find(
-        img => img.colorName && img.colorName.trim().toLowerCase() === color.trim().toLowerCase()
-      )
-    : undefined;
-  const displayImage = matchingImage?.url || product?.image;
+  const resolvedImage = product ? resolveProductImageForColor(product, color) : null;
+  const displayImage = resolvedImage?.url || product?.image;
 
   return (
     <button type="button" onClick={onSelect} disabled={disabled} aria-label={`${product ? 'Đổi' : 'Chọn'} ${label.toLowerCase()}${product ? `: ${product.name}` : ''}`} className={`group w-full min-w-0 overflow-hidden rounded-2xl border border-[#E8DED6] bg-[#FCFAF7] text-left transition-colors hover:border-[#B49789] ${buttonFocus} ${horizontal ? 'flex items-center gap-4 p-3' : 'p-2.5 max-[379px]:flex max-[379px]:items-center max-[379px]:gap-3'}`}>
@@ -188,6 +200,43 @@ function GarmentCard({ label, product, onSelect, disabled, horizontal = false, c
       </div>
       <div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[#987C70]">{label}</p><p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-[#43312C]">{product?.name ?? `Chọn ${label.toLowerCase()} của bạn`}</p><span className="mt-2 inline-flex min-h-6 items-center gap-1 text-[11px] font-medium text-[#6C3045]">{product ? 'Đổi món' : 'Chọn ngay'}<ArrowRight size={12} /></span></div>
     </button>
+  );
+}
+
+function ColorSelector({ product, selectedColor, onSelectColor, disabled, label }: { product: Product | null; selectedColor?: string | null; onSelectColor: (color: string) => void; disabled: boolean; label: string }) {
+  const colors = getValidProductColors(product);
+  if (!product || colors.length < 2) return null;
+  const currentColor = normalizeProductColorName(selectedColor) || normalizeProductColorName(colors[0]?.name);
+
+  return (
+    <div className="mt-4 min-w-0 rounded-2xl border border-[#E9E0D9] bg-[#FCFAF7] p-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#987C70]">{label}</p>
+        <span className="truncate text-[12px] font-semibold text-[#5D1C34]">{selectedColor || colors[0]?.name}</span>
+      </div>
+      <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto pr-1" role="radiogroup" aria-label={label}>
+        {colors.map(color => {
+          const selected = normalizeProductColorName(color.name) === currentColor;
+          return (
+            <button
+              key={color.name}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              disabled={disabled}
+              onClick={() => onSelectColor(color.name)}
+              className={`flex min-h-10 max-w-full items-center gap-2 rounded-full border bg-white px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${buttonFocus} ${selected ? 'border-[#5D1C34] text-[#5D1C34] ring-1 ring-[#5D1C34]' : 'border-[#E2D4CA] text-[#65504A] hover:border-[#B49789]'}`}
+              title={color.name}
+            >
+              <span className="h-5 w-5 shrink-0 rounded-full border border-black/15 ring-1 ring-white" style={{ backgroundColor: color.hex }} />
+              <span className="truncate">{color.name}</span>
+              {selected && <Check size={13} className="shrink-0" />}
+            </button>
+          );
+        })}
+      </div>
+      {disabled && <p className="mt-2 text-[11px] leading-4 text-[#8A7871]">Tạm dừng Live để đổi màu trang phục.</p>}
+    </div>
   );
 }
 

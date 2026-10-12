@@ -140,3 +140,43 @@ export function guessColorHex(color: string) {
   if (normalized.includes('burgundy') || normalized.includes('do') || normalized.includes('red')) return '#5D1C34';
   return '#8b8f98';
 }
+
+export function normalizeProductColorName(color?: string | null) {
+  return color?.trim().toLowerCase() || '';
+}
+
+export function getValidProductColors(product?: Pick<Product, 'colors'> | null) {
+  return (product?.colors || []).filter(color => Boolean(color.name?.trim() && color.hex?.trim()));
+}
+
+export function resolveProductColor(product?: Pick<Product, 'colors'> | null, requestedColor?: string | null) {
+  const colors = getValidProductColors(product);
+  const normalized = normalizeProductColorName(requestedColor);
+  if (normalized) {
+    const match = colors.find(color => normalizeProductColorName(color.name) === normalized);
+    if (match) return match.name;
+  }
+  return colors[0]?.name || null;
+}
+
+export function resolveProductImageForColor(
+  product: Pick<Product, 'image' | 'gallery' | 'imageItems'>,
+  selectedColor?: string | null,
+) {
+  const images = product.imageItems && product.imageItems.length > 0
+    ? product.imageItems
+    : product.gallery?.length
+      ? product.gallery.map((url, index) => ({ url, colorName: null, isMain: index === 0 }))
+      : [{ url: product.image, colorName: null, isMain: true }];
+  const normalizedColor = normalizeProductColorName(selectedColor);
+  const colorImage = normalizedColor
+    ? images.find(image => normalizeProductColorName(image.colorName) === normalizedColor)
+    : undefined;
+  if (colorImage?.url) return { url: colorImage.url, matchedColor: true };
+
+  const genericImage = images.find(image => image.colorName == null && image.url);
+  if (genericImage?.url) return { url: genericImage.url, matchedColor: false };
+
+  const mainImage = images.find(image => image.isMain && image.url);
+  return { url: mainImage?.url || images[0]?.url || product.image, matchedColor: false };
+}

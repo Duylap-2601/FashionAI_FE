@@ -80,8 +80,11 @@ export function pauseLiveTryOnSessionKeepalive(sessionId: string, reason = 'page
   }).catch(() => undefined);
 }
 
-export async function resumeLiveTryOnSession(sessionId: string, productId?: string) {
-  return http.post<LiveTryOnSessionResponse, { productId?: string }>(`/try-on/live/sessions/${sessionId}/resume`, productId ? { productId } : {});
+export async function resumeLiveTryOnSession(sessionId: string, productId?: string, color?: string) {
+  const body: { productId?: string; color?: string } = {};
+  if (productId) body.productId = productId;
+  if (color) body.color = color;
+  return http.post<LiveTryOnSessionResponse, { productId?: string; color?: string }>(`/try-on/live/sessions/${sessionId}/resume`, body);
 }
 
 export function endLiveTryOnSessionKeepalive(sessionId: string, reason = 'pagehide') {

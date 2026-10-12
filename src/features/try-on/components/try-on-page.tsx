@@ -4,7 +4,7 @@ import { fetchTryOnImage } from '@/features/try-on/services/queries';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
-import { toBackendCategory } from '@/features/products/services/products-utils';
+import { resolveProductColor, toBackendCategory } from '@/features/products/services/products-utils';
 import type { Product } from '@/features/products/types/products';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import { QuotaExhaustedModal } from '@/features/stylist/components/QuotaExhaustedModal';
@@ -98,16 +98,16 @@ function VirtualTryOnContent() {
   const [resultSourcePhotoUrl, setResultSourcePhotoUrl] = useState<string | null>(null);
   const [inputError, setInputError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialProduct);
-  const [selectedColor, setSelectedColor] = useState<string | null>(initialColor || initialProduct?.colors?.[0]?.name || null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(() => resolveProductColor(initialProduct, initialColor));
   const [upperProduct, setUpperProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null);
   const [lowerProduct, setLowerProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || null);
   const [upperColor, setUpperColor] = useState<string | null>(() => {
     const p = catalogProducts.find(item => (item.garmentCategory || toBackendCategory(item.category)) === 'UPPER');
-    return p?.colors?.[0]?.name || null;
+    return resolveProductColor(p);
   });
   const [lowerColor, setLowerColor] = useState<string | null>(() => {
     const p = catalogProducts.find(item => (item.garmentCategory || toBackendCategory(item.category)) === 'LOWER');
-    return p?.colors?.[0]?.name || null;
+    return resolveProductColor(p);
   });
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [catalogSlot, setCatalogSlot] = useState<CatalogSlot>('single');
@@ -148,14 +148,14 @@ function VirtualTryOnContent() {
           const cat = match.garmentCategory || toBackendCategory(match.category);
           if (cat === 'UPPER') {
             setUpperProduct(match);
-            setUpperColor(match.colors?.[0]?.name || null);
+            setUpperColor(resolveProductColor(match));
           }
           if (cat === 'LOWER') {
             setLowerProduct(match);
-            setLowerColor(match.colors?.[0]?.name || null);
+            setLowerColor(resolveProductColor(match));
           }
           setSelectedProduct(match);
-          setSelectedColor(match.colors?.[0]?.name || null);
+          setSelectedColor(resolveProductColor(match, initialColor));
           setGarmentMode('single');
         }
       } else if (ids.length >= 2) {
@@ -166,46 +166,53 @@ function VirtualTryOnContent() {
           const cat1 = p1.garmentCategory || toBackendCategory(p1.category);
           if (cat0 === 'UPPER' && cat1 === 'LOWER') {
             setUpperProduct(p0);
-            setUpperColor(p0.colors?.[0]?.name || null);
+            setUpperColor(resolveProductColor(p0));
             setLowerProduct(p1);
-            setLowerColor(p1.colors?.[0]?.name || null);
+            setLowerColor(resolveProductColor(p1));
           } else if (cat0 === 'LOWER' && cat1 === 'UPPER') {
             setUpperProduct(p1);
-            setUpperColor(p1.colors?.[0]?.name || null);
+            setUpperColor(resolveProductColor(p1));
             setLowerProduct(p0);
-            setLowerColor(p0.colors?.[0]?.name || null);
+            setLowerColor(resolveProductColor(p0));
           } else {
             setUpperProduct(p0);
-            setUpperColor(p0.colors?.[0]?.name || null);
+            setUpperColor(resolveProductColor(p0));
             setLowerProduct(p1);
-            setLowerColor(p1.colors?.[0]?.name || null);
+            setLowerColor(resolveProductColor(p1));
           }
           setGarmentMode('combo');
         } else if (p0 || p1) {
           const single = (p0 || p1)!;
           setSelectedProduct(single);
-          setSelectedColor(single.colors?.[0]?.name || null);
+          setSelectedColor(resolveProductColor(single, initialColor));
           setGarmentMode('single');
         }
       }
     } else if (productId) {
       const match = catalogProducts.find(p => p.id === productId);
-      if (match) setSelectedProduct(match);
+      if (match) {
+        setSelectedProduct(match);
+        setSelectedColor(resolveProductColor(match, initialColor));
+      }
     } else if (catalogProducts.length > 0) {
-      setSelectedProduct(prev => prev ?? catalogProducts[0]);
+      setSelectedProduct(prev => {
+        if (prev) return prev;
+        setSelectedColor(resolveProductColor(catalogProducts[0]));
+        return catalogProducts[0];
+      });
     }
 
     if (catalogProducts.length > 0) {
       setUpperProduct(prev => {
         if (prev) return prev;
         const u = catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null;
-        if (u) setUpperColor(u.colors?.[0]?.name || null);
+        if (u) setUpperColor(resolveProductColor(u));
         return u;
       });
       setLowerProduct(prev => {
         if (prev) return prev;
         const l = catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || null;
-        if (l) setLowerColor(l.colors?.[0]?.name || null);
+        if (l) setLowerColor(resolveProductColor(l));
         return l;
       });
     }
@@ -246,14 +253,14 @@ function VirtualTryOnContent() {
     clearResult();
     if (catalogSlot === 'single') {
       setSelectedProduct(product);
-      setSelectedColor(product.colors?.[0]?.name || null);
+      setSelectedColor(resolveProductColor(product));
       router.replace(`/try-on?productId=${product.id}`);
     } else if (catalogSlot === 'upper') {
       setUpperProduct(product);
-      setUpperColor(product.colors?.[0]?.name || null);
+      setUpperColor(resolveProductColor(product));
     } else if (catalogSlot === 'lower') {
       setLowerProduct(product);
-      setLowerColor(product.colors?.[0]?.name || null);
+      setLowerColor(resolveProductColor(product));
     }
   };
 
@@ -476,6 +483,9 @@ function VirtualTryOnContent() {
             onOpenUpperCatalog={() => handleOpenCatalog('upper')}
             onOpenLowerCatalog={() => handleOpenCatalog('lower')}
             onOpenCatalog={() => handleOpenCatalog('single')}
+            onSelectColor={setSelectedColor}
+            onSelectUpperColor={setUpperColor}
+            onSelectLowerColor={setLowerColor}
             onSwitchToPhoto={() => handleTryOnModeChange('photo')}
           />
         ) : selectedProduct ? (

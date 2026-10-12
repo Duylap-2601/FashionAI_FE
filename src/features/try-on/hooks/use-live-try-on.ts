@@ -124,7 +124,7 @@ export function useLiveTryOn() {
     }, 500);
   }, [cleanup, clearCountdown]);
 
-  const start = useCallback(async (productId: string, resumeSessionId?: string, lowerProductId?: string, color?: string) => {
+  const start = useCallback(async (productId: string, resumeSessionId?: string, lowerProductId?: string, color?: string, lowerColor?: string) => {
     const epoch = epochRef.current + 1;
     epochRef.current = epoch;
     const abort = new AbortController();
@@ -151,13 +151,13 @@ export function useLiveTryOn() {
       const outfitReference = lowerProductId
         ? await Promise.all([
           fetchLiveTryOnGarment(productId, abort.signal, color),
-          fetchLiveTryOnGarment(lowerProductId, abort.signal),
+          fetchLiveTryOnGarment(lowerProductId, abort.signal, lowerColor),
         ]).then(([upper, lower]) => prepareLiveOutfitReference(upper, lower, abort.signal))
         : undefined;
       if (epochRef.current !== epoch) return;
       setStatus('connecting');
       const session = resumeSessionId
-        ? await resumeLiveTryOnSession(resumeSessionId, productId)
+        ? await resumeLiveTryOnSession(resumeSessionId, productId, color)
         : await createLiveTryOnSession(productId, crypto.randomUUID(), abort.signal, color);
       setStatus('preparing-garment');
       await preloadImage(session.garment.imageUrl, abort.signal);

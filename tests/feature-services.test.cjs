@@ -343,6 +343,7 @@ test('Sprint 3: try-on and live try-on preserve garment color and product mappin
 
   await queries.fetchLiveTryOnGarment('p-color', signal, 'Đen');
   await mutations.createLiveTryOnSession('p-color', 'idempotency-key-1', signal, 'Đen');
+  await mutations.resumeLiveTryOnSession('session-1', 'p-color', 'Trắng');
 
   assert.equal(calls[1][0], 'get');
   assert.equal(calls[1][1], '/try-on/live/garments/p-color');
@@ -351,6 +352,10 @@ test('Sprint 3: try-on and live try-on preserve garment color and product mappin
   assert.equal(calls[2][0], 'post');
   assert.equal(calls[2][1], '/try-on/live/sessions');
   assert.equal(JSON.stringify(calls[2][2]), JSON.stringify({ productId: 'p-color', color: 'Đen' }));
+
+  assert.equal(calls[3][0], 'post');
+  assert.equal(calls[3][1], '/try-on/live/sessions/session-1/resume');
+  assert.equal(JSON.stringify(calls[3][2]), JSON.stringify({ productId: 'p-color', color: 'Trắng' }));
 
   // 4. Order mapping prioritizes productImageSnapshot
   const { mapOrder } = load('@/features/orders/services/orders-utils');
