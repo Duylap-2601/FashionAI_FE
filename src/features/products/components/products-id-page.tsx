@@ -21,9 +21,17 @@ import { usePinToRack, useRackItems, useUnpinFromRack } from '@/features/rack/ho
 import { ReviewSection } from '@/features/reviews/components/ReviewSection';
 import { useReviewStats } from '@/features/reviews/hooks/useReviews';
 import { X } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+
+type ProductImageItem = { url: string; colorName?: string | null; isMain?: boolean };
+
+type ProductSelection = {
+  productId: string;
+  selectedColor: string;
+  activeThumb: number;
+};
 
 function isComboProduct(product?: Product) {
   return Boolean(
@@ -34,6 +42,54 @@ function isComboProduct(product?: Product) {
   );
 }
 
+function normalizeColorName(color?: string | null) {
+  return color?.trim().toLowerCase() || '';
+}
+
+function getProductImageItems(product: Product): ProductImageItem[] {
+  if (product.imageItems && product.imageItems.length > 0) return product.imageItems;
+  if (product.gallery && product.gallery.length > 0) {
+    return product.gallery.map((url, index) => ({ url, colorName: null, isMain: index === 0 }));
+  }
+  return [{ url: product.image, colorName: null, isMain: true }];
+}
+
+function findValidProductColor(product: Product, color?: string | null) {
+  const normalized = normalizeColorName(color);
+  if (!normalized) return undefined;
+  return product.colors?.find(item => normalizeColorName(item.name) === normalized)?.name;
+}
+
+function resolveDefaultColor(product: Product, requestedColor?: string | null) {
+  return findValidProductColor(product, requestedColor) || product.colors?.[0]?.name || 'Trắng';
+}
+
+function resolveDefaultImageIndex(product: Product, selectedColor: string) {
+  const imageItems = getProductImageItems(product);
+  const selectedColorName = normalizeColorName(selectedColor);
+  const matchingColorIndex = imageItems.findIndex(
+    item => normalizeColorName(item.colorName) === selectedColorName
+  );
+  if (matchingColorIndex !== -1) return matchingColorIndex;
+
+  const genericIndex = imageItems.findIndex(item => item.colorName == null);
+  if (genericIndex !== -1) return genericIndex;
+
+  const mainIndex = imageItems.findIndex(item => item.isMain);
+  if (mainIndex !== -1) return mainIndex;
+
+  return 0;
+}
+
+function resolveInitialProductSelection(product: Product, requestedColor?: string | null): ProductSelection {
+  const selectedColor = resolveDefaultColor(product, requestedColor);
+  return {
+    productId: product.id,
+    selectedColor,
+    activeThumb: resolveDefaultImageIndex(product, selectedColor),
+  };
+}
+
 export default function ProductDetail() {
   const { setIsCartOpen } = useCartPanel();
   const { addToCart } = useCart();
@@ -41,6 +97,8 @@ export default function ProductDetail() {
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedColor = searchParams.get('color');
   const { product: apiProduct, isLoading: isProductLoading } = useProduct(id);
   const { products: allApiProducts } = useProductCatalog();
   const { measurements } = useMeasurements();
@@ -58,8 +116,7 @@ export default function ProductDetail() {
 
   const isComboSuit = isComboProduct(product);
   const [selectedType, setSelectedType] = useState<ComboType>('combo');
-  const [selectedColor, setSelectedColor] = useState(product?.colors?.[0]?.name || 'Trắng');
-  const [activeThumb, setActiveThumb] = useState(0);
+  const [selection, setSelection] = useState<ProductSelection | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('Mô tả sản phẩm');
 
@@ -68,23 +125,33 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (product) {
-      setSelectedColor(product.colors?.[0]?.name || 'Trắng');
-      setActiveThumb(0);
+      setSelection(resolveInitialProductSelection(product, requestedColor));
       setSelectedType('combo');
       setQuantity(1);
     }
-  }, [product]);
+  }, [product, requestedColor]);
 
   if (isProductLoading && !product) return <ProductDetailSkeleton />;
   if (!product) return <ProductNotFound />;
 
-  const thumbs = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
+  const imageItems = getProductImageItems(product);
+  const thumbs = imageItems.map(item => item.url);
+  const initialSelection = resolveInitialProductSelection(product, requestedColor);
+  const currentSelection = selection?.productId === product.id ? selection : initialSelection;
+  const selectedColor = currentSelection.selectedColor;
+  const activeThumb = currentSelection.activeThumb < thumbs.length ? currentSelection.activeThumb : initialSelection.activeThumb;
 
   const handleSelectThumb = (idx: number) => {
-    setActiveThumb(idx);
+    const normalizedIdx = idx % thumbs.length;
+    const imageColor = imageItems[normalizedIdx]?.colorName;
+    const matchedColor = findValidProductColor(product, imageColor);
+    setSelection(prev => ({
+      productId: product.id,
+      selectedColor: matchedColor || (prev?.productId === product.id ? prev.selectedColor : selectedColor),
+      activeThumb: idx,
+    }));
     if (!isComboSuit) return;
 
-    const normalizedIdx = idx % thumbs.length;
     if (normalizedIdx === 0) setSelectedType('combo');
     else if (normalizedIdx === 1) setSelectedType('blazer');
     else if (normalizedIdx === 2) setSelectedType('retail');
@@ -92,21 +159,21 @@ export default function ProductDetail() {
 
   const handleSelectType = (type: ComboType) => {
     setSelectedType(type);
-    if (type === 'combo') setActiveThumb(0);
-    else if (type === 'blazer') setActiveThumb(1);
-    else if (type === 'retail') setActiveThumb(2);
+    const preferredThumb = type === 'combo' ? 0 : type === 'blazer' ? 1 : 2;
+    const nextThumb = Math.min(preferredThumb, thumbs.length - 1);
+    setSelection(prev => ({
+      productId: product.id,
+      selectedColor: prev?.productId === product.id ? prev.selectedColor : selectedColor,
+      activeThumb: nextThumb,
+    }));
   };
 
   const handleSelectColor = (colorName: string) => {
-    setSelectedColor(colorName);
-    if (product?.imageItems && product.imageItems.length > 0) {
-      const matchIdx = product.imageItems.findIndex(
-        img => img.colorName && img.colorName.trim().toLowerCase() === colorName.trim().toLowerCase()
-      );
-      if (matchIdx !== -1) {
-        setActiveThumb(matchIdx);
-      }
-    }
+    setSelection({
+      productId: product.id,
+      selectedColor: colorName,
+      activeThumb: resolveDefaultImageIndex(product, colorName),
+    });
   };
 
   const handleAddToCart = () => {
