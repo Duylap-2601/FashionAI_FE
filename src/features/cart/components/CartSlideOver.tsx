@@ -1,15 +1,24 @@
-import { useCart } from '@/features/cart/store/cartStore';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import type { CartSlideOverProps } from '@/features/cart/types/cart-slide-over';
-import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
+import { Loader2, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
-  const { cartItems: items, updateQuantity, removeFromCart } = useCart();
+  const {
+    cartItems: items,
+    purchasableItems,
+    updateQuantity,
+    removeFromCart,
+    totalPrice: total,
+    isLoading,
+    isError,
+    refetch,
+  } = useCart();
 
   if (!isOpen) return null;
 
-  const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const purchasableQuantity = purchasableItems.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
     <div className="fixed inset-0 z-[100] flex">
@@ -42,7 +51,22 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          {items.length === 0 ? (
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-neutral-400" aria-label="Đang tải giỏ hàng" />
+            </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+              <p className="text-body-md text-brand-navy font-semibold mb-4">Không tải được giỏ hàng</p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="inline-flex items-center justify-center px-6 py-3 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors"
+              >
+                Thử lại
+              </button>
+            </div>
+          ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full p-6 text-center">
               <ShoppingBag className="w-16 h-16 text-neutral-300 mb-4" strokeWidth={1} />
               <p className="text-body-lg text-brand-navy font-semibold mb-2">Giỏ hàng của bạn đang trống</p>
@@ -56,8 +80,10 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
             </div>
           ) : (
             <div className="flex flex-col">
-              {items.map(item => (
-                <div key={item.id} className="p-4 border-b border-neutral-100 relative group">
+              {items.map(item => {
+                const isAvailable = item.available !== false;
+                return (
+                <div key={item.id} className={`p-4 border-b border-neutral-100 relative group ${isAvailable ? '' : 'opacity-60'}`}>
                   <div className="flex gap-4">
                     <Link
                       href={`/products/${item.productId || item.id}`}
@@ -87,13 +113,17 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
                           </Link>
                         </h3>
                         <p className="text-[13px] text-neutral-500 mb-3">{item.variant}</p>
+                        {!isAvailable && (
+                          <p className="text-[12px] font-semibold text-semantic-error -mt-2 mb-3">Sản phẩm đã ngừng bán</p>
+                        )}
                       </div>
 
                       <div className="flex items-center justify-between">
                         <div className="flex items-center border border-neutral-200 rounded-lg h-[32px] bg-white">
                           <button
                             onClick={() => updateQuantity(item.id, -1)}
-                            className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
+                            disabled={!isAvailable}
+                            className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors disabled:cursor-not-allowed"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
@@ -102,7 +132,8 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
                           </div>
                           <button
                             onClick={() => updateQuantity(item.id, 1)}
-                            className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors"
+                            disabled={!isAvailable}
+                            className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-brand-navy transition-colors disabled:cursor-not-allowed"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
@@ -128,16 +159,17 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        {items.length > 0 && (
+        {!isLoading && !isError && items.length > 0 && (
           <div className="p-6 border-t border-neutral-200 bg-white">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-body-sm text-neutral-600">Tạm tính ({items.reduce((a, b) => a + b.quantity, 0)} sản phẩm)</span>
+              <span className="text-body-sm text-neutral-600">Tạm tính ({purchasableQuantity} sản phẩm)</span>
               <span className="text-body-lg font-bold text-brand-navy">{total.toLocaleString('vi-VN')}đ</span>
             </div>
 

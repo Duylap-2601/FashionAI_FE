@@ -3,7 +3,7 @@
 import { HangerIcon } from '@/components/ui/HangerIcon';
 import { useMobileBreakpoint } from '@/components/ui/use-mobile';
 import { useCartPanel } from '@/features/cart/hooks/use-cart-panel';
-import { useCart } from '@/features/cart/store/cartStore';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { DesktopFilterSidebar, MobileFilterSheet, MobileSortSheet } from '@/features/products/components/listing/ProductFilterPanels';
 import { ProductList } from '@/features/products/components/listing/ProductList';
 import { ProductResultsHeader } from '@/features/products/components/listing/ProductResultsHeader';
@@ -272,7 +272,7 @@ export default function ProductListing() {
   };
 
   const handleAddToCart = (product: Product) => {
-    const color = product.colors?.[0]?.name || 'Mặc định';
+    const color = product.colors?.[0]?.name;
     addToCart({
       productId: product.id,
       name: product.name,
@@ -280,7 +280,7 @@ export default function ProductListing() {
       quantity: 1,
       image: product.image,
       color,
-      variant: `Màu: ${color} · May đo`,
+      variant: `Màu: ${color || 'Mặc định'} · May đo`,
     });
 
     toast.custom((t) => (

@@ -1,5 +1,6 @@
 'use client';
 import { queryKeys as reviewsQueryKeys } from '@/features/reviews/services/query-keys';
+import { handleRemoteCartChange } from '@/features/cart/services/cart-sync';
 
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
@@ -10,6 +11,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Info, MessageSquare, Package, Tag } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
+
+// Socket là singleton (lib/realtimeSocket) nên giữ handler 'reconnect' ở module để gỡ đúng
+// handler cũ khi effect chạy lại.
+let reconnectCartHandler: (() => void) | null = null;
 
 function getToastIcon(type: NotificationType) {
   switch (type) {
@@ -78,8 +83,18 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           });
         };
 
+        // Giỏ đổi ở thiết bị khác (hoặc BE vừa bỏ món đã thanh toán): tải lại giỏ. Kết nối
+        // lại sau khi rớt mạng cũng tải lại vì có thể đã lỡ event trong lúc mất kết nối.
+        const handleCartUpdated = () => handleRemoteCartChange(queryClient);
+
         socket.off('notification');
         socket.on('notification', handleNotification);
+        socket.off('cart:updated');
+        socket.on('cart:updated', handleCartUpdated);
+        // off() không truyền handler sẽ gỡ mọi listener 'reconnect', nên chỉ gỡ handler cũ của mình.
+        if (reconnectCartHandler) socket.io.off('reconnect', reconnectCartHandler);
+        reconnectCartHandler = handleCartUpdated;
+        socket.io.on('reconnect', reconnectCartHandler);
       } catch (err) {
         console.warn('[Realtime] Failed to initialize socket:', err);
       }

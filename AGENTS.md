@@ -67,8 +67,15 @@ src/
 │   │                        #           password-mutations.ts, mutation-keys.ts
 │   │                        # components: AuthBootstrap, AdminGuard, AuthLayout,
 │   │                        #             OnboardingModal, *-page.tsx
-│   ├── cart/                # components/ hooks/ store/ types/
-│   │                        # store: cartStore.ts (Zustand)
+│   ├── cart/                # components/ hooks/ services/ store/ types/
+│   │                        # hooks: use-cart.ts (server cart when logged in,
+│   │                        #        guest store otherwise)
+│   │                        # services: queries.ts, mutations.ts, query-keys.ts,
+│   │                        #           mutation-keys.ts, cart-mapper.ts,
+│   │                        #           cart-sync.ts (shared server-cart mutation
+│   │                        #           options, realtime/focus refresh, login sync)
+│   │                        # store: cartStore.ts (Zustand guest cart)
+│   │                        # components: CartSync (merge guest cart on login)
 │   ├── chat/                # components/ constants/ hooks/ services/ types/
 │   │                        # services: queries.ts, mutations.ts, chat-utils.ts
 │   ├── checkout/            # components/ constants/ hooks/ services/ types/
@@ -234,9 +241,16 @@ src/
   `checkoutUrl`, open `checkoutUrl` in a new tab/window, and poll
   `GET /payments/:paymentId` until terminal status. Do not depend on ZaloPay
   browser redirect as the source of truth.
-- Clear the cart only after payment polling confirms `PAID`, not immediately
-  after checkout link creation. Clearing early unmounts the checkout page and
-  hides the payment modal.
+- The logged-in cart lives on the backend (`/cart`) and syncs across devices;
+  the Zustand `stale_cart` store is only the guest cart, merged into the server
+  cart by `CartSync` on login. Components use `useCart` from
+  `features/cart/hooks/use-cart.ts`, never the store or HTTP directly.
+- After an order is paid the backend removes the purchased lines from the
+  server cart and emits `cart:updated`. Checkout only calls
+  `refreshAfterPayment` once payment polling confirms `PAID`; do not call
+  `DELETE /cart` (it would drop items added from another device). Checkout keeps
+  its item list locked while a payment is pending, so the cart refresh cannot
+  unmount the checkout page or hide the payment modal.
 - `/payment/result` should be able to poll by `paymentId` when the backend embeds
   it in the redirect URL. If a gateway redirect lacks `paymentId`, send the user
   to their order history/detail page instead of assuming success.

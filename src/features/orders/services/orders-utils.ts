@@ -47,6 +47,7 @@ export function mapOrder(order: BackendOrder): Order {
       productId: item.productId,
       quantity: item.quantity,
       color: item.color || '',
+      comboType: item.comboType ?? undefined,
       price: Number(item.price),
       productSkuSnapshot: item.productSkuSnapshot,
       productImageSnapshot: item.productImageSnapshot,

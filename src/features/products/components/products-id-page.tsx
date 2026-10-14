@@ -3,7 +3,7 @@
 import { useCartPanel } from '@/features/cart/hooks/use-cart-panel';
 import { HangerIcon } from '@/components/ui/HangerIcon';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { useCart } from '@/features/cart/store/cartStore';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { ProductBreadcrumb } from '@/features/products/components/detail/ProductBreadcrumb';
@@ -194,7 +194,8 @@ export default function ProductDetail() {
       price,
       quantity,
       image: thumbs[activeThumb] || product.image,
-      color: selectedColor,
+      // Sản phẩm không khai báo màu: selectedColor chỉ là nhãn hiển thị ("Trắng"), không gửi lên giỏ.
+      color: product.colors?.length ? selectedColor : undefined,
       variant: `Màu: ${selectedColor} · Đặt may theo số đo`,
       type: isComboSuit ? selectedType : undefined,
     });
@@ -208,7 +209,7 @@ export default function ProductDetail() {
   };
 
   const handleAddRelatedToCart = (relatedProduct: Product) => {
-    const color = relatedProduct.colors?.[0]?.name || 'Mặc định';
+    const color = relatedProduct.colors?.[0]?.name;
     addToCart({
       productId: relatedProduct.id,
       name: relatedProduct.name,
@@ -216,7 +217,7 @@ export default function ProductDetail() {
       quantity: 1,
       image: relatedProduct.image,
       color,
-      variant: `Màu: ${color} · May đo`,
+      variant: `Màu: ${color || 'Mặc định'} · May đo`,
     });
     toast.success(`Đã thêm ${relatedProduct.name} vào giỏ`, { duration: 2500 });
   };

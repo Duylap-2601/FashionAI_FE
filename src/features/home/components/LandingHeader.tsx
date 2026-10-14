@@ -4,7 +4,7 @@ import type { LandingHeaderProps } from '@/features/home/types/landing-header';
 import { HangerIcon } from '@/components/ui/HangerIcon';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useCart } from '@/features/cart/store/cartStore';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import {
   LogOut, Package,

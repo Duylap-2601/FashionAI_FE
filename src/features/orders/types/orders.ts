@@ -1,7 +1,10 @@
+import type { ComboType } from '@/features/products/types/product-detail-config';
+
 export interface OrderItemInput {
   productId: string;
   quantity: number;
   color?: string;
+  comboType?: ComboType;
   price: number;
 }
 
@@ -133,6 +136,7 @@ export interface OrderItem {
   productId: string;
   quantity: number;
   color?: string;
+  comboType?: ComboType;
   price: number;
   productSkuSnapshot?: string | null;
   productImageSnapshot?: string | null;
@@ -196,6 +200,7 @@ export interface BackendOrderItem {
   productId: string;
   quantity: number;
   color?: string | null;
+  comboType?: ComboType | null;
   price: number | string;
   productSkuSnapshot?: string | null;
   productImageSnapshot?: string | null;

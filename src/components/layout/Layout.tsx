@@ -6,7 +6,7 @@ import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import type { UserTier } from '@/features/auth/types/auth';
 import { CartSlideOver } from '@/features/cart/components/CartSlideOver';
-import { useCart } from '@/features/cart/store/cartStore';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { FloatingChat } from '@/features/chat/components/FloatingChat';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { HeaderSearch } from '@/features/products/components/HeaderSearch';
