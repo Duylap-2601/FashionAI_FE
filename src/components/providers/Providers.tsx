@@ -11,6 +11,11 @@ const AuthBootstrap = dynamic(
   { ssr: false },
 );
 
+const CartSync = dynamic(
+  () => import('@/features/cart/components/CartSync').then((mod) => mod.CartSync),
+  { ssr: false },
+);
+
 const RealtimeProvider = dynamic(
   () => import('@/components/providers/RealtimeProvider').then((mod) => mod.RealtimeProvider),
   { ssr: false },
@@ -60,6 +65,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthBootstrap />
+      <CartSync />
       <RealtimeProvider>
         {children}
         <Toaster />

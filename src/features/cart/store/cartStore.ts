@@ -2,6 +2,7 @@ import type { CartStore } from '@/features/cart/types/cart-store';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// Giỏ khách: chỉ dùng khi chưa đăng nhập. Đăng nhập thì CartSync gộp lên server rồi xoá.
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
@@ -17,9 +18,11 @@ export const useCartStore = create<CartStore>()(
         );
 
         if (existingIndex > -1) {
-          const updated = [...prev];
-          updated[existingIndex].quantity += newItem.quantity;
-          set({ cartItems: updated });
+          set({
+            cartItems: prev.map((item, index) =>
+              index === existingIndex ? { ...item, quantity: item.quantity + newItem.quantity } : item
+            ),
+          });
         } else {
           const id = `${newItem.productId}-${newItem.color || 'default'}-${newItem.type || ''}-${Date.now()}`;
           set({ cartItems: [...prev, { ...newItem, id }] });
@@ -39,22 +42,11 @@ export const useCartStore = create<CartStore>()(
         });
       },
       clearCart: () => set({ cartItems: [] }),
-      totalItems: () => get().cartItems.reduce((acc, item) => acc + item.quantity, 0),
-      totalPrice: () => get().cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0),
     }),
     {
       name: 'stale_cart', // local storage key
+      // Không lưu trạng thái mở panel: tải lại trang không tự bật giỏ hàng.
+      partialize: (state) => ({ cartItems: state.cartItems }),
     }
   )
 );
-
-export function useCart() {
-  const store = useCartStore();
-  const totalItems = useCartStore(state => state.totalItems());
-  const totalPrice = useCartStore(state => state.totalPrice());
-  return {
-    ...store,
-    totalItems,
-    totalPrice
-  };
-}

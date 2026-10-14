@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProductGridProps } from '@/features/home/types/product-grid';
-import { useCart } from '@/features/cart/store/cartStore';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { GARMENT_TYPE_TABS } from '@/features/products/constants/product-filters';
 import { matchesGarmentType } from '@/features/products/services/product-filters';
 import type { Product } from '@/features/products/types/products';

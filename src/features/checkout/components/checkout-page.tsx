@@ -3,7 +3,9 @@
 import { CheckoutSummary } from '@/features/checkout/components/checkout-summary';
 import { DeliveryOptions } from '@/features/checkout/components/delivery-options';
 import type { CheckoutPaymentMethod } from '@/features/checkout/types/delivery-options';
-import { useCart } from '@/features/cart/store/cartStore';
+import { useCart } from '@/features/cart/hooks/use-cart';
+import { toCartLineInput } from '@/features/cart/services/cart-mapper';
+import type { CartItem } from '@/features/cart/types/cart-store';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
 import { quoteOrder } from '@/features/orders/services/mutations';
@@ -26,7 +28,21 @@ function formatCheckoutAddress(address: { addressLine: string; wardName: string;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cartItems: items, totalPrice, clearCart } = useCart();
+  const {
+    cartItems,
+    purchasableItems,
+    totalPrice,
+    refreshAfterPayment,
+    isLoading: isCartLoading,
+    isError: isCartError,
+    refetch: refetchCart,
+  } = useCart();
+  // Từ lúc bấm đặt hàng tới khi thanh toán xong, giữ nguyên danh sách món và báo giá: giỏ
+  // có thể đổi giữa chừng (thiết bị khác, hoặc BE bỏ món đã mua ngay khi nhận tiền kèm
+  // realtime), trang không được báo giá lại, đổi số tiền, hay nhảy sang "giỏ trống" và mất modal.
+  const [lockedItems, setLockedItems] = useState<CartItem[] | null>(null);
+  const items = lockedItems ?? purchasableItems;
+  const unavailableCount = cartItems.length - purchasableItems.length;
   const { canOrder, completeness } = useMeasurementsCompleteness();
   const { createOrderAsync, isSubmitting } = useCreateOrder();
   const { checkout, isLoading: isCheckoutLoading } = useCheckout();
@@ -58,6 +74,7 @@ export default function CheckoutPage() {
     let isMounted = true;
 
     async function loadQuote() {
+      if (lockedItems) return;
       if (!selectedAddress || items.length === 0) {
         setOrderQuote(null);
         setDiscount(0);
@@ -69,12 +86,7 @@ export default function CheckoutPage() {
       setPricingError(null);
       try {
         const quote = await quoteOrder({
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            color: item.color,
-            price: item.price,
-          })),
+          items: items.map((item) => ({ ...toCartLineInput(item), price: item.price })),
           shippingAddressId: selectedAddress.id,
           addressVersion: selectedAddress.version,
           shippingNote: notes,
@@ -109,7 +121,7 @@ export default function CheckoutPage() {
     return () => {
       isMounted = false;
     };
-  }, [appliedCoupon, items, notes, selectedAddress]);
+  }, [appliedCoupon, items, lockedItems, notes, selectedAddress]);
 
   const shippingFee = orderQuote?.shippingFee ?? 0;
   const total = orderQuote?.totalAmount ?? Math.max(0, totalPrice);
@@ -242,14 +254,10 @@ export default function CheckoutPage() {
       return;
     }
 
+    setLockedItems(items);
     try {
       const order = await createOrderAsync({
-        items: items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          color: item.color,
-          price: item.price,
-        })),
+        items: items.map((item) => ({ ...toCartLineInput(item), price: item.price })),
         shippingAddressId: selectedAddress.id,
         addressVersion: selectedAddress.version,
         shippingNote: notes,
@@ -282,6 +290,7 @@ export default function CheckoutPage() {
         router.push(`/orders/${orderId}`);
       }
     } catch (error: unknown) {
+      setLockedItems(null);
       console.error('Failed to create order:', error);
       const data = getErrorData(error);
       if (data?.code === 'MEASUREMENTS_INCOMPLETE') {
@@ -301,13 +310,43 @@ export default function CheckoutPage() {
     }
   };
 
+  if (isCartError && !lockedItems) {
+    return (
+      <div className="bg-brand-cream min-h-screen py-20 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-2xl border border-neutral-200 shadow-sm max-w-md w-full text-center">
+          <h2 className="text-[20px] font-bold text-brand-navy mb-2">Không tải được giỏ hàng</h2>
+          <p className="text-neutral-500 mb-6">Vui lòng kiểm tra kết nối mạng rồi thử lại.</p>
+          <button
+            type="button"
+            onClick={() => refetchCart()}
+            className="inline-flex items-center justify-center px-6 py-3 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isCartLoading && !lockedItems) {
+    return (
+      <div className="bg-brand-cream min-h-screen py-20 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-navy" aria-label="Đang tải giỏ hàng" />
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div className="bg-brand-cream min-h-screen py-20 flex items-center justify-center">
         <div className="bg-white p-8 rounded-2xl border border-neutral-200 shadow-sm max-w-md w-full text-center">
           <ShoppingBag className="w-16 h-16 text-neutral-300 mx-auto mb-4" strokeWidth={1} />
           <h2 className="text-[20px] font-bold text-brand-navy mb-2">Giỏ hàng trống</h2>
-          <p className="text-neutral-500 mb-6">Bạn chưa có sản phẩm nào trong giỏ hàng để thực hiện thanh toán.</p>
+          <p className="text-neutral-500 mb-6">
+            {unavailableCount > 0
+              ? 'Các sản phẩm trong giỏ hiện đã ngừng bán, vui lòng chọn sản phẩm khác.'
+              : 'Bạn chưa có sản phẩm nào trong giỏ hàng để thực hiện thanh toán.'}
+          </p>
           <Link
             href="/products"
             className="inline-flex items-center justify-center px-6 py-3 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors"
@@ -322,6 +361,12 @@ export default function CheckoutPage() {
   return (
     <div className="bg-brand-cream min-h-screen pb-20">
       <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8">
+        {unavailableCount > 0 && !lockedItems && (
+          <div className="mb-6 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-body-sm text-amber-800">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {unavailableCount} sản phẩm trong giỏ đã ngừng bán nên không được đưa vào đơn hàng này.
+          </div>
+        )}
         <div className="flex items-center gap-3 text-label-sm font-medium mb-12">
           <span className="text-brand-navy font-bold">1. Thông tin giao hàng</span>
           <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -458,9 +503,10 @@ export default function CheckoutPage() {
           onClose={() => {
             setPendingCheckout(null);
             setPendingOrderId(null);
+            setLockedItems(null);
             toast.info('Đơn hàng đã được tạo. Bạn có thể tiếp tục thanh toán trong trang chi tiết đơn hàng.');
           }}
-          onPaid={clearCart}
+          onPaid={refreshAfterPayment}
         />
       )}
 
@@ -474,6 +520,7 @@ export default function CheckoutPage() {
                 onClick={() => {
                   setPendingCheckout(null);
                   setPendingOrderId(null);
+                  setLockedItems(null);
                 }}
                 className="text-neutral-400 hover:text-brand-navy"
                 aria-label="Đóng"

@@ -7,6 +7,7 @@ function toCreateOrderBody(payload: CreateOrderRequest) {
       productId: item.productId,
       quantity: item.quantity,
       color: item.color,
+      comboType: item.comboType,
       price: item.price,
     })),
     shippingInfo: payload.shippingInfo ? {

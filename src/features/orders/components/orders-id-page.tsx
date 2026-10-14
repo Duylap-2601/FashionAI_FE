@@ -1,7 +1,7 @@
 'use client';
 
 import { STATUS_MAP, TAILORING_STEPS } from '@/features/orders/constants/orders-id-page';
-import { useCart } from '@/features/cart/store/cartStore';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
 import { OrderIssuesList } from '@/features/orders/components/order-issues-list';
 import { ReportIssueModal } from '@/features/orders/components/report-issue-modal';
@@ -132,7 +132,8 @@ export default function OrderDetailPage() {
         name: item.product?.name || 'Trang phục FashionAI',
         price: item.price,
         quantity: item.quantity,
-        color: item.color || 'Mặc định',
+        color: item.color || undefined,
+        type: item.comboType,
         image: item.product?.images?.[0] || '/images/726470431_1311184104081177_6052756217829444481_n.png',
         variant: `Màu: ${item.color || 'Mặc định'} · May đo`
       });

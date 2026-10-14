@@ -1,15 +1,50 @@
 'use client';
 
-import { useCart } from '@/features/cart/store/cartStore';
-import { ArrowRight, ChevronLeft, Minus, Plus, RotateCcw, ShieldCheck, ShoppingBag, Trash2, Truck } from 'lucide-react';
+import { useCart } from '@/features/cart/hooks/use-cart';
+import { ArrowRight, ChevronLeft, Loader2, Minus, Plus, RotateCcw, ShieldCheck, ShoppingBag, Trash2, Truck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function CartPage() {
-  const { cartItems: items, updateQuantity, removeFromCart, clearCart } = useCart();
+  const {
+    cartItems: items,
+    purchasableItems,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    totalPrice: total,
+    isLoading,
+    isError,
+    refetch,
+  } = useCart();
 
-  const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const totalQuantity = items.reduce((acc, item) => acc + item.quantity, 0);
+  const totalQuantity = purchasableItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  if (isLoading) {
+    return (
+      <div className="bg-neutral-50 min-h-screen py-16 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-navy" aria-label="Đang tải giỏ hàng" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-brand-cream min-h-screen py-16 px-4">
+        <div className="max-w-[560px] mx-auto bg-white rounded-2xl border border-neutral-200 p-8 md:p-12 text-center shadow-sm">
+          <h1 className="text-[24px] font-bold text-brand-navy mb-2">Không tải được giỏ hàng</h1>
+          <p className="text-body-md text-neutral-500 mb-8">Vui lòng kiểm tra kết nối mạng rồi thử lại.</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="h-[50px] px-8 bg-brand-navy text-white text-body-md font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -69,8 +104,10 @@ export default function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left: Items list (8 cols) */}
           <div className="lg:col-span-8 bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden divide-y divide-neutral-100">
-            {items.map((item) => (
-              <div key={item.id} className="p-5 md:p-6 flex flex-col sm:flex-row gap-5 relative group">
+            {items.map((item) => {
+              const isAvailable = item.available !== false;
+              return (
+              <div key={item.id} className={`p-5 md:p-6 flex flex-col sm:flex-row gap-5 relative group ${isAvailable ? '' : 'opacity-60'}`}>
                 <Link
                   href={`/products/${item.productId || item.id}`}
                   className="w-full sm:w-[100px] h-[120px] rounded-xl overflow-hidden shrink-0 hover:opacity-85 transition-opacity relative"
@@ -98,6 +135,11 @@ export default function CartPage() {
                       </Link>
                     </h3>
                     <p className="text-label-sm text-neutral-500 mb-3">{item.variant}</p>
+                    {!isAvailable && (
+                      <p className="text-label-sm font-semibold text-semantic-error -mt-2 mb-3">
+                        Sản phẩm đã ngừng bán, không được tính vào đơn hàng
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between mt-auto">
@@ -105,7 +147,8 @@ export default function CartPage() {
                     <div className="flex items-center border border-neutral-300 rounded-xl h-[38px] bg-white shadow-2xs">
                       <button
                         onClick={() => updateQuantity(item.id, -1)}
-                        className="w-10 h-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-l-xl transition-colors"
+                        disabled={!isAvailable}
+                        className="w-10 h-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-l-xl transition-colors disabled:cursor-not-allowed"
                         aria-label="Giảm số lượng"
                       >
                         <Minus className="w-3.5 h-3.5" />
@@ -115,7 +158,8 @@ export default function CartPage() {
                       </div>
                       <button
                         onClick={() => updateQuantity(item.id, 1)}
-                        className="w-10 h-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-r-xl transition-colors"
+                        disabled={!isAvailable}
+                        className="w-10 h-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-r-xl transition-colors disabled:cursor-not-allowed"
                         aria-label="Tăng số lượng"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -145,7 +189,8 @@ export default function CartPage() {
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Right: Order Summary (4 cols) */}

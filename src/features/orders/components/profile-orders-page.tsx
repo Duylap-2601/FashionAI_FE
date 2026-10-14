@@ -2,7 +2,7 @@
 
 import { FILTER_TABS, STATUS_CONFIG, STEPS } from '@/features/orders/constants/profile-orders-page';
 import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
-import { useCart } from '@/features/cart/store/cartStore';
+import { useCart } from '@/features/cart/hooks/use-cart';
 import { useCancelOrder, useConfirmDelivery, useInfiniteOrders } from '@/features/orders/hooks/useOrders';
 import type { BackendOrderStatus, Order, OrderItem } from '@/features/orders/types/orders';
 import { WriteReviewModal } from '@/features/reviews/components/WriteReviewModal';
@@ -128,7 +128,8 @@ function OrderCard({
         name: item.product?.name || 'Sản phẩm công sở',
         price: item.price,
         quantity: item.quantity,
-        color: item.color || 'Mặc định',
+        color: item.color || undefined,
+        type: item.comboType,
         image: getProductImage(item),
         variant: `Màu: ${item.color || 'Mặc định'} · May đo`
       });
