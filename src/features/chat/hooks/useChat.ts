@@ -20,6 +20,7 @@ import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
 import { getValidAccessToken } from '@/lib/api';
 import { initChatSocket } from '@/lib/realtimeSocket';
+import { trackEvent } from '@/lib/analytics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { toast } from 'sonner';
@@ -336,6 +337,7 @@ export function useChat(options: UseChatOptions = {}) {
     async (content: string, sendOptions: SendMessageOptions = {}) => {
       const trimmed = content.trim();
       if (!trimmed || isStreaming) return;
+      if (!sendOptions.retryMessageId) trackEvent('chat_message_send', { has_product: Boolean(sendOptions.productId) });
 
       // Abort any ongoing stream
       if (abortControllerRef.current) {

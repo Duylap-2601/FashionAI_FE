@@ -6,7 +6,8 @@ import { queryKeys as paymentsQueryKeys } from '@/features/payments/services/que
 import { checkout } from '@/features/payments/services/mutations';
 import { fetchPaymentOrders, fetchPaymentStatus } from '@/features/payments/services/queries';
 import { extractErrorMessage } from '@/features/payments/services/payments-utils';
-import type { PaymentOrder, PaymentStatusResponse } from '@/features/payments/types/payments';
+import { getAnalyticsIds } from '@/lib/analytics';
+import type { CheckoutRequest, PaymentOrder, PaymentStatusResponse } from '@/features/payments/types/payments';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 /**
@@ -16,7 +17,8 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 export function useCheckout() {
   const mutation = useMutation({
     mutationKey: mutationKeys.checkout(),
-    mutationFn: checkout,
+    // Gửi kèm định danh GA4 để BE gửi purchase vào đúng phiên (rỗng nếu chưa đồng ý cookie).
+    mutationFn: async (payload: CheckoutRequest) => checkout({ ...payload, ...(await getAnalyticsIds()) }),
   });
 
   return {

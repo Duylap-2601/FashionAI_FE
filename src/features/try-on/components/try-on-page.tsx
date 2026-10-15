@@ -18,6 +18,7 @@ import { MOCK_USER_PHOTO } from '@/features/try-on/constants/try-on-types';
 import { useTryOn } from '@/features/try-on/hooks/useTryOn';
 import type { GarmentSlotInput } from '@/features/try-on/types/try-on';
 import type { CatalogSlot, GarmentMode, PageState, TryOnErrorBody } from '@/features/try-on/types/try-on-types';
+import { trackEvent } from '@/lib/analytics';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -315,6 +316,7 @@ function VirtualTryOnContent() {
       }
 
       const result = await tryOnAsync(payload);
+      trackEvent('try_on_generate', { garment_count: payload.garments?.length || 1 });
       setResultPhotoUrl(result.resultUrl);
       setResultSourcePhotoUrl(currentUserPhotoUrl);
       setPageState('result');

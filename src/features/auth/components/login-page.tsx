@@ -2,6 +2,7 @@
 
 import { AuthSplitLayout, GoogleButton } from '@/features/auth/components/AuthLayout';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { trackEvent } from '@/lib/analytics';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -57,6 +58,7 @@ function LoginFormContent() {
         }
       } else {
         const role = res?.user?.role;
+        if (role !== 'ADMIN') trackEvent('login', { method: 'email' });
         if (role === 'ADMIN') {
           const targetUrl = callbackUrl && callbackUrl.startsWith('/admin') ? callbackUrl : '/admin/dashboard';
           router.push(targetUrl);

@@ -6,6 +6,7 @@ import { clearRack, pinToRack, unpinFromRack } from '@/features/rack/services/mu
 import { fetchRackItems } from '@/features/rack/services/queries';
 import type { RackItem } from '@/features/rack/types/rack';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { trackEvent } from '@/lib/analytics';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useRackItems() {
@@ -42,7 +43,8 @@ export function usePinToRack() {
   const mutation = useMutation({
     mutationKey: mutationKeys.pinToRack(),
     mutationFn: pinToRack,
-    onSuccess: () => {
+    onSuccess: (_data, productId) => {
+      trackEvent('add_to_wishlist', { items: [{ item_id: productId }] });
       queryClient.invalidateQueries({ queryKey: rackQueryKeys.rack() });
     },
   });
