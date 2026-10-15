@@ -2,6 +2,8 @@ import { sendGAEvent } from '@next/third-parties/google';
 
 // Next chỉ inline biến NEXT_PUBLIC_* khi viết nguyên văn process.env.<TÊN>.
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '';
+// Bật để in mọi lệnh gửi GA4 ra console và đẩy hit vào DebugView của GA4.
+export const GA_DEBUG = process.env.NEXT_PUBLIC_GA_DEBUG === 'true';
 
 export const ANALYTICS_CONSENT_STORAGE_KEY = 'fashionai_analytics_consent';
 export const OPEN_COOKIE_SETTINGS_EVENT = 'fashionai:open-cookie-settings';
@@ -57,8 +59,13 @@ function isAnalyticsActive() {
   return Boolean(GA_MEASUREMENT_ID) && typeof window !== 'undefined';
 }
 
+export function logAnalyticsDebug(...args: unknown[]) {
+  if (GA_DEBUG) console.info('[GA4]', ...args);
+}
+
 function gtag(...args: unknown[]) {
   if (!isAnalyticsActive()) return;
+  logAnalyticsDebug(...args);
   sendGAEvent(...(args as object[]));
 }
 
@@ -84,6 +91,7 @@ export function identifyAnalyticsUser(user: { id: string; tier: string } | null)
 export function setAnalyticsDisabled(disabled: boolean) {
   if (!isAnalyticsActive()) return;
   (window as unknown as Record<string, unknown>)[`ga-disable-${GA_MEASUREMENT_ID}`] = disabled;
+  logAnalyticsDebug(disabled ? 'ĐANG TẮT gửi dữ liệu (tài khoản ADMIN hoặc trang /admin)' : 'Đang gửi dữ liệu');
 }
 
 export function readAnalyticsConsent(): AnalyticsConsent | null {

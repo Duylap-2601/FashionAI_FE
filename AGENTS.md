@@ -51,11 +51,28 @@ src/
 │   ├── layout.tsx           # Root layout
 │   └── page.tsx             # Home page (thin wrapper)
 ├── features/
-│   ├── admin/               # components/ constants/ services/ types/
+│   ├── admin/               # components/ constants/ hooks/ services/ types/
 │   │                        # services: queries.ts, mutations.ts, format.ts,
-│   │                        #           api.ts, requests.ts, <panel>.ts (type files)
-│   │                        # components: dashboard-overview, admin-*-panel,
-│   │                        #             admin-*-modal, admin-pagination,
+│   │                        #           admin-mappers.ts (DTO -> UI model),
+│   │                        #           admin-list-loaders.ts (one list page per
+│   │                        #           query), admin-list-filters.ts,
+│   │                        #           dashboard-metrics.ts, product-editor.ts,
+│   │                        #           admin-list-controller.ts (list query +
+│   │                        #           request lifecycle, framework-free)
+│   │                        # types: api.ts, requests.ts, <panel>.ts (props)
+│   │                        # hooks: use-admin-dashboard (composes the page),
+│   │                        #        use-admin-paginated-list (wraps the list
+│   │                        #        controller, returns panelProps),
+│   │                        #        use-admin-products/-orders/-shipments/
+│   │                        #        -order-issues/-users, use-admin-product-editor,
+│   │                        #        use-admin-overview-data (stats, reviews),
+│   │                        #        use-admin-navigation, use-admin-auto-refresh,
+│   │                        #        use-latest-ref
+│   │                        # components: admin-dashboard-page (layout only),
+│   │                        #             admin-sidebar, admin-topbar,
+│   │                        #             dashboard-overview, admin-revenue-chart,
+│   │                        #             admin-*-panel, admin-*-modal,
+│   │                        #             admin-pagination,
 │   │                        #             admin-live-try-on-settings-panel,
 │   │                        #             admin-shipping-settings-panel,
 │   │                        #             admin-webhook-failures-panel,
@@ -156,8 +173,16 @@ src/
   Keep layouts, route handlers, metadata, and route configuration in `app/`.
 - Preserve file names when moving files. New file names use kebab-case; React
   components use PascalCase, and hooks start with `use`.
-- `features/admin/services/` uses per-panel type files (e.g., `admin-orders-panel.ts`)
-  alongside `queries.ts` and `mutations.ts`; follow the same pattern when adding panels.
+- `features/admin/types/` uses per-panel props type files (e.g., `admin-orders-panel.ts`);
+  follow the same pattern when adding panels.
+- The admin dashboard page only lays out the sidebar, topbar, tabs and modals. State and
+  fetching live in `features/admin/hooks/`, composed by `useAdminDashboard`. A new list
+  tab gets a loader in `admin-list-loaders.ts` and a hook built on
+  `useAdminPaginatedList`, whose `panelProps` are spread into the panel (lists paged on
+  the client, like users, build the same props with `useAdminListPanelProps`). Keep fetch
+  callbacks identity-stable: effects depend on them, and an unstable fetcher re-runs
+  the initial load in a loop. Nav items, page titles, default filters/pagination and
+  refresh intervals belong in `constants/admin-dashboard-page.ts`.
 - `products/services/` contains utility modules (`product-filters.ts`, `products-utils.ts`,
   `combo-pricing.ts`) in addition to `queries.ts`; keep them here, not in `lib/`.
 
