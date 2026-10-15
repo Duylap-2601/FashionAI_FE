@@ -9,6 +9,20 @@ export type AdminImageDto = string | {
   colorName?: string | null;
 };
 
+interface AdminListMeta {
+  total?: number;
+  totalPages?: number;
+  page?: number;
+}
+
+export interface AdminPaginatedResponse<T = unknown> {
+  items?: T[];
+  total?: number;
+  meta?: AdminListMeta;
+  __meta?: AdminListMeta;
+  pagination?: AdminListMeta;
+}
+
 export interface AdminProductDto extends Omit<AdminProduct, 'image' | 'images' | 'price'> {
   images?: AdminImageDto[];
   price: string | number;

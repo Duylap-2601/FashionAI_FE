@@ -1,14 +1,110 @@
-import type { GarmentCategory, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
-import type { OrderDisplayStatus } from '@/features/orders/types/orders';
+import type { AdminNavItem, AdminPage, AdminPagination, GarmentCategory, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
+import type { AdminOrderIssueFilters } from '@/features/admin/types/admin-order-issues-panel';
+import type { AdminOrderFilters } from '@/features/admin/types/admin-orders-panel';
+import type { AdminProductFilters } from '@/features/admin/types/admin-products-panel';
+import type { AdminShipmentFilters } from '@/features/admin/types/admin-shipments-panel';
+import type { AdminUserFilters } from '@/features/admin/types/admin-users-panel';
+import type { BackendOrderStatus, OrderDisplayStatus } from '@/features/orders/types/orders';
 import type { LucideIcon } from 'lucide-react';
 import {
+  AlertTriangle,
+  BarChart3,
   CheckCircle2,
   Clock,
+  Layers,
+  LayoutDashboard,
+  MessageSquare,
+  Package,
+  Radio,
   RotateCcw,
   Scissors,
+  ShieldAlert,
+  ShoppingBag,
+  Tag,
   Truck,
+  Users,
   XCircle
 } from 'lucide-react';
+
+export const ADMIN_PAGES: AdminPage[] = ['dashboard', 'analytics', 'products', 'collections', 'users', 'orders', 'shipments', 'order-issues', 'coupons', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
+
+export function isAdminPage(value: string | null | undefined): value is AdminPage {
+  return Boolean(value && ADMIN_PAGES.includes(value as AdminPage));
+}
+
+// 'webhook-failures' vẫn mở được qua URL/notification nhưng không có mục riêng trên sidebar.
+export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'analytics', label: 'Phân tích', icon: BarChart3 },
+  { id: 'products', label: 'Sản phẩm', icon: Package },
+  { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
+  { id: 'users', label: 'Người dùng', icon: Users },
+  { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
+  { id: 'shipments', label: 'Vận đơn', icon: Truck },
+  { id: 'order-issues', label: 'Báo lỗi & Đổi trả', icon: ShieldAlert },
+  { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
+  { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
+  { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
+  { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
+  { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
+];
+
+export const ADMIN_PAGE_TITLES: Record<AdminPage, string> = {
+  dashboard: 'Tổng quan kinh doanh',
+  analytics: 'Phân tích truy cập',
+  products: 'Quản lý sản phẩm',
+  collections: 'Quản lý bộ sưu tập',
+  users: 'Quản lý người dùng',
+  orders: 'Quản lý đơn hàng',
+  shipments: 'Quản lý vận đơn',
+  'order-issues': 'Quản lý Báo lỗi & Đổi trả',
+  coupons: 'Quản lý mã giảm giá',
+  'webhook-failures': 'Đối soát giao dịch lạ',
+  reconciliation: 'Đối soát giao dịch lạ',
+  reviews: 'Quản lý đánh giá sản phẩm',
+  'shipping-settings': 'Cài đặt GHN',
+  'live-try-on-settings': 'Cài đặt Live Try-On',
+};
+
+export const DEFAULT_ADMIN_PAGINATION: AdminPagination = {
+  page: 1,
+  pageSize: 10,
+  total: 0,
+  totalPages: 1,
+};
+
+export const EMPTY_PRODUCT_FILTERS: AdminProductFilters = { category: '', status: '', search: '' };
+export const EMPTY_ORDER_FILTERS: AdminOrderFilters = { search: '', status: '', paymentStatus: '', fromDate: '', toDate: '' };
+export const EMPTY_USER_FILTERS: AdminUserFilters = { search: '', tier: '', role: '', isVerified: '' };
+export const EMPTY_SHIPMENT_FILTERS: AdminShipmentFilters = {};
+export const EMPTY_ORDER_ISSUE_FILTERS: AdminOrderIssueFilters = { status: '', reason: '' };
+
+/** Users được tải một lần rồi lọc/phân trang phía client. */
+export const ADMIN_USERS_FETCH_LIMIT = 1000;
+export const ADMIN_REVIEW_SCAN_LIMIT = 50;
+
+/** Chu kỳ đồng bộ đơn hàng/vận đơn/thống kê khi tab trình duyệt đang hiển thị. */
+export const ADMIN_REFRESH_INTERVAL_MS = 30_000;
+/** Chu kỳ kiểm tra socket realtime đã được tạo/tạo lại để gắn listener (không gọi mạng). */
+export const ADMIN_SOCKET_CHECK_MS = 2_000;
+/** Gộp socket event và notification bắn liên tiếp cho cùng một thay đổi thành một lần tải lại. */
+export const ADMIN_REALTIME_DEBOUNCE_MS = 500;
+// 'notification' không nằm ở đây: RealtimeProvider đã đưa nó vào notification store và dashboard
+// tải lại theo store.
+export const ADMIN_REALTIME_EVENTS = [
+  'order:created',
+  'order:updated',
+  'order_status',
+  'shipment:created',
+  'shipment:updated',
+  'shipment_status',
+] as const;
+
+/** Trạng thái đơn không tính vào doanh thu khi backend không trả số liệu. */
+export const NON_REVENUE_STATUSES: BackendOrderStatus[] = ['CANCELLED', 'FAILED', 'EXPIRED', 'PENDING', 'RETURNED'];
+
+export const ADMIN_PRODUCT_FALLBACK_IMAGE = '/images/731163514_999523332788054_1114320478812927640_n.png';
+export const DEFAULT_PRODUCT_COLOR_HEX = '#5D1C34';
 
 export const CATEGORY_LABEL: Record<GarmentCategory, string> = {
   UPPER: 'Áo',

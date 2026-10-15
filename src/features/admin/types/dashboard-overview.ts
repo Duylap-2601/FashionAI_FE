@@ -1,38 +1,11 @@
-import type { AdminOrder, AdminPage, AdminProduct, AdminUser } from '@/features/admin/types/admin-dashboard-page';
-import React from 'react';
+import type { AdminOrder, AdminPage, AdminProduct, DashboardMetrics, RevenueChartDays } from '@/features/admin/types/admin-dashboard-page';
 
 export interface DashboardOverviewProps {
-  totalRevenue: number;
-  avgOrderValue: number;
-  totalOrders: number;
-  pendingOrders: number;
-  deliveredOrders: number;
-  totalProducts: number;
-  activeProducts: number;
-  totalUsers: number;
-  memberUsers: number;
-  vipUsers: number;
-  users: AdminUser[];
-  setActiveTab: React.Dispatch<React.SetStateAction<AdminPage>>;
-  shippingOrders: number;
-  cancelledOrders: number;
-  setChartDays: React.Dispatch<React.SetStateAction<7 | 14 | 30>>;
-  setHoveredPoint: React.Dispatch<React.SetStateAction<{ x: number; y: number; label: string; dateKey: string; fullDate: string; revenue: number; ordersCount: number; } | null>>;
-  chartDays: 7 | 14 | 30;
-  renderRevenueChart: () => React.JSX.Element | null;
+  metrics: DashboardMetrics;
   orders: AdminOrder[];
-  setSelectedOrder: React.Dispatch<React.SetStateAction<AdminOrder | null>>;
   products: AdminProduct[];
+  setActiveTab: (tab: AdminPage) => void;
   openProductEditor: (product: Partial<AdminProduct> | null) => void;
-  refundedRevenue?: number;
-  netRevenue?: number;
-  subscriptionRevenue?: number;
-  productRevenue?: number;
-  netSubscriptionRevenue?: number;
-  netProductRevenue?: number;
-  totalReviews?: number;
-  avgRating?: number;
-  tryOnToday?: number;
-  tryOnCount?: number;
-  stylistCount?: number;
+  chartDays: RevenueChartDays;
+  setChartDays: (days: RevenueChartDays) => void;
 }
