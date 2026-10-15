@@ -24,6 +24,7 @@ import { useState } from 'react';
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 
 const CARD_CLASS = 'rounded-xl border border-neutral-200 bg-white p-5 shadow-sm';
+const EMPTY_TEXT = 'Chưa có dữ liệu trong kỳ này.';
 
 const trendConfig = {
   activeUsers: { label: 'Người dùng hoạt động', color: 'var(--chart-1)' },
@@ -124,6 +125,7 @@ function ViewToggle({ showTable, onChange }: { showTable: boolean; onChange: (sh
 
 export function AnalyticsTrendChart({ data }: { data: AnalyticsTrendPoint[] }) {
   const [showTable, setShowTable] = useState(false);
+  const isEmpty = data.every((point) => point.activeUsers === 0 && point.sessions === 0);
 
   return (
     <AnalyticsCard
@@ -153,44 +155,53 @@ export function AnalyticsTrendChart({ data }: { data: AnalyticsTrendPoint[] }) {
           </table>
         </div>
       ) : (
-        <ChartContainer config={trendConfig} className="aspect-auto h-[300px] w-full">
-          <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={24}
-              tickFormatter={(value: string) => formatShortDate(value)}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              width={40}
-              allowDecimals={false}
-              tickFormatter={(value: number) => formatCompact(value)}
-            />
-            <ChartTooltip
-              cursor={{ strokeWidth: 1 }}
-              content={<ChartTooltipContent indicator="line" labelFormatter={(value) => formatLongDate(String(value))} />}
-            />
-            <ChartLegend content={<ChartLegendContent />} />
-            {(['activeUsers', 'sessions'] as const).map((key) => (
-              <Line
-                key={key}
-                dataKey={key}
-                type="monotone"
-                stroke={`var(--color-${key})`}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                dot={false}
-                activeDot={{ r: 4, strokeWidth: 2, stroke: 'var(--background)' }}
+        <div className="relative">
+          {isEmpty ? (
+            // Giữ khung trục và lưới để bố cục không đổi; chữ phủ lên vùng vẽ.
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 text-center">
+              <p className="text-body-sm font-semibold text-neutral-700">{EMPTY_TEXT}</p>
+              <p className="text-[12px] text-neutral-500">Property GA4 mới tạo có thể cần 24–48 giờ để có số liệu.</p>
+            </div>
+          ) : null}
+          <ChartContainer config={trendConfig} className={`aspect-auto h-[300px] w-full ${isEmpty ? 'opacity-40' : ''}`}>
+            <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={24}
+                tickFormatter={(value: string) => formatShortDate(value)}
               />
-            ))}
-          </LineChart>
-        </ChartContainer>
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={40}
+                allowDecimals={false}
+                tickFormatter={(value: number) => formatCompact(value)}
+              />
+              <ChartTooltip
+                cursor={{ strokeWidth: 1 }}
+                content={<ChartTooltipContent indicator="line" labelFormatter={(value) => formatLongDate(String(value))} />}
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+              {(['activeUsers', 'sessions'] as const).map((key) => (
+                <Line
+                  key={key}
+                  dataKey={key}
+                  type="monotone"
+                  stroke={`var(--color-${key})`}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: 'var(--background)' }}
+                />
+              ))}
+            </LineChart>
+          </ChartContainer>
+        </div>
       )}
     </AnalyticsCard>
   );
@@ -246,7 +257,7 @@ export function AnalyticsRankedTable({
   nameLabel,
   columns,
   rows,
-  emptyText = 'Chưa có dữ liệu trong kỳ này.',
+  emptyText = EMPTY_TEXT,
 }: {
   title: string;
   description?: string;
@@ -256,10 +267,12 @@ export function AnalyticsRankedTable({
   emptyText?: string;
 }) {
   const max = Math.max(0, ...rows.map((row) => row.values[0] ?? 0));
+  // Một số bảng luôn có đủ dòng (vd. tính năng AI) nên toàn số 0 cũng coi là chưa có dữ liệu.
+  const isEmpty = max === 0;
 
   return (
     <AnalyticsCard title={title} description={description}>
-      {rows.length === 0 ? (
+      {isEmpty ? (
         <p className="py-6 text-center text-body-sm text-neutral-500">{emptyText}</p>
       ) : (
         <table className="w-full table-fixed text-[12px]">
