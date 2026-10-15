@@ -1,5 +1,5 @@
 import { Providers } from "@/components/providers/Providers";
-import { buildGaBootstrapScript, GA_MEASUREMENT_ID } from "@/lib/analytics";
+import { buildGaBootstrapScript, GA_DEBUG, GA_MEASUREMENT_ID } from "@/lib/analytics";
 import "@/styles/index.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata, Viewport } from "next";
@@ -44,7 +44,7 @@ export default function RootLayout({
           {children}
         </Providers>
       </body>
-      {GA_MEASUREMENT_ID ? <GoogleAnalytics gaId={GA_MEASUREMENT_ID} /> : null}
+      {GA_MEASUREMENT_ID ? <GoogleAnalytics gaId={GA_MEASUREMENT_ID} debugMode={GA_DEBUG} /> : null}
     </html>
   );
 }

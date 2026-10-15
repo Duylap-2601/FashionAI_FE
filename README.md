@@ -22,6 +22,7 @@ Backend mặc định ở `http://localhost:3002`. Next.js proxy request qua
 | `NEXT_PUBLIC_API_URL` | API base URL; mặc định `/api/backend` |
 | `NEXT_PUBLIC_WS_URL` | Origin Socket.IO; không chứa hậu tố `/api` |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Measurement ID GA4 (`G-XXXX`); để trống thì tắt Google Analytics |
+| `NEXT_PUBLIC_GA_DEBUG` | `true` để log lệnh GA4 ra console và gửi hit vào DebugView |
 
 ## Cấu trúc và quyền sở hữu
 
