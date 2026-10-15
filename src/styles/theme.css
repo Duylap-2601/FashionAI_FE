@@ -28,6 +28,11 @@
   --destructive-foreground: #ffffff;
   --border: #E5DFD5;
   /* landing warm divider */
+  /* Màu dữ liệu biểu đồ: bước sáng hơn của burgundy/bronze, đã qua kiểm tra CVD và
+     tương phản trên nền trắng (burgundy gốc quá tối để làm màu dữ liệu). */
+  --chart-1: #972F50;
+  --chart-2: #B77B29;
+  --chart-track: #FEE8EC;
   --input: transparent;
   --input-background: #F9F7F5;
   --switch-background: #E5DFD5;
@@ -123,6 +128,11 @@
   /* sage */
   --color-tier-vip: #FFD93D;
   /* warm gold */
+
+  /* Chart series */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-track: var(--chart-track);
 
   /* Fonts */
   --font-sans: 'Be Vietnam Pro', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;

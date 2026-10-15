@@ -1,5 +1,6 @@
 'use client';
 
+import { useCommerceViewTracking } from '@/features/analytics/hooks/use-commerce-view-tracking';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { ArrowRight, ChevronLeft, Loader2, Minus, Plus, RotateCcw, ShieldCheck, ShoppingBag, Trash2, Truck } from 'lucide-react';
 import Image from 'next/image';
@@ -19,6 +20,7 @@ export default function CartPage() {
   } = useCart();
 
   const totalQuantity = purchasableItems.reduce((acc, item) => acc + item.quantity, 0);
+  useCommerceViewTracking('view_cart', purchasableItems, !isLoading);
 
   if (isLoading) {
     return (

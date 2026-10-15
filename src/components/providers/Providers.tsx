@@ -21,6 +21,11 @@ const RealtimeProvider = dynamic(
   { ssr: false },
 );
 
+const AnalyticsBootstrap = dynamic(
+  () => import('@/features/analytics/components/analytics-bootstrap').then((mod) => mod.AnalyticsBootstrap),
+  { ssr: false },
+);
+
 const NativeBackButtonHandler = dynamic(
   () => import('@/components/native/NativeBackButtonHandler').then((mod) => mod.NativeBackButtonHandler),
   { ssr: false },
@@ -66,6 +71,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthBootstrap />
       <CartSync />
+      <AnalyticsBootstrap />
       <RealtimeProvider>
         {children}
         <Toaster />

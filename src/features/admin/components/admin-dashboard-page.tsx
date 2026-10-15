@@ -4,6 +4,7 @@ import type { AdminImageDto, AdminProductDto, AdminOrderDto, AdminShipmentDetail
 
 
 import { AdminOrderModal } from '@/features/admin/components/admin-order-modal';
+import { AdminAnalyticsPanel } from '@/features/admin/components/admin-analytics-panel';
 import { AdminLiveTryOnSettingsPanel } from '@/features/admin/components/admin-live-try-on-settings-panel';
 import { AdminOrdersPanel } from '@/features/admin/components/admin-orders-panel';
 import { AdminOrderIssuesPanel } from '@/features/admin/components/admin-order-issues-panel';
@@ -42,6 +43,7 @@ import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
+  BarChart3,
   Layers,
   LayoutDashboard,
   LogOut,
@@ -70,7 +72,7 @@ interface ApiPaginatedResponse<T = unknown> {
   pagination?: { total?: number; totalPages?: number; page?: number };
 }
 
-const ADMIN_PAGES: AdminPage[] = ['dashboard', 'products', 'collections', 'users', 'orders', 'shipments', 'order-issues', 'coupons', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
+const ADMIN_PAGES: AdminPage[] = ['dashboard', 'analytics', 'products', 'collections', 'users', 'orders', 'shipments', 'order-issues', 'coupons', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
 
 function isAdminPage(value: string | null): value is AdminPage {
   return Boolean(value && ADMIN_PAGES.includes(value as AdminPage));
@@ -1878,6 +1880,7 @@ function AdminDashboardContent() {
           <nav className="flex-1 px-3 py-3 flex flex-col gap-0.5 overflow-y-auto min-h-0 no-scrollbar">
             {([
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+              { id: 'analytics', label: 'Phân tích', icon: BarChart3 },
               { id: 'products', label: 'Sản phẩm', icon: Package },
               { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
               { id: 'users', label: 'Người dùng', icon: Users },
@@ -1939,6 +1942,7 @@ function AdminDashboardContent() {
               </button>
               <span className="text-body-sm font-bold text-brand-navy">
                 {activeTab === 'dashboard' ? 'Tổng quan kinh doanh' :
+                  activeTab === 'analytics' ? 'Phân tích truy cập' :
                   activeTab === 'products' ? 'Quản lý sản phẩm' :
                     activeTab === 'collections' ? 'Quản lý bộ sưu tập' :
                       activeTab === 'users' ? 'Quản lý người dùng' :
@@ -2133,6 +2137,9 @@ function AdminDashboardContent() {
 
             {/* ─── TAB: SHIPPING SETTINGS ─────────────────────────────────────────── */}
             {activeTab === 'shipping-settings' && <AdminShippingSettingsPanel />}
+
+            {/* ─── TAB: ANALYTICS (GA4) ───────────────────────────────────────────── */}
+            {activeTab === 'analytics' && <AdminAnalyticsPanel />}
 
             {/* ─── TAB: LIVE TRY-ON SETTINGS ──────────────────────────────────────── */}
             {activeTab === 'live-try-on-settings' && <AdminLiveTryOnSettingsPanel />}

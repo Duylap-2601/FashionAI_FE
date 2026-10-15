@@ -22,6 +22,7 @@ import {
   User as UserIcon,
   X
 } from 'lucide-react';
+import { openCookieSettings } from '@/lib/analytics';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -353,6 +354,7 @@ export function SiteFooter({ variant = 'simple' }: { variant?: Exclude<FooterVar
           <Link href="/terms" className="hover:text-brand-navy transition-colors">Điều khoản</Link>
           <Link href="/privacy" className="hover:text-brand-navy transition-colors">Bảo mật</Link>
           <Link href="/support" className="hover:text-brand-navy transition-colors">Hỗ trợ</Link>
+          <button type="button" onClick={openCookieSettings} className="hover:text-brand-navy transition-colors">Cài đặt cookie</button>
         </div>
       </div>
     </footer>
@@ -446,6 +448,7 @@ function MarketingFooter() {
             <Link href="/privacy" className="transition-colors hover:text-neutral-300">Bảo mật</Link>
             <Link href="/terms" className="transition-colors hover:text-neutral-300">Điều khoản</Link>
             <Link href="/products" className="transition-colors hover:text-neutral-300">Sitemap</Link>
+            <button type="button" onClick={openCookieSettings} className="transition-colors hover:text-neutral-300">Cài đặt cookie</button>
           </div>
         </div>
       </div>

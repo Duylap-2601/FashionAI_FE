@@ -1,5 +1,6 @@
 'use client';
 
+import { productToGaItem } from '@/features/analytics/services/ga-items';
 import { useCartPanel } from '@/features/cart/hooks/use-cart-panel';
 import { HangerIcon } from '@/components/ui/HangerIcon';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -20,9 +21,10 @@ import type { Product } from '@/features/products/types/products';
 import { usePinToRack, useRackItems, useUnpinFromRack } from '@/features/rack/hooks/useRack';
 import { ReviewSection } from '@/features/reviews/components/ReviewSection';
 import { useReviewStats } from '@/features/reviews/hooks/useReviews';
+import { toCommerceParams, trackEvent } from '@/lib/analytics';
 import { X } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 type ProductImageItem = { url: string; colorName?: string | null; isMain?: boolean };
@@ -130,6 +132,14 @@ export default function ProductDetail() {
       setQuantity(1);
     }
   }, [product, requestedColor]);
+
+  // Chỉ tính lượt xem sản phẩm thật từ API, không tính dữ liệu mock khi API lỗi.
+  const trackedViewIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!apiProduct || trackedViewIdRef.current === apiProduct.id) return;
+    trackedViewIdRef.current = apiProduct.id;
+    trackEvent('view_item', toCommerceParams([productToGaItem(apiProduct)]));
+  }, [apiProduct]);
 
   if (isProductLoading && !product) return <ProductDetailSkeleton />;
   if (!product) return <ProductNotFound />;

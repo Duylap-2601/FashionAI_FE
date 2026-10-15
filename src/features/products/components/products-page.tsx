@@ -17,6 +17,7 @@ import type { Product } from '@/features/products/types/products';
 import type { ProductListParams } from '@/features/products/types/products-hook';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePinToRack, useRackItems, useUnpinFromRack } from '@/features/rack/hooks/useRack';
+import { trackEvent } from '@/lib/analytics';
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -94,6 +95,11 @@ export default function ProductListing() {
 
     return () => window.clearTimeout(timeoutId);
   }, [searchQuery]);
+
+  // Mọi ô tìm kiếm (header, trang /search, landing) đều dẫn về trang này nên chỉ đo ở đây.
+  useEffect(() => {
+    if (debouncedSearchQuery) trackEvent('search', { search_term: debouncedSearchQuery });
+  }, [debouncedSearchQuery]);
 
   const activeGarmentType = useMemo(() => {
     const matchTab = GARMENT_TYPE_TABS.find(

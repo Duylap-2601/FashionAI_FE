@@ -1,3 +1,4 @@
+import { useCommerceViewTracking } from '@/features/analytics/hooks/use-commerce-view-tracking';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import type { CartSlideOverProps } from '@/features/cart/types/cart-slide-over';
 import { Loader2, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
@@ -15,6 +16,7 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
     isError,
     refetch,
   } = useCart();
+  useCommerceViewTracking('view_cart', purchasableItems, isOpen && !isLoading);
 
   if (!isOpen) return null;
 

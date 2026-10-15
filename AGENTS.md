@@ -58,7 +58,15 @@ src/
 │   │                        #             admin-*-modal, admin-pagination,
 │   │                        #             admin-live-try-on-settings-panel,
 │   │                        #             admin-shipping-settings-panel,
-│   │                        #             admin-webhook-failures-panel
+│   │                        #             admin-webhook-failures-panel,
+│   │                        #             admin-analytics-panel (+ -charts; GA4
+│   │                        #             report from /admin/analytics)
+│   ├── analytics/           # components/ hooks/ services/
+│   │                        # components: analytics-bootstrap (GA4 user sync,
+│   │                        #             admin opt-out), cookie-consent-banner
+│   │                        # hooks: use-commerce-view-tracking (view_cart,
+│   │                        #        begin_checkout)
+│   │                        # services: ga-items.ts (Product/CartItem → GA4 item)
 │   ├── auth/                # components/ constants/ hooks/ services/ store/ types/
 │   │                        # hooks: useAuth.ts, use-change-password.ts
 │   │                        # store: authStore.ts (Zustand)
@@ -122,6 +130,7 @@ src/
 │   ├── overlay-manager.ts   # Global overlay/modal orchestration
 │   ├── platform.ts          # Capacitor platform detection
 │   ├── errors.ts            # Typed error helpers
+│   ├── analytics.ts         # GA4: trackEvent, consent, client_id for checkout
 │   └── utils.ts             # General utilities
 ├── styles/
 │   ├── index.css            # Root entry: imports fonts, tailwind, theme
@@ -261,6 +270,14 @@ src/
   the backend. Keep the UI sending legacy GHN IDs/codes for province, district,
   and ward; do not hard-code pickup address environment values in the frontend.
 - Preserve the `/api/backend` proxy and PWA `NetworkOnly` strategy for private APIs.
+- Google Analytics 4 loads through `GoogleAnalytics` from `@next/third-parties/google`
+  in the root layout, never an inline `<script>` (eslint `next-script-for-ga`). A
+  `beforeInteractive` script sets Consent Mode v2 defaults first (analytics denied
+  until the cookie banner is accepted). Send events only through `trackEvent` in
+  `src/lib/analytics.ts`; event names are a contract with the backend admin
+  analytics report. `purchase` is sent by the backend after payment is confirmed,
+  so the frontend never tracks it; checkout only forwards `gaClientId` /
+  `gaSessionId`. Admin accounts and `/admin` routes are excluded from GA4.
 - `src/lib/auth.ts` is legacy NextAuth code and is not part of the active auth flow.
   Do not reinstall NextAuth or activate this file during structural refactors.
 - Capacitor native bridge (`src/components/native/`) handles Android back-button and

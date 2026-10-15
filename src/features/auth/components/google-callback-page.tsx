@@ -5,6 +5,7 @@ import { exchangeAuthCode } from '@/features/auth/services/mutations';
 import { toAuthSession } from '@/features/auth/services/session';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { invalidateSessionCache } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -43,6 +44,7 @@ function GoogleCallbackContent() {
 
         useAuthStore.getState().setSession(session);
         invalidateSessionCache();
+        if (session.user?.role !== 'ADMIN') trackEvent('login', { method: 'google' });
         if (session.user?.role === 'ADMIN') {
           router.replace('/admin/dashboard');
         } else {
