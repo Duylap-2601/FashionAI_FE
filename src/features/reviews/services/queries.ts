@@ -74,4 +74,21 @@ export function fetchProductReviewsResponse(id: string, config: HttpOptions) {
   return http.get(`/products/${id}/reviews`, config);
 }
 
+export function toReviewList(payload: unknown): Review[] {
+  if (Array.isArray(payload)) return payload as Review[];
+  if (payload && typeof payload === 'object') {
+    const p = payload as Record<string, unknown>;
+    if (Array.isArray(p.data)) return p.data as Review[];
+    if (Array.isArray(p.items)) return p.items as Review[];
+    if (Array.isArray(p.reviews)) return p.reviews as Review[];
+    if (p.data && typeof p.data === 'object') {
+      const d = p.data as Record<string, unknown>;
+      if (Array.isArray(d.items)) return d.items as Review[];
+      if (Array.isArray(d.reviews)) return d.reviews as Review[];
+      if (Array.isArray(d.data)) return d.data as Review[];
+    }
+  }
+  return [];
+}
+
 export { queryKeys } from './query-keys';

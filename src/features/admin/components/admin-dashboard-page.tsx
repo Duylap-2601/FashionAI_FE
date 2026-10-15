@@ -36,7 +36,8 @@ import { NotificationBell } from '@/features/notifications/components/Notificati
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
 import type { BackendOrderStatus, OrderIssue, OrderIssueListMeta, OrderIssueListParams, OrderIssueReason, OrderIssueStatus } from '@/features/orders/types/orders';
 import { AdminReviewTable } from '@/features/reviews/components/AdminReviewTable';
-import { fetchAdminReviewsResponse } from '@/features/reviews/services/queries';
+import { fetchAdminReviewsResponse, fetchProductReviewsResponse, toReviewList } from '@/features/reviews/services/queries';
+import type { Review } from '@/features/reviews/types/reviews';
 import { getRealtimeSocket } from '@/lib/realtimeSocket';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -449,6 +450,7 @@ function AdminDashboardContent() {
           total: serverTotal,
           totalPages: typeof meta?.totalPages === 'number' ? meta.totalPages : Math.ceil(serverTotal / limit) || 1,
         }));
+        return mappedList;
       } else {
         let filtered = mappedList;
         if (filters.search) {
@@ -473,10 +475,12 @@ function AdminDashboardContent() {
           total,
           totalPages,
         }));
+        return mappedList;
       }
     } catch (e) {
       console.error('Backend API products fetch failed:', e);
       toast.error('Không thể tải danh sách sản phẩm');
+      return [] as AdminProduct[];
     } finally {
       setIsProductsFetching(false);
     }
@@ -966,46 +970,80 @@ function AdminDashboardContent() {
     }
   }, []);
 
-  const fetchReviewsData = useCallback(async () => {
+  const fetchReviewsData = useCallback(async (prods?: AdminProduct[]) => {
+    // 1. Thử endpoint admin tập trung trước (/products/admin/reviews)
     try {
       const res = await fetchAdminReviewsResponse();
-      if (Array.isArray(res)) {
-        setReviewsCount(res.length);
-        if (res.length > 0) {
-          const sum = res.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
-          setAvgRating(Math.round((sum / res.length) * 10) / 10);
-        }
+      const list = toReviewList(res);
+      if (list.length > 0) {
+        setReviewsCount(list.length);
+        const sum = list.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
+        setAvgRating(Math.round((sum / list.length) * 10) / 10);
         return;
-      } else if (res && typeof res === 'object') {
-        const obj = res as Record<string, unknown>;
-        const list = Array.isArray(obj.data) ? obj.data : Array.isArray(obj.items) ? obj.items : Array.isArray(obj.reviews) ? obj.reviews : [];
-        const total = typeof obj.total === 'number' ? obj.total : (obj.meta as { total?: number })?.total ?? list.length;
-        if (total > 0 || list.length > 0) {
-          setReviewsCount(total);
-          if (list.length > 0) {
-            const sum = list.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
-            setAvgRating(Math.round((sum / list.length) * 10) / 10);
-          }
-          return;
-        }
       }
     } catch {
-      // Backend may not have implemented /products/admin/reviews yet; fallback
+      // Endpoint admin lỗi hoặc chưa hỗ trợ, chuyển sang fallback
+    }
+
+    // 2. Fallback: Quét toàn bộ sản phẩm để tổng hợp đánh giá (giống AdminReviewTable)
+    const targetProducts = prods && prods.length > 0 ? prods : products;
+    if (targetProducts && targetProducts.length > 0) {
+      try {
+        const results = await Promise.allSettled(
+          targetProducts.map(async (p) => {
+            const res = await fetchProductReviewsResponse(p.id, { params: { limit: 50 } });
+            return toReviewList(res);
+          })
+        );
+        const aggregated: Review[] = [];
+        for (const item of results) {
+          if (item.status === 'fulfilled') {
+            aggregated.push(...item.value);
+          }
+        }
+        if (aggregated.length > 0) {
+          setReviewsCount(aggregated.length);
+          const sum = aggregated.reduce((acc: number, r: { rating?: number }) => acc + (Number(r.rating) || 0), 0);
+          setAvgRating(Math.round((sum / aggregated.length) * 10) / 10);
+          return;
+        }
+      } catch (err) {
+        console.warn('Fallback reviews scan failed:', err);
+      }
     }
 
     setReviewsCount(0);
     setAvgRating(0);
-  }, []);
+  }, [products]);
 
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
-    Promise.all([fetchProducts(), fetchOrders(), fetchShipments(), fetchUsers(), fetchStats(), fetchWebhookFailuresList(), fetchReviewsData()])
-      .finally(() => {
-        if (mounted) setIsLoading(false);
-      });
+    const loadAll = async () => {
+      const [prods] = await Promise.all([
+        fetchProducts(),
+        fetchOrders(),
+        fetchShipments(),
+        fetchUsers(),
+        fetchStats(),
+        fetchWebhookFailuresList(),
+      ]);
+      if (mounted) {
+        await fetchReviewsData(prods);
+      }
+    };
+    loadAll().finally(() => {
+      if (mounted) setIsLoading(false);
+    });
     return () => { mounted = false; };
   }, [fetchProducts, fetchOrders, fetchShipments, fetchUsers, fetchStats, fetchWebhookFailuresList, fetchReviewsData]);
+
+  // Khi chuyển sang tab 'dashboard' và danh sách sản phẩm đã có, đảm bảo reviews được đồng bộ
+  useEffect(() => {
+    if (activeTab === 'dashboard' && products.length > 0) {
+      void fetchReviewsData(products);
+    }
+  }, [activeTab, products, fetchReviewsData]);
 
   // Auto-refresh orders and stats when new notification arrives in realtime
   const recentNotifications = useNotificationStore((s) => s.recentNotifications);
@@ -1016,8 +1054,9 @@ function AdminDashboardContent() {
       fetchOrders();
       fetchShipments();
       fetchStats();
+      fetchReviewsData();
     }
-  }, [latestNotifId, fetchOrders, fetchShipments, fetchStats]);
+  }, [latestNotifId, fetchOrders, fetchShipments, fetchStats, fetchReviewsData]);
 
   // Realtime socket listeners & visibility-based periodic sync (30s)
   useEffect(() => {
@@ -1451,6 +1490,16 @@ function AdminDashboardContent() {
       const updatedOrder = rawData?.order || rawData?.data || rawData;
       const targetStatus: BackendOrderStatus = (updatedOrder?.status || 'MEASUREMENT_REVIEW') as BackendOrderStatus;
 
+      // Cập nhật trạng thái đơn hàng sang MEASUREMENT_REVIEW trên backend nếu đơn đang là CREATED / PENDING
+      const currentOrder = orders.find(item => item.orderCode === orderCode);
+      if (currentOrder && (currentOrder.status === 'CREATED' || currentOrder.status === 'PENDING')) {
+        try {
+          await updateOrderStatus(currentOrder.id, { status: 'MEASUREMENT_REVIEW' });
+        } catch (statusErr) {
+          console.warn('Auto update order status failed:', statusErr);
+        }
+      }
+
       setOrders(prev => prev.map(o => {
         if (o.orderCode !== orderCode) return o;
         const ship = updatedOrder?.shippingInfo;
@@ -1459,7 +1508,7 @@ function AdminDashboardContent() {
           status: targetStatus,
           displayStatus: updatedOrder?.displayStatus || o.displayStatus,
           refundStatus: updatedOrder?.refundStatus || o.refundStatus,
-          paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus,
+          paymentStatus: updatedOrder?.paymentStatus || o.paymentStatus || 'PAID',
           customer: ship?.name || updatedOrder?.user?.name || o.customer,
           email: updatedOrder?.user?.email || ship?.phone || o.email,
           address: ship?.address || o.address,
@@ -1476,7 +1525,7 @@ function AdminDashboardContent() {
             status: targetStatus,
             displayStatus: updatedOrder?.displayStatus || prev.displayStatus,
             refundStatus: updatedOrder?.refundStatus || prev.refundStatus,
-            paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus,
+            paymentStatus: updatedOrder?.paymentStatus || prev.paymentStatus || 'PAID',
             customer: ship?.name || updatedOrder?.user?.name || prev.customer,
             email: updatedOrder?.user?.email || ship?.phone || prev.email,
             address: ship?.address || prev.address,

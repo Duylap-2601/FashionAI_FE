@@ -41,7 +41,6 @@ const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
 
 const ADMIN_ORDER_STATUS_OPTIONS: BackendOrderStatus[] = [
   'CREATED',
-  'PENDING',
   'MEASUREMENT_REVIEW',
   'MEASUREMENT_CONFIRMED',
   'TAILORING',
@@ -61,7 +60,7 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
   const createShipmentAbortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
 
-  const isPending = selectedOrder.status === 'PENDING';
+  const isPending = selectedOrder.status === 'PENDING' || selectedOrder.paymentStatus === 'PENDING' || selectedOrder.status === 'CREATED';
   const refundRequired = selectedOrder.refundStatus === 'REQUIRED' || selectedOrder.refundStatus === 'PROCESSING';
   const refundCompleted = selectedOrder.refundStatus === 'COMPLETED';
   const statusOptions = ADMIN_ORDER_STATUS_OPTIONS.includes(selectedOrder.status)
@@ -77,13 +76,10 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
   }, []);
 
   const onConfirmManualPayment = async () => {
-    if (!note.trim()) {
-      toast.error('Vui lòng nhập ghi chú xác nhận.');
-      return;
-    }
+    const confirmNote = note.trim() || 'Xác nhận thanh toán thủ công';
     setSubmitting(true);
     try {
-      await handleConfirmManualPayment(selectedOrder.orderCode, note.trim(), note.trim());
+      await handleConfirmManualPayment(selectedOrder.orderCode, confirmNote, confirmNote);
       setNote('');
     } finally {
       setSubmitting(false);

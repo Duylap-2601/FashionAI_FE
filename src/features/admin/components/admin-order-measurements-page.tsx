@@ -67,7 +67,6 @@ const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
 
 const ADMIN_ORDER_STATUS_OPTIONS: BackendOrderStatus[] = [
   'CREATED',
-  'PENDING',
   'MEASUREMENT_REVIEW',
   'MEASUREMENT_CONFIRMED',
   'TAILORING',
@@ -146,17 +145,26 @@ export default function AdminOrderMeasurementsPage() {
   };
 
   const onConfirmManualPayment = async () => {
-    if (!order?.orderCode) return;
-    if (!manualPaymentNote.trim()) {
-      toast.error('Vui lòng nhập ghi chú xác nhận thanh toán.');
-      return;
-    }
+    if (!order?.orderCode || !order?.id) return;
+    const finalNote = manualPaymentNote.trim() || 'Xác nhận thanh toán chuyển khoản thủ công';
+    const finalRef = manualPaymentNote.trim() || `SEPAY-${order.orderCode}-${Date.now()}`;
     setSubmittingPayment(true);
     try {
       await confirmManualPayment(order.orderCode, {
-        reference: manualPaymentNote.trim(),
-        note: manualPaymentNote.trim(),
+        reference: finalRef,
+        note: finalNote,
       });
+
+      // Nếu đơn hàng đang ở trạng thái 'CREATED' (Đã tạo) hoặc 'PENDING',
+      // tự động chuyển trạng thái đơn hàng sang 'MEASUREMENT_REVIEW' (Kiểm tra số đo)
+      if (order.status === 'CREATED' || order.status === 'PENDING') {
+        try {
+          await updateOrderStatus(order.id, { status: 'MEASUREMENT_REVIEW' });
+        } catch (statusError) {
+          console.warn('Auto transition to MEASUREMENT_REVIEW failed:', statusError);
+        }
+      }
+
       toast.success('Xác nhận thanh toán thủ công thành công');
       setManualPaymentNote('');
       await refetch();
