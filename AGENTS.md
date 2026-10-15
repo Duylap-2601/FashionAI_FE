@@ -3,8 +3,9 @@
 ## Stack And Commands
 
 Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4, TanStack Query,
-Zustand, Axios, Radix UI, Lucide, Motion (Framer), Three.js / React Three Fiber,
-Recharts, Zod, socket.io-client, Capacitor (mobile bridge), and @ducanh2912/next-pwa.
+TanStack Table (v9), Zustand, Axios, Radix UI, Lucide, Motion (Framer),
+Three.js / React Three Fiber, Recharts, Zod, socket.io-client, Capacitor
+(mobile bridge), and @ducanh2912/next-pwa.
 Keep this stack when refactoring.
 
 ```bash
@@ -133,6 +134,10 @@ src/
 │   │                        # (Capacitor mobile bridge)
 │   ├── providers/           # Providers.tsx, RealtimeProvider.tsx
 │   ├── pwa/                 # InstallPrompt.tsx, offline-page.tsx
+│   ├── tables/              # Generic data-table design system (ClientTable,
+│   │                        #   ServerTable, BaseTable + toolbar/filters/pagination/
+│   │                        #   actions/column-visibility/skeleton/empty-state
+│   │                        #   primitives). See docs/table-design.md.
 │   └── ui/                  # shadcn/Radix primitives + custom: AnimateIn,
 │                            # HangerIcon, Logo, PageTransition, chart.tsx,
 │                            # sidebar.tsx, and full Radix component set
@@ -159,6 +164,7 @@ src/
 └── (project root)
     ├── scripts/check-architecture.cjs
     ├── tests/               # Node built-in test runner (*.test.cjs)
+    ├── docs/                # table-design.md (table design system spec)
     ├── public/              # PWA icons, manifest, screenshots, images
     ├── next.config.mjs      # next-pwa, image domains config
     ├── SRS.md               # Software Requirements Specification
@@ -206,6 +212,10 @@ src/
 ## Dependencies And Server/Client Boundaries
 
 - Shared UI and utilities must not import feature business logic.
+- The generic data-table system in `components/tables/` is a shared primitive: it must
+  not import from `features/`, perform HTTP, or hard-code business values. Columns,
+  filters, and detail URLs are passed in by the calling feature. Full spec and usage:
+  `docs/table-design.md`.
 - Layout/providers may compose features; features must not import back from those
   orchestration components.
 - A feature may use modules from related business features, but do not create circular
@@ -333,8 +343,10 @@ src/
 - Run `npm.cmd test` for unit tests and `npm.cmd run check:architecture` after HTTP
   boundary changes. If an e2e script is unavailable in `package.json`, state that e2e
   could not be run rather than claiming it passed.
-- Baseline before refactor: 7 TypeScript errors in legacy NextAuth and 56 ESLint errors.
-  Do not add new errors; compare diagnostics for moved files and clearly report baseline errors.
+- Baseline (verified): `npm.cmd run typecheck` clean (0 errors), `npm.cmd run lint`
+  0 errors / ~51 warnings (pre-existing `no-img-element` / unused-var warnings), and
+  `npm.cmd run check:architecture` passing. Do not add new errors; compare diagnostics
+  for moved files and clearly report any pre-existing warnings you did not introduce.
   Do not disable additional rules or add ignores to bypass checks.
 - PWA builds may regenerate tracked files under `public/`. Use a temporary worktree copy for
   builds so those files are not overwritten.
