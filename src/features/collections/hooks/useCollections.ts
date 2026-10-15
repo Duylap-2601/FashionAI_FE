@@ -87,8 +87,10 @@ export function useAdminAllCollections() {
     queryFn: fetchAdminAllCollections,
   });
 
+  // undefined khi chưa có data: `?? []` tạo mảng mới mỗi render, làm effect đồng bộ của
+  // AdminCollectionManager setState liên tục (Maximum update depth) và che mất fallback local khi lỗi.
   return {
-    collections: query.data ?? [],
+    collections: query.data,
     isLoading: query.isLoading,
     isError: query.isError,
     refetch: query.refetch,
