@@ -48,8 +48,9 @@ function NotConfiguredNotice() {
               <code className="text-[12px]">GA4_PROPERTY_ID</code>: số property GA4 (không phải mã G-XXXX).
             </li>
             <li>
-              <code className="text-[12px]">GA4_SERVICE_ACCOUNT_JSON_BASE64</code>: key service account, và thêm email
-              service account vào property với vai trò Viewer.
+              <code className="text-[12px]">GA_SERVICE_ACCOUNT_EMAIL</code> và{' '}
+              <code className="text-[12px]">GA_PRIVATE_KEY</code>: lấy từ key service account, và thêm email service
+              account vào property với vai trò Viewer.
             </li>
           </ul>
         </div>
