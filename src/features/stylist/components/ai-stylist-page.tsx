@@ -1,27 +1,21 @@
 'use client';
 import { getErrorStatus } from '@/lib/errors';
-import { toColorList, toOutfitList } from '@/features/stylist/services/result-lists';
-
-
+import { StylistBriefSummary } from '@/features/stylist/components/stylist-brief-summary';
 import { StylistHistoryPanel } from '@/features/stylist/components/stylist-history-panel';
 import { StylistInputPanel } from '@/features/stylist/components/stylist-input-panel';
 import { StylistResultPanel } from '@/features/stylist/components/stylist-result-panel';
+import { StylistResultSkeleton } from '@/features/stylist/components/stylist-result-skeleton';
 import type { GenderPref, Status } from '@/features/stylist/types/ai-stylist-page';
 import { PRODUCTS } from '@/features/products/constants/products';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { ProductPickerModal } from '@/features/stylist/components/ProductPickerModal';
 import { QuotaExhaustedModal } from '@/features/stylist/components/QuotaExhaustedModal';
 import { useAnalyzeStylist, useDeleteStylistHistory, useStylistHistory } from '@/features/stylist/hooks/useStylist';
-import type { StylistProduct, StylistResult } from '@/features/stylist/types/stylist';
+import { validateStylistRequest } from '@/features/stylist/services/stylist-utils';
+import type { StylistAnalysisRequest, StylistProduct, StylistResult } from '@/features/stylist/types/stylist';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
 import { trackEvent } from '@/lib/analytics';
-import {
-  Briefcase,
-  LayoutGrid,
-  ScanFace,
-  Shirt,
-  Watch
-} from 'lucide-react';
+import { History as HistoryIcon, Sparkles } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -37,6 +31,9 @@ export default function AIStylistPage() {
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  // Đồng ý dùng ảnh gắn với từng ảnh: đổi hoặc xoá ảnh thì phải tick lại.
+  const [imageConsent, setImageConsent] = useState(false);
+  const [showConsentError, setShowConsentError] = useState(false);
   const [occasion, setOccasion] = useState('Đi làm');
   const [stylePreference, setStylePreference] = useState('');
   const [budget, setBudget] = useState('');
@@ -47,12 +44,16 @@ export default function AIStylistPage() {
   const [pageState, setPageState] = useState<Status>('idle');
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedResult, setSelectedResult] = useState<StylistResult | null>(null);
+  // Đã có kết quả nhưng người dùng mở lại form để sửa yêu cầu.
+  const [isEditing, setIsEditing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   const handleFileSelect = (file: File | null) => {
+    setImageConsent(false);
+    setShowConsentError(false);
     if (!file) {
       setPhotoUrl(null);
       setPhotoFile(null);
@@ -66,49 +67,55 @@ export default function AIStylistPage() {
     e.stopPropagation();
     setPhotoUrl(null);
     setPhotoFile(null);
-    setPageState('idle');
-    setSelectedResult(null);
+    setImageConsent(false);
+    setShowConsentError(false);
   };
 
   const remainingQuota = quota ? (quota.unlimited || quota.limit === null ? Infinity : (quota.limit ?? 0) - quota.used) : null;
   const hasQuota = remainingQuota === null || remainingQuota > 0;
+
+  const handleImageConsentChange = (checked: boolean) => {
+    setImageConsent(checked);
+    if (checked) setShowConsentError(false);
+  };
 
   const handleAnalyze = async () => {
     if (!hasQuota) {
       setShowQuotaModal(true);
       return;
     }
-    if (!photoFile) {
-      toast.error('Vui lòng tải lên ảnh của bạn trước.');
-      return;
-    }
-    if (!selectedProduct && !occasion) {
-      toast.error('Vui lòng chọn sản phẩm hoặc dịp mặc.');
+
+    const trimmedOccasion = occasion.trim();
+    const payload: StylistAnalysisRequest = {
+      humanImage: photoFile ?? undefined,
+      imageConsent: photoFile ? imageConsent : undefined,
+      productId: selectedProduct?.id,
+      // Không chọn sản phẩm thì để trống: BE tự phối hoàn toàn từ catalog theo dịp mặc/phong cách.
+      occasion: trimmedOccasion || undefined,
+      stylePreference: stylePreference.trim() || undefined,
+      budget: budget || undefined,
+      genderPreference: genderPreference || undefined,
+    };
+    const validationError = validateStylistRequest(payload);
+    if (validationError) {
+      if (photoFile && !imageConsent) setShowConsentError(true);
+      toast.error(validationError);
       return;
     }
 
     resetAnalyzeError();
     setSelectedResult(null);
+    setIsEditing(false);
     setPageState('processing');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-      const res = await analyzeAsync({
-        humanImage: photoFile,
-        productId: selectedProduct?.id,
-        garmentDescription: selectedProduct
-          ? undefined
-          : `Trang phục cho dịp: ${occasion}`,
-        occasion,
-        stylePreference: stylePreference || undefined,
-        budget: budget || undefined,
-        genderPreference: genderPreference || undefined,
-      });
+      const res = await analyzeAsync(payload);
       setSelectedResult(res);
       setPageState('result');
       refetchQuota();
       trackEvent('stylist_analyze', {});
-      toast.success('Phân tích phong cách hoàn tất!');
-      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      toast.success('Đã có bộ phối cho bạn!');
     } catch (error: unknown) {
       setPageState('idle');
       console.error('Stylist analyze error:', error);
@@ -124,7 +131,14 @@ export default function AIStylistPage() {
   const handleSelectHistoryItem = (item: StylistResult) => {
     setSelectedResult(item);
     setPageState('result');
-    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    setIsEditing(false);
+    setHistoryOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteHistory = async (e: React.MouseEvent, item: StylistResult) => {
@@ -135,6 +149,7 @@ export default function AIStylistPage() {
       if (selectedResult?.id === item.id) {
         setSelectedResult(null);
         setPageState('idle');
+        setIsEditing(false);
       }
     } catch (err) {
       toast.error('Không thể xóa kết quả. Vui lòng thử lại.');
@@ -142,37 +157,11 @@ export default function AIStylistPage() {
   };
 
   const displayResult = selectedResult;
-
-  const score = displayResult?.productCompatibilityScore;
-
-  const getOutfitIcon = (type: string) => {
-    switch ((type || '').toLowerCase()) {
-      case 'shirt':
-      case 'top':
-      case 'áo':
-      case 'blazer':
-      case 'vest':
-        return <Shirt className="w-4 h-4 text-brand-navy" />;
-      case 'pants':
-      case 'trouser':
-      case 'quần':
-      case 'skirt':
-      case 'váy':
-        return <LayoutGrid className="w-4 h-4 text-brand-navy" />;
-      case 'shoes':
-      case 'giày':
-        return <Briefcase className="w-4 h-4 text-brand-navy" />;
-      default:
-        return <Watch className="w-4 h-4 text-brand-navy" />;
-    }
-  };
-
-  const scoreColor = score === null || score === undefined ? 'bg-neutral-200' : score >= 80 ? 'bg-semantic-success' : score >= 60 ? 'bg-amber-500' : 'bg-red-500';
-  const scoreLabel = score === null || score === undefined ? 'Chưa đủ dữ liệu' : score >= 80 ? 'Rất phù hợp' : score >= 60 ? 'Tương đối phù hợp' : 'Ít phù hợp';
+  const showForm = pageState === 'idle' || isEditing;
 
   return (
     <div className="min-h-screen bg-brand-cream text-neutral-900 font-sans pb-24">
-      <div className="max-w-[820px] mx-auto px-4 sm:px-6 py-8 md:py-12">
+      <div className="max-w-[1080px] mx-auto px-4 sm:px-6 py-6 md:py-10">
 
         {/* Hidden inputs */}
         <input
@@ -202,88 +191,90 @@ export default function AIStylistPage() {
         {showQuotaModal && <QuotaExhaustedModal onClose={() => setShowQuotaModal(false)} />}
 
         {/* HEADER */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-navy/10 mb-4">
+        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+          <div>
+            <p className="inline-flex items-center gap-1.5 text-label-sm font-semibold text-brand-navy">
+              <Sparkles className="w-3.5 h-3.5" /> AI Stylist
+            </p>
+            <h1 className="mt-1 text-heading-h1 font-semibold text-neutral-900">Phối đồ cùng AI</h1>
+            <p className="mt-1 text-body-md text-neutral-500">Chọn dịp mặc, nhận bộ phối từ sản phẩm của cửa hàng.</p>
           </div>
-          <h1 className="text-heading-h2 font-semibold text-neutral-900 mb-2">AI Stylist</h1>
-          <p className="text-body-md text-neutral-600 mb-4">
-            Tư vấn màu sắc cá nhân, vóc dáng, size phù hợp và outfit công sở
-          </p>
-          <div className={`inline-flex items-center gap-2 bg-white border px-4 py-1.5 rounded-full text-label-sm font-semibold shadow-sm ${hasQuota ? 'border-neutral-200 text-neutral-700' : 'border-red-200 text-red-600'}`}>
-            <span className={`w-2 h-2 rounded-full ${hasQuota ? 'bg-amber-500 animate-ping' : 'bg-red-500'}`} />
-            {remainingQuota === null
-              ? 'Đang tải quota...'
-              : remainingQuota === Infinity
-                ? 'Gói VIP: không giới hạn lượt'
-                : `Còn ${remainingQuota} / ${quota?.limit} lượt tư vấn hôm nay`}
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full border bg-white text-label-sm font-semibold ${hasQuota ? 'border-neutral-200 text-neutral-600' : 'border-red-200 text-semantic-error'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${hasQuota ? 'bg-semantic-success' : 'bg-semantic-error'}`} />
+              {remainingQuota === null
+                ? 'Đang tải lượt…'
+                : remainingQuota === Infinity
+                  ? 'Không giới hạn lượt'
+                  : `Còn ${remainingQuota}/${quota?.limit} lượt hôm nay`}
+            </span>
+            {!historyLoading && history.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                className="h-9 px-3 rounded-full border border-neutral-200 bg-white text-label-sm font-semibold text-neutral-700 hover:border-brand-navy/40 hover:text-brand-navy flex items-center gap-1.5 cursor-pointer"
+              >
+                <HistoryIcon className="w-3.5 h-3.5" /> Lịch sử
+                <span className="text-neutral-400">{meta?.total ?? history.length}</span>
+              </button>
+            )}
           </div>
-        </div>
+        </header>
 
-        {/* INPUT SECTION */}
-        <StylistInputPanel
-          photoUrl={photoUrl}
-          fileInputRef={fileInputRef}
-          handleRemovePhoto={handleRemovePhoto}
-          cameraInputRef={cameraInputRef}
-          selectedProduct={selectedProduct}
-          setShowCatalogModal={setShowCatalogModal}
-          productsLoading={productsLoading}
-          setOccasion={setOccasion}
-          occasion={occasion}
-          setStylePreference={setStylePreference}
-          stylePreference={stylePreference}
-          setBudget={setBudget}
-          budget={budget}
-          setGenderPreference={setGenderPreference}
-          genderPreference={genderPreference}
-          pageState={pageState}
-          errorMessage={errorMessage}
-          handleAnalyze={handleAnalyze}
-          photoFile={photoFile}
-          isAnalyzing={isAnalyzing}
-        />
-
-        {/* PROCESSING LOADER */}
-        {pageState === 'processing' && (
-          <div className="bg-brand-navy/5 border border-brand-navy/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center animate-[fadeInUp_0.3s_ease-out]">
-            <ScanFace className="w-12 h-12 text-brand-navy mb-4 animate-bounce" />
-            <h3 className="text-body-lg font-bold text-brand-navy mb-2">
-              Gemini Vision đang quét vóc dáng, sắc tố da và số đo...
-            </h3>
-            <p className="text-body-sm text-brand-navy/70">Quá trình phân tích chuyên sâu mất khoảng 3-5 giây</p>
-          </div>
-        )}
-
-        {/* RESULT SECTION */}
-        {pageState === 'result' && displayResult && (
-          <StylistResultPanel
-            resultRef={resultRef}
-            displayResult={displayResult}
-            toColorList={toColorList}
-            score={score}
-            scoreColor={scoreColor}
-            scoreLabel={scoreLabel}
+        {showForm ? (
+          <StylistInputPanel
+            photoUrl={photoUrl}
+            fileInputRef={fileInputRef}
+            handleRemovePhoto={handleRemovePhoto}
+            cameraInputRef={cameraInputRef}
+            selectedProduct={selectedProduct}
+            setShowCatalogModal={setShowCatalogModal}
+            productsLoading={productsLoading}
+            setOccasion={setOccasion}
             occasion={occasion}
-            toOutfitList={toOutfitList}
-            getOutfitIcon={getOutfitIcon}
-            catalogProducts={catalogProducts}
+            setStylePreference={setStylePreference}
+            stylePreference={stylePreference}
+            setBudget={setBudget}
+            budget={budget}
+            setGenderPreference={setGenderPreference}
+            genderPreference={genderPreference}
+            pageState={pageState}
+            errorMessage={errorMessage}
+            handleAnalyze={handleAnalyze}
+            photoFile={photoFile}
+            imageConsent={imageConsent}
+            onImageConsentChange={handleImageConsentChange}
+            showConsentError={showConsentError}
+            isAnalyzing={isAnalyzing}
+            onCancelEdit={isEditing && displayResult ? () => setIsEditing(false) : undefined}
+          />
+        ) : (
+          <StylistBriefSummary
+            result={pageState === 'result' ? displayResult : null}
+            photoUrl={photoUrl}
+            isAnalyzing={pageState === 'processing'}
+            onEdit={handleEdit}
           />
         )}
 
-        {/* BOTTOM: History */}
-        {!historyLoading && history.length > 0 && (
-          <StylistHistoryPanel
-            setHistoryOpen={setHistoryOpen}
-            historyOpen={historyOpen}
-            meta={meta}
-            history={history}
-            handleSelectHistoryItem={handleSelectHistoryItem}
-            handleDeleteHistory={handleDeleteHistory}
-            isDeleting={isDeleting}
-            setPage={setPage}
-            page={page}
-          />
+        {pageState === 'processing' && <StylistResultSkeleton />}
+
+        {pageState === 'result' && displayResult && !isEditing && (
+          <StylistResultPanel key={displayResult.id} resultRef={resultRef} displayResult={displayResult} catalogProducts={catalogProducts} />
         )}
+
+        <StylistHistoryPanel
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+          meta={meta}
+          history={history}
+          selectedId={displayResult?.id ?? null}
+          handleSelectHistoryItem={handleSelectHistoryItem}
+          handleDeleteHistory={handleDeleteHistory}
+          isDeleting={isDeleting}
+          setPage={setPage}
+          page={page}
+        />
       </div>
     </div>
   );

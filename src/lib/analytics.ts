@@ -17,7 +17,16 @@ const GTAG_GET_TIMEOUT_MS = 1000;
 export type AnalyticsConsent = 'granted' | 'denied';
 export type AnalyticsAuthMethod = 'email' | 'google';
 
-export interface GaItem {
+/** Danh sách sản phẩm (GA4 item list) nơi người dùng thấy sản phẩm, vd. gợi ý của AI. */
+export interface GaItemList {
+  item_list_id: string;
+  item_list_name: string;
+}
+
+/** List + vị trí của sản phẩm trong list, gắn vào item để GA4 quy đơn hàng về list đó. */
+export type GaItemListContext = GaItemList & { index?: number };
+
+export interface GaItem extends Partial<GaItemListContext> {
   item_id: string;
   item_name: string;
   item_brand?: string;
@@ -33,12 +42,18 @@ export interface CommerceParams {
   items: GaItem[];
 }
 
+export interface ItemListParams extends GaItemList {
+  items: GaItem[];
+}
+
 /**
  * Tên event và tham số gửi lên GA4. Tên event là hợp đồng với tab Phân tích của BE
  * (modules/analytics/constants), đổi tên phải đổi cả hai bên.
  */
 export interface AnalyticsEvents {
   view_item: CommerceParams;
+  view_item_list: ItemListParams;
+  select_item: ItemListParams;
   add_to_cart: CommerceParams;
   remove_from_cart: CommerceParams;
   view_cart: CommerceParams;

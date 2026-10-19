@@ -1,5 +1,7 @@
 'use client';
 
+import { GA_ITEM_LISTS } from '@/features/analytics/constants/ga-item-lists';
+import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
 import { OCCASION_LABELS } from '@/features/stylist/constants/profile-stylist-history-page';
 import { useDeleteStylistHistory, useStylistHistory } from '@/features/stylist/hooks/useStylist';
 import type { StylistResult } from '@/features/stylist/types/stylist';
@@ -38,7 +40,8 @@ function StylistCard({ item, onDelete, isDeleting }: {
   const [imgError, setImgError] = useState(false);
 
   const score = item.productCompatibilityScore;
-  const outfits = Array.isArray(item.outfitCombinations) ? item.outfitCombinations : [];
+  // Lịch sử cũ chưa có bộ phối từ catalog (`outfits` rỗng): hiện gợi ý dạng chữ như trước.
+  const legacyOutfits = item.outfits.length === 0 && Array.isArray(item.outfitCombinations) ? item.outfitCombinations : [];
   const colors = Array.isArray(item.colorSuggestions) ? item.colorSuggestions : [];
 
   const handleDelete = () => {
@@ -224,7 +227,7 @@ function StylistCard({ item, onDelete, isDeleting }: {
                   }
                   return (
                     <div key={i} className="flex items-center gap-1.5 px-2.5 py-1 bg-neutral-50 border border-neutral-200 rounded-full">
-                      <div className="w-3 h-3 rounded-full border border-white shadow-sm" style={{ backgroundColor: c.hex }} />
+                      <div className="w-3 h-3 rounded-full border border-white shadow-sm" style={{ backgroundColor: c.hex ?? undefined }} />
                       <span className="text-label-sm text-neutral-700">{c.name}</span>
                     </div>
                   );
@@ -234,34 +237,38 @@ function StylistCard({ item, onDelete, isDeleting }: {
           )}
 
           {/* Outfit Combinations */}
-          {outfits.length > 0 && (
+          {(item.outfits.length > 0 || legacyOutfits.length > 0) && (
             <div>
               <div className="flex items-center gap-1.5 mb-2 text-label-sm font-semibold text-neutral-700 uppercase tracking-wide">
                 <Heart className="w-3.5 h-3.5 text-semantic-error" /> Gợi ý outfit
               </div>
-              <div className="space-y-2">
-                {outfits.map((outfit, i) => {
-                  if (typeof outfit === 'string') {
+              {item.outfits.length > 0 ? (
+                <OutfitSuggestionList viewKey={item.id} list={GA_ITEM_LISTS.aiStylist} outfits={item.outfits} />
+              ) : (
+                <div className="space-y-2">
+                  {legacyOutfits.map((outfit, i) => {
+                    if (typeof outfit === 'string') {
+                      return (
+                        <div key={i} className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-body-sm text-neutral-700">
+                          {outfit}
+                        </div>
+                      );
+                    }
                     return (
-                      <div key={i} className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-body-sm text-neutral-700">
-                        {outfit}
+                      <div key={i} className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl">
+                        <p className="text-label-sm font-semibold text-brand-navy mb-1.5">{outfit.name}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(outfit.items || []).map((item, j) => (
+                            <span key={j} className="text-label-sm px-2 py-0.5 bg-white border border-neutral-200 rounded-full text-neutral-600">
+                              {item.type}: {item.name}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     );
-                  }
-                  return (
-                    <div key={i} className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl">
-                      <p className="text-label-sm font-semibold text-brand-navy mb-1.5">{outfit.name}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(outfit.items || []).map((item, j) => (
-                          <span key={j} className="text-label-sm px-2 py-0.5 bg-white border border-neutral-200 rounded-full text-neutral-600">
-                            {item.type}: {item.name}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              )}
             </div>
           )}
 

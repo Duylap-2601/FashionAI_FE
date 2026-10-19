@@ -79,12 +79,16 @@ src/
 │   │                        #             admin-webhook-failures-panel,
 │   │                        #             admin-analytics-panel (+ -charts; GA4
 │   │                        #             report from /admin/analytics)
-│   ├── analytics/           # components/ hooks/ services/
+│   ├── analytics/           # components/ constants/ hooks/ services/
 │   │                        # components: analytics-bootstrap (GA4 user sync,
 │   │                        #             admin opt-out), cookie-consent-banner
+│   │                        # constants: ga-item-lists.ts (GA4 item lists,
+│   │                        #            e.g. ai_stylist, ai_chat)
 │   │                        # hooks: use-commerce-view-tracking (view_cart,
-│   │                        #        begin_checkout)
-│   │                        # services: ga-items.ts (Product/CartItem → GA4 item)
+│   │                        #        begin_checkout), use-item-list-view-tracking
+│   │                        #        (view_item_list once per result/message)
+│   │                        # services: ga-items.ts (Product/CartItem/
+│   │                        #           SuggestedProduct → GA4 item)
 │   ├── auth/                # components/ constants/ hooks/ services/ store/ types/
 │   │                        # hooks: useAuth.ts, use-change-password.ts
 │   │                        # store: authStore.ts (Zustand)
@@ -119,6 +123,14 @@ src/
 │   ├── rack/                # components/ hooks/ services/ types/
 │   ├── reviews/             # components/ constants/ hooks/ services/ types/
 │   ├── stylist/             # components/ constants/ hooks/ services/ types/
+│   │                        # types/outfit-suggestion.ts owns SuggestedProduct /
+│   │                        #   OutfitSuggestion (AI catalog picks, also used by chat)
+│   │                        # components: outfit-suggestion-list (+ -card,
+│   │                        #   suggested-product-list) shared with chat;
+│   │                        #   variant="showcase" (outfit-showcase-card) is
+│   │                        #   the AI Stylist page card. The page swaps the
+│   │                        #   form for stylist-brief-summary once a result
+│   │                        #   shows; history opens in a Sheet.
 │   ├── subscription/        # components/ constants/ hooks/ services/ types/
 │   └── try-on/              # components/ constants/ hooks/ services/ types/
 │                            # components: TryOnWorkspace, TryOnResult, TryOnHeader,
@@ -310,9 +322,13 @@ src/
   `beforeInteractive` script sets Consent Mode v2 defaults first (analytics denied
   until the cookie banner is accepted). Send events only through `trackEvent` in
   `src/lib/analytics.ts`; event names are a contract with the backend admin
-  analytics report. `purchase` is sent by the backend after payment is confirmed,
-  so the frontend never tracks it; checkout only forwards `gaClientId` /
-  `gaSessionId`. Admin accounts and `/admin` routes are excluded from GA4.
+  analytics report. Recommendation lists (AI Stylist, AI Chat) send `view_item_list` /
+  `select_item` with an `item_list_id` / `item_list_name` from `GA_ITEM_LISTS`; adding
+  from such a list passes the list to `useCart().addToCart(item, listContext)` so the
+  one `add_to_cart` it already sends carries the list. Never send a second `add_to_cart`.
+  `purchase` is sent by the backend after payment is confirmed, so the frontend never
+  tracks it; checkout only forwards `gaClientId` / `gaSessionId`. Admin accounts and
+  `/admin` routes are excluded from GA4.
 - `src/lib/auth.ts` is legacy NextAuth code and is not part of the active auth flow.
   Do not reinstall NextAuth or activate this file during structural refactors.
 - Capacitor native bridge (`src/components/native/`) handles Android back-button and

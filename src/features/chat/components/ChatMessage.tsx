@@ -1,6 +1,9 @@
 'use client';
 
+import { GA_ITEM_LISTS } from '@/features/analytics/constants/ga-item-lists';
 import type { ChatMessageProps } from '@/features/chat/types/chat-message';
+import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
+import { ChatSuggestionsSkeleton } from './ChatSuggestionsSkeleton';
 import { Check, Copy, ExternalLink, Package, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react';
@@ -11,6 +14,9 @@ import { FormattedChatText } from './FormattedChatText';
 export function ChatMessage({ message, onRetry }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
+  // Thẻ có thể tới trước khi stream kết thúc hẳn (BE gửi trước bước lưu DB).
+  const suggestions = !isUser ? message.suggestions : null;
+  const suggestionsPending = !isUser && Boolean(message.suggestionsPending) && !suggestions;
 
   const handleCopy = async () => {
     try {
@@ -42,7 +48,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
       )}
 
       {/* Message Content Container */}
-      <div className={`flex flex-col gap-1.5 max-w-[85%] sm:max-w-[78%] md:max-w-[70%] ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex flex-col gap-1.5 max-w-[85%] sm:max-w-[78%] md:max-w-[70%] ${isUser ? 'items-end' : 'items-start'} ${suggestions || suggestionsPending ? 'w-full' : ''}`}>
 
         {/* Attached Product Preview Card if present */}
         {message.product && (
@@ -113,6 +119,18 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
             </div>
           )}
         </div>
+
+        {/* Bộ phối / sản phẩm AI gợi ý từ catalog */}
+        {suggestionsPending && <ChatSuggestionsSkeleton />}
+        {suggestions && (
+          <OutfitSuggestionList
+            viewKey={message.messageId ?? message.id}
+            list={GA_ITEM_LISTS.aiChat}
+            variant="carousel"
+            outfits={suggestions.outfits}
+            products={suggestions.products}
+          />
+        )}
 
         {/* Footer info & message actions */}
         <div className="flex items-center gap-2 px-1 text-[11px] text-neutral-400 font-medium">

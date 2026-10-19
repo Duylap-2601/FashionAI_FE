@@ -1,19 +1,60 @@
 'use client';
 
-import { BUDGETS, OCCASIONS, STYLE_PREFERENCES } from '@/features/stylist/constants/ai-stylist-page';
-import type { GenderPref } from '@/features/stylist/types/ai-stylist-page';
+import { BUDGETS, GENDER_OPTIONS, IMAGE_CONSENT_TEXT, OCCASIONS, STYLE_PREFERENCES } from '@/features/stylist/constants/ai-stylist-page';
 import type { StylistInputPanelProps } from '@/features/stylist/types/stylist-input-panel';
 import {
   AlertTriangle,
+  Briefcase,
   Camera as CameraIcon,
-  Package,
+  Palette,
+  Plus,
+  ScanFace,
+  ShieldCheck,
+  Shirt,
+  Sparkles,
   UploadCloud,
+  UserRound,
   Wallet,
   X
 } from 'lucide-react';
+import Image from 'next/image';
 import React, { useState } from 'react';
 
-export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, cameraInputRef, selectedProduct, setShowCatalogModal, productsLoading, setOccasion, occasion, setStylePreference, stylePreference, setBudget, budget, setGenderPreference, genderPreference, pageState, errorMessage, handleAnalyze, photoFile, isAnalyzing }: StylistInputPanelProps) {
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`h-9 px-3.5 rounded-full text-label-md font-medium border transition-colors cursor-pointer ${active
+        ? 'bg-brand-navy text-white border-brand-navy'
+        : 'bg-white text-neutral-700 border-neutral-200 hover:border-brand-navy/40 hover:text-brand-navy'
+        }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function OptionGroup({ icon: Icon, label, children }: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="flex items-center gap-1.5 mb-2.5 text-label-sm font-semibold text-neutral-500">
+        <Icon className="w-3.5 h-3.5" /> {label}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+const TEXT_INPUT_CLASS =
+  'mt-2.5 w-full h-10 px-3.5 rounded-xl border border-neutral-200 bg-white text-body-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-brand-navy/15 focus:border-brand-navy transition-all';
+
+export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, cameraInputRef, selectedProduct, setShowCatalogModal, productsLoading, setOccasion, occasion, setStylePreference, stylePreference, setBudget, budget, setGenderPreference, genderPreference, pageState, errorMessage, handleAnalyze, photoFile, imageConsent, onImageConsentChange, showConsentError, isAnalyzing, onCancelEdit }: StylistInputPanelProps) {
   const [isCustomOccasion, setIsCustomOccasion] = useState(
     () => !!occasion && !OCCASIONS.includes(occasion)
   );
@@ -62,286 +103,248 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
     setCustomStyleInput(val);
     setStylePreference(val);
   };
-  return (
-    <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-neutral-200 mb-8 transition-all">
-      <h2 className="text-heading-h3 font-semibold text-brand-navy mb-6">
-        1. Ảnh của bạn
-      </h2>
 
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        {/* Upload Area */}
-        <div className="w-full md:w-[200px] shrink-0 flex flex-col items-center">
+  return (
+    <section className="bg-white rounded-3xl border border-neutral-200/80 shadow-xs p-5 md:p-7 mb-6">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+        {/* Ảnh: tùy chọn, chỉ để AI đọc dáng người và màu da */}
+        <div className="flex md:flex-col items-center md:items-stretch gap-4 md:gap-2.5 md:w-[176px] shrink-0">
           <div
-            className={`relative w-[200px] h-[260px] rounded-xl overflow-hidden transition-all flex flex-col items-center justify-center text-center group border-2 ${photoUrl
-                ? 'border-transparent'
-                : 'border-dashed border-brand-navy/40 bg-neutral-50 hover:bg-neutral-100/50 cursor-pointer'
+            className={`relative w-[84px] h-[112px] md:w-full md:h-auto md:aspect-[3/4] shrink-0 rounded-2xl overflow-hidden ${photoUrl
+              ? ''
+              : 'border border-dashed border-neutral-300 bg-brand-cream'
               }`}
-            onClick={() => { if (!photoUrl) fileInputRef.current?.click(); }}
           >
             {photoUrl ? (
               <>
-                <img src={photoUrl} alt="Ảnh đã tải lên" className="w-full h-full object-cover" />
+                {/* blob: URL của ảnh vừa chọn, next/image không tối ưu được nên dùng thẻ img. */}
+                <img src={photoUrl} alt="Ảnh của bạn" className="w-full h-full object-cover" />
                 <button
                   onClick={handleRemovePhoto}
                   type="button"
-                  className="absolute top-2 right-2 w-8 h-8 bg-neutral-900/50 hover:bg-neutral-900/80 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors border-0 cursor-pointer"
+                  aria-label="Xoá ảnh"
+                  className="absolute top-1.5 right-1.5 w-7 h-7 bg-neutral-900/55 hover:bg-neutral-900/80 rounded-full flex items-center justify-center text-white border-0 cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
-                <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur text-white text-[11px] px-2 py-1 rounded">
-                  Đã chọn ảnh
-                </div>
               </>
             ) : (
-              <div className="p-4 flex flex-col items-center justify-center h-full w-full">
-                <div className="flex flex-col gap-2 w-full">
+              <div className="h-full flex flex-col p-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  aria-label="Tải ảnh lên"
+                  className="flex-1 flex flex-col items-center justify-center gap-2 text-brand-navy border-0 bg-transparent cursor-pointer"
+                >
+                  <ScanFace className="w-7 h-7 md:w-9 md:h-9 opacity-70" />
+                  <span className="hidden md:block text-label-md font-semibold text-neutral-900">Ảnh của bạn</span>
+                </button>
+                <div className="hidden md:flex flex-col gap-1.5">
                   <button
-                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                     type="button"
-                    className="flex flex-col items-center p-2 rounded-xl hover:bg-brand-navy/5 transition-colors border-0 bg-transparent w-full cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-8 w-full rounded-full bg-white border border-neutral-200 text-label-sm font-semibold text-neutral-700 hover:border-brand-navy/40 hover:text-brand-navy flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
                   >
-                    <UploadCloud className="w-7 h-7 text-brand-navy mb-2 opacity-80" />
-                    <span className="text-label-sm font-semibold text-brand-navy">Tải ảnh lên</span>
+                    <UploadCloud className="w-3.5 h-3.5" /> Tải ảnh lên
                   </button>
-
-                  <div className="h-px bg-neutral-200 w-3/4 mx-auto" />
-
                   <button
-                    onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
                     type="button"
-                    className="flex flex-col items-center p-2 rounded-xl hover:bg-brand-navy/5 transition-colors border-0 bg-transparent w-full cursor-pointer"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="h-8 w-full rounded-full bg-white border border-neutral-200 text-label-sm font-semibold text-neutral-700 hover:border-brand-navy/40 hover:text-brand-navy flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
                   >
-                    <CameraIcon className="w-7 h-7 text-brand-navy mb-2 opacity-80" />
-                    <span className="text-label-sm font-semibold text-brand-navy">Chụp ảnh selfie</span>
+                    <CameraIcon className="w-3.5 h-3.5" /> Chụp ảnh
                   </button>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Desktop: một dòng dưới ô ảnh */}
+          <p className="hidden md:flex items-center justify-center gap-1 text-[11px] text-neutral-400 whitespace-nowrap">
+            <ShieldCheck className="w-3 h-3 text-semantic-success" /> Tùy chọn · không lưu ảnh
+          </p>
+
+          {/* Mobile: chữ và nút nằm cạnh ô ảnh */}
+          <div className="md:hidden flex-1 min-w-0">
+            <p className="text-label-md font-semibold text-neutral-900">Ảnh của bạn</p>
+            <p className="text-label-sm text-neutral-500">Tùy chọn, giúp AI đọc dáng và màu da</p>
+            {!photoUrl && (
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-8 px-3 rounded-full border border-neutral-200 bg-white text-label-sm font-semibold text-neutral-700 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" /> Tải lên
+                </button>
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="h-8 px-3 rounded-full border border-neutral-200 bg-white text-label-sm font-semibold text-neutral-700 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                >
+                  <CameraIcon className="w-3.5 h-3.5" /> Chụp
+                </button>
+              </div>
+            )}
+            <p className="mt-2 flex items-center gap-1 text-[11px] text-neutral-400">
+              <ShieldCheck className="w-3 h-3 text-semantic-success" /> Không lưu ảnh
+            </p>
+          </div>
         </div>
 
-        {/* Context fields */}
-        <div className="flex-1 w-full flex flex-col gap-6">
-          {/* Product selection */}
-          <div>
-            <label className="text-label-md font-semibold text-neutral-900 mb-3 block">
-              Sản phẩm cần tư vấn <span className="text-neutral-400 font-normal">(tùy chọn)</span>
-            </label>
+        {/* Yêu cầu */}
+        <div className="flex-1 min-w-0 flex flex-col gap-5">
+          <OptionGroup icon={Briefcase} label="Dịp mặc">
+            <div className="flex flex-wrap gap-2">
+              {OCCASIONS.map((occ) => (
+                <Chip key={occ} active={!isCustomOccasion && occasion === occ} onClick={() => handleSelectPresetOccasion(occ)}>
+                  {occ}
+                </Chip>
+              ))}
+              <Chip active={isCustomOccasion} onClick={handleSelectCustomOccasion}>Khác…</Chip>
+            </div>
+            {isCustomOccasion && (
+              <input
+                type="text"
+                value={customOccasionInput}
+                onChange={(e) => handleCustomOccasionChange(e.target.value)}
+                placeholder="VD: Hẹn hò, Du lịch biển, Tiệc sinh nhật"
+                className={TEXT_INPUT_CLASS}
+                autoFocus
+              />
+            )}
+          </OptionGroup>
+
+          <OptionGroup icon={Palette} label="Phong cách">
+            <div className="flex flex-wrap gap-2">
+              {STYLE_PREFERENCES.map((style) => (
+                <Chip key={style} active={!isCustomStyle && stylePreference === style} onClick={() => handleSelectPresetStyle(style)}>
+                  {style}
+                </Chip>
+              ))}
+              <Chip active={isCustomStyle} onClick={handleToggleCustomStyle}>Khác…</Chip>
+            </div>
+            {isCustomStyle && (
+              <input
+                type="text"
+                value={customStyleInput}
+                onChange={(e) => handleCustomStyleChange(e.target.value)}
+                placeholder="VD: Vintage, Cổ điển, Nữ tính"
+                className={TEXT_INPUT_CLASS}
+                autoFocus
+              />
+            )}
+          </OptionGroup>
+
+          <div className="flex flex-wrap gap-x-10 gap-y-5">
+            <OptionGroup icon={Wallet} label="Ngân sách mỗi bộ">
+              <div className="flex flex-wrap gap-2">
+                {BUDGETS.map((b) => (
+                  <Chip key={b} active={budget === b} onClick={() => setBudget(budget === b ? '' : b)}>{b}</Chip>
+                ))}
+              </div>
+            </OptionGroup>
+            <OptionGroup icon={UserRound} label="Giới tính">
+              <div className="flex flex-wrap gap-2">
+                {GENDER_OPTIONS.map(({ value, label }) => (
+                  <Chip
+                    key={value}
+                    active={genderPreference === value}
+                    onClick={() => setGenderPreference(genderPreference === value ? '' : value)}
+                  >
+                    {label}
+                  </Chip>
+                ))}
+              </div>
+            </OptionGroup>
+          </div>
+
+          <OptionGroup icon={Shirt} label="Món muốn phối cùng">
             {selectedProduct ? (
-              <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl border border-neutral-200">
+              <div className="inline-flex max-w-full items-center gap-2.5 pl-1.5 pr-2 py-1.5 rounded-2xl border border-brand-navy/30 bg-brand-navy/5">
                 {selectedProduct.garmentUrl && (
-                  <img
-                    src={selectedProduct.garmentUrl}
-                    alt={selectedProduct.name}
-                    className="w-14 h-16 rounded-lg object-cover bg-neutral-100 shrink-0 border border-neutral-100"
-                  />
+                  <div className="relative w-9 h-11 shrink-0 rounded-lg overflow-hidden bg-neutral-100">
+                    <Image src={selectedProduct.garmentUrl} alt={selectedProduct.name} fill sizes="36px" className="object-contain" />
+                  </div>
                 )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-body-sm font-semibold text-neutral-900 truncate">
-                    {selectedProduct.name}
-                  </p>
-                  {typeof selectedProduct.price === 'number' && selectedProduct.price > 0 && (
-                    <p className="text-label-sm font-semibold text-brand-navy mt-0.5">
-                      {selectedProduct.price.toLocaleString('vi-VN')} đ
-                    </p>
-                  )}
-                </div>
+                <span className="min-w-0 truncate text-body-sm font-semibold text-neutral-900">{selectedProduct.name}</span>
                 <button
                   onClick={() => setShowCatalogModal(true)}
                   type="button"
-                  className="text-label-sm font-bold text-brand-navy hover:underline border-0 bg-transparent cursor-pointer whitespace-nowrap"
+                  className="shrink-0 text-label-sm font-semibold text-brand-navy hover:underline border-0 bg-transparent cursor-pointer"
                 >
-                  Đổi sản phẩm
+                  Đổi
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setShowCatalogModal(true)}
                 type="button"
-                className="w-full h-11 px-4 rounded-xl border border-brand-navy/40 text-brand-navy font-semibold text-label-sm hover:bg-brand-navy hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="h-9 px-3.5 rounded-full border border-dashed border-neutral-300 text-label-md font-medium text-neutral-600 hover:border-brand-navy/40 hover:text-brand-navy flex items-center gap-1.5 cursor-pointer"
               >
-                <Package className="w-4 h-4" />
-                {productsLoading ? 'Đang tải catalog...' : 'Chọn từ catalog'}
+                <Plus className="w-4 h-4" />
+                {productsLoading ? 'Đang tải…' : 'Chọn từ cửa hàng'}
               </button>
-
             )}
+          </OptionGroup>
+        </div>
+      </div>
+
+      <div className="mt-6 pt-5 border-t border-neutral-100 flex flex-col gap-3">
+        {/* Đồng ý dùng ảnh: bắt buộc khi có ảnh */}
+        {photoFile && (
+          <label
+            className={`flex items-start gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors ${showConsentError && !imageConsent
+              ? 'border-semantic-error bg-red-50'
+              : 'border-neutral-200 bg-brand-cream'
+              }`}
+          >
+            <input
+              type="checkbox"
+              checked={imageConsent}
+              onChange={(e) => onImageConsentChange(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-brand-navy cursor-pointer"
+            />
+            <span className="text-label-sm text-neutral-700 leading-relaxed">{IMAGE_CONSENT_TEXT}</span>
+          </label>
+        )}
+
+        {pageState === 'idle' && errorMessage && (
+          <div className="flex items-start gap-2 px-3 py-2.5 bg-red-50 rounded-xl border border-red-100">
+            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <p className="text-body-sm text-red-700">{errorMessage}</p>
           </div>
+        )}
 
-          {/* Occasion */}
-          <div>
-            <label className="text-label-md font-semibold text-neutral-900 mb-3 block">
-              Dịp mặc
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {OCCASIONS.map((occ) => (
-                <button
-                  key={occ}
-                  type="button"
-                  onClick={() => handleSelectPresetOccasion(occ)}
-                  className={`px-4 py-2 rounded-full text-label-md font-medium transition-colors border cursor-pointer ${
-                    !isCustomOccasion && occasion === occ
-                      ? 'bg-brand-navy text-white border-brand-navy'
-                      : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                  }`}
-                >
-                  {occ}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={handleSelectCustomOccasion}
-                className={`px-4 py-2 rounded-full text-label-md font-medium transition-colors border cursor-pointer ${
-                  isCustomOccasion
-                    ? 'bg-brand-navy text-white border-brand-navy'
-                    : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                }`}
-              >
-                Khác...
-              </button>
-            </div>
-
-            {isCustomOccasion && (
-              <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-150">
-                <input
-                  type="text"
-                  value={customOccasionInput}
-                  onChange={(e) => handleCustomOccasionChange(e.target.value)}
-                  placeholder="Nhập dịp mặc của bạn (VD: Dạo phố, Du lịch biển, Tiệc sinh nhật, Hẹn hò...)"
-                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 bg-neutral-50 focus:bg-white text-body-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all"
-                  autoFocus
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Style + budget */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-label-md font-semibold text-neutral-900 mb-2 block">
-                Phong cách yêu thích
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {STYLE_PREFERENCES.map((style) => (
-                  <button
-                    key={style}
-                    type="button"
-                    onClick={() => handleSelectPresetStyle(style)}
-                    className={`px-3 py-1.5 rounded-full text-label-sm font-medium transition-colors border cursor-pointer ${
-                      !isCustomStyle && stylePreference === style
-                        ? 'bg-brand-navy/10 text-brand-navy border-brand-navy/40 font-semibold'
-                        : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                    }`}
-                  >
-                    {style}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={handleToggleCustomStyle}
-                  className={`px-3 py-1.5 rounded-full text-label-sm font-medium transition-colors border cursor-pointer ${
-                    isCustomStyle
-                      ? 'bg-brand-navy/10 text-brand-navy border-brand-navy/40 font-semibold'
-                      : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                  }`}
-                >
-                  Khác...
-                </button>
-              </div>
-
-              {isCustomStyle && (
-                <div className="mt-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                  <input
-                    type="text"
-                    value={customStyleInput}
-                    onChange={(e) => handleCustomStyleChange(e.target.value)}
-                    placeholder="Nhập phong cách (VD: Vintage, Y2K, Streetwear, Cổ điển...)"
-                    className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 bg-neutral-50 focus:bg-white text-body-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all"
-                    autoFocus
-                  />
-                </div>
-              )}
-            </div>
-            <div>
-              <label className="text-label-md font-semibold text-neutral-900 mb-2 block">
-                <Wallet className="w-4 h-4 inline mr-1 text-brand-navy" /> Ngân sách
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {BUDGETS.map((b) => (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => setBudget(budget === b ? '' : b)}
-                    className={`px-3 py-1.5 rounded-full text-label-sm font-medium transition-colors border cursor-pointer ${budget === b
-                        ? 'bg-brand-navy/10 text-brand-navy border-brand-navy/40'
-                        : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                      }`}
-                  >
-                    {b}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Gender preference */}
-          <div>
-            <label className="text-label-md font-semibold text-neutral-900 mb-2 block">
-              Giới tính tư vấn <span className="text-neutral-400 font-normal">(tùy chọn)</span>
-            </label>
-            <div className="flex gap-2">
-              {([
-                ['male', 'Nam'],
-                ['female', 'Nữ'],
-                ['other', 'Khác'],
-              ] as [GenderPref, string][]).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setGenderPreference(genderPreference === value ? '' : value)}
-                  className={`px-4 py-2 rounded-xl text-label-sm font-medium transition-colors border cursor-pointer ${genderPreference === value
-                      ? 'bg-brand-navy text-white border-brand-navy'
-                      : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                    }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Error banner */}
-          {pageState === 'idle' && errorMessage && (
-            <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 rounded-xl border border-red-100">
-              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-body-sm text-red-700">{errorMessage}</p>
-            </div>
+        <div className="flex flex-col-reverse sm:flex-row gap-2.5">
+          {onCancelEdit && (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="h-12 px-5 rounded-xl border border-neutral-200 bg-white text-label-md font-semibold text-neutral-700 hover:bg-neutral-50 cursor-pointer"
+            >
+              Xem lại kết quả
+            </button>
           )}
-
-          {/* Analyze */}
           <button
             onClick={handleAnalyze}
-            disabled={!photoFile || isAnalyzing}
+            disabled={isAnalyzing}
             type="button"
-            className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-label-md font-bold text-white transition-all border-0 ${!photoFile
-                ? 'bg-neutral-300 cursor-not-allowed'
-                : isAnalyzing
-                  ? 'bg-brand-navy/80 cursor-wait'
-                  : 'bg-brand-navy hover:bg-brand-navy/90 shadow-md cursor-pointer'
-              }`}
+            className="w-full sm:flex-1 h-12 rounded-xl flex items-center justify-center gap-2 text-label-md font-bold text-white bg-brand-navy hover:bg-brand-navy/90 shadow-sm transition-colors border-0 cursor-pointer disabled:bg-brand-navy/70 disabled:cursor-wait"
           >
             {isAnalyzing ? (
               <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Đang phân tích dáng người & màu da...
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Đang phối đồ…
               </>
             ) : (
               <>
-                Phân tích phong cách bằng AI
+                <Sparkles className="w-4 h-4" /> Gợi ý bộ phối
               </>
             )}
           </button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

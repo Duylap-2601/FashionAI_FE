@@ -1,9 +1,9 @@
 import { normalizeStylistResult } from '@/features/stylist/services/stylist-utils';
-import type { StylistHistoryMeta, StylistResult } from '@/features/stylist/types/stylist';
+import type { StylistHistoryMeta, StylistResultDto } from '@/features/stylist/types/stylist';
 import { http } from '@/lib/http';
 
 export async function fetchStylistHistory(page: number, pageSize: number) {
-  const data = await http.get<(StylistResult[] & { __meta?: StylistHistoryMeta }) | { items?: StylistResult[]; meta?: StylistHistoryMeta }>('/stylist/history', {
+  const data = await http.get<(StylistResultDto[] & { __meta?: StylistHistoryMeta }) | { items?: StylistResultDto[]; meta?: StylistHistoryMeta }>('/stylist/history', {
     params: { page, limit: pageSize },
   });
   const rawItems = Array.isArray(data) ? data : data.items || [];

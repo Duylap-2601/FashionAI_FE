@@ -7,7 +7,7 @@ import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
 import { trackEvent } from '@/lib/analytics';
 import { ArrowRight, Camera, Check, ChevronDown, CirclePause, Expand, Image as ImageIcon, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface LiveTryOnWorkspaceProps {
   selectedProduct: Product;
@@ -23,6 +23,9 @@ interface LiveTryOnWorkspaceProps {
   onSelectUpperColor: (color: string) => void;
   onSelectLowerColor: (color: string) => void;
   onSwitchToPhoto: () => void;
+  /** Chế độ áo + quần dùng chung với Thử bằng ảnh, để đổi tab không mất bộ đang chọn. */
+  outfitMode: boolean;
+  onOutfitModeChange: (combo: boolean) => void;
 }
 
 const buttonFocus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D1C34] focus-visible:ring-offset-4 disabled:cursor-not-allowed disabled:opacity-45';
@@ -41,8 +44,9 @@ export function LiveTryOnWorkspace({
   onSelectUpperColor,
   onSelectLowerColor,
   onSwitchToPhoto,
+  outfitMode,
+  onOutfitModeChange,
 }: LiveTryOnWorkspaceProps) {
-  const [outfitMode, setOutfitMode] = useState(false);
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const live = useLiveTryOn();
@@ -63,7 +67,7 @@ export function LiveTryOnWorkspace({
   const lowTime = hasSession && seconds > 0 && seconds <= 10;
   const canStart = productsReady && (!hasSession || isPaused) && !isBusy && !isLive && !otherSessionRunning && !isLoading && !isError && Boolean(quota?.enabled && quota.eligible) && seconds > 0;
   const statusLabel = isPaused ? 'Đã tạm dừng' : isLive ? 'Đang thử trực tiếp' : busyLabel(live.status) ?? (live.status === 'ended' ? 'Phiên đã kết thúc' : 'Sẵn sàng thử đồ');
-  const unavailable = isLoading ? 'Đang kiểm tra thời gian thử đồ…' : isError ? 'Chưa tải được thời gian sử dụng. Vui lòng thử lại.' : quota && !quota.enabled ? 'Thử đồ trực tiếp hiện đang tạm nghỉ. Bạn vẫn có thể thử bằng ảnh.' : quota && !quota.eligible ? reasonLabel(quota.disabledReason) : otherSessionRunning ? 'Bạn có phiên đang mở ở nơi khác. Kết thúc phiên đó để bắt đầu tại đây.' : !productsReady ? (outfitMode ? 'Chọn đủ áo và quần để bắt đầu.' : 'Chọn một sản phẩm để bắt đầu thử đồ.') : !hasSession && seconds <= 0 && quota ? 'Bạn đã dùng hết thời gian Live hôm nay.' : null;
+  const unavailable = isLoading ? 'Đang kiểm tra thời gian thử đồ…' : isError ? 'Chưa tải được thời gian sử dụng. Vui lòng thử lại.' : quota && !quota.enabled ? 'Thử đồ trực tiếp hiện đang tạm nghỉ. Bạn vẫn có thể thử bằng ảnh.' : quota && !quota.eligible ? reasonLabel(quota.disabledReason) : otherSessionRunning ? 'Bạn có phiên đang mở ở nơi khác. Kết thúc phiên đó để bắt đầu tại đây.' : !productsReady ? (outfitMode ? 'Chọn đủ áo và quần để bắt đầu.' : 'Chọn một sản phẩm để bắt đầu thử đồ.') : !hasSession && seconds <= 0 && quota ? 'Bạn đã dùng hết thời gian thử trực tiếp hôm nay.' : null;
 
   useEffect(() => {
     const video = cameraVideoRef.current;
@@ -105,7 +109,7 @@ export function LiveTryOnWorkspace({
     <section aria-label="Phòng thử đồ trực tiếp" className="pb-40 md:pb-32 lg:pb-0">
       <div className="mb-5 flex items-end justify-between gap-4 md:mb-7">
         <div>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#865C68]">LIVE FITTING ROOM</p>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#865C68]">Phòng thử trực tiếp</p>
           <h2 className="font-serif text-[30px] leading-[1.1] tracking-tight text-[#302323] sm:text-[40px]">Phòng thử của bạn</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[#81716D]">Một góc nhìn mới, một bộ đồ thật hợp.</p>
         </div>
@@ -137,7 +141,7 @@ export function LiveTryOnWorkspace({
             </div>
             <div className="flex items-center gap-2 border-t border-white/10 px-4 py-3 text-[12px] text-[#DFD2C8]"><Expand size={15} className="shrink-0" />{outfitMode ? 'Lùi lại để thấy trọn áo và quần trong khung hình.' : 'Đứng nơi đủ sáng, giữ trang phục trong khung hình.'}</div>
           </div>
-          <p className="mt-3 flex items-center justify-center gap-2 text-[11px] text-[#887873]"><Camera size={13} />Camera chỉ được gửi để xử lý khi bắt đầu hoặc tiếp tục Live.</p>
+          <p className="mt-3 flex items-center justify-center gap-2 text-[11px] text-[#887873]"><Camera size={13} />Camera chỉ được gửi để xử lý khi bạn bắt đầu hoặc tiếp tục thử.</p>
         </div>
 
         <div className="min-w-0 space-y-4 lg:sticky lg:top-24">
@@ -148,7 +152,7 @@ export function LiveTryOnWorkspace({
             </div>
             <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-[#F4F0EC] p-1" role="group" aria-label="Chế độ trang phục">
               {[{ label: 'Một món', combo: false }, { label: 'Áo + quần', combo: true }].map(({ label, combo }) => (
-                <button key={label} type="button" aria-pressed={outfitMode === combo} disabled={selectionLocked} onClick={() => setOutfitMode(combo)} className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-[13px] font-semibold transition-colors ${buttonFocus} ${outfitMode === combo ? 'bg-white text-[#5D1C34] shadow-sm' : 'text-[#8A7871] hover:text-[#5D1C34]'}`}>{outfitMode === combo && <Check size={14} />}{label}</button>
+                <button key={label} type="button" aria-pressed={outfitMode === combo} disabled={selectionLocked} onClick={() => onOutfitModeChange(combo)} className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-[13px] font-semibold transition-colors ${buttonFocus} ${outfitMode === combo ? 'bg-white text-[#5D1C34] shadow-sm' : 'text-[#8A7871] hover:text-[#5D1C34]'}`}>{outfitMode === combo && <Check size={14} />}{label}</button>
               ))}
             </div>
             <div className={outfitMode ? 'grid grid-cols-1 min-[380px]:grid-cols-2 gap-3' : ''}>
@@ -168,7 +172,7 @@ export function LiveTryOnWorkspace({
             </p>
           </div>
 
-          <div className="fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-40 rounded-[22px] border border-[#E2D4CA] bg-[#FFFDF9]/95 p-3 shadow-[0_4px_32px_rgba(48,35,35,0.16)] backdrop-blur-xl md:bottom-4 md:left-auto md:right-6 md:w-[400px] lg:static lg:w-auto lg:p-5 lg:shadow-none" aria-label="Điều khiển phiên Live">
+          <div className="fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-40 rounded-[22px] border border-[#E2D4CA] bg-[#FFFDF9]/95 p-3 shadow-[0_4px_32px_rgba(48,35,35,0.16)] backdrop-blur-xl md:bottom-4 md:left-auto md:right-6 md:w-[400px] lg:static lg:w-auto lg:p-5 lg:shadow-none" aria-label="Điều khiển phiên thử trực tiếp">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <div className={`flex h-10 w-10 items-center justify-center rounded-full ${lowTime ? 'bg-[#FBE4DC] text-[#A13E29]' : 'bg-[#F0E6E0] text-[#79544C]'}`}><Timer size={19} strokeWidth={1.6} /></div>
@@ -179,7 +183,7 @@ export function LiveTryOnWorkspace({
             <div className={`grid gap-2 ${hasSession ? 'grid-cols-[minmax(0,1fr)_auto]' : 'grid-cols-1'}`}>
               <button type="button" disabled={isLive ? false : !canStart} onClick={isLive ? () => void live.pause('client_pause') : start} className={`flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#5D1C34] px-4 text-[14px] font-semibold text-white transition-colors hover:bg-[#481428] ${buttonFocus}`}>
                 {isBusy ? <Loader2 size={18} className="animate-spin motion-reduce:animate-none" /> : isLive ? <CirclePause size={19} /> : <Play size={17} fill="currentColor" />}
-                {isBusy ? 'Vui lòng chờ…' : isLive ? 'Tạm dừng' : isPaused ? 'Tiếp tục Live' : 'Bắt đầu thử đồ'}
+                {isBusy ? 'Vui lòng chờ…' : isLive ? 'Tạm dừng' : isPaused ? 'Tiếp tục thử' : 'Bắt đầu thử đồ'}
               </button>
               {hasSession && <button type="button" disabled={isBusy} onClick={() => void live.stop('client_end', currentSessionId)} className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#DACCC3] px-3 text-[13px] font-semibold text-[#65504A] hover:bg-[#F0E6E0] ${buttonFocus}`}><Square size={14} />Kết thúc</button>}
             </div>
@@ -188,8 +192,8 @@ export function LiveTryOnWorkspace({
           {(live.error || unavailable) && <div role={live.error ? 'alert' : 'status'} className={`rounded-2xl border px-4 py-3 text-[13px] leading-6 ${live.error ? 'border-red-200 bg-red-50 text-red-800' : 'border-[#E9DED1] bg-[#FBF6ED] text-[#7D6140]'}`}>{live.error || unavailable}{isError && <button type="button" onClick={() => void refetch()} className={`ml-2 inline-flex min-h-11 items-center gap-1 font-semibold underline ${buttonFocus}`}><RefreshCw size={13} />Thử lại</button>}</div>}
 
           <details className="group rounded-2xl border border-[#E9E0D9] bg-[#F8F5F1] px-4">
-            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 text-[12px] text-[#7C6760] [&::-webkit-details-marker]:hidden"><span>Thời gian Live hôm nay</span><span className="flex items-center gap-2 font-semibold text-[#4E3833]">{isLoading ? 'Đang tải…' : quota ? `${formatTime(quota.remaining)} có thể dùng` : 'Chưa có dữ liệu'}<ChevronDown size={14} className="transition-transform group-open:rotate-180" /></span></summary>
-            {quota && <div className="space-y-2 border-t border-[#E9E0D9] py-3 text-[12px] text-[#87716A]"><div className="flex justify-between"><span>Tổng thời gian mỗi ngày</span><span>{formatTime(quota.limit)}</span></div><div className="flex justify-between"><span>Đã sử dụng</span><span>{formatTime(quota.allocated)}</span></div><div className="flex justify-between"><span>Dành cho phiên đang mở</span><span>{formatTime(quota.reserved)}</span></div><p className="pt-1 leading-5">Thời gian còn lại của phiên hiển thị ở bộ đếm. Live không sử dụng lượt thử bằng ảnh.</p></div>}
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 text-[12px] text-[#7C6760] [&::-webkit-details-marker]:hidden"><span>Thời gian thử trực tiếp hôm nay</span><span className="flex items-center gap-2 font-semibold text-[#4E3833]">{isLoading ? 'Đang tải…' : quota ? `${formatTime(quota.remaining)} có thể dùng` : 'Chưa có dữ liệu'}<ChevronDown size={14} className="transition-transform group-open:rotate-180" /></span></summary>
+            {quota && <div className="space-y-2 border-t border-[#E9E0D9] py-3 text-[12px] text-[#87716A]"><div className="flex justify-between"><span>Tổng thời gian mỗi ngày</span><span>{formatTime(quota.limit)}</span></div><div className="flex justify-between"><span>Đã sử dụng</span><span>{formatTime(quota.allocated)}</span></div><div className="flex justify-between"><span>Dành cho phiên đang mở</span><span>{formatTime(quota.reserved)}</span></div><p className="pt-1 leading-5">Thời gian còn lại của phiên hiển thị ở bộ đếm. Thử trực tiếp không trừ lượt thử bằng ảnh.</p></div>}
           </details>
           <button type="button" disabled={hasSession || isBusy} onClick={onSwitchToPhoto} className={`flex min-h-11 w-full items-center justify-center gap-2 text-[12px] text-[#8A7871] hover:text-[#5D1C34] ${buttonFocus}`}><ImageIcon size={15} />Thử bằng ảnh<ArrowRight size={14} /></button>
         </div>
@@ -244,7 +248,7 @@ function ColorSelector({ product, selectedColor, onSelectColor, disabled, label 
           );
         })}
       </div>
-      {disabled && <p className="mt-2 text-[11px] leading-4 text-[#8A7871]">Tạm dừng Live để đổi màu trang phục.</p>}
+      {disabled && <p className="mt-2 text-[11px] leading-4 text-[#8A7871]">Tạm dừng để đổi màu trang phục.</p>}
     </div>
   );
 }

@@ -1,4 +1,5 @@
-import type { StylistAnalysisRequest, StylistResult } from '@/features/stylist/types/stylist';
+import { toOutfitSuggestions } from '@/features/stylist/services/outfit-suggestions';
+import type { StylistAnalysisRequest, StylistResult, StylistResultDto } from '@/features/stylist/types/stylist';
 
 export function extractErrorMessage(error: unknown): string {
   if (!error) return 'Không xác định được lỗi.';
@@ -14,9 +15,26 @@ export function extractErrorMessage(error: unknown): string {
   return 'Đã xảy ra lỗi không xác định.';
 }
 
+/** Lỗi nhập liệu chặn gửi yêu cầu (khớp validate của BE), null nếu hợp lệ. */
+export function validateStylistRequest(payload: StylistAnalysisRequest): string | null {
+  if (payload.humanImage && !payload.imageConsent) {
+    return 'Vui lòng xác nhận đồng ý cho FashionAI dùng ảnh để phân tích, hoặc xoá ảnh để tư vấn không cần ảnh.';
+  }
+  const hasContext = [payload.productId, payload.garmentDescription, payload.occasion, payload.stylePreference]
+    .some((value) => Boolean(value?.trim()));
+  if (!payload.humanImage && !hasContext) {
+    return 'Vui lòng tải ảnh, chọn sản phẩm, dịp mặc hoặc phong cách để AI tư vấn.';
+  }
+  return null;
+}
+
 export function buildFormData(payload: StylistAnalysisRequest): FormData {
   const formData = new FormData();
-  formData.append('humanImage', payload.humanImage);
+  if (payload.humanImage) {
+    formData.append('humanImage', payload.humanImage);
+    // BE trả 400 nếu có ảnh mà thiếu imageConsent='true'.
+    if (payload.imageConsent) formData.append('imageConsent', 'true');
+  }
   if (payload.productId) formData.append('productId', payload.productId);
   if (payload.garmentDescription) formData.append('garmentDescription', payload.garmentDescription);
   if (payload.occasion) formData.append('occasion', payload.occasion);
@@ -26,9 +44,11 @@ export function buildFormData(payload: StylistAnalysisRequest): FormData {
   return formData;
 }
 
-export function normalizeStylistResult(result: StylistResult): StylistResult {
+export function normalizeStylistResult(result: StylistResultDto): StylistResult {
   return {
     ...result,
     ...(result.analysisResult ?? {}),
+    // Ghi sau cùng: analysisResult.outfits chỉ là id thô, bộ phối hiển thị là `outfits` top-level.
+    outfits: toOutfitSuggestions(result.outfits),
   };
 }

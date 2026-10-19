@@ -1,394 +1,270 @@
 'use client';
 
-import type { StylistResultPanelProps } from '@/features/stylist/types/stylist-result-panel';
+import { GA_ITEM_LISTS } from '@/features/analytics/constants/ga-item-lists';
+import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
+import { toColorSwatches, toOutfitList } from '@/features/stylist/services/result-lists';
 import { findOutfitProducts } from '@/features/stylist/services/stylist-product-matcher';
-import type { OutfitCombination } from '@/features/stylist/types/stylist';
-import type { Product } from '@/features/products/types/products';
-import {
-  AlertCircle,
-  CheckCircle2,
-  ExternalLink,
-  Ruler,
-  ShoppingBag,
-  Sun
-} from 'lucide-react';
+import type { ColorSwatch } from '@/features/stylist/types/stylist';
+import type { StylistResultPanelProps } from '@/features/stylist/types/stylist-result-panel';
+import { AlertCircle, Check, ChevronDown, Copy, Lightbulb, Shirt, Sparkles, UserRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
 
-// ---------------------------------------------------------------------------
-// Inline markdown renderer (handles **bold**, *italic*, ## heading, - bullet)
-// ---------------------------------------------------------------------------
-function renderMarkdown(text: string): React.ReactNode {
-  if (!text) return null;
+/** "- mẹo 1\n- mẹo 2" (định dạng prompt yêu cầu) → danh sách; kết quả cũ dạng đoạn văn giữ nguyên một mục. */
+function toTips(text: string | undefined): string[] {
+  if (!text) return [];
+  return text
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*[-•*]\s*/, '').trim())
+    .filter(Boolean);
+}
 
-  const lines = text.split('\n');
-  const nodes: React.ReactNode[] = [];
+function scoreTone(score: number) {
+  if (score >= 80) return { bar: 'bg-semantic-success', label: 'Rất hợp' };
+  if (score >= 60) return { bar: 'bg-semantic-warning', label: 'Khá hợp' };
+  return { bar: 'bg-semantic-error', label: 'Ít hợp' };
+}
 
-  lines.forEach((line, li) => {
-    const trimmed = line.trim();
+function SectionTitle({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+  return (
+    <h2 className="flex items-center gap-2 text-body-lg font-semibold text-neutral-900">
+      <Icon className="w-4 h-4 text-brand-navy" /> {children}
+    </h2>
+  );
+}
 
-    // Heading ## or ###
-    if (trimmed.startsWith('### ')) {
-      nodes.push(
-        <p key={li} className="text-[13px] font-bold text-brand-navy uppercase tracking-wide mt-4 mb-1">
-          {trimmed.slice(4)}
-        </p>
-      );
-      return;
-    }
-    if (trimmed.startsWith('## ')) {
-      nodes.push(
-        <p key={li} className="text-[14px] font-bold text-brand-navy mt-4 mb-1">
-          {trimmed.slice(3)}
-        </p>
-      );
-      return;
-    }
+function ProfileRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <dt className="text-label-sm text-neutral-400">{label}</dt>
+      <dd className="text-body-sm font-medium text-neutral-900 line-clamp-2">{children}</dd>
+    </div>
+  );
+}
 
-    // Bullet point
-    if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
-      nodes.push(
-        <div key={li} className="flex items-start gap-2 text-[13.5px] text-neutral-700 leading-relaxed">
-          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-navy/50 shrink-0" />
-          <span>{parseInline(trimmed.slice(2))}</span>
-        </div>
-      );
-      return;
-    }
+/** Ô màu: bấm để sao chép mã hex. Kết quả cũ không có mã thì chỉ hiện tên. */
+function ColorChip({ name, hex }: ColorSwatch) {
+  const [copied, setCopied] = useState(false);
 
-    // Numbered list: 1. ...
-    const numbered = trimmed.match(/^(\d+)\.\s+(.+)/);
-    if (numbered) {
-      nodes.push(
-        <div key={li} className="flex items-start gap-2 text-[13.5px] text-neutral-700 leading-relaxed">
-          <span className="mt-0.5 w-5 h-5 rounded-full bg-brand-navy/10 text-brand-navy text-[11px] font-bold flex items-center justify-center shrink-0">
-            {numbered[1]}
-          </span>
-          <span>{parseInline(numbered[2])}</span>
-        </div>
-      );
-      return;
-    }
-
-    // Empty line → spacer
-    if (!trimmed) {
-      nodes.push(<div key={li} className="h-2" />);
-      return;
-    }
-
-    // Normal paragraph
-    nodes.push(
-      <p key={li} className="text-[13.5px] text-neutral-700 leading-relaxed">
-        {parseInline(trimmed)}
-      </p>
+  if (!hex) {
+    return (
+      <span className="px-2.5 py-1 rounded-full bg-brand-cream border border-neutral-200 text-label-sm font-medium text-neutral-700">
+        {name}
+      </span>
     );
-  });
+  }
 
-  return <>{nodes}</>;
-}
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(hex);
+      setCopied(true);
+      toast.success(`Đã sao chép mã màu ${hex}`);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error('Không thể sao chép mã màu');
+    }
+  };
 
-/** Parse inline formatting: **bold**, *italic*, `code` */
-function parseInline(text: string): React.ReactNode {
-  // Split on **bold**, *italic*, or `code` tokens
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
   return (
-    <>
-      {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={i} className="font-semibold text-neutral-900">{part.slice(2, -2)}</strong>;
-        }
-        if (part.startsWith('*') && part.endsWith('*')) {
-          return <em key={i} className="italic text-neutral-600">{part.slice(1, -1)}</em>;
-        }
-        if (part.startsWith('`') && part.endsWith('`')) {
-          return (
-            <code key={i} className="px-1 py-0.5 bg-neutral-100 rounded text-[12px] font-mono text-neutral-800">
-              {part.slice(1, -1)}
-            </code>
-          );
-        }
-        return <span key={i}>{part}</span>;
-      })}
-    </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Tiny shop product card shown inside each outfit
-// ---------------------------------------------------------------------------
-function ShopProductCard({ product }: { product: Product }) {
-  return (
-    <Link
-      href={`/products/${product.id}`}
-      className="flex items-center gap-2.5 p-2.5 bg-white rounded-xl border border-neutral-200 hover:border-brand-navy/40 hover:shadow-sm transition-all group"
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={`Sao chép ${hex}`}
+      className="group inline-flex items-center gap-2 h-8 pl-1 pr-2.5 rounded-full bg-white border border-neutral-200 hover:border-brand-navy/40 transition-colors cursor-pointer"
     >
-      <div className="w-10 h-12 rounded-lg overflow-hidden bg-neutral-100 shrink-0 border border-neutral-100">
-        {product.image ? (
-          <Image
-            src={product.image}
-            alt={product.name}
-            width={40}
-            height={48}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ShoppingBag className="w-4 h-4 text-neutral-300" />
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-semibold text-neutral-900 truncate leading-tight">{product.name}</p>
-        {product.numericPrice > 0 && (
-          <p className="text-[11px] font-bold text-brand-navy mt-0.5">
-            {product.numericPrice.toLocaleString('vi-VN')}đ
-          </p>
-        )}
-      </div>
-      <ExternalLink className="w-3 h-3 text-neutral-400 group-hover:text-brand-navy shrink-0 transition-colors" />
-    </Link>
+      {/* Màu lấy từ dữ liệu AI trả về nên không dùng được token. */}
+      <span className="w-6 h-6 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: hex }} />
+      <span className="text-label-sm font-medium text-neutral-800">{name}</span>
+      <span className="flex items-center gap-1 font-mono text-[10.5px] text-neutral-400 group-hover:text-brand-navy">
+        {hex}
+        {copied ? <Check className="w-3 h-3 text-semantic-success" /> : <Copy className="w-3 h-3" />}
+      </span>
+    </button>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
-export function StylistResultPanel({
-  resultRef,
-  displayResult,
-  toColorList,
-  score,
-  scoreColor,
-  scoreLabel,
-  occasion,
-  toOutfitList,
-  getOutfitIcon,
-  catalogProducts,
-}: StylistResultPanelProps) {
-  const outfits = toOutfitList(displayResult.outfitCombinations);
+export function StylistResultPanel({ resultRef, displayResult, catalogProducts }: StylistResultPanelProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  const warnings = displayResult.warnings ?? [];
+  const outfits = displayResult.outfits;
+  // Lịch sử cũ chưa có bộ phối từ catalog: hiện gợi ý dạng chữ như trước.
+  const legacyOutfits = outfits.length > 0 ? [] : toOutfitList(displayResult.outfitCombinations);
+  // Không có bộ phối nào (vd. catalog không có đồ phù hợp): lời giải thích của AI là kết quả chính.
+  const noOutfits = outfits.length === 0 && legacyOutfits.length === 0;
+
+  const colors = toColorSwatches(displayResult.colorSuggestions);
+  const score = displayResult.productCompatibilityScore;
+  const profileRowCount = [displayResult.bodyType, displayResult.skinTone, displayResult.personalColor].filter(Boolean).length;
+  const hasProfile = profileRowCount > 0 || colors.length > 0 || score != null;
+
+  const tips = toTips(displayResult.stylingTips);
+  const fitText = displayResult.fitAdvice || displayResult.fitRecommendation;
+  const hasAdvice = Boolean(displayResult.verdict || tips.length || fitText);
+  const visibleTips = expanded ? tips : tips.slice(0, 3);
+  const canExpand = tips.length > 3 || (displayResult.verdict?.length ?? 0) > 160 || tips.some((tip) => tip.length > 120) || (fitText?.length ?? 0) > 120;
 
   return (
-    <div ref={resultRef} className="space-y-8 scroll-mt-6 animate-[fadeInUp_0.5s_ease-out]">
-
-      {/* Stylist Warnings Callout */}
-      {displayResult.warnings && displayResult.warnings.length > 0 && (
-        <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 md:p-5 flex items-start gap-3 shadow-xs">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="text-body-sm text-amber-900 space-y-1">
-            <p className="font-semibold text-amber-950">Lưu ý từ AI Stylist</p>
-            {displayResult.warnings.map((warning, idx) => (
-              <p key={idx} className="text-amber-800 leading-relaxed text-[13.5px]">
-                {warning}
-              </p>
-            ))}
+    <div ref={resultRef} className="flex flex-col gap-6 scroll-mt-24 animate-[fadeInUp_0.4s_ease-out]">
+      {warnings.length > 0 && !noOutfits && (
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-200/70">
+          <AlertCircle className="w-4 h-4 text-semantic-warning shrink-0 mt-0.5" />
+          <div className="text-body-sm text-amber-900 space-y-0.5">
+            {warnings.map((warning, idx) => <p key={idx}>{warning}</p>)}
           </div>
         </div>
       )}
 
-      {displayResult.product && (
-        <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-neutral-200 flex items-center gap-4">
-          {displayResult.product.garmentUrl && (
-            <img
-              src={displayResult.product.garmentUrl}
-              alt={displayResult.product.name}
-              className="w-16 h-20 rounded-xl object-cover bg-neutral-100 shrink-0 border border-neutral-100"
-            />
-          )}
-          <div className="min-w-0">
-            <div className="text-[11px] font-bold tracking-wider uppercase text-neutral-400 mb-1">
-              Sản phẩm được tư vấn
-            </div>
-            <h3 className="text-body-lg font-bold text-neutral-900 truncate">
-              {displayResult.product.name}
-            </h3>
-            {typeof displayResult.product.price === 'number' && displayResult.product.price > 0 && (
-              <p className="text-label-sm font-semibold text-brand-navy mt-0.5">
-                {displayResult.product.price.toLocaleString('vi-VN')} đ
-              </p>
+      {/* Bộ phối: phần chính của kết quả */}
+      <section className="flex flex-col gap-3">
+        {!noOutfits && (
+          <div className="flex items-baseline justify-between gap-3">
+            <SectionTitle icon={Sparkles}>Bộ phối dành cho bạn</SectionTitle>
+            {outfits.length > 1 && (
+              <span className="md:hidden text-label-sm text-neutral-400">Vuốt để xem {outfits.length} bộ</span>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Section 1: Analysis */}
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-neutral-200">
-        <h2 className="text-heading-h3 font-bold text-brand-navy mb-6 flex items-center gap-2">
-          <CheckCircle2 className="w-6 h-6 text-semantic-success" /> Phân tích sắc màu &amp; dáng người
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Personal Color */}
-          <div className="p-5 bg-amber-50/50 rounded-xl border border-amber-100 flex flex-col justify-center">
-            <div className="text-[11px] font-bold tracking-wider uppercase text-amber-700 mb-1">Personal Color</div>
-            <h3 className="text-heading-h3 font-bold text-amber-900 mb-3 flex items-center gap-1">
-              <Sun className="w-5 h-5" /> {displayResult.personalColor || 'Chưa xác định'}
-            </h3>
-            <div className="flex flex-wrap gap-1.5 mt-auto">
-              {toColorList(displayResult.colorSuggestions).slice(0, 6).map((c, i) => {
-                const label = typeof c === 'string' ? c : c?.name || c?.color || '';
-                return (
-                  <span
-                    key={i}
-                    className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-amber-200 text-[10.5px] font-semibold text-amber-800"
-                  >
-                    {label}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Body Type */}
-          <div className="p-5 bg-neutral-50 rounded-xl border border-neutral-200 flex flex-col justify-center">
-            <div className="text-[11px] font-bold tracking-wider uppercase text-neutral-500 mb-1">Dáng người</div>
-            <h3 className="text-heading-h3 font-bold text-neutral-900 mb-2">{displayResult.bodyType}</h3>
-            <p className="text-[12.5px] text-neutral-600 leading-relaxed">
-              Khớp dáng người theo tỷ lệ vai, ngực, eo, hông để gợi ý phom trang phục phù hợp.
-            </p>
-          </div>
-
-          {/* Skin Tone */}
-          <div className="p-5 bg-neutral-50 rounded-xl border border-neutral-200 flex flex-col justify-center">
-            <div className="text-[11px] font-bold tracking-wider uppercase text-neutral-500 mb-1">Skin Tone / Undertone</div>
-            <h3 className="text-heading-h3 font-bold text-neutral-900 mb-2">{displayResult.skinTone}</h3>
-            <p className="text-[12.5px] text-neutral-600 leading-relaxed">
-              Đề xuất tông màu áo sơ mi, blazer tôn vinh sắc diện tự nhiên.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Section 2: Fit Advice & Compatibility */}
-      {(displayResult.fitAdvice || displayResult.fitRecommendation || displayResult.recommendedSize || score !== null) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(displayResult.fitAdvice || displayResult.fitRecommendation || displayResult.recommendedSize) && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
-              <div className="flex items-center gap-2 text-label-sm font-bold text-brand-navy mb-3">
-                <Ruler className="w-4 h-4 text-[#5D1C34]" /> Tư vấn may đo &amp; form dáng
-              </div>
-              <p className="text-body-md text-neutral-800 leading-relaxed font-medium">
-                {displayResult.fitAdvice || displayResult.fitRecommendation || `Khuyên dùng form: ${displayResult.recommendedSize}`}
-              </p>
-              {displayResult.fitRecommendation && displayResult.fitAdvice && (
-                <p className="text-body-sm text-neutral-500 mt-2 leading-relaxed">
-                  {displayResult.fitRecommendation}
+        {outfits.length > 0 ? (
+          <OutfitSuggestionList viewKey={displayResult.id} list={GA_ITEM_LISTS.aiStylist} outfits={outfits} variant="showcase" />
+        ) : legacyOutfits.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {legacyOutfits.map((outfit, idx) => {
+              // Kết quả cũ chỉ có tên món dạng chữ: dò sản phẩm gần giống trong catalog (chỉ là gợi ý).
+              const matchedProducts = findOutfitProducts(
+                typeof outfit === 'string' ? [outfit] : outfit.items.map((item) => item.name),
+                catalogProducts,
+                3,
+              );
+              return (
+              <div key={idx} className="bg-white rounded-2xl border border-neutral-200/80 p-4 flex flex-col">
+                <p className="text-label-md font-semibold text-neutral-900 mb-2">
+                  {typeof outfit === 'string' ? `Bộ phối ${idx + 1}` : outfit.name || `Bộ phối ${idx + 1}`}
                 </p>
-              )}
-            </div>
-          )}
-
-          {score !== null && score !== undefined && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-label-sm font-bold text-brand-navy">
-                  Độ tương thích sản phẩm
-                </div>
-                <span className="text-heading-h3 font-bold text-neutral-900">{score}%</span>
-              </div>
-              <div className="w-full h-2.5 bg-neutral-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${scoreColor} rounded-full transition-all duration-700`}
-                  style={{ width: `${score}%` }}
-                />
-              </div>
-              <p className="text-label-sm font-semibold mt-2 text-neutral-600">{scoreLabel}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Section 3: Outfit combinations with shop product matching */}
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-neutral-200">
-        <h2 className="text-heading-h3 font-bold text-brand-navy mb-6">
-          Đề xuất trang phục ({occasion})
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {outfits.map((outfit, idx) => {
-            // Collect item names for product matching
-            const itemNames: string[] = typeof outfit === 'string'
-              ? [outfit]
-              : (outfit as OutfitCombination).items?.map((it) => it.name) ?? [];
-
-            const matchedProducts = findOutfitProducts(itemNames, catalogProducts, 3);
-
-            return (
-              <div key={idx} className="bg-neutral-50 rounded-xl border border-neutral-200 p-5 flex flex-col">
-                <h4 className="text-label-lg font-bold text-brand-navy mb-4 border-b border-neutral-200 pb-3">
-                  {typeof outfit === 'string' ? `Bộ phối ${idx + 1}` : (outfit as OutfitCombination).name || `Outfit ${idx + 1}`}
-                </h4>
-
-                {/* Outfit items */}
-                <div className="space-y-3 mb-4">
-                  {typeof outfit === 'string' ? (
-                    <div className="flex items-start gap-3 text-body-sm text-neutral-700 leading-relaxed">
-                      <div className="w-8 h-8 rounded bg-white flex items-center justify-center shadow-sm shrink-0">
-                        {getOutfitIcon('shirt')}
-                      </div>
-                      <span>{outfit}</span>
-                    </div>
-                  ) : (
-                    (outfit as OutfitCombination).items?.map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 text-body-sm text-neutral-700">
-                        <div className="w-8 h-8 rounded bg-white flex items-center justify-center shadow-sm shrink-0">
-                          {getOutfitIcon(item.type || 'shirt')}
-                        </div>
-                        <span className="truncate" title={item.name}>{item.name}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Matched shop products */}
+                {typeof outfit === 'string' ? (
+                  <p className="text-body-sm text-neutral-600 line-clamp-4">{outfit}</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {outfit.items.map((item, i) => (
+                      <li key={i} className="flex items-center gap-2 text-body-sm text-neutral-600">
+                        <Shirt className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                        <span className="truncate">{item.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {matchedProducts.length > 0 && (
-                  <div className="mt-auto">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <ShoppingBag className="w-3.5 h-3.5 text-brand-navy/60" />
-                      <span className="text-[11px] font-bold tracking-wider uppercase text-neutral-400">
-                        Sản phẩm trong shop
-                      </span>
-                    </div>
-                    <div className="space-y-2">
+                  <div className="mt-3 pt-3 border-t border-neutral-100">
+                    <p className="text-label-sm text-neutral-400 mb-2">Sản phẩm tương tự trong shop</p>
+                    <div className="flex flex-col gap-2">
                       {matchedProducts.map((product) => (
-                        <ShopProductCard key={product.id} product={product} />
+                        <Link key={product.id} href={`/products/${product.id}`} className="group flex items-center gap-2.5">
+                          <span className="relative w-9 h-12 shrink-0 rounded-lg overflow-hidden bg-brand-cream">
+                            {product.image && <Image src={product.image} alt={product.name} fill sizes="36px" className="object-contain" />}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-body-sm text-neutral-700 group-hover:text-brand-navy">{product.name}</span>
+                          <span className="shrink-0 text-label-sm font-semibold text-neutral-900">{product.price}</span>
+                        </Link>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {/* Fallback: view all products */}
-                {matchedProducts.length === 0 && (
-                  <Link
-                    href={displayResult.product ? `/products/${displayResult.product.id}` : '/products'}
-                    className="mt-auto w-full py-2.5 rounded-lg border border-brand-navy text-brand-navy font-semibold text-label-sm hover:bg-brand-navy hover:text-white transition-colors text-center"
-                  >
-                    Xem sản phẩm
-                  </Link>
-                )}
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Section 4: Verdict — with markdown rendering */}
-      <div className="bg-brand-gold/10 border border-brand-gold/20 rounded-2xl p-6 md:p-8">
-        <h2 className="text-heading-h3 font-bold text-brand-navy mb-5">Lời khuyên &amp; Nhận xét chi tiết</h2>
-
-        <div className="space-y-1">
-          {renderMarkdown(displayResult.verdict ?? '')}
-        </div>
-
-        {displayResult.stylingTips && (
-          <>
-            <div className="h-px bg-brand-gold/20 my-5" />
-            <div className="space-y-1">
-              {renderMarkdown(displayResult.stylingTips)}
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-neutral-200/80 p-6 flex flex-col items-center text-center gap-2">
+            <div className="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center">
+              <AlertCircle className="w-5 h-5 text-semantic-warning" />
             </div>
-          </>
+            <p className="text-body-md font-semibold text-neutral-900">Chưa có bộ phối phù hợp trong cửa hàng</p>
+            {warnings.map((warning, idx) => (
+              <p key={idx} className="max-w-md text-body-sm text-neutral-500">{warning}</p>
+            ))}
+            <p className="text-label-sm text-neutral-400">Thử đổi dịp mặc, phong cách hoặc ngân sách.</p>
+          </div>
         )}
-      </div>
+      </section>
+
+      {(hasProfile || hasAdvice) && (
+        <div className={`grid grid-cols-1 gap-4 ${hasProfile && hasAdvice ? 'md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]' : ''}`}>
+          {hasProfile && (
+            <section className="bg-white rounded-2xl border border-neutral-200/80 p-5 flex flex-col gap-4">
+              <SectionTitle icon={UserRound}>Hồ sơ phong cách</SectionTitle>
+              {profileRowCount > 0 && (
+                <dl className={`grid gap-x-4 gap-y-3 ${profileRowCount > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {displayResult.bodyType && <ProfileRow label="Dáng người">{displayResult.bodyType}</ProfileRow>}
+                  {displayResult.skinTone && <ProfileRow label="Tông da">{displayResult.skinTone}</ProfileRow>}
+                  {displayResult.personalColor && <ProfileRow label="Màu cá nhân">{displayResult.personalColor}</ProfileRow>}
+                </dl>
+              )}
+              {colors.length > 0 && (
+                <div>
+                  <p className="text-label-sm text-neutral-400 mb-1.5">
+                    Màu nên mặc{colors.some((color) => color.hex) ? ' · bấm để sao chép mã' : ''}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {colors.map((color) => <ColorChip key={color.name} {...color} />)}
+                  </div>
+                </div>
+              )}
+              {score != null && (
+                <div>
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <span className="text-label-sm text-neutral-400 truncate">
+                      Độ hợp{displayResult.product ? ` với ${displayResult.product.name}` : ''}
+                    </span>
+                    <span className="text-label-md font-bold text-neutral-900 shrink-0 ml-2">
+                      {score}% · {scoreTone(score).label}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+                    <div className={`h-full rounded-full ${scoreTone(score).bar}`} style={{ width: `${score}%` }} />
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {hasAdvice && (
+            <section className="bg-white rounded-2xl border border-neutral-200/80 p-5 flex flex-col gap-3">
+              <SectionTitle icon={Lightbulb}>Lời khuyên</SectionTitle>
+              {displayResult.verdict && (
+                <p className={`text-body-md text-neutral-800 ${expanded ? '' : 'line-clamp-3'}`}>{displayResult.verdict}</p>
+              )}
+              {visibleTips.length > 0 && (
+                <ul className="flex flex-col gap-1.5">
+                  {visibleTips.map((tip, idx) => (
+                    <li key={idx} className="flex gap-2 text-body-sm text-neutral-600">
+                      <span className="mt-2 w-1 h-1 rounded-full bg-brand-navy shrink-0" />
+                      <span className={expanded ? '' : 'line-clamp-2'}>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {fitText && (
+                <p className={`text-body-sm text-neutral-600 ${expanded ? '' : 'line-clamp-2'}`}>
+                  <span className="font-semibold text-neutral-900">Phom dáng: </span>{fitText}
+                </p>
+              )}
+              {canExpand && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  className="self-start flex items-center gap-1 text-label-sm font-semibold text-brand-navy border-0 bg-transparent cursor-pointer"
+                >
+                  {expanded ? 'Thu gọn' : 'Xem thêm'}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </section>
+          )}
+        </div>
+      )}
     </div>
   );
 }

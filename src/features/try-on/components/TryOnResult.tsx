@@ -7,7 +7,7 @@ import Link from 'next/link';
 export function TryOnResult({ userPhotoUrl, resultPhotoUrl, shareProductName, onDownload, onReset }: TryOnResultProps) {
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({ title: 'Kết quả Try-On từ FashionAI', text: `Thử đồ online bộ ${shareProductName} tại FashionAI!`, url: resultPhotoUrl });
+      navigator.share({ title: 'Kết quả thử đồ từ FashionAI', text: `Thử đồ online bộ ${shareProductName} tại FashionAI!`, url: resultPhotoUrl });
     } else {
       navigator.clipboard.writeText(resultPhotoUrl);
       alert('Đã sao chép link ảnh vào clipboard!');
@@ -41,7 +41,7 @@ export function TryOnResult({ userPhotoUrl, resultPhotoUrl, shareProductName, on
 
         <div className="flex items-center gap-2 px-4 py-3 bg-green-50 rounded-xl border border-green-100">
           <CheckCircle2 className="w-4 h-4 text-semantic-success shrink-0" />
-          <p className="text-body-sm text-green-700">Kết quả đã được lưu vào lịch sử Try-On của bạn</p>
+          <p className="text-body-sm text-green-700">Kết quả đã được lưu vào lịch sử thử đồ của bạn</p>
         </div>
       </div>
     </div>
