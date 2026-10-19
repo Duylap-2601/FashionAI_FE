@@ -1,6 +1,7 @@
 'use client';
 
 import { Logo } from '@/components/ui/Logo';
+import { openCookieSettings } from '@/lib/analytics';
 import { Clock, Mail, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
@@ -146,6 +147,7 @@ export function LandingFooter() {
             <a href="#" className="hover:text-neutral-300 transition-colors">Bảo mật</a>
             <a href="#" className="hover:text-neutral-300 transition-colors">Điều khoản</a>
             <a href="#" className="hover:text-neutral-300 transition-colors">Sitemap</a>
+            <button type="button" onClick={openCookieSettings} className="hover:text-neutral-300 transition-colors">Cài đặt cookie</button>
           </div>
         </div>
       </div>

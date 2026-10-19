@@ -4,6 +4,7 @@ import type { Product } from '@/features/products/types/products';
 import { getValidProductColors, normalizeProductColorName, resolveProductImageForColor } from '@/features/products/services/products-utils';
 import { useLiveTryOnQuota } from '@/features/subscription/hooks/useQuota';
 import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
+import { trackEvent } from '@/lib/analytics';
 import { ArrowRight, Camera, Check, ChevronDown, CirclePause, Expand, Image as ImageIcon, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
@@ -86,6 +87,14 @@ export function LiveTryOnWorkspace({
   useEffect(() => {
     if (['live', 'paused', 'ended'].includes(live.status)) void refetch();
   }, [live.status, refetch]);
+
+  // Một phiên thử trực tiếp tính một lần; tiếp tục sau khi tạm dừng không tính thêm.
+  const previousLiveStatusRef = useRef(live.status);
+  useEffect(() => {
+    const previous = previousLiveStatusRef.current;
+    previousLiveStatusRef.current = live.status;
+    if (live.status === 'live' && previous !== 'live' && previous !== 'paused') trackEvent('live_try_on_start', {});
+  }, [live.status]);
 
   const start = () => {
     const primaryColor = outfitMode ? upperColor : selectedColor;

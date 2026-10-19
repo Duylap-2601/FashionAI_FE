@@ -1,5 +1,6 @@
 'use client';
 
+import { AdminRevenueChart } from '@/features/admin/components/admin-revenue-chart';
 import { CATEGORY_LABEL, resolveOrderStatusCfg } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt } from '@/features/admin/services/format';
 import type { DashboardOverviewProps } from '@/features/admin/types/dashboard-overview';
@@ -25,40 +26,39 @@ import {
 import Link from 'next/link';
 
 export function DashboardOverview({
-  totalRevenue,
-  avgOrderValue,
-  totalOrders,
-  pendingOrders,
-  deliveredOrders,
-  totalProducts,
-  activeProducts,
-  totalUsers,
-  memberUsers,
-  vipUsers,
-  users,
-  setActiveTab,
-  shippingOrders,
-  cancelledOrders,
-  setChartDays,
-  setHoveredPoint,
-  chartDays,
-  renderRevenueChart,
+  metrics,
   orders,
-  setSelectedOrder,
   products,
+  setActiveTab,
   openProductEditor,
-  refundedRevenue,
-  netRevenue,
-  subscriptionRevenue,
-  productRevenue,
-  netSubscriptionRevenue,
-  netProductRevenue,
-  totalReviews,
-  avgRating,
-  tryOnToday = 0,
-  tryOnCount = 0,
-  stylistCount = 0,
+  chartDays,
+  setChartDays,
 }: DashboardOverviewProps) {
+  const {
+    totalRevenue,
+    avgOrderValue,
+    totalOrders,
+    pendingOrders,
+    deliveredOrders,
+    totalProducts,
+    activeProducts,
+    totalUsers,
+    memberUsers,
+    vipUsers,
+    userSource: users,
+    shippingOrders,
+    cancelledOrders,
+    refundedRevenue,
+    netRevenue,
+    subscriptionRevenue,
+    productRevenue,
+    netSubscriptionRevenue,
+    netProductRevenue,
+    totalReviews,
+    avgRating,
+    tryOnToday,
+    tryOnCount,
+  } = metrics;
   const freeUsersCount = Math.max(0, totalUsers - (memberUsers + vipUsers));
   const freePct = totalUsers > 0 ? Math.round((freeUsersCount / totalUsers) * 100) : 0;
   const memberPct = totalUsers > 0 ? Math.round((memberUsers / totalUsers) * 100) : 0;
@@ -369,10 +369,7 @@ export function DashboardOverview({
               {([7, 14, 30] as const).map(days => (
                 <button
                   key={days}
-                  onClick={() => {
-                    setChartDays(days);
-                    setHoveredPoint(null);
-                  }}
+                  onClick={() => setChartDays(days)}
                   className={`px-3 py-1.5 rounded-lg text-label-sm font-semibold transition-all border-0 cursor-pointer ${chartDays === days
                       ? 'bg-white text-brand-navy shadow-sm'
                       : 'text-neutral-500 hover:text-neutral-800 bg-transparent'
@@ -387,7 +384,7 @@ export function DashboardOverview({
             </span>
           </div>
         </div>
-        {renderRevenueChart()}
+        <AdminRevenueChart orders={orders} days={chartDays} />
       </div>
 
       {/* Two Columns: Recent Orders & Inventory Status */}

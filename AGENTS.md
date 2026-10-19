@@ -3,8 +3,9 @@
 ## Stack And Commands
 
 Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4, TanStack Query,
-Zustand, Axios, Radix UI, Lucide, Motion (Framer), Three.js / React Three Fiber,
-Recharts, Zod, socket.io-client, Capacitor (mobile bridge), and @ducanh2912/next-pwa.
+TanStack Table (v9), Zustand, Axios, Radix UI, Lucide, Motion (Framer),
+Three.js / React Three Fiber, Recharts, Zod, socket.io-client, Capacitor
+(mobile bridge), and @ducanh2912/next-pwa.
 Keep this stack when refactoring.
 
 ```bash
@@ -51,14 +52,39 @@ src/
 │   ├── layout.tsx           # Root layout
 │   └── page.tsx             # Home page (thin wrapper)
 ├── features/
-│   ├── admin/               # components/ constants/ services/ types/
+│   ├── admin/               # components/ constants/ hooks/ services/ types/
 │   │                        # services: queries.ts, mutations.ts, format.ts,
-│   │                        #           api.ts, requests.ts, <panel>.ts (type files)
-│   │                        # components: dashboard-overview, admin-*-panel,
-│   │                        #             admin-*-modal, admin-pagination,
+│   │                        #           admin-mappers.ts (DTO -> UI model),
+│   │                        #           admin-list-loaders.ts (one list page per
+│   │                        #           query), admin-list-filters.ts,
+│   │                        #           dashboard-metrics.ts, product-editor.ts,
+│   │                        #           admin-list-controller.ts (list query +
+│   │                        #           request lifecycle, framework-free)
+│   │                        # types: api.ts, requests.ts, <panel>.ts (props)
+│   │                        # hooks: use-admin-dashboard (composes the page),
+│   │                        #        use-admin-paginated-list (wraps the list
+│   │                        #        controller, returns panelProps),
+│   │                        #        use-admin-products/-orders/-shipments/
+│   │                        #        -order-issues/-users, use-admin-product-editor,
+│   │                        #        use-admin-overview-data (stats, reviews),
+│   │                        #        use-admin-navigation, use-admin-auto-refresh,
+│   │                        #        use-latest-ref
+│   │                        # components: admin-dashboard-page (layout only),
+│   │                        #             admin-sidebar, admin-topbar,
+│   │                        #             dashboard-overview, admin-revenue-chart,
+│   │                        #             admin-*-panel, admin-*-modal,
+│   │                        #             admin-pagination,
 │   │                        #             admin-live-try-on-settings-panel,
 │   │                        #             admin-shipping-settings-panel,
-│   │                        #             admin-webhook-failures-panel
+│   │                        #             admin-webhook-failures-panel,
+│   │                        #             admin-analytics-panel (+ -charts; GA4
+│   │                        #             report from /admin/analytics)
+│   ├── analytics/           # components/ hooks/ services/
+│   │                        # components: analytics-bootstrap (GA4 user sync,
+│   │                        #             admin opt-out), cookie-consent-banner
+│   │                        # hooks: use-commerce-view-tracking (view_cart,
+│   │                        #        begin_checkout)
+│   │                        # services: ga-items.ts (Product/CartItem → GA4 item)
 │   ├── auth/                # components/ constants/ hooks/ services/ store/ types/
 │   │                        # hooks: useAuth.ts, use-change-password.ts
 │   │                        # store: authStore.ts (Zustand)
@@ -108,6 +134,10 @@ src/
 │   │                        # (Capacitor mobile bridge)
 │   ├── providers/           # Providers.tsx, RealtimeProvider.tsx
 │   ├── pwa/                 # InstallPrompt.tsx, offline-page.tsx
+│   ├── tables/              # Generic data-table design system (ClientTable,
+│   │                        #   ServerTable, BaseTable + toolbar/filters/pagination/
+│   │                        #   actions/column-visibility/skeleton/empty-state
+│   │                        #   primitives). See docs/table-design.md.
 │   └── ui/                  # shadcn/Radix primitives + custom: AnimateIn,
 │                            # HangerIcon, Logo, PageTransition, chart.tsx,
 │                            # sidebar.tsx, and full Radix component set
@@ -122,6 +152,7 @@ src/
 │   ├── overlay-manager.ts   # Global overlay/modal orchestration
 │   ├── platform.ts          # Capacitor platform detection
 │   ├── errors.ts            # Typed error helpers
+│   ├── analytics.ts         # GA4: trackEvent, consent, client_id for checkout
 │   └── utils.ts             # General utilities
 ├── styles/
 │   ├── index.css            # Root entry: imports fonts, tailwind, theme
@@ -133,6 +164,7 @@ src/
 └── (project root)
     ├── scripts/check-architecture.cjs
     ├── tests/               # Node built-in test runner (*.test.cjs)
+    ├── docs/                # table-design.md (table design system spec)
     ├── public/              # PWA icons, manifest, screenshots, images
     ├── next.config.mjs      # next-pwa, image domains config
     ├── SRS.md               # Software Requirements Specification
@@ -147,8 +179,16 @@ src/
   Keep layouts, route handlers, metadata, and route configuration in `app/`.
 - Preserve file names when moving files. New file names use kebab-case; React
   components use PascalCase, and hooks start with `use`.
-- `features/admin/services/` uses per-panel type files (e.g., `admin-orders-panel.ts`)
-  alongside `queries.ts` and `mutations.ts`; follow the same pattern when adding panels.
+- `features/admin/types/` uses per-panel props type files (e.g., `admin-orders-panel.ts`);
+  follow the same pattern when adding panels.
+- The admin dashboard page only lays out the sidebar, topbar, tabs and modals. State and
+  fetching live in `features/admin/hooks/`, composed by `useAdminDashboard`. A new list
+  tab gets a loader in `admin-list-loaders.ts` and a hook built on
+  `useAdminPaginatedList`, whose `panelProps` are spread into the panel (lists paged on
+  the client, like users, build the same props with `useAdminListPanelProps`). Keep fetch
+  callbacks identity-stable: effects depend on them, and an unstable fetcher re-runs
+  the initial load in a loop. Nav items, page titles, default filters/pagination and
+  refresh intervals belong in `constants/admin-dashboard-page.ts`.
 - `products/services/` contains utility modules (`product-filters.ts`, `products-utils.ts`,
   `combo-pricing.ts`) in addition to `queries.ts`; keep them here, not in `lib/`.
 
@@ -172,6 +212,10 @@ src/
 ## Dependencies And Server/Client Boundaries
 
 - Shared UI and utilities must not import feature business logic.
+- The generic data-table system in `components/tables/` is a shared primitive: it must
+  not import from `features/`, perform HTTP, or hard-code business values. Columns,
+  filters, and detail URLs are passed in by the calling feature. Full spec and usage:
+  `docs/table-design.md`.
 - Layout/providers may compose features; features must not import back from those
   orchestration components.
 - A feature may use modules from related business features, but do not create circular
@@ -261,6 +305,14 @@ src/
   the backend. Keep the UI sending legacy GHN IDs/codes for province, district,
   and ward; do not hard-code pickup address environment values in the frontend.
 - Preserve the `/api/backend` proxy and PWA `NetworkOnly` strategy for private APIs.
+- Google Analytics 4 loads through `GoogleAnalytics` from `@next/third-parties/google`
+  in the root layout, never an inline `<script>` (eslint `next-script-for-ga`). A
+  `beforeInteractive` script sets Consent Mode v2 defaults first (analytics denied
+  until the cookie banner is accepted). Send events only through `trackEvent` in
+  `src/lib/analytics.ts`; event names are a contract with the backend admin
+  analytics report. `purchase` is sent by the backend after payment is confirmed,
+  so the frontend never tracks it; checkout only forwards `gaClientId` /
+  `gaSessionId`. Admin accounts and `/admin` routes are excluded from GA4.
 - `src/lib/auth.ts` is legacy NextAuth code and is not part of the active auth flow.
   Do not reinstall NextAuth or activate this file during structural refactors.
 - Capacitor native bridge (`src/components/native/`) handles Android back-button and
@@ -291,8 +343,10 @@ src/
 - Run `npm.cmd test` for unit tests and `npm.cmd run check:architecture` after HTTP
   boundary changes. If an e2e script is unavailable in `package.json`, state that e2e
   could not be run rather than claiming it passed.
-- Baseline before refactor: 7 TypeScript errors in legacy NextAuth and 56 ESLint errors.
-  Do not add new errors; compare diagnostics for moved files and clearly report baseline errors.
+- Baseline (verified): `npm.cmd run typecheck` clean (0 errors), `npm.cmd run lint`
+  0 errors / ~51 warnings (pre-existing `no-img-element` / unused-var warnings), and
+  `npm.cmd run check:architecture` passing. Do not add new errors; compare diagnostics
+  for moved files and clearly report any pre-existing warnings you did not introduce.
   Do not disable additional rules or add ignores to bypass checks.
 - PWA builds may regenerate tracked files under `public/`. Use a temporary worktree copy for
   builds so those files are not overwritten.

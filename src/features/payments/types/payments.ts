@@ -6,6 +6,9 @@ export interface CheckoutRequest {
   orderId?: string;
   targetTier?: TargetTier;
   provider?: PaymentProvider;
+  // Định danh GA4 của trình duyệt để BE gắn event purchase vào đúng phiên.
+  gaClientId?: string;
+  gaSessionId?: string;
 }
 
 export interface ProrationBreakdown {

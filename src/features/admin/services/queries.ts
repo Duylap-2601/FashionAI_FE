@@ -1,5 +1,6 @@
 import { http, type HttpOptions } from '@/lib/http';
 import type { LiveTryOnSettings } from '@/features/admin/types/admin-dashboard-page';
+import type { AnalyticsRange, AnalyticsRealtimeResult, AnalyticsReportResult } from '@/features/admin/types/admin-analytics';
 import type { UnmatchedTransaction, UnmatchedTransactionsResponse } from '@/features/admin/types/admin-reconciliation';
 import type { AdminCoupon, AdminCouponsResponse } from '@/features/admin/types/admin-coupons';
 import type { OrderIssue, OrderIssueListMeta, OrderIssueListParams } from '@/features/orders/types/orders';
@@ -34,6 +35,14 @@ export function fetchGhnPickupSettings() {
 
 export function fetchLiveTryOnSettings() {
   return http.get<LiveTryOnSettings>('/admin/settings/live-try-on');
+}
+
+export function fetchAnalyticsReport(range: AnalyticsRange, config?: HttpOptions) {
+  return http.get<AnalyticsReportResult>('/admin/analytics/report', { ...config, params: { range } });
+}
+
+export function fetchAnalyticsRealtime(config?: HttpOptions) {
+  return http.get<AnalyticsRealtimeResult>('/admin/analytics/realtime', config);
 }
 
 export function fetchWebhookFailures(config?: HttpOptions) {

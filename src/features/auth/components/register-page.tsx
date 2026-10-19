@@ -3,6 +3,7 @@
 import { AuthSplitLayout, GoogleButton } from '@/features/auth/components/AuthLayout';
 import { registerWithPassword } from '@/features/auth/services/mutations';
 import { AuthClientError } from '@/features/auth/services/session';
+import { trackEvent } from '@/lib/analytics';
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -63,6 +64,7 @@ export default function Register() {
       });
 
       setIsSuccess(true);
+      trackEvent('sign_up', { method: 'email' });
       const targetEmail = res?.email || email;
       setTimeout(() => {
         router.push(`/verify-email?email=${encodeURIComponent(targetEmail)}`);

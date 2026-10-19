@@ -1,5 +1,6 @@
 'use client';
 
+import { cartItemToGaItem } from '@/features/analytics/services/ga-items';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import {
   EMPTY_SERVER_CART,
@@ -17,6 +18,7 @@ import { queryKeys } from '@/features/cart/services/query-keys';
 import { useCartStore } from '@/features/cart/store/cartStore';
 import type { CartLineInput, ServerCart } from '@/features/cart/types/cart-api';
 import type { CartItem } from '@/features/cart/types/cart-store';
+import { toCommerceParams, trackEvent } from '@/lib/analytics';
 import { getErrorMessage } from '@/lib/errors';
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
@@ -103,6 +105,7 @@ export function useCart() {
 
   const addToCart = useCallback(
     (item: Omit<CartItem, 'id'>) => {
+      trackEvent('add_to_cart', toCommerceParams([cartItemToGaItem(item)]));
       if (!isServerCart) {
         useCartStore.getState().addToCart(item);
         return;
@@ -114,6 +117,13 @@ export function useCart() {
 
   const updateQuantity = useCallback(
     (id: string, delta: number) => {
+      const line = cartItems.find((item) => item.id === id);
+      if (line && delta !== 0 && line.quantity + delta >= 1) {
+        trackEvent(
+          delta > 0 ? 'add_to_cart' : 'remove_from_cart',
+          toCommerceParams([cartItemToGaItem(line, Math.abs(delta))]),
+        );
+      }
       if (!isServerCart) {
         useCartStore.getState().updateQuantity(id, delta);
         return;
@@ -127,15 +137,17 @@ export function useCart() {
       const quantity = clampCartQuantity(current.quantity + delta);
       if (quantity !== current.quantity) updateServerItem({ id, quantity });
     },
-    [isServerCart, queryClient, userId, updateServerItem],
+    [cartItems, isServerCart, queryClient, userId, updateServerItem],
   );
 
   const removeFromCart = useCallback(
     (id: string) => {
+      const line = cartItems.find((item) => item.id === id);
+      if (line) trackEvent('remove_from_cart', toCommerceParams([cartItemToGaItem(line)]));
       if (isServerCart) removeServerCartItem(id);
       else useCartStore.getState().removeFromCart(id);
     },
-    [isServerCart, removeServerCartItem],
+    [cartItems, isServerCart, removeServerCartItem],
   );
 
   const clearCart = useCallback(() => {

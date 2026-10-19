@@ -62,6 +62,13 @@ export default (isDev ? nextConfig : withPWA({
           sameOrigin && url.pathname.startsWith('/api/backend/'),
         handler: 'NetworkOnly',
       },
+      {
+        // gtag.js phải luôn lấy bản mới từ Google; rule cross-origin mặc định sẽ
+        // NetworkFirst-cache nó. Hit GA (POST/beacon) vốn không qua cache.
+        urlPattern: ({ url }) =>
+          url.hostname === 'www.googletagmanager.com' || url.hostname.endsWith('google-analytics.com'),
+        handler: 'NetworkOnly',
+      },
     ],
   },
 })(nextConfig));

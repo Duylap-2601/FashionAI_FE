@@ -1,5 +1,7 @@
 'use client';
 
+import { useCommerceViewTracking } from '@/features/analytics/hooks/use-commerce-view-tracking';
+import { cartItemToGaItem } from '@/features/analytics/services/ga-items';
 import { CheckoutSummary } from '@/features/checkout/components/checkout-summary';
 import { DeliveryOptions } from '@/features/checkout/components/delivery-options';
 import type { CheckoutPaymentMethod } from '@/features/checkout/types/delivery-options';
@@ -14,6 +16,7 @@ import { useCheckout, usePaymentStatus } from '@/features/payments/hooks/usePaym
 import type { CheckoutResponse } from '@/features/payments/types/payments';
 import { AddressForm } from '@/features/profile/components/address-form';
 import { useAddressMutations, useUserAddresses } from '@/features/profile/hooks/use-addresses';
+import { toCommerceParams, trackEvent } from '@/lib/analytics';
 import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
 import { AlertCircle, CheckCircle2, ChevronRight, Copy, ExternalLink, Loader2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
@@ -64,6 +67,7 @@ export default function CheckoutPage() {
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
 
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId) ?? null;
+  useCommerceViewTracking('begin_checkout', purchasableItems, !isCartLoading);
 
   useEffect(() => {
     if (selectedAddressId || addresses.length === 0) return;
@@ -255,6 +259,12 @@ export default function CheckoutPage() {
     }
 
     setLockedItems(items);
+    const checkoutParams = {
+      ...toCommerceParams(items.map((item) => cartItemToGaItem(item))),
+      ...(appliedCoupon ? { coupon: appliedCoupon } : {}),
+    };
+    trackEvent('add_shipping_info', { ...checkoutParams, shipping_tier: 'GHN' });
+    trackEvent('add_payment_info', { ...checkoutParams, payment_type: paymentMethod });
     try {
       const order = await createOrderAsync({
         items: items.map((item) => ({ ...toCartLineInput(item), price: item.price })),

@@ -92,7 +92,11 @@ for (const file of files) {
   graph.set(file, dependencies);
   for (const dependency of dependencies) {
     const target = relative(dependency);
-    if (/^(components\/(ui|figma)|hooks)\//.test(name) && target.startsWith('features/')) {
+    // Shared components must not depend on feature business logic. `layout/`,
+    // `providers/`, `native/`, and `pwa/` are app-composition layers and are exempt.
+    const isSharedComponent = name.startsWith('components/') &&
+      !/^components\/(layout|providers|native|pwa)\//.test(name);
+    if ((isSharedComponent || name.startsWith('hooks/')) && target.startsWith('features/')) {
       errors.push(`${name}: shared primitive depends on ${target}`);
     }
     if (/^features\/[^/]+\/services\//.test(name) && /^features\/[^/]+\/(hooks|components)\//.test(target)) {

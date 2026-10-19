@@ -1,4 +1,4 @@
-import type { GarmentCategory, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
+import type { GarmentCategory, ProductColor, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 
 export type PutProductsInput = {
@@ -7,7 +7,7 @@ export type PutProductsInput = {
   category: GarmentCategory;
   garmentType?: string | null;
   color: string | undefined;
-  colors: { name: string; hex: string; }[];
+  colors: ProductColor[];
   material: string | undefined;
   description: string | undefined;
   status: ProductStatus;

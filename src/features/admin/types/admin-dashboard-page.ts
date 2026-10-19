@@ -1,6 +1,7 @@
 import type { BackendOrderStatus, OrderDisplayStatus, OrderPayment, OrderRefund } from '@/features/orders/types/orders';
+import type { LucideIcon } from 'lucide-react';
 
-export type AdminPage = 'dashboard' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'order-issues' | 'coupons' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
+export type AdminPage = 'dashboard' | 'analytics' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'order-issues' | 'coupons' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
 
 export interface GhnPickupSettings {
   provinceV3Id?: string;
@@ -44,6 +45,11 @@ export type UserTier = 'FREE' | 'MEMBER' | 'VIP';
 
 export type UserRole = 'USER' | 'ADMIN';
 
+export interface ProductColor {
+  name: string;
+  hex: string;
+}
+
 export interface AdminProductImage {
   id: string;
   imageUrl: string;
@@ -64,7 +70,7 @@ export interface AdminProduct {
   description?: string;
   material?: string;
   color?: string;
-  colors?: { name: string; hex: string }[];
+  colors?: ProductColor[];
 }
 
 export interface AdminUser {
@@ -224,4 +230,100 @@ export interface ProductImageItem {
   file?: File;
   isExisting?: boolean;
   colorName?: string | null;
+}
+
+export interface AdminPagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface AdminNavItem {
+  id: AdminPage;
+  label: string;
+  icon: LucideIcon;
+}
+
+export type RevenueChartDays = 7 | 14 | 30;
+
+export interface RevenueChartPoint {
+  dateKey: string;
+  label: string;
+  fullDate: string;
+  revenue: number;
+  ordersCount: number;
+  x: number;
+  y: number;
+}
+
+export interface RevenueChart {
+  points: RevenueChartPoint[];
+  maxRevenue: number;
+  totalRevenue: number;
+  totalOrders: number;
+}
+
+export interface DashboardMetrics {
+  totalRevenue: number;
+  refundedRevenue: number;
+  productRevenue: number;
+  subscriptionRevenue: number;
+  netSubscriptionRevenue: number;
+  netProductRevenue: number;
+  netRevenue: number;
+  avgOrderValue: number;
+  totalOrders: number;
+  pendingOrders: number;
+  shippingOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  totalProducts: number;
+  activeProducts: number;
+  userSource: AdminUser[];
+  totalUsers: number;
+  memberUsers: number;
+  vipUsers: number;
+  totalReviews: number;
+  avgRating: number;
+  tryOnToday: number;
+  tryOnCount: number;
+  stylistCount: number;
+}
+
+export interface AdminListQuery<TFilters> {
+  page: number;
+  pageSize: number;
+  filters: TFilters;
+}
+
+export interface AdminListResult<TItem> {
+  items: TItem[];
+  total: number;
+  totalPages: number;
+}
+
+/** Props phân trang chung của các panel list admin (khớp tên prop của AdminPagination). */
+export interface AdminPaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  isFetching: boolean;
+}
+
+/** Props bộ lọc + phân trang chung của panel list admin. */
+export interface AdminListPanelProps<TFilters> extends AdminPaginationProps {
+  filters: TFilters;
+  onFilterChange: (patch: Partial<TFilters>) => void;
+  onResetFilters: () => void;
+}
+
+/** Detail của window event `admin:navigate` (notification, drawer đơn hàng mở tab admin). */
+export interface AdminNavigateEventDetail {
+  tab?: string;
+  orderCode?: string | number;
+  shipmentCode?: string | number;
 }

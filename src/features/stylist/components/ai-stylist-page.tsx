@@ -14,6 +14,7 @@ import { QuotaExhaustedModal } from '@/features/stylist/components/QuotaExhauste
 import { useAnalyzeStylist, useDeleteStylistHistory, useStylistHistory } from '@/features/stylist/hooks/useStylist';
 import type { StylistProduct, StylistResult } from '@/features/stylist/types/stylist';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
+import { trackEvent } from '@/lib/analytics';
 import {
   Briefcase,
   LayoutGrid,
@@ -105,6 +106,7 @@ export default function AIStylistPage() {
       setSelectedResult(res);
       setPageState('result');
       refetchQuota();
+      trackEvent('stylist_analyze', {});
       toast.success('Phân tích phong cách hoàn tất!');
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     } catch (error: unknown) {
