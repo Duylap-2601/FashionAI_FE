@@ -1,7 +1,7 @@
 'use client';
 
 import { LOCAL_STORAGE_SESSIONS_KEY, LOCAL_STORAGE_MESSAGES_PREFIX } from '@/features/chat/constants/storage';
-import { isUuid, normalizeChatMessage, parseChatDonePayload, simulateAssistantStream } from '@/features/chat/services/chat-utils';
+import { isUuid, normalizeChatMessage, parseChatDonePayload, simulateAssistantStream, toChatSuggestions } from '@/features/chat/services/chat-utils';
 import { deleteChatSessionPayload, renameChatSessionPayload } from '@/features/chat/services/mutations';
 import { fetchChatSessionPayload, fetchChatSessionsPayload } from '@/features/chat/services/queries';
 import type { UseChatOptions } from '@/features/chat/types/chat-hook';
@@ -321,7 +321,7 @@ export function useChat(options: UseChatOptions = {}) {
     }
     setIsStreaming(false);
     setMessages((prev) =>
-      prev.map((msg) => (msg.streaming ? { ...msg, streaming: false } : msg))
+      prev.map((msg) => (msg.streaming ? { ...msg, streaming: false, suggestionsPending: false } : msg))
     );
   }, []);
 
@@ -427,6 +427,24 @@ export function useChat(options: UseChatOptions = {}) {
               }
             };
 
+            // Chữ đã xong, BE đang chọn sản phẩm: hiện khung chờ thẻ ngay.
+            const onSuggestionsPending = () => {
+              setMessages((prev) =>
+                prev.map((msg) => (msg.id === assistantMessageId ? { ...msg, suggestionsPending: true } : msg))
+              );
+            };
+
+            // Thẻ sản phẩm tới trước `chat:done` (BE gửi trước khi lưu DB).
+            const onSuggestions = (payload: unknown) => {
+              const suggestions = toChatSuggestions(payload);
+              if (suggestions) doneSuggestions = suggestions;
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId ? { ...msg, suggestions, suggestionsPending: false } : msg
+                )
+              );
+            };
+
             const onDone = (payload: unknown) => {
               clearTimeout(timeoutId);
               cleanup();
@@ -434,7 +452,7 @@ export function useChat(options: UseChatOptions = {}) {
 
               const { sessionId, messageId, suggestions } = parseChatDonePayload(payload);
               doneMessageId = messageId;
-              doneSuggestions = suggestions;
+              doneSuggestions = suggestions ?? doneSuggestions;
 
               const returnedUuid = sessionId && isUuid(sessionId) ? sessionId : null;
               if (returnedUuid) {
@@ -502,12 +520,16 @@ export function useChat(options: UseChatOptions = {}) {
 
             function cleanup() {
               socket.off('chat:token', onToken);
+              socket.off('chat:suggestions-pending', onSuggestionsPending);
+              socket.off('chat:suggestions', onSuggestions);
               socket.off('chat:done', onDone);
               socket.off('chat:error', onError);
               socket.off('connect_error', onConnectError);
             }
 
             socket.on('chat:token', onToken);
+            socket.on('chat:suggestions-pending', onSuggestionsPending);
+            socket.on('chat:suggestions', onSuggestions);
             socket.on('chat:done', onDone);
             socket.on('chat:error', onError);
             socket.once('connect_error', onConnectError);
@@ -557,6 +579,7 @@ export function useChat(options: UseChatOptions = {}) {
               sessionId: finalSessionId,
               messageId: doneMessageId,
               suggestions: doneSuggestions,
+              suggestionsPending: false,
             }
             : {
               ...msg,
@@ -592,6 +615,7 @@ export function useChat(options: UseChatOptions = {}) {
                   ? `${accumulatedContent}\n\n*(Đã dừng do gián đoạn kết nối)*`
                   : 'Rất tiếc, đã có lỗi xảy ra khi kết nối với máy chủ AI. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau.',
                 streaming: false,
+                suggestionsPending: false,
                 isError: true,
               }
               : msg

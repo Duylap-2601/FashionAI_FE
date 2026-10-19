@@ -4,6 +4,7 @@ import { GA_ITEM_LISTS } from '@/features/analytics/constants/ga-item-lists';
 import { QUICK_REPLIES } from '@/features/chat/constants/floating-chat';
 import { useChat } from '@/features/chat/hooks/useChat';
 import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
+import { ChatSuggestionsSkeleton } from '@/features/chat/components/ChatSuggestionsSkeleton';
 import { Check, ChevronDown, Copy, MessageCircle, RotateCcw, Send, Square, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -68,6 +69,8 @@ export function FloatingChat() {
   const handleSend = useCallback((text: string) => {
     if (!text.trim() || isStreaming) return;
     sendMessage(text.trim());
+    // Ô nhập không điều khiển bằng state nên phải tự xoá sau khi gửi.
+    if (inputRef.current) inputRef.current.value = '';
   }, [sendMessage, isStreaming]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -156,7 +159,8 @@ export function FloatingChat() {
               ) : (
                 messages.map((msg) => {
                   const isUser = msg.role === 'user';
-                  const suggestions = !isUser && !msg.streaming ? msg.suggestions : null;
+                  const suggestions = !isUser ? msg.suggestions : null;
+                  const suggestionsPending = !isUser && Boolean(msg.suggestionsPending) && !suggestions;
                   return (
                     <div
                       key={msg.id}
@@ -169,7 +173,7 @@ export function FloatingChat() {
                       <div
                         className={`flex flex-col gap-1 ${
                           isUser ? 'max-w-[85%] items-end' : 'max-w-[88%] items-start'
-                        } ${suggestions ? 'w-full' : ''}`}
+                        } ${suggestions || suggestionsPending ? 'w-full' : ''}`}
                       >
                         <div
                           className={`px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl text-body-sm shadow-xs transition-all ${
@@ -201,10 +205,12 @@ export function FloatingChat() {
                             </div>
                           )}
                         </div>
+                        {suggestionsPending && <ChatSuggestionsSkeleton />}
                         {suggestions && (
                           <OutfitSuggestionList
                             viewKey={msg.messageId ?? msg.id}
                             list={GA_ITEM_LISTS.aiChat}
+                            variant="carousel"
                             outfits={suggestions.outfits}
                             products={suggestions.products}
                           />

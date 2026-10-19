@@ -4,6 +4,7 @@ import { useItemListViewTracking } from '@/features/analytics/hooks/use-item-lis
 import { suggestedProductToGaItem } from '@/features/analytics/services/ga-items';
 import { OutfitShowcaseCard } from '@/features/stylist/components/outfit-showcase-card';
 import { OutfitSuggestionCard } from '@/features/stylist/components/outfit-suggestion-card';
+import { SuggestedProductCard } from '@/features/stylist/components/suggested-product-card';
 import { SuggestedProductList } from '@/features/stylist/components/suggested-product-list';
 import { useOutfitSuggestionActions } from '@/features/stylist/hooks/use-outfit-suggestion-actions';
 import { collectSuggestedProducts } from '@/features/stylist/services/outfit-suggestions';
@@ -18,6 +19,9 @@ const NO_PRODUCTS: SuggestedProduct[] = [];
 const SHOWCASE_CLASS =
   'flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-2 md:mx-0 md:px-0 md:pb-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible';
 
+// Carousel (chat): một băng vuốt ngang cho cả bộ phối lẫn món lẻ, thẻ rộng cố định.
+const CAROUSEL_CLASS = 'flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2';
+
 export function OutfitSuggestionList({ viewKey, list, outfits, products = NO_PRODUCTS, layout = 'stack', variant = 'compact' }: OutfitSuggestionListProps) {
   // Một sản phẩm nằm ở nhiều bộ chỉ tính một vị trí trong list GA4.
   const gaItems = useMemo(
@@ -30,6 +34,25 @@ export function OutfitSuggestionList({ viewKey, list, outfits, products = NO_PRO
   const { addOutfitToCart, addProductToCart, selectProduct } = useOutfitSuggestionActions(list, gaIndexes);
 
   if (outfits.length === 0 && products.length === 0) return null;
+
+  if (variant === 'carousel') {
+    return (
+      <div className={`${CAROUSEL_CLASS} w-full min-w-0`}>
+        {outfits.map((outfit, idx) => (
+          <OutfitShowcaseCard
+            key={`${outfit.name}-${idx}`}
+            outfit={outfit}
+            onAddToCart={addOutfitToCart}
+            onSelectProduct={selectProduct}
+            density="chat"
+          />
+        ))}
+        {products.map((product) => (
+          <SuggestedProductCard key={product.id} product={product} onAddToCart={addProductToCart} onSelectProduct={selectProduct} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3 w-full min-w-0">

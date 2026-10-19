@@ -2,60 +2,39 @@
 
 import { OUTFIT_ROLE_LABELS } from '@/features/stylist/constants/outfit-suggestion';
 import { OutfitTryOnButton } from '@/features/stylist/components/outfit-try-on-button';
+import { ProductCutoutImage } from '@/features/stylist/components/product-cutout-image';
 import { formatVnd } from '@/features/stylist/services/format';
-import type { OutfitSuggestionItem } from '@/features/stylist/types/outfit-suggestion';
 import type { OutfitSuggestionCardProps } from '@/features/stylist/types/outfit-suggestion-card';
-import { Package, ShoppingBag } from 'lucide-react';
-import Image from 'next/image';
+import { ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 
-// Ảnh sản phẩm là PNG 3:4 đã tách nền, quanh món đồ còn ≥ ~9% trên/dưới và ≥ ~11% hai bên
-// trong suốt. Khung ảnh được nới ra ngoài ô (6% dọc, 12% ngang) rồi `object-contain`: món đồ
-// to hơn mà vẫn hiện trọn, phần bị ô cắt mất chỉ là nền trong suốt.
-const IMAGE_BLEED_STYLE = { inset: '-6% -12%' } as const;
+// `page`: trang AI Stylist (vuốt ngang trên mobile, lưới từ md). `chat`: thẻ rộng cố định trong
+// băng vuốt ngang của tin nhắn, dải ảnh thấp hơn.
+const DENSITY = {
+  page: { article: 'w-[84%] sm:w-[58%] md:w-auto', strip: 'h-60', body: 'p-4' },
+  chat: { article: 'w-[256px] sm:w-[272px]', strip: 'h-48', body: 'p-3.5' },
+} as const;
 
-function ItemImage({ item, onSelect }: { item: OutfitSuggestionItem; onSelect: () => void }) {
-  const { product } = item;
-  const content = product.image ? (
-    <div className="absolute pointer-events-none transition-transform duration-300 group-hover/img:scale-[1.03]" style={IMAGE_BLEED_STYLE}>
-      <Image
-        src={product.image}
-        alt={`${OUTFIT_ROLE_LABELS[item.role]}: ${product.name}`}
-        fill
-        sizes="(min-width: 1024px) 200px, 50vw"
-        className={`object-contain ${product.available ? '' : 'grayscale opacity-50'}`}
-      />
-    </div>
-  ) : (
-    <div className="w-full h-full flex items-center justify-center">
-      <Package className="w-5 h-5 text-neutral-300" />
-    </div>
-  );
-
-  if (!product.available) {
-    return <div className="relative flex-1 min-w-0 h-full">{content}</div>;
-  }
-  return (
-    <Link href={`/products/${product.id}`} onClick={onSelect} className="group/img relative block flex-1 min-w-0 h-full">
-      {content}
-    </Link>
-  );
-}
-
-/** Thẻ bộ phối lớn của trang AI Stylist: nhìn ảnh là thấy cả bộ, chữ chỉ để đọc nhanh. */
-export function OutfitShowcaseCard({ outfit, onAddToCart, onSelectProduct }: OutfitSuggestionCardProps) {
+/** Thẻ bộ phối lớn (AI Stylist, AI Chat): nhìn ảnh là thấy cả bộ, chữ chỉ để đọc nhanh. */
+export function OutfitShowcaseCard({ outfit, onAddToCart, onSelectProduct, density = 'page' }: OutfitSuggestionCardProps) {
+  const size = DENSITY[density];
   const availableCount = outfit.items.filter((item) => item.product.available).length;
   const stripItems = outfit.items.slice(0, 4);
 
   return (
-    <article className="snap-start shrink-0 w-[84%] sm:w-[58%] md:w-auto bg-white rounded-2xl border border-neutral-200/80 shadow-xs overflow-hidden flex flex-col">
-      <div className="flex h-60 px-3 bg-brand-cream overflow-hidden">
+    <article className={`snap-start shrink-0 ${size.article} bg-white rounded-2xl border border-neutral-200/80 shadow-xs overflow-hidden flex flex-col`}>
+      <div className={`flex ${size.strip} px-3 bg-brand-cream overflow-hidden`}>
         {stripItems.map((item, idx) => (
-          <ItemImage key={`${item.product.id}-${idx}`} item={item} onSelect={() => onSelectProduct(item.product)} />
+          <ProductCutoutImage
+            key={`${item.product.id}-${idx}`}
+            product={item.product}
+            alt={`${OUTFIT_ROLE_LABELS[item.role]}: ${item.product.name}`}
+            onSelect={onSelectProduct}
+          />
         ))}
       </div>
 
-      <div className="flex-1 flex flex-col gap-3 p-4">
+      <div className={`flex-1 flex flex-col gap-3 ${size.body}`}>
         <div>
           <h3 className="text-body-lg font-semibold text-neutral-900 leading-snug line-clamp-1">
             {outfit.name || 'Bộ phối gợi ý'}

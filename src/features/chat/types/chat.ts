@@ -30,6 +30,8 @@ export interface ChatMessage {
   /** Id tin nhắn trên server (từ event done); tin tải từ server thì trùng `id`. */
   messageId?: string;
   suggestions?: ChatSuggestions | null;
+  /** AI đã viết xong chữ và đang chọn sản phẩm: hiện khung chờ thẻ sản phẩm. */
+  suggestionsPending?: boolean;
 }
 
 export interface ChatSession {
