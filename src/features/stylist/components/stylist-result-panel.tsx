@@ -2,10 +2,12 @@
 
 import { GA_ITEM_LISTS } from '@/features/analytics/constants/ga-item-lists';
 import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
-import { toColorList, toOutfitList } from '@/features/stylist/services/result-lists';
+import { toColorSwatches, toOutfitList } from '@/features/stylist/services/result-lists';
+import type { ColorSwatch } from '@/features/stylist/types/stylist';
 import type { StylistResultPanelProps } from '@/features/stylist/types/stylist-result-panel';
-import { AlertCircle, ChevronDown, Lightbulb, Shirt, Sparkles, UserRound } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown, Copy, Lightbulb, Shirt, Sparkles, UserRound } from 'lucide-react';
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 
 /** "- mẹo 1\n- mẹo 2" (định dạng prompt yêu cầu) → danh sách; kết quả cũ dạng đoạn văn giữ nguyên một mục. */
 function toTips(text: string | undefined): string[] {
@@ -39,6 +41,47 @@ function ProfileRow({ label, children }: { label: string; children: React.ReactN
   );
 }
 
+/** Ô màu: bấm để sao chép mã hex. Kết quả cũ không có mã thì chỉ hiện tên. */
+function ColorChip({ name, hex }: ColorSwatch) {
+  const [copied, setCopied] = useState(false);
+
+  if (!hex) {
+    return (
+      <span className="px-2.5 py-1 rounded-full bg-brand-cream border border-neutral-200 text-label-sm font-medium text-neutral-700">
+        {name}
+      </span>
+    );
+  }
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(hex);
+      setCopied(true);
+      toast.success(`Đã sao chép mã màu ${hex}`);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error('Không thể sao chép mã màu');
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={`Sao chép ${hex}`}
+      className="group inline-flex items-center gap-2 h-8 pl-1 pr-2.5 rounded-full bg-white border border-neutral-200 hover:border-brand-navy/40 transition-colors cursor-pointer"
+    >
+      {/* Màu lấy từ dữ liệu AI trả về nên không dùng được token. */}
+      <span className="w-6 h-6 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: hex }} />
+      <span className="text-label-sm font-medium text-neutral-800">{name}</span>
+      <span className="flex items-center gap-1 font-mono text-[10.5px] text-neutral-400 group-hover:text-brand-navy">
+        {hex}
+        {copied ? <Check className="w-3 h-3 text-semantic-success" /> : <Copy className="w-3 h-3" />}
+      </span>
+    </button>
+  );
+}
+
 export function StylistResultPanel({ resultRef, displayResult }: StylistResultPanelProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -49,10 +92,7 @@ export function StylistResultPanel({ resultRef, displayResult }: StylistResultPa
   // Không có bộ phối nào (vd. catalog không có đồ phù hợp): lời giải thích của AI là kết quả chính.
   const noOutfits = outfits.length === 0 && legacyOutfits.length === 0;
 
-  const colors = toColorList(displayResult.colorSuggestions)
-    .map((c) => (typeof c === 'string' ? c : c?.name || c?.color || ''))
-    .filter(Boolean)
-    .slice(0, 6);
+  const colors = toColorSwatches(displayResult.colorSuggestions);
   const score = displayResult.productCompatibilityScore;
   const profileRowCount = [displayResult.bodyType, displayResult.skinTone, displayResult.personalColor].filter(Boolean).length;
   const hasProfile = profileRowCount > 0 || colors.length > 0 || score != null;
@@ -137,13 +177,11 @@ export function StylistResultPanel({ resultRef, displayResult }: StylistResultPa
               )}
               {colors.length > 0 && (
                 <div>
-                  <p className="text-label-sm text-neutral-400 mb-1.5">Màu nên mặc</p>
+                  <p className="text-label-sm text-neutral-400 mb-1.5">
+                    Màu nên mặc{colors.some((color) => color.hex) ? ' · bấm để sao chép mã' : ''}
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {colors.map((color) => (
-                      <span key={color} className="px-2.5 py-1 rounded-full bg-brand-cream border border-neutral-200 text-label-sm font-medium text-neutral-700">
-                        {color}
-                      </span>
-                    ))}
+                    {colors.map((color) => <ColorChip key={color.name} {...color} />)}
                   </div>
                 </div>
               )}

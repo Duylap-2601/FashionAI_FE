@@ -167,3 +167,21 @@ test('outfitTryOnOptions offers what the fitting room can show (1 top + 1 bottom
   assert.deepEqual(hrefs(outfit([item('top', { id: 'shirt' }), item('bottom', { id: 'skirt', category: 'LOWER', available: false })])), ['/try-on?productId=shirt']);
   assert.deepEqual(hrefs(outfit([item('top', { available: false })])), []);
 });
+
+test('toColorSwatches keeps valid hex codes and falls back to name-only chips', () => {
+  const load = createSourceLoader();
+  const { toColorSwatches } = load('@/features/stylist/services/result-lists');
+
+  assert.deepEqual(plain(toColorSwatches([
+    { name: 'Be', hex: '#e8dcc8' },
+    { name: 'Đỏ', hex: 'red' },
+    { hex: '#000000' },
+    'Navy',
+    42,
+  ])), [
+    { name: 'Be', hex: '#E8DCC8' },
+    { name: 'Đỏ', hex: null },
+    { name: 'Navy', hex: null },
+  ]);
+  assert.deepEqual(plain(toColorSwatches(undefined)), []);
+});

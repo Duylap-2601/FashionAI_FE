@@ -227,7 +227,7 @@ function StylistCard({ item, onDelete, isDeleting }: {
                   }
                   return (
                     <div key={i} className="flex items-center gap-1.5 px-2.5 py-1 bg-neutral-50 border border-neutral-200 rounded-full">
-                      <div className="w-3 h-3 rounded-full border border-white shadow-sm" style={{ backgroundColor: c.hex }} />
+                      <div className="w-3 h-3 rounded-full border border-white shadow-sm" style={{ backgroundColor: c.hex ?? undefined }} />
                       <span className="text-label-sm text-neutral-700">{c.name}</span>
                     </div>
                   );

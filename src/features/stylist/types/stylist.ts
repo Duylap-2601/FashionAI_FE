@@ -18,7 +18,13 @@ export interface OutfitItem {
   name: string;
 }
 
-export type ColorSuggestion = string | { name?: string; color?: string; hex?: string };
+export type ColorSuggestion = string | { name?: string; color?: string; hex?: string | null };
+
+/** Màu đã chuẩn hoá để hiển thị: hex null khi kết quả không có mã màu (kết quả cũ chỉ có tên). */
+export interface ColorSwatch {
+  name: string;
+  hex: string | null;
+}
 
 export interface OutfitCombination {
   name: string;
@@ -45,7 +51,7 @@ export interface StylistAnalysisResult {
   fitAdvice?: string | null;
   recommendedSize?: string | null;
   productCompatibilityScore?: number | null;
-  colorSuggestions: string[] | { name: string; hex: string }[];
+  colorSuggestions: string[] | { name: string; hex: string | null }[];
   outfitCombinations: OutfitCombination[] | string[];
   stylingTips: string;
   verdict: string;
