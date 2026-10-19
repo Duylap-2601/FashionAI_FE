@@ -119,3 +119,20 @@ export function suggestedProductToCartItem(product: SuggestedProduct): Omit<Cart
     variant: `Màu: ${color || 'Mặc định'} · May đo`,
   };
 }
+
+/**
+ * Đường dẫn Phòng thử cho một bộ phối. Phòng thử nhận tối đa 2 món (áo + quần/váy, hoặc một
+ * chiếc đầm) qua cùng tham số `rackIds` mà Giá treo đồ dùng: bộ có đầm thì thử đầm, không thì
+ * thử lớp áo ngoài cùng (áo khoác/blazer trước, rồi tới áo) với quần/váy. Null khi không còn món nào bán.
+ */
+export function outfitTryOnHref(outfit: OutfitSuggestion): string | null {
+  const available = outfit.items.filter((item) => item.product.available);
+  const pick = (role: OutfitSuggestion['items'][number]['role']) => available.find((item) => item.role === role);
+
+  const dress = pick('dress');
+  const ids = dress
+    ? [dress.product.id]
+    : [(pick('outer') ?? pick('top'))?.product.id, pick('bottom')?.product.id].filter((id): id is string => Boolean(id));
+  if (ids.length === 0) return null;
+  return ids.length === 1 ? `/try-on?productId=${ids[0]}` : `/try-on?rackIds=${ids.join(',')}`;
+}

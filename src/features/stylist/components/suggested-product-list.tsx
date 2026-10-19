@@ -16,7 +16,7 @@ export function SuggestedProductList({ products, onAddToCart, onSelectProduct }:
             <>
               <div className="relative w-10 h-[52px] shrink-0 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-100">
                 {product.image ? (
-                  <Image src={product.image} alt={product.name} fill sizes="40px" className="object-cover" />
+                  <Image src={product.image} alt={product.name} fill sizes="40px" className="object-contain p-0.5" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Package className="w-4 h-4 text-neutral-400" />

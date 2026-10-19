@@ -2,9 +2,10 @@
 
 import { OUTFIT_ROLE_LABELS } from '@/features/stylist/constants/outfit-suggestion';
 import { formatVnd } from '@/features/stylist/services/format';
+import { outfitTryOnHref } from '@/features/stylist/services/outfit-suggestions';
 import type { OutfitSuggestionItem, SuggestedProduct } from '@/features/stylist/types/outfit-suggestion';
 import type { OutfitSuggestionCardProps } from '@/features/stylist/types/outfit-suggestion-card';
-import { Package, ShoppingBag } from 'lucide-react';
+import { Package, ShoppingBag, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -12,7 +13,7 @@ function ProductThumb({ product }: { product: SuggestedProduct }) {
   return (
     <div className="relative w-14 h-[72px] shrink-0 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-100">
       {product.image ? (
-        <Image src={product.image} alt={product.name} fill sizes="56px" className="object-cover" />
+        <Image src={product.image} alt={product.name} fill sizes="56px" className="object-contain p-0.5" />
       ) : (
         <div className="w-full h-full flex items-center justify-center">
           <Package className="w-4 h-4 text-neutral-400" />
@@ -71,6 +72,7 @@ function OutfitItemRow({ item, onSelectProduct }: {
 
 export function OutfitSuggestionCard({ outfit, onAddToCart, onSelectProduct }: OutfitSuggestionCardProps) {
   const availableCount = outfit.items.filter((item) => item.product.available).length;
+  const tryOnHref = outfitTryOnHref(outfit);
 
   return (
     <article className="bg-white rounded-2xl border border-neutral-200 shadow-xs flex flex-col min-w-0 overflow-hidden">
@@ -108,15 +110,29 @@ export function OutfitSuggestionCard({ outfit, onAddToCart, onSelectProduct }: O
           <span className="text-label-sm text-neutral-500">Tổng cả bộ</span>
           <span className="text-body-md font-bold text-brand-navy">{formatVnd(outfit.totalPrice)}</span>
         </div>
-        <button
-          type="button"
-          onClick={() => onAddToCart(outfit)}
-          disabled={availableCount === 0}
-          className="w-full h-10 rounded-xl bg-brand-navy text-white text-label-md font-semibold flex items-center justify-center gap-2 hover:bg-brand-navy/90 transition-colors border-0 cursor-pointer disabled:bg-neutral-300 disabled:cursor-not-allowed"
-        >
-          <ShoppingBag className="w-4 h-4" />
-          {availableCount === 0 ? 'Bộ phối đã ngừng bán' : 'Thêm cả bộ vào giỏ'}
-        </button>
+        <div className="grid grid-cols-[auto_1fr] gap-2">
+          {tryOnHref ? (
+            <Link
+              href={tryOnHref}
+              className="h-10 px-3 rounded-xl border border-brand-navy/30 bg-white text-brand-navy text-label-md font-semibold flex items-center justify-center gap-1.5 hover:bg-brand-navy/5 transition-colors"
+            >
+              <Sparkles className="w-4 h-4" /> Thử đồ
+            </Link>
+          ) : (
+            <span className="h-10 px-3 rounded-xl border border-neutral-200 text-neutral-400 text-label-md font-semibold flex items-center justify-center gap-1.5">
+              <Sparkles className="w-4 h-4" /> Thử đồ
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => onAddToCart(outfit)}
+            disabled={availableCount === 0}
+            className="h-10 rounded-xl bg-brand-navy text-white text-label-md font-semibold flex items-center justify-center gap-2 hover:bg-brand-navy/90 transition-colors border-0 cursor-pointer disabled:bg-neutral-300 disabled:cursor-not-allowed"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            {availableCount === 0 ? 'Đã ngừng bán' : 'Thêm cả bộ vào giỏ'}
+          </button>
+        </div>
       </footer>
     </article>
   );

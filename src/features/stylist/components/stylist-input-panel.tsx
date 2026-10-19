@@ -264,7 +264,7 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
               <div className="inline-flex max-w-full items-center gap-2.5 pl-1.5 pr-2 py-1.5 rounded-2xl border border-brand-navy/30 bg-brand-navy/5">
                 {selectedProduct.garmentUrl && (
                   <div className="relative w-9 h-11 shrink-0 rounded-lg overflow-hidden bg-neutral-100">
-                    <Image src={selectedProduct.garmentUrl} alt={selectedProduct.name} fill sizes="36px" className="object-cover" />
+                    <Image src={selectedProduct.garmentUrl} alt={selectedProduct.name} fill sizes="36px" className="object-contain" />
                   </div>
                 )}
                 <span className="min-w-0 truncate text-body-sm font-semibold text-neutral-900">{selectedProduct.name}</span>

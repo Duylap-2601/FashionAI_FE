@@ -145,3 +145,33 @@ test('chat done payload and stored messages carry validated suggestions', () => 
   assert.equal(message.suggestions, null);
   assert.equal(message.content, 'Hi');
 });
+
+test('outfitTryOnHref picks what the fitting room can show: a dress, or outer layer + bottom', () => {
+  const load = createSourceLoader();
+  const { outfitTryOnHref } = load('@/features/stylist/services/outfit-suggestions');
+  const item = (role, overrides) => ({ role, note: null, product: product(overrides) });
+
+  assert.equal(
+    outfitTryOnHref({ name: '', reason: '', extras: [], totalPrice: 0, items: [
+      item('outer', { id: 'blazer' }), item('top', { id: 'shirt' }), item('bottom', { id: 'pants', category: 'LOWER' }),
+    ] }),
+    '/try-on?rackIds=blazer,pants',
+  );
+  assert.equal(
+    outfitTryOnHref({ name: '', reason: '', extras: [], totalPrice: 0, items: [
+      item('outer', { id: 'blazer' }), item('dress', { id: 'dress', category: 'FULL_BODY' }),
+    ] }),
+    '/try-on?productId=dress',
+  );
+  // Món ngừng bán bị bỏ qua; chỉ còn một món thì thử món đó.
+  assert.equal(
+    outfitTryOnHref({ name: '', reason: '', extras: [], totalPrice: 0, items: [
+      item('top', { id: 'shirt' }), item('bottom', { id: 'skirt', category: 'LOWER', available: false }),
+    ] }),
+    '/try-on?productId=shirt',
+  );
+  assert.equal(
+    outfitTryOnHref({ name: '', reason: '', extras: [], totalPrice: 0, items: [item('top', { available: false })] }),
+    null,
+  );
+});
