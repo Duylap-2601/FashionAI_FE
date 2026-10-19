@@ -2,7 +2,7 @@
 
 import { SectionHeader } from '@/features/measurements/components/section-header';
 import { SizeChip } from '@/features/measurements/components/size-chip';
-import { SHIRT_SIZES, SHOE_SIZES_VN, TROUSER_SIZES } from '@/features/measurements/constants/profile-measurements-page';
+import { SHIRT_SIZE_GUIDE, SHIRT_SIZES, SHOE_SIZES_VN, TROUSER_SIZES } from '@/features/measurements/constants/profile-measurements-page';
 import {
   CheckCircle2,
   Save
@@ -21,16 +21,6 @@ export function SizesTab() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const sizeGuide: Record<string, { chest: string; waist: string; hip: string }> = {
-    XS: { chest: '80–84', waist: '63–67', hip: '86–90' },
-    S: { chest: '84–88', waist: '67–71', hip: '90–94' },
-    M: { chest: '88–92', waist: '71–75', hip: '94–98' },
-    L: { chest: '92–96', waist: '75–79', hip: '98–102' },
-    XL: { chest: '96–100', waist: '79–83', hip: '102–106' },
-    XXL: { chest: '100–106', waist: '83–89', hip: '106–112' },
-    '3XL': { chest: '106–112', waist: '89–95', hip: '112–118' },
-  };
-
   return (
     <div className="flex flex-col gap-5">
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
@@ -47,21 +37,21 @@ export function SizesTab() {
                 <SizeChip key={s} label={s} selected={shirt === s} onClick={() => setShirt(s)} />
               ))}
             </div>
-            {sizeGuide[shirt] && (
+            {SHIRT_SIZE_GUIDE[shirt] && (
               <div className="flex flex-wrap gap-4 p-4 bg-brand-navy/5 rounded-xl border border-brand-navy/10">
                 <div className="text-center">
                   <p className="text-label-sm text-neutral-500">Vòng ngực</p>
-                  <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{sizeGuide[shirt].chest} cm</p>
+                  <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{SHIRT_SIZE_GUIDE[shirt].chest} cm</p>
                 </div>
                 <div className="w-px bg-neutral-200 self-stretch" />
                 <div className="text-center">
                   <p className="text-label-sm text-neutral-500">Vòng eo</p>
-                  <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{sizeGuide[shirt].waist} cm</p>
+                  <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{SHIRT_SIZE_GUIDE[shirt].waist} cm</p>
                 </div>
                 <div className="w-px bg-neutral-200 self-stretch" />
                 <div className="text-center">
                   <p className="text-label-sm text-neutral-500">Vòng hông</p>
-                  <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{sizeGuide[shirt].hip} cm</p>
+                  <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{SHIRT_SIZE_GUIDE[shirt].hip} cm</p>
                 </div>
               </div>
             )}

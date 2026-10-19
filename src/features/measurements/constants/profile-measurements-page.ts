@@ -29,6 +29,17 @@ export const allMeasurementFields = [...OVERVIEW_FIELDS, ...UPPER_FIELDS, ...LOW
 
 export const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
 
+/** Body measurement ranges (cm) behind each reference shirt size. */
+export const SHIRT_SIZE_GUIDE: Record<string, { chest: string; waist: string; hip: string }> = {
+  XS: { chest: '80–84', waist: '63–67', hip: '86–90' },
+  S: { chest: '84–88', waist: '67–71', hip: '90–94' },
+  M: { chest: '88–92', waist: '71–75', hip: '94–98' },
+  L: { chest: '92–96', waist: '75–79', hip: '98–102' },
+  XL: { chest: '96–100', waist: '79–83', hip: '102–106' },
+  XXL: { chest: '100–106', waist: '83–89', hip: '106–112' },
+  '3XL': { chest: '106–112', waist: '89–95', hip: '112–118' },
+};
+
 export const TROUSER_SIZES = ['28', '29', '30', '31', '32', '33', '34', '36'];
 
 export const SHOE_SIZES_VN = ['35', '36', '37', '38', '39', '40', '41', '42', '43', '44'];
