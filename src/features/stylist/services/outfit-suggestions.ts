@@ -5,6 +5,7 @@ import type {
   OutfitRole,
   OutfitSuggestion,
   OutfitSuggestionItem,
+  OutfitTryOnOption,
   SuggestedProduct,
   SuggestedProductCategory,
 } from '@/features/stylist/types/outfit-suggestion';
@@ -121,18 +122,30 @@ export function suggestedProductToCartItem(product: SuggestedProduct): Omit<Cart
 }
 
 /**
- * Đường dẫn Phòng thử cho một bộ phối. Phòng thử nhận tối đa 2 món (áo + quần/váy, hoặc một
- * chiếc đầm) qua cùng tham số `rackIds` mà Giá treo đồ dùng: bộ có đầm thì thử đầm, không thì
- * thử lớp áo ngoài cùng (áo khoác/blazer trước, rồi tới áo) với quần/váy. Null khi không còn món nào bán.
+ * Các cách thử một bộ phối trong Phòng thử. Phòng thử (BE) chỉ nhận tối đa 1 áo + 1 quần/váy,
+ * hoặc 1 đầm đứng riêng, qua cùng tham số `productId` / `rackIds` mà Giá treo đồ dùng.
+ * Bộ có đầm: thử đầm. Bộ có nhiều lớp áo (blazer + sơ mi): mỗi lớp áo là một lựa chọn, lớp
+ * ngoài trước vì nhìn thấy rõ nhất, đi cùng quần/váy của bộ. Rỗng khi không còn món nào bán.
+ *
+ * Tạm thời suy ra từ role; khi category có lớp mặc ngoài riêng thì xem lại chỗ này.
  */
-export function outfitTryOnHref(outfit: OutfitSuggestion): string | null {
+export function outfitTryOnOptions(outfit: OutfitSuggestion): OutfitTryOnOption[] {
   const available = outfit.items.filter((item) => item.product.available);
-  const pick = (role: OutfitSuggestion['items'][number]['role']) => available.find((item) => item.role === role);
+  const toOption = (items: OutfitSuggestionItem[]): OutfitTryOnOption => ({
+    href: items.length === 1
+      ? `/try-on?productId=${items[0].product.id}`
+      : `/try-on?rackIds=${items.map((item) => item.product.id).join(',')}`,
+    products: items.map((item) => item.product),
+  });
 
-  const dress = pick('dress');
-  const ids = dress
-    ? [dress.product.id]
-    : [(pick('outer') ?? pick('top'))?.product.id, pick('bottom')?.product.id].filter((id): id is string => Boolean(id));
-  if (ids.length === 0) return null;
-  return ids.length === 1 ? `/try-on?productId=${ids[0]}` : `/try-on?rackIds=${ids.join(',')}`;
+  const dress = available.find((item) => item.role === 'dress');
+  if (dress) return [toOption([dress])];
+
+  const bottom = available.find((item) => item.role === 'bottom');
+  const uppers = [
+    ...available.filter((item) => item.role === 'outer'),
+    ...available.filter((item) => item.role === 'top'),
+  ];
+  if (uppers.length === 0) return bottom ? [toOption([bottom])] : [];
+  return uppers.map((upper) => toOption(bottom ? [upper, bottom] : [upper]));
 }

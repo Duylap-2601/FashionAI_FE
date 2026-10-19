@@ -35,3 +35,10 @@ export interface OutfitSuggestion {
   /** Tổng giá các món còn bán (BE đã bỏ món ngừng bán). */
   totalPrice: number;
 }
+
+/** Một cách thử bộ phối trong Phòng thử: tối đa 1 áo + 1 quần/váy, hoặc 1 đầm. */
+export interface OutfitTryOnOption {
+  href: string;
+  /** Món sẽ được thử, áo trước. */
+  products: SuggestedProduct[];
+}

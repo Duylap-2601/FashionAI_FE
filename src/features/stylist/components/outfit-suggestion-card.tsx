@@ -1,11 +1,11 @@
 'use client';
 
 import { OUTFIT_ROLE_LABELS } from '@/features/stylist/constants/outfit-suggestion';
+import { OutfitTryOnButton } from '@/features/stylist/components/outfit-try-on-button';
 import { formatVnd } from '@/features/stylist/services/format';
-import { outfitTryOnHref } from '@/features/stylist/services/outfit-suggestions';
 import type { OutfitSuggestionItem, SuggestedProduct } from '@/features/stylist/types/outfit-suggestion';
 import type { OutfitSuggestionCardProps } from '@/features/stylist/types/outfit-suggestion-card';
-import { Package, ShoppingBag, Sparkles } from 'lucide-react';
+import { Package, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -72,7 +72,6 @@ function OutfitItemRow({ item, onSelectProduct }: {
 
 export function OutfitSuggestionCard({ outfit, onAddToCart, onSelectProduct }: OutfitSuggestionCardProps) {
   const availableCount = outfit.items.filter((item) => item.product.available).length;
-  const tryOnHref = outfitTryOnHref(outfit);
 
   return (
     <article className="bg-white rounded-2xl border border-neutral-200 shadow-xs flex flex-col min-w-0 overflow-hidden">
@@ -111,18 +110,7 @@ export function OutfitSuggestionCard({ outfit, onAddToCart, onSelectProduct }: O
           <span className="text-body-md font-bold text-brand-navy">{formatVnd(outfit.totalPrice)}</span>
         </div>
         <div className="grid grid-cols-[auto_1fr] gap-2">
-          {tryOnHref ? (
-            <Link
-              href={tryOnHref}
-              className="h-10 px-3 rounded-xl border border-brand-navy/30 bg-white text-brand-navy text-label-md font-semibold flex items-center justify-center gap-1.5 hover:bg-brand-navy/5 transition-colors"
-            >
-              <Sparkles className="w-4 h-4" /> Thử đồ
-            </Link>
-          ) : (
-            <span className="h-10 px-3 rounded-xl border border-neutral-200 text-neutral-400 text-label-md font-semibold flex items-center justify-center gap-1.5">
-              <Sparkles className="w-4 h-4" /> Thử đồ
-            </span>
-          )}
+          <OutfitTryOnButton outfit={outfit} />
           <button
             type="button"
             onClick={() => onAddToCart(outfit)}

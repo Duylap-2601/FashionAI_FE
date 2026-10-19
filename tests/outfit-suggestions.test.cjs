@@ -146,32 +146,24 @@ test('chat done payload and stored messages carry validated suggestions', () => 
   assert.equal(message.content, 'Hi');
 });
 
-test('outfitTryOnHref picks what the fitting room can show: a dress, or outer layer + bottom', () => {
+test('outfitTryOnOptions offers what the fitting room can show (1 top + 1 bottom, or a dress)', () => {
   const load = createSourceLoader();
-  const { outfitTryOnHref } = load('@/features/stylist/services/outfit-suggestions');
+  const { outfitTryOnOptions } = load('@/features/stylist/services/outfit-suggestions');
   const item = (role, overrides) => ({ role, note: null, product: product(overrides) });
+  const outfit = (items) => ({ name: '', reason: '', extras: [], totalPrice: 0, items });
+  const hrefs = (value) => plain(outfitTryOnOptions(value)).map((option) => option.href);
 
-  assert.equal(
-    outfitTryOnHref({ name: '', reason: '', extras: [], totalPrice: 0, items: [
-      item('outer', { id: 'blazer' }), item('top', { id: 'shirt' }), item('bottom', { id: 'pants', category: 'LOWER' }),
-    ] }),
-    '/try-on?rackIds=blazer,pants',
-  );
-  assert.equal(
-    outfitTryOnHref({ name: '', reason: '', extras: [], totalPrice: 0, items: [
-      item('outer', { id: 'blazer' }), item('dress', { id: 'dress', category: 'FULL_BODY' }),
-    ] }),
-    '/try-on?productId=dress',
-  );
-  // Món ngừng bán bị bỏ qua; chỉ còn một món thì thử món đó.
-  assert.equal(
-    outfitTryOnHref({ name: '', reason: '', extras: [], totalPrice: 0, items: [
-      item('top', { id: 'shirt' }), item('bottom', { id: 'skirt', category: 'LOWER', available: false }),
-    ] }),
-    '/try-on?productId=shirt',
-  );
-  assert.equal(
-    outfitTryOnHref({ name: '', reason: '', extras: [], totalPrice: 0, items: [item('top', { available: false })] }),
-    null,
-  );
+  // Hai lớp áo: mỗi lớp một lựa chọn, lớp ngoài trước, cùng quần của bộ.
+  const layered = plain(outfitTryOnOptions(outfit([
+    item('top', { id: 'shirt' }), item('outer', { id: 'blazer' }), item('bottom', { id: 'pants', category: 'LOWER' }),
+  ])));
+  assert.deepEqual(layered.map((option) => option.href), ['/try-on?rackIds=blazer,pants', '/try-on?rackIds=shirt,pants']);
+  assert.deepEqual(layered[0].products.map((p) => p.id), ['blazer', 'pants']);
+
+  assert.deepEqual(hrefs(outfit([item('top', { id: 'shirt' }), item('bottom', { id: 'skirt', category: 'LOWER' })])), ['/try-on?rackIds=shirt,skirt']);
+  // Đầm không ghép được với món khác.
+  assert.deepEqual(hrefs(outfit([item('outer', { id: 'blazer' }), item('dress', { id: 'dress', category: 'FULL_BODY' })])), ['/try-on?productId=dress']);
+  // Món ngừng bán bị bỏ qua.
+  assert.deepEqual(hrefs(outfit([item('top', { id: 'shirt' }), item('bottom', { id: 'skirt', category: 'LOWER', available: false })])), ['/try-on?productId=shirt']);
+  assert.deepEqual(hrefs(outfit([item('top', { available: false })])), []);
 });
