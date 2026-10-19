@@ -264,6 +264,7 @@ export default function AIStylistPage() {
             occasion={occasion}
             toOutfitList={toOutfitList}
             getOutfitIcon={getOutfitIcon}
+            catalogProducts={catalogProducts}
           />
         )}
 

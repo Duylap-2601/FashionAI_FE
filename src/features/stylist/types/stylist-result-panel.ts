@@ -1,5 +1,6 @@
 
 import type { toColorList, toOutfitList } from '@/features/stylist/services/result-lists';
+import type { Product } from '@/features/products/types/products';
 import type { StylistResult } from '@/features/stylist/types/stylist';
 import React from 'react';
 
@@ -13,4 +14,6 @@ export interface StylistResultPanelProps {
   occasion: string;
   toOutfitList: typeof toOutfitList;
   getOutfitIcon: (type: string) => React.JSX.Element;
+  /** Shop product catalog for matching outfit suggestions */
+  catalogProducts: Product[];
 }
