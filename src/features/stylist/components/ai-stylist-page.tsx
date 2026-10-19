@@ -260,7 +260,7 @@ export default function AIStylistPage() {
         {pageState === 'processing' && <StylistResultSkeleton />}
 
         {pageState === 'result' && displayResult && !isEditing && (
-          <StylistResultPanel key={displayResult.id} resultRef={resultRef} displayResult={displayResult} />
+          <StylistResultPanel key={displayResult.id} resultRef={resultRef} displayResult={displayResult} catalogProducts={catalogProducts} />
         )}
 
         <StylistHistoryPanel

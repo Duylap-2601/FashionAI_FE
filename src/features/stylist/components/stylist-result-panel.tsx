@@ -3,9 +3,12 @@
 import { GA_ITEM_LISTS } from '@/features/analytics/constants/ga-item-lists';
 import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
 import { toColorSwatches, toOutfitList } from '@/features/stylist/services/result-lists';
+import { findOutfitProducts } from '@/features/stylist/services/stylist-product-matcher';
 import type { ColorSwatch } from '@/features/stylist/types/stylist';
 import type { StylistResultPanelProps } from '@/features/stylist/types/stylist-result-panel';
 import { AlertCircle, Check, ChevronDown, Copy, Lightbulb, Shirt, Sparkles, UserRound } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -82,7 +85,7 @@ function ColorChip({ name, hex }: ColorSwatch) {
   );
 }
 
-export function StylistResultPanel({ resultRef, displayResult }: StylistResultPanelProps) {
+export function StylistResultPanel({ resultRef, displayResult, catalogProducts }: StylistResultPanelProps) {
   const [expanded, setExpanded] = useState(false);
 
   const warnings = displayResult.warnings ?? [];
@@ -129,8 +132,15 @@ export function StylistResultPanel({ resultRef, displayResult }: StylistResultPa
           <OutfitSuggestionList viewKey={displayResult.id} list={GA_ITEM_LISTS.aiStylist} outfits={outfits} variant="showcase" />
         ) : legacyOutfits.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {legacyOutfits.map((outfit, idx) => (
-              <div key={idx} className="bg-white rounded-2xl border border-neutral-200/80 p-4">
+            {legacyOutfits.map((outfit, idx) => {
+              // Kết quả cũ chỉ có tên món dạng chữ: dò sản phẩm gần giống trong catalog (chỉ là gợi ý).
+              const matchedProducts = findOutfitProducts(
+                typeof outfit === 'string' ? [outfit] : outfit.items.map((item) => item.name),
+                catalogProducts,
+                3,
+              );
+              return (
+              <div key={idx} className="bg-white rounded-2xl border border-neutral-200/80 p-4 flex flex-col">
                 <p className="text-label-md font-semibold text-neutral-900 mb-2">
                   {typeof outfit === 'string' ? `Bộ phối ${idx + 1}` : outfit.name || `Bộ phối ${idx + 1}`}
                 </p>
@@ -146,8 +156,25 @@ export function StylistResultPanel({ resultRef, displayResult }: StylistResultPa
                     ))}
                   </ul>
                 )}
+                {matchedProducts.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-neutral-100">
+                    <p className="text-label-sm text-neutral-400 mb-2">Sản phẩm tương tự trong shop</p>
+                    <div className="flex flex-col gap-2">
+                      {matchedProducts.map((product) => (
+                        <Link key={product.id} href={`/products/${product.id}`} className="group flex items-center gap-2.5">
+                          <span className="relative w-9 h-12 shrink-0 rounded-lg overflow-hidden bg-brand-cream">
+                            {product.image && <Image src={product.image} alt={product.name} fill sizes="36px" className="object-contain" />}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-body-sm text-neutral-700 group-hover:text-brand-navy">{product.name}</span>
+                          <span className="shrink-0 text-label-sm font-semibold text-neutral-900">{product.price}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-neutral-200/80 p-6 flex flex-col items-center text-center gap-2">
