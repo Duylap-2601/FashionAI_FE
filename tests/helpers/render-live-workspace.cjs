@@ -5,8 +5,8 @@ const { createSourceLoader } = require('./load-source.cjs');
 function renderLiveWorkspace({ status = 'idle', combo = false, remaining = 42, dailyRemaining = 240, serverStatus, localSession = true } = {}) {
   const noop = () => {};
   const active = Boolean(serverStatus) || (status !== 'idle' && status !== 'ended');
+  // Chế độ áo + quần giờ là prop do trang Phòng thử điều khiển (dùng chung với thử bằng ảnh).
   const load = createSourceLoader({ mocks: {
-    react: { ...React, useState: () => [combo, noop] },
     '@/features/try-on/hooks/use-live-try-on': { useLiveTryOn: () => ({
       status, remainingSeconds: remaining, sessionId: active && localSession ? 'session-1' : null,
       cameraStream: null, remoteStream: null, markFirstFrame: noop, pause: noop, start: noop, stop: noop,
@@ -22,6 +22,7 @@ function renderLiveWorkspace({ status = 'idle', combo = false, remaining = 42, d
   return renderToStaticMarkup(React.createElement(LiveTryOnWorkspace, {
     selectedProduct: product, upperProduct: product, lowerProduct: { ...product, id: '22222222-2222-4222-8222-222222222222', name: 'Quần suông kem' },
     onOpenCatalog: noop, onOpenUpperCatalog: noop, onOpenLowerCatalog: noop, onSwitchToPhoto: noop,
+    outfitMode: combo, onOutfitModeChange: noop,
   }));
 }
 

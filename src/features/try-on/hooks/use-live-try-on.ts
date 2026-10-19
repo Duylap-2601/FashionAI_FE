@@ -206,7 +206,7 @@ export function useLiveTryOn() {
 
   const updateGarment = useCallback(async (productId: string) => {
     void productId;
-    setError('Không thể đổi sản phẩm trong phiên Live đang chạy. Hãy kết thúc Live rồi bắt đầu phiên mới.');
+    setError('Không thể đổi sản phẩm khi đang thử trực tiếp. Hãy kết thúc phiên rồi bắt đầu phiên mới.');
   }, []);
 
   const hasResumableSession = useCallback(() => Boolean(sessionIdRef.current), []);
@@ -342,14 +342,14 @@ function preloadImage(url: string, signal: AbortSignal) {
     };
     image.onerror = () => {
       signal.removeEventListener('abort', abort);
-      reject(new Error('Không thể tải ảnh garment cho Live Try-On'));
+      reject(new Error('Không thể tải ảnh trang phục để thử trực tiếp'));
     };
     image.src = url;
   });
 }
 
 function readErrorMessage(error: unknown) {
-  if (error instanceof DOMException && error.name === 'NotAllowedError') return 'Bạn cần cấp quyền camera để bắt đầu Live Try-On.';
+  if (error instanceof DOMException && error.name === 'NotAllowedError') return 'Bạn cần cấp quyền camera để thử đồ trực tiếp.';
   if (error instanceof Error) return error.message;
-  return 'Live Try-On gặp lỗi. Vui lòng thử lại sau.';
+  return 'Thử đồ trực tiếp gặp lỗi. Vui lòng thử lại sau.';
 }

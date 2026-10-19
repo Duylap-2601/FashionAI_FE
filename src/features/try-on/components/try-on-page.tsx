@@ -9,7 +9,7 @@ import type { Product } from '@/features/products/types/products';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import { QuotaExhaustedModal } from '@/features/stylist/components/QuotaExhaustedModal';
 import { SubscriptionRequiredModal } from '@/features/subscription/components/SubscriptionRequiredModal';
-import { useQuota } from '@/features/subscription/hooks/useQuota';
+import { useLiveTryOnQuota, useQuota } from '@/features/subscription/hooks/useQuota';
 import { CatalogModal } from '@/features/try-on/components/CatalogModal';
 import { SubscriptionNotice, TryOnHeader } from '@/features/try-on/components/TryOnHeader';
 import { TryOnWorkspace } from '@/features/try-on/components/TryOnWorkspace';
@@ -91,7 +91,11 @@ function VirtualTryOnContent() {
   const initialProduct = catalogProducts.find(p => p.id === productId) || catalogProducts[0] || null;
 
   const [pageState, setPageState] = useState<PageState>('idle');
-  const [tryOnMode, setTryOnMode] = useState<'photo' | 'live'>('photo');
+  // Thử trực tiếp là mặc định; tự lùi về thử bằng ảnh khi tài khoản/thiết bị không dùng được,
+  // trừ khi người dùng đã tự chọn tab.
+  const [tryOnMode, setTryOnMode] = useState<'photo' | 'live'>('live');
+  const [tryOnModeTouched, setTryOnModeTouched] = useState(false);
+  const { quota: liveQuota, isError: liveQuotaError } = useLiveTryOnQuota();
   const [garmentMode, setGarmentMode] = useState<GarmentMode>('single');
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
   const [userPhotoFile, setUserPhotoFile] = useState<File | null>(null);
@@ -162,6 +166,13 @@ function VirtualTryOnContent() {
       } else if (ids.length >= 2) {
         const p0 = catalogProducts.find(p => p.id === ids[0]);
         const p1 = catalogProducts.find(p => p.id === ids[1]);
+        // Hai tab đều cần một sản phẩm "một món" để hiển thị: tải thẳng link bộ 2 món (catalog chưa có
+        // trong cache) thì món đó còn trống, nên lấy món đầu của bộ.
+        const first = p0 ?? p1;
+        if (first) {
+          setSelectedProduct(prev => prev ?? first);
+          setSelectedColor(prev => prev ?? resolveProductColor(first));
+        }
         if (p0 && p1) {
           const cat0 = p0.garmentCategory || toBackendCategory(p0.category);
           const cat1 = p1.garmentCategory || toBackendCategory(p1.category);
@@ -365,9 +376,17 @@ function VirtualTryOnContent() {
   const handleTryOnModeChange = (mode: 'photo' | 'live') => {
     if (pageState === 'loading') return;
     clearResult();
+    setTryOnModeTouched(true);
     setTryOnMode(mode);
-    if (mode === 'live') setGarmentMode('single');
   };
+
+  useEffect(() => {
+    if (tryOnModeTouched || tryOnMode !== 'live') return;
+    const noCamera = typeof navigator !== 'undefined' && !navigator.mediaDevices?.getUserMedia;
+    if (noCamera || liveQuotaError || (liveQuota && (!liveQuota.enabled || !liveQuota.eligible))) {
+      setTryOnMode('photo');
+    }
+  }, [liveQuota, liveQuotaError, tryOnMode, tryOnModeTouched]);
 
   const handleUseMockPhoto = () => {
     if (pageState === 'loading') return;
@@ -396,7 +415,7 @@ function VirtualTryOnContent() {
     if (!resultPhotoUrl) return;
     try {
       if (navigator.share) {
-      await navigator.share({ title: 'Kết quả Try-On từ FashionAI', text: `Thử đồ online bộ ${selectedProduct?.name || 'thời trang'} tại FashionAI!`, url: resultPhotoUrl });
+      await navigator.share({ title: 'Kết quả thử đồ từ FashionAI', text: `Thử đồ online bộ ${selectedProduct?.name || 'thời trang'} tại FashionAI!`, url: resultPhotoUrl });
         return;
       }
       await navigator.clipboard.writeText(resultPhotoUrl);
@@ -445,7 +464,7 @@ function VirtualTryOnContent() {
 
       {showQuotaModal && <QuotaExhaustedModal
         onClose={() => setShowQuotaModal(false)}
-        actionName="Thử đồ AI (Try-On)"
+        actionName="Thử đồ AI"
         resetAt={quotaModalData.resetAt}
         requested={quotaModalData.requested}
         remaining={quotaModalData.remaining}
@@ -454,25 +473,25 @@ function VirtualTryOnContent() {
         isOpen={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
         reason={subscriptionReason}
-        actionName="Thử đồ AI (Virtual Try-On)"
+        actionName="Thử đồ AI"
       />}
 
       <input ref={cameraInputRef} type="file" accept="image/png,image/jpeg" capture="user" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0]); e.currentTarget.value = ''; }} />
 
-      <TryOnHeader remainingQuota={remainingQuota} limitQuota={limitQuota} isBlocked={isBlocked} />
+      <TryOnHeader remainingQuota={remainingQuota} limitQuota={limitQuota} isBlocked={isBlocked} showQuota={tryOnMode === 'photo'} />
 
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-10">
         {isBlocked && tryOnMode === 'photo' && <SubscriptionNotice isSubscriptionExpired={isSubscriptionExpired} />}
 
         <div className="mb-5 inline-flex rounded-2xl border border-[#E5DFD5] bg-white p-1 shadow-sm">
+          <button type="button" onClick={() => handleTryOnModeChange('live')} disabled={pageState === 'loading'} className={`rounded-xl px-5 py-2 text-label-sm font-semibold transition-colors disabled:opacity-60 ${tryOnMode === 'live' ? 'bg-[#5D1C34] text-white' : 'text-neutral-600 hover:bg-[#F9F7F5]'}`}>Thử trực tiếp</button>
           <button type="button" onClick={() => handleTryOnModeChange('photo')} disabled={pageState === 'loading'} className={`rounded-xl px-5 py-2 text-label-sm font-semibold transition-colors disabled:opacity-60 ${tryOnMode === 'photo' ? 'bg-[#5D1C34] text-white' : 'text-neutral-600 hover:bg-[#F9F7F5]'}`}>Thử bằng ảnh</button>
-          <button type="button" onClick={() => handleTryOnModeChange('live')} disabled={pageState === 'loading'} className={`rounded-xl px-5 py-2 text-label-sm font-semibold transition-colors disabled:opacity-60 ${tryOnMode === 'live' ? 'bg-[#5D1C34] text-white' : 'text-neutral-600 hover:bg-[#F9F7F5]'}`}>Live Try-On</button>
         </div>
 
         {catalogProducts.length === 0 ? (
           <div className="rounded-2xl border border-[#E5DFD5] bg-white p-8 text-center shadow-sm">
             <h2 className="text-[20px] font-semibold text-[#1A1917]">Chưa có sản phẩm từ backend</h2>
-            <p className="mt-2 text-body-sm text-neutral-600">Try-On hiện chỉ dùng catalog thật. Vui lòng kiểm tra API sản phẩm hoặc thêm sản phẩm ACTIVE có garmentUrl.</p>
+            <p className="mt-2 text-body-sm text-neutral-600">Phòng thử hiện chỉ dùng sản phẩm thật trong catalog. Vui lòng kiểm tra API sản phẩm hoặc thêm sản phẩm ACTIVE có garmentUrl.</p>
           </div>
         ) : tryOnMode === 'live' && selectedProduct ? (
           <LiveTryOnWorkspace
@@ -489,6 +508,8 @@ function VirtualTryOnContent() {
             onSelectUpperColor={setUpperColor}
             onSelectLowerColor={setLowerColor}
             onSwitchToPhoto={() => handleTryOnModeChange('photo')}
+            outfitMode={garmentMode === 'combo'}
+            onOutfitModeChange={(combo) => handleModeChange(combo ? 'combo' : 'single')}
           />
         ) : selectedProduct ? (
           <TryOnWorkspace

@@ -167,7 +167,7 @@ export default function TryOnHistoryPage() {
         <div className="mb-8 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h1 className="text-heading-h2 font-semibold text-neutral-900 flex items-center gap-3">
-              Lịch sử Try-On
+              Lịch sử thử đồ
               {!isLoading && (
                 <span className="text-label-md bg-neutral-200 text-neutral-600 px-2.5 py-0.5 rounded-full font-medium">
                   {displayHistory.length}

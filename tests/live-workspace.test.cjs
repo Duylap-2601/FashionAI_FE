@@ -10,7 +10,7 @@ test('paused outfit keeps the session timer and allows resume even when daily fr
   const html = renderLiveWorkspace({ status: 'paused', combo: true, dailyRemaining: 0 });
   assert.match(html, /Phiên còn 00:42/);
   assert.match(html, /Đã tạm dừng/);
-  assert.ok(!button(html, 'Tiếp tục Live').includes(' disabled='));
+  assert.ok(!button(html, 'Tiếp tục thử').includes(' disabled='));
   assert.ok(!button(html, 'Đổi áo:').includes(' disabled='));
   assert.ok(!button(html, 'Đổi quần:').includes(' disabled='));
   assert.ok(button(html, 'Kết thúc'));
@@ -29,7 +29,7 @@ test('active session prominently offers pause and locks outfit selection', () =>
 test('restored paused session uses server time and offers end and resume', () => {
   const paused = renderLiveWorkspace({ status: 'idle', serverStatus: 'PAUSED', localSession: false, remaining: 23 });
   assert.match(paused, /Phiên còn 00:23/);
-  assert.ok(!button(paused, 'Tiếp tục Live').includes(' disabled='));
+  assert.ok(!button(paused, 'Tiếp tục thử').includes(' disabled='));
   assert.ok(!button(paused, 'Kết thúc').includes(' disabled='));
 });
 
