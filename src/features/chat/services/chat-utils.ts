@@ -1,11 +1,38 @@
 import {
   ChatContextPayload,
-  ChatProductContext
+  ChatDonePayload,
+  ChatMessage,
+  ChatProductContext,
+  ChatSuggestions
 } from '@/features/chat/types/chat';
+import { toOutfitSuggestions, toSuggestedProducts } from '@/features/stylist/services/outfit-suggestions';
+import { isRecord } from '@/lib/errors';
 
 export function isUuid(val?: string | null): boolean {
   if (!val) return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+}
+
+export function toChatSuggestions(value: unknown): ChatSuggestions | null {
+  if (!isRecord(value)) return null;
+  const outfits = toOutfitSuggestions(value.outfits);
+  const products = toSuggestedProducts(value.products);
+  return outfits.length > 0 || products.length > 0 ? { outfits, products } : null;
+}
+
+/** Đọc payload `done` của WS/SSE; thiếu field thì coi như không có gợi ý. */
+export function parseChatDonePayload(value: unknown): ChatDonePayload {
+  if (!isRecord(value)) return { suggestions: null };
+  return {
+    sessionId: typeof value.sessionId === 'string' ? value.sessionId : undefined,
+    messageId: typeof value.messageId === 'string' ? value.messageId : undefined,
+    suggestions: toChatSuggestions(value.suggestions),
+  };
+}
+
+/** Tin nhắn từ server hoặc cache localStorage: kiểm tra lại phần gợi ý trước khi render. */
+export function normalizeChatMessage(message: ChatMessage): ChatMessage {
+  return { ...message, suggestions: toChatSuggestions(message.suggestions) };
 }
 
 export async function simulateAssistantStream(

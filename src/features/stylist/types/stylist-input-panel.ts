@@ -22,5 +22,9 @@ export interface StylistInputPanelProps {
   errorMessage: string | null;
   handleAnalyze: () => Promise<void>;
   photoFile: File | null;
+  imageConsent: boolean;
+  onImageConsentChange: (checked: boolean) => void;
+  /** Đã bấm phân tích khi có ảnh mà chưa tick đồng ý. */
+  showConsentError: boolean;
   isAnalyzing: boolean;
 }

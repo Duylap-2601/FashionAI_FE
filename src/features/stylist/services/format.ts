@@ -1,3 +1,7 @@
 export function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
+
+export function formatVnd(amount: number) {
+  return `${amount.toLocaleString('vi-VN')} đ`;
+}

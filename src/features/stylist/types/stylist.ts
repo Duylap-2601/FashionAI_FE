@@ -1,5 +1,10 @@
+import type { OutfitSuggestion } from '@/features/stylist/types/outfit-suggestion';
+
 export interface StylistAnalysisRequest {
-  humanImage: File;
+  /** Tùy chọn: không có ảnh thì AI tư vấn theo số đo, dịp mặc và phong cách. */
+  humanImage?: File;
+  /** Người dùng đã đồng ý cho dùng ảnh; BE bắt buộc khi có `humanImage`. */
+  imageConsent?: boolean;
   productId?: string;
   garmentDescription?: string;
   occasion?: string;
@@ -32,9 +37,10 @@ export interface StylistProduct {
 }
 
 export interface StylistAnalysisResult {
-  bodyType: string;
-  skinTone: string;
-  personalColor: string;
+  // null khi không có ảnh và không suy ra được từ số đo: ẩn các khối tương ứng.
+  bodyType: string | null;
+  skinTone: string | null;
+  personalColor: string | null;
   fitRecommendation: string;
   fitAdvice?: string | null;
   recommendedSize?: string | null;
@@ -44,11 +50,17 @@ export interface StylistAnalysisResult {
   stylingTips: string;
   verdict: string;
   warnings?: string[];
+  /** Id thô BE lưu lại; bộ phối đã hydrate để hiển thị là `StylistResult.outfits`. */
+  outfits?: unknown;
 }
 
-export interface StylistResult extends Partial<StylistAnalysisResult> {
+export interface StylistResult extends Partial<Omit<StylistAnalysisResult, 'outfits'>> {
   id: string;
-  humanImageUrl?: string;
+  /** Ảnh không còn được lưu: kết quả mới luôn null, lịch sử cũ có thể còn URL. */
+  humanImageUrl?: string | null;
+  hasImage?: boolean;
+  /** Bộ phối từ sản phẩm thật; [] với lịch sử cũ (khi đó dùng `outfitCombinations`). */
+  outfits: OutfitSuggestion[];
   garmentDescription?: string;
   analysisResult?: StylistAnalysisResult;
   createdAt: string;
@@ -63,6 +75,9 @@ export interface StylistResult extends Partial<StylistAnalysisResult> {
   model?: string;
   warnings?: string[];
 }
+
+/** Kết quả BE trả về, trước khi `normalizeStylistResult` kiểm tra `outfits`. */
+export type StylistResultDto = Omit<StylistResult, 'outfits'> & { outfits?: unknown };
 
 export interface StylistHistoryMeta {
   total: number;

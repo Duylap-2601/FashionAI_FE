@@ -1,7 +1,7 @@
 'use client';
 
 import { LOCAL_STORAGE_SESSIONS_KEY, LOCAL_STORAGE_MESSAGES_PREFIX } from '@/features/chat/constants/storage';
-import { isUuid, simulateAssistantStream } from '@/features/chat/services/chat-utils';
+import { isUuid, normalizeChatMessage, parseChatDonePayload, simulateAssistantStream } from '@/features/chat/services/chat-utils';
 import { deleteChatSessionPayload, renameChatSessionPayload } from '@/features/chat/services/mutations';
 import { fetchChatSessionPayload, fetchChatSessionsPayload } from '@/features/chat/services/queries';
 import type { UseChatOptions } from '@/features/chat/types/chat-hook';
@@ -11,6 +11,7 @@ import {
   ChatMessage,
   ChatProductContext,
   ChatSession,
+  ChatSuggestions,
   SendMessageOptions,
 } from '@/features/chat/types/chat';
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
@@ -168,7 +169,7 @@ export function useChat(options: UseChatOptions = {}) {
         try {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && isMounted) {
-            setMessages(parsed);
+            setMessages(parsed.map(normalizeChatMessage));
           }
         } catch (e) {
           console.error('Failed to parse cached messages', e);
@@ -180,7 +181,8 @@ export function useChat(options: UseChatOptions = {}) {
       if (hasSession && typeof sessionId === 'string' && isUuid(sessionId)) {
         try {
           const data = await fetchChatSessionPayload(sessionId);
-          const serverMessages = !Array.isArray(data) && Array.isArray(data.messages) ? data.messages : Array.isArray(data) ? data : null;
+          const rawMessages = !Array.isArray(data) && Array.isArray(data.messages) ? data.messages : Array.isArray(data) ? data : null;
+          const serverMessages = rawMessages?.map(normalizeChatMessage);
           if (serverMessages && isMounted) {
             setMessages(serverMessages);
             try {
@@ -392,6 +394,9 @@ export function useChat(options: UseChatOptions = {}) {
 
       let accumulatedContent = '';
       let resolvedBackendUuid: string | null = backendSessionIdToSend;
+      // Từ event done: gắn vào tin trả lời khi hoàn tất.
+      let doneMessageId: string | undefined;
+      let doneSuggestions: ChatSuggestions | null = null;
 
       try {
         const token = await getValidAccessToken();
@@ -422,10 +427,14 @@ export function useChat(options: UseChatOptions = {}) {
               }
             };
 
-            const onDone = ({ sessionId }: { sessionId?: string }) => {
+            const onDone = (payload: unknown) => {
               clearTimeout(timeoutId);
               cleanup();
               usedWs = true;
+
+              const { sessionId, messageId, suggestions } = parseChatDonePayload(payload);
+              doneMessageId = messageId;
+              doneSuggestions = suggestions;
 
               const returnedUuid = sessionId && isUuid(sessionId) ? sessionId : null;
               if (returnedUuid) {
@@ -546,6 +555,8 @@ export function useChat(options: UseChatOptions = {}) {
               content: accumulatedContent || 'Tôi đã tiếp nhận câu hỏi của bạn. Hãy cho tôi biết thêm chi tiết để hỗ trợ tốt nhất nhé!',
               streaming: false,
               sessionId: finalSessionId,
+              messageId: doneMessageId,
+              suggestions: doneSuggestions,
             }
             : {
               ...msg,

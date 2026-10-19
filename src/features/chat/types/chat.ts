@@ -1,4 +1,13 @@
+import type { OutfitSuggestion, SuggestedProduct } from '@/features/stylist/types/outfit-suggestion';
+
 export type ChatRole = 'user' | 'assistant' | 'system';
+
+/** Gợi ý từ catalog kèm câu trả lời của AI Chat (BE đã hydrate, đã tách khỏi text). */
+export interface ChatSuggestions {
+  outfits: OutfitSuggestion[];
+  /** Món lẻ. */
+  products: SuggestedProduct[];
+}
 
 export interface ChatProductContext {
   id: string;
@@ -18,6 +27,9 @@ export interface ChatMessage {
   productId?: string;
   product?: ChatProductContext;
   isError?: boolean;
+  /** Id tin nhắn trên server (từ event done); tin tải từ server thì trùng `id`. */
+  messageId?: string;
+  suggestions?: ChatSuggestions | null;
 }
 
 export interface ChatSession {
@@ -29,9 +41,16 @@ export interface ChatSession {
   lastRole?: 'user' | 'assistant';
 }
 
+/** Payload `done` (WS `chat:done`, SSE `{ type: 'done', data }`). */
+export interface ChatDonePayload {
+  sessionId?: string;
+  messageId?: string;
+  suggestions: ChatSuggestions | null;
+}
+
 export interface SSEEvent {
   type: 'token' | 'done' | 'error';
-  data: string | { sessionId?: string;[key: string]: unknown };
+  data: string | ChatDonePayload;
 }
 
 export interface ChatMeasurementsContext {

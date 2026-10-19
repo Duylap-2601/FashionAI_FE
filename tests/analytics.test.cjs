@@ -124,6 +124,23 @@ test('cart items map to GA4 items with the plain product name and combo/color va
   });
 });
 
+test('AI suggestions map to GA4 list items with list id/name and position', () => {
+  const load = createSourceLoader();
+  const { suggestedProductToGaItem } = load('@/features/analytics/services/ga-items');
+  const { GA_ITEM_LISTS } = load('@/features/analytics/constants/ga-item-lists');
+
+  assert.deepEqual(plain(suggestedProductToGaItem({ id: 'p-3', name: 'Đầm suông', price: 990000 }, GA_ITEM_LISTS.aiChat, 2)), {
+    item_id: 'p-3',
+    item_name: 'Đầm suông',
+    price: 990000,
+    quantity: 1,
+    index: 2,
+    item_list_id: 'ai_chat',
+    item_list_name: 'AI Chat',
+  });
+  assert.deepEqual(plain(GA_ITEM_LISTS.aiStylist), { item_list_id: 'ai_stylist', item_list_name: 'AI Stylist' });
+});
+
 test('analytics formatting helpers', () => {
   const load = createSourceLoader();
   const format = load('@/features/admin/services/analytics-format');

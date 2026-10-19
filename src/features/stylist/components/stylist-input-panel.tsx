@@ -1,19 +1,20 @@
 'use client';
 
-import { BUDGETS, OCCASIONS, STYLE_PREFERENCES } from '@/features/stylist/constants/ai-stylist-page';
+import { BUDGETS, IMAGE_CONSENT_TEXT, OCCASIONS, STYLE_PREFERENCES } from '@/features/stylist/constants/ai-stylist-page';
 import type { GenderPref } from '@/features/stylist/types/ai-stylist-page';
 import type { StylistInputPanelProps } from '@/features/stylist/types/stylist-input-panel';
 import {
   AlertTriangle,
   Camera as CameraIcon,
   Package,
+  ShieldCheck,
   UploadCloud,
   Wallet,
   X
 } from 'lucide-react';
 import React, { useState } from 'react';
 
-export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, cameraInputRef, selectedProduct, setShowCatalogModal, productsLoading, setOccasion, occasion, setStylePreference, stylePreference, setBudget, budget, setGenderPreference, genderPreference, pageState, errorMessage, handleAnalyze, photoFile, isAnalyzing }: StylistInputPanelProps) {
+export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, cameraInputRef, selectedProduct, setShowCatalogModal, productsLoading, setOccasion, occasion, setStylePreference, stylePreference, setBudget, budget, setGenderPreference, genderPreference, pageState, errorMessage, handleAnalyze, photoFile, imageConsent, onImageConsentChange, showConsentError, isAnalyzing }: StylistInputPanelProps) {
   const [isCustomOccasion, setIsCustomOccasion] = useState(
     () => !!occasion && !OCCASIONS.includes(occasion)
   );
@@ -64,9 +65,12 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
   };
   return (
     <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-neutral-200 mb-8 transition-all">
-      <h2 className="text-heading-h3 font-semibold text-brand-navy mb-6">
-        1. Ảnh của bạn
+      <h2 className="text-heading-h3 font-semibold text-brand-navy mb-1">
+        1. Ảnh của bạn <span className="text-body-sm text-neutral-400 font-normal">(tùy chọn)</span>
       </h2>
+      <p className="text-body-sm text-neutral-500 mb-6">
+        Không có ảnh, AI vẫn gợi ý bộ phối dựa trên số đo, dịp mặc và phong cách bạn chọn.
+      </p>
 
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {/* Upload Area */}
@@ -118,6 +122,10 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
               </div>
             )}
           </div>
+          <p className="mt-2 w-[200px] flex items-start gap-1.5 text-[11.5px] text-neutral-500 leading-snug">
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-px text-semantic-success" />
+            Ảnh chỉ dùng để phân tích, không được lưu lại.
+          </p>
         </div>
 
         {/* Context fields */}
@@ -309,6 +317,33 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
             </div>
           </div>
 
+          {/* Image consent: bắt buộc khi có ảnh */}
+          {photoFile && (
+            <div>
+              <label
+                className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors ${showConsentError && !imageConsent
+                    ? 'border-semantic-error bg-red-50'
+                    : 'border-neutral-200 bg-neutral-50'
+                  }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={imageConsent}
+                  onChange={(e) => onImageConsentChange(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 shrink-0 accent-brand-navy cursor-pointer"
+                />
+                <span className="text-[12.5px] text-neutral-700 leading-relaxed">
+                  {IMAGE_CONSENT_TEXT} <span className="text-semantic-error">*</span>
+                </span>
+              </label>
+              {showConsentError && !imageConsent && (
+                <p className="mt-1.5 text-label-sm text-semantic-error">
+                  Vui lòng tick xác nhận để dùng ảnh, hoặc xoá ảnh để tư vấn không cần ảnh.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Error banner */}
           {pageState === 'idle' && errorMessage && (
             <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 rounded-xl border border-red-100">
@@ -320,19 +355,17 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
           {/* Analyze */}
           <button
             onClick={handleAnalyze}
-            disabled={!photoFile || isAnalyzing}
+            disabled={isAnalyzing}
             type="button"
-            className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-label-md font-bold text-white transition-all border-0 ${!photoFile
-                ? 'bg-neutral-300 cursor-not-allowed'
-                : isAnalyzing
-                  ? 'bg-brand-navy/80 cursor-wait'
-                  : 'bg-brand-navy hover:bg-brand-navy/90 shadow-md cursor-pointer'
+            className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-label-md font-bold text-white transition-all border-0 ${isAnalyzing
+                ? 'bg-brand-navy/80 cursor-wait'
+                : 'bg-brand-navy hover:bg-brand-navy/90 shadow-md cursor-pointer'
               }`}
           >
             {isAnalyzing ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Đang phân tích dáng người & màu da...
+                {photoFile ? 'Đang phân tích dáng người & màu da...' : 'Đang chọn bộ phối từ catalog...'}
               </>
             ) : (
               <>

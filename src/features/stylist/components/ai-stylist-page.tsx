@@ -12,7 +12,8 @@ import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { ProductPickerModal } from '@/features/stylist/components/ProductPickerModal';
 import { QuotaExhaustedModal } from '@/features/stylist/components/QuotaExhaustedModal';
 import { useAnalyzeStylist, useDeleteStylistHistory, useStylistHistory } from '@/features/stylist/hooks/useStylist';
-import type { StylistProduct, StylistResult } from '@/features/stylist/types/stylist';
+import { validateStylistRequest } from '@/features/stylist/services/stylist-utils';
+import type { StylistAnalysisRequest, StylistProduct, StylistResult } from '@/features/stylist/types/stylist';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
 import { trackEvent } from '@/lib/analytics';
 import {
@@ -37,6 +38,9 @@ export default function AIStylistPage() {
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  // Đồng ý dùng ảnh gắn với từng ảnh: đổi hoặc xoá ảnh thì phải tick lại.
+  const [imageConsent, setImageConsent] = useState(false);
+  const [showConsentError, setShowConsentError] = useState(false);
   const [occasion, setOccasion] = useState('Đi làm');
   const [stylePreference, setStylePreference] = useState('');
   const [budget, setBudget] = useState('');
@@ -53,6 +57,8 @@ export default function AIStylistPage() {
   const resultRef = useRef<HTMLDivElement>(null);
 
   const handleFileSelect = (file: File | null) => {
+    setImageConsent(false);
+    setShowConsentError(false);
     if (!file) {
       setPhotoUrl(null);
       setPhotoFile(null);
@@ -66,6 +72,8 @@ export default function AIStylistPage() {
     e.stopPropagation();
     setPhotoUrl(null);
     setPhotoFile(null);
+    setImageConsent(false);
+    setShowConsentError(false);
     setPageState('idle');
     setSelectedResult(null);
   };
@@ -73,17 +81,32 @@ export default function AIStylistPage() {
   const remainingQuota = quota ? (quota.unlimited || quota.limit === null ? Infinity : (quota.limit ?? 0) - quota.used) : null;
   const hasQuota = remainingQuota === null || remainingQuota > 0;
 
+  const handleImageConsentChange = (checked: boolean) => {
+    setImageConsent(checked);
+    if (checked) setShowConsentError(false);
+  };
+
   const handleAnalyze = async () => {
     if (!hasQuota) {
       setShowQuotaModal(true);
       return;
     }
-    if (!photoFile) {
-      toast.error('Vui lòng tải lên ảnh của bạn trước.');
-      return;
-    }
-    if (!selectedProduct && !occasion) {
-      toast.error('Vui lòng chọn sản phẩm hoặc dịp mặc.');
+
+    const trimmedOccasion = occasion.trim();
+    const payload: StylistAnalysisRequest = {
+      humanImage: photoFile ?? undefined,
+      imageConsent: photoFile ? imageConsent : undefined,
+      productId: selectedProduct?.id,
+      // Không chọn sản phẩm thì để trống: BE tự phối hoàn toàn từ catalog theo dịp mặc/phong cách.
+      occasion: trimmedOccasion || undefined,
+      stylePreference: stylePreference.trim() || undefined,
+      budget: budget || undefined,
+      genderPreference: genderPreference || undefined,
+    };
+    const validationError = validateStylistRequest(payload);
+    if (validationError) {
+      if (photoFile && !imageConsent) setShowConsentError(true);
+      toast.error(validationError);
       return;
     }
 
@@ -92,17 +115,7 @@ export default function AIStylistPage() {
     setPageState('processing');
 
     try {
-      const res = await analyzeAsync({
-        humanImage: photoFile,
-        productId: selectedProduct?.id,
-        garmentDescription: selectedProduct
-          ? undefined
-          : `Trang phục cho dịp: ${occasion}`,
-        occasion,
-        stylePreference: stylePreference || undefined,
-        budget: budget || undefined,
-        genderPreference: genderPreference || undefined,
-      });
+      const res = await analyzeAsync(payload);
       setSelectedResult(res);
       setPageState('result');
       refetchQuota();
@@ -240,6 +253,9 @@ export default function AIStylistPage() {
           errorMessage={errorMessage}
           handleAnalyze={handleAnalyze}
           photoFile={photoFile}
+          imageConsent={imageConsent}
+          onImageConsentChange={handleImageConsentChange}
+          showConsentError={showConsentError}
           isAnalyzing={isAnalyzing}
         />
 
@@ -248,7 +264,9 @@ export default function AIStylistPage() {
           <div className="bg-brand-navy/5 border border-brand-navy/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center animate-[fadeInUp_0.3s_ease-out]">
             <ScanFace className="w-12 h-12 text-brand-navy mb-4 animate-bounce" />
             <h3 className="text-body-lg font-bold text-brand-navy mb-2">
-              Gemini Vision đang quét vóc dáng, sắc tố da và số đo...
+              {photoFile
+                ? 'Gemini Vision đang quét vóc dáng, sắc tố da và số đo...'
+                : 'AI đang chọn bộ phối phù hợp từ catalog...'}
             </h3>
             <p className="text-body-sm text-brand-navy/70">Quá trình phân tích chuyên sâu mất khoảng 3-5 giây</p>
           </div>

@@ -19,6 +19,7 @@ import { useCartStore } from '@/features/cart/store/cartStore';
 import type { CartLineInput, ServerCart } from '@/features/cart/types/cart-api';
 import type { CartItem } from '@/features/cart/types/cart-store';
 import { toCommerceParams, trackEvent } from '@/lib/analytics';
+import type { GaItemListContext } from '@/lib/analytics';
 import { getErrorMessage } from '@/lib/errors';
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
@@ -103,9 +104,11 @@ export function useCart() {
     }),
   );
 
+  // `listContext`: thêm từ một danh sách gợi ý (vd. AI Stylist) thì gắn list vào chính
+  // event add_to_cart này để GA4 quy đơn hàng về list, không gửi thêm event thứ hai.
   const addToCart = useCallback(
-    (item: Omit<CartItem, 'id'>) => {
-      trackEvent('add_to_cart', toCommerceParams([cartItemToGaItem(item)]));
+    (item: Omit<CartItem, 'id'>, listContext?: GaItemListContext) => {
+      trackEvent('add_to_cart', toCommerceParams([{ ...cartItemToGaItem(item), ...listContext }]));
       if (!isServerCart) {
         useCartStore.getState().addToCart(item);
         return;
