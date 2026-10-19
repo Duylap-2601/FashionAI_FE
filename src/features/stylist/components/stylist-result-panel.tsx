@@ -2,241 +2,202 @@
 
 import { GA_ITEM_LISTS } from '@/features/analytics/constants/ga-item-lists';
 import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
+import { toColorList, toOutfitList } from '@/features/stylist/services/result-lists';
 import type { StylistResultPanelProps } from '@/features/stylist/types/stylist-result-panel';
-import {
-  AlertCircle,
-  CheckCircle2,
-  Ruler,
-  Sun
-} from 'lucide-react';
+import { AlertCircle, ChevronDown, Lightbulb, Shirt, Sparkles, UserRound } from 'lucide-react';
+import React, { useState } from 'react';
 
-// Tailwind cần tên class đầy đủ, không ghép chuỗi động.
-const ANALYSIS_GRID_COLS = ['', 'sm:grid-cols-1', 'sm:grid-cols-2', 'sm:grid-cols-3'];
+/** "- mẹo 1\n- mẹo 2" (định dạng prompt yêu cầu) → danh sách; kết quả cũ dạng đoạn văn giữ nguyên một mục. */
+function toTips(text: string | undefined): string[] {
+  if (!text) return [];
+  return text
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*[-•*]\s*/, '').trim())
+    .filter(Boolean);
+}
 
-export function StylistResultPanel({ resultRef, displayResult, toColorList, score, scoreColor, scoreLabel, occasion, toOutfitList, getOutfitIcon }: StylistResultPanelProps) {
+function scoreTone(score: number) {
+  if (score >= 80) return { bar: 'bg-semantic-success', label: 'Rất hợp' };
+  if (score >= 60) return { bar: 'bg-semantic-warning', label: 'Khá hợp' };
+  return { bar: 'bg-semantic-error', label: 'Ít hợp' };
+}
+
+function SectionTitle({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+  return (
+    <h2 className="flex items-center gap-2 text-body-lg font-semibold text-neutral-900">
+      <Icon className="w-4 h-4 text-brand-navy" /> {children}
+    </h2>
+  );
+}
+
+function ProfileRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <dt className="text-label-sm text-neutral-400">{label}</dt>
+      <dd className="text-body-sm font-medium text-neutral-900 line-clamp-2">{children}</dd>
+    </div>
+  );
+}
+
+export function StylistResultPanel({ resultRef, displayResult }: StylistResultPanelProps) {
+  const [expanded, setExpanded] = useState(false);
+
   const warnings = displayResult.warnings ?? [];
   const outfits = displayResult.outfits;
   // Lịch sử cũ chưa có bộ phối từ catalog: hiện gợi ý dạng chữ như trước.
   const legacyOutfits = outfits.length > 0 ? [] : toOutfitList(displayResult.outfitCombinations);
   // Không có bộ phối nào (vd. catalog không có đồ phù hợp): lời giải thích của AI là kết quả chính.
-  const warningsAsResult = outfits.length === 0 && legacyOutfits.length === 0 && warnings.length > 0;
-  const colorList = toColorList(displayResult.colorSuggestions);
-  const showPersonalColor = Boolean(displayResult.personalColor) || colorList.length > 0;
-  const analysisBlockCount = [showPersonalColor, Boolean(displayResult.bodyType), Boolean(displayResult.skinTone)]
-    .filter(Boolean).length;
-  const occasionLabel = displayResult.occasion || occasion;
+  const noOutfits = outfits.length === 0 && legacyOutfits.length === 0;
+
+  const colors = toColorList(displayResult.colorSuggestions)
+    .map((c) => (typeof c === 'string' ? c : c?.name || c?.color || ''))
+    .filter(Boolean)
+    .slice(0, 6);
+  const score = displayResult.productCompatibilityScore;
+  const profileRowCount = [displayResult.bodyType, displayResult.skinTone, displayResult.personalColor].filter(Boolean).length;
+  const hasProfile = profileRowCount > 0 || colors.length > 0 || score != null;
+
+  const tips = toTips(displayResult.stylingTips);
+  const fitText = displayResult.fitAdvice || displayResult.fitRecommendation;
+  const hasAdvice = Boolean(displayResult.verdict || tips.length || fitText);
+  const visibleTips = expanded ? tips : tips.slice(0, 3);
+  const canExpand = tips.length > 3 || (displayResult.verdict?.length ?? 0) > 160 || tips.some((tip) => tip.length > 120) || (fitText?.length ?? 0) > 120;
 
   return (
-    <div ref={resultRef} className="space-y-8 scroll-mt-6 animate-[fadeInUp_0.5s_ease-out]">
-
-      {/* Stylist Warnings Callout */}
-      {warnings.length > 0 && !warningsAsResult && (
-        <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 md:p-5 flex items-start gap-3 shadow-xs">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="text-body-sm text-amber-900 space-y-1">
-            <p className="font-semibold text-amber-950">Lưu ý từ AI Stylist</p>
-            {warnings.map((warning, idx) => (
-              <p key={idx} className="text-amber-800 leading-relaxed text-[13.5px]">
-                {warning}
-              </p>
-            ))}
+    <div ref={resultRef} className="flex flex-col gap-6 scroll-mt-24 animate-[fadeInUp_0.4s_ease-out]">
+      {warnings.length > 0 && !noOutfits && (
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-200/70">
+          <AlertCircle className="w-4 h-4 text-semantic-warning shrink-0 mt-0.5" />
+          <div className="text-body-sm text-amber-900 space-y-0.5">
+            {warnings.map((warning, idx) => <p key={idx}>{warning}</p>)}
           </div>
         </div>
       )}
 
-      {displayResult.product && (
-        <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-neutral-200 flex items-center gap-4">
-          {displayResult.product.garmentUrl && (
-            <img
-              src={displayResult.product.garmentUrl}
-              alt={displayResult.product.name}
-              className="w-16 h-20 rounded-xl object-cover bg-neutral-100 shrink-0 border border-neutral-100"
-            />
-          )}
-          <div className="min-w-0">
-            <div className="text-[11px] font-bold tracking-wider uppercase text-neutral-400 mb-1">
-              Sản phẩm được tư vấn
-            </div>
-            <h3 className="text-body-lg font-bold text-neutral-900 truncate">
-              {displayResult.product.name}
-            </h3>
-            {typeof displayResult.product.price === 'number' && displayResult.product.price > 0 && (
-              <p className="text-label-sm font-semibold text-brand-navy mt-0.5">
-                {displayResult.product.price.toLocaleString('vi-VN')} đ
-              </p>
+      {/* Bộ phối: phần chính của kết quả */}
+      <section className="flex flex-col gap-3">
+        {!noOutfits && (
+          <div className="flex items-baseline justify-between gap-3">
+            <SectionTitle icon={Sparkles}>Bộ phối dành cho bạn</SectionTitle>
+            {outfits.length > 1 && (
+              <span className="md:hidden text-label-sm text-neutral-400">Vuốt để xem {outfits.length} bộ</span>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Section 1: Analysis (ẩn từng khối khi AI không xác định được, vd. không có ảnh) */}
-      {analysisBlockCount > 0 && (
-        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-neutral-200">
-          <h2 className="text-heading-h3 font-bold text-brand-navy mb-6 flex items-center gap-2">
-            <CheckCircle2 className="w-6 h-6 text-semantic-success" /> Phân tích sắc màu & dáng người
-          </h2>
-
-          <div className={`grid grid-cols-1 ${ANALYSIS_GRID_COLS[analysisBlockCount]} gap-4`}>
-            {/* Personal Color */}
-            {showPersonalColor && (
-              <div className="p-5 bg-amber-50/50 rounded-xl border border-amber-100 flex flex-col justify-center">
-                <div className="text-[11px] font-bold tracking-wider uppercase text-amber-700 mb-1">
-                  {displayResult.personalColor ? 'Personal Color' : 'Màu sắc gợi ý'}
-                </div>
-                {displayResult.personalColor && (
-                  <h3 className="text-heading-h3 font-bold text-amber-900 mb-3 flex items-center gap-1">
-                    <Sun className="w-5 h-5" /> {displayResult.personalColor}
-                  </h3>
-                )}
-                <div className="flex flex-wrap gap-1.5 mt-auto">
-                  {colorList.slice(0, 6).map((c, i) => {
-                    const label = typeof c === 'string' ? c : c?.name || c?.color || '';
-                    return (
-                      <span
-                        key={i}
-                        className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-amber-200 text-[10.5px] font-semibold text-amber-800"
-                      >
-                        {label}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Body Type */}
-            {displayResult.bodyType && (
-              <div className="p-5 bg-neutral-50 rounded-xl border border-neutral-200 flex flex-col justify-center">
-                <div className="text-[11px] font-bold tracking-wider uppercase text-neutral-500 mb-1">Dáng người</div>
-                <h3 className="text-heading-h3 font-bold text-neutral-900 mb-2">{displayResult.bodyType}</h3>
-                <p className="text-[12.5px] text-neutral-600 leading-relaxed">
-                  Khớp dáng người theo tỷ lệ vai, ngực, eo, hông để gợi ý phom trang phục phù hợp.
-                </p>
-              </div>
-            )}
-
-            {/* Skin Tone */}
-            {displayResult.skinTone && (
-              <div className="p-5 bg-neutral-50 rounded-xl border border-neutral-200 flex flex-col justify-center">
-                <div className="text-[11px] font-bold tracking-wider uppercase text-neutral-500 mb-1">Skin Tone / Undertone</div>
-                <h3 className="text-heading-h3 font-bold text-neutral-900 mb-2">{displayResult.skinTone}</h3>
-                <p className="text-[12.5px] text-neutral-600 leading-relaxed">
-                  Đề xuất tông màu áo sơ mi, blazer tôn vinh sắc diện tự nhiên.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Section 2: Fit Advice & Compatibility */}
-      {(displayResult.fitAdvice || displayResult.fitRecommendation || displayResult.recommendedSize || score != null) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(displayResult.fitAdvice || displayResult.fitRecommendation || displayResult.recommendedSize) && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
-              <div className="flex items-center gap-2 text-label-sm font-bold text-brand-navy mb-3">
-                <Ruler className="w-4 h-4 text-[#5D1C34]" /> Tư vấn may đo & form dáng
-              </div>
-              <p className="text-body-md text-neutral-800 leading-relaxed font-medium">
-                {displayResult.fitAdvice || displayResult.fitRecommendation || `Khuyên dùng form: ${displayResult.recommendedSize}`}
-              </p>
-              {displayResult.fitRecommendation && displayResult.fitAdvice && (
-                <p className="text-body-sm text-neutral-500 mt-2 leading-relaxed">
-                  {displayResult.fitRecommendation}
-                </p>
-              )}
-            </div>
-          )}
-
-          {score !== null && score !== undefined && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-label-sm font-bold text-brand-navy">
-                  Độ tương thích sản phẩm
-                </div>
-                <span className="text-heading-h3 font-bold text-neutral-900">{score}%</span>
-              </div>
-              <div className="w-full h-2.5 bg-neutral-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${scoreColor} rounded-full transition-all duration-700`}
-                  style={{ width: `${score}%` }}
-                />
-              </div>
-              <p className="text-label-sm font-semibold mt-2 text-neutral-600">{scoreLabel}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Section 3: Outfit combinations */}
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-neutral-200">
-        <h2 className="text-heading-h3 font-bold text-brand-navy mb-6">
-          Đề xuất trang phục{occasionLabel ? ` (${occasionLabel})` : ''}
-        </h2>
+        )}
 
         {outfits.length > 0 ? (
-          <OutfitSuggestionList
-            viewKey={displayResult.id}
-            list={GA_ITEM_LISTS.aiStylist}
-            outfits={outfits}
-            layout="grid"
-          />
+          <OutfitSuggestionList viewKey={displayResult.id} list={GA_ITEM_LISTS.aiStylist} outfits={outfits} variant="showcase" />
         ) : legacyOutfits.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {legacyOutfits.map((outfit, idx) => (
-              <div key={idx} className="bg-neutral-50 rounded-xl border border-neutral-200 p-5 flex flex-col">
-                <h4 className="text-label-lg font-bold text-brand-navy mb-4 border-b border-neutral-200 pb-3">
-                  {typeof outfit === 'string' ? `Bộ phối ${idx + 1}` : outfit.name || `Outfit ${idx + 1}`}
-                </h4>
-                <div className="space-y-3">
-                  {typeof outfit === 'string' ? (
-                    <div className="flex items-start gap-3 text-body-sm text-neutral-700 leading-relaxed">
-                      <div className="w-8 h-8 rounded bg-white flex items-center justify-center shadow-sm shrink-0">
-                        {getOutfitIcon('shirt')}
-                      </div>
-                      <span>{outfit}</span>
-                    </div>
-                  ) : (
-                    outfit.items?.map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 text-body-sm text-neutral-700">
-                        <div className="w-8 h-8 rounded bg-white flex items-center justify-center shadow-sm shrink-0">
-                          {getOutfitIcon(item.type || 'shirt')}
-                        </div>
-                        <span className="truncate" title={item.name}>{item.name}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
+              <div key={idx} className="bg-white rounded-2xl border border-neutral-200/80 p-4">
+                <p className="text-label-md font-semibold text-neutral-900 mb-2">
+                  {typeof outfit === 'string' ? `Bộ phối ${idx + 1}` : outfit.name || `Bộ phối ${idx + 1}`}
+                </p>
+                {typeof outfit === 'string' ? (
+                  <p className="text-body-sm text-neutral-600 line-clamp-4">{outfit}</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {outfit.items.map((item, i) => (
+                      <li key={i} className="flex items-center gap-2 text-body-sm text-neutral-600">
+                        <Shirt className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                        <span className="truncate">{item.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
-        ) : warningsAsResult ? (
-          <div className="bg-amber-50/90 border border-amber-200/80 rounded-xl p-5 flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-amber-600 shrink-0" />
-            <div className="space-y-1.5">
-              <p className="text-body-md font-semibold text-amber-950">AI chưa tìm được bộ phối phù hợp trong catalog</p>
-              {warnings.map((warning, idx) => (
-                <p key={idx} className="text-body-sm text-amber-800 leading-relaxed">{warning}</p>
-              ))}
-              <p className="text-body-sm text-amber-800/80">Thử đổi dịp mặc, phong cách hoặc ngân sách rồi phân tích lại.</p>
-            </div>
-          </div>
         ) : (
-          <p className="text-body-sm text-neutral-500">Chưa có gợi ý trang phục cho yêu cầu này.</p>
-        )}
-      </div>
-
-      {/* Section 4: Verdict */}
-      {(displayResult.verdict || displayResult.stylingTips) && (
-        <div className="bg-brand-gold/10 border border-brand-gold/20 rounded-2xl p-6 md:p-8">
-          <h2 className="text-heading-h3 font-bold text-brand-navy mb-4">Lời khuyên & Nhận xét chi tiết</h2>
-          <div className="text-body-md text-neutral-800 space-y-4 leading-relaxed font-sans">
-            {displayResult.verdict && <p className="whitespace-pre-line">{displayResult.verdict}</p>}
-            {displayResult.verdict && displayResult.stylingTips && <div className="h-px bg-brand-gold/20 my-4" />}
-            {displayResult.stylingTips && (
-              <p className="whitespace-pre-line text-neutral-700 text-body-sm">{displayResult.stylingTips}</p>
-            )}
+          <div className="bg-white rounded-2xl border border-neutral-200/80 p-6 flex flex-col items-center text-center gap-2">
+            <div className="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center">
+              <AlertCircle className="w-5 h-5 text-semantic-warning" />
+            </div>
+            <p className="text-body-md font-semibold text-neutral-900">Chưa có bộ phối phù hợp trong cửa hàng</p>
+            {warnings.map((warning, idx) => (
+              <p key={idx} className="max-w-md text-body-sm text-neutral-500">{warning}</p>
+            ))}
+            <p className="text-label-sm text-neutral-400">Thử đổi dịp mặc, phong cách hoặc ngân sách.</p>
           </div>
+        )}
+      </section>
+
+      {(hasProfile || hasAdvice) && (
+        <div className={`grid grid-cols-1 gap-4 ${hasProfile && hasAdvice ? 'md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]' : ''}`}>
+          {hasProfile && (
+            <section className="bg-white rounded-2xl border border-neutral-200/80 p-5 flex flex-col gap-4">
+              <SectionTitle icon={UserRound}>Hồ sơ phong cách</SectionTitle>
+              {profileRowCount > 0 && (
+                <dl className={`grid gap-x-4 gap-y-3 ${profileRowCount > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {displayResult.bodyType && <ProfileRow label="Dáng người">{displayResult.bodyType}</ProfileRow>}
+                  {displayResult.skinTone && <ProfileRow label="Tông da">{displayResult.skinTone}</ProfileRow>}
+                  {displayResult.personalColor && <ProfileRow label="Màu cá nhân">{displayResult.personalColor}</ProfileRow>}
+                </dl>
+              )}
+              {colors.length > 0 && (
+                <div>
+                  <p className="text-label-sm text-neutral-400 mb-1.5">Màu nên mặc</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {colors.map((color) => (
+                      <span key={color} className="px-2.5 py-1 rounded-full bg-brand-cream border border-neutral-200 text-label-sm font-medium text-neutral-700">
+                        {color}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {score != null && (
+                <div>
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <span className="text-label-sm text-neutral-400 truncate">
+                      Độ hợp{displayResult.product ? ` với ${displayResult.product.name}` : ''}
+                    </span>
+                    <span className="text-label-md font-bold text-neutral-900 shrink-0 ml-2">
+                      {score}% · {scoreTone(score).label}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+                    <div className={`h-full rounded-full ${scoreTone(score).bar}`} style={{ width: `${score}%` }} />
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {hasAdvice && (
+            <section className="bg-white rounded-2xl border border-neutral-200/80 p-5 flex flex-col gap-3">
+              <SectionTitle icon={Lightbulb}>Lời khuyên</SectionTitle>
+              {displayResult.verdict && (
+                <p className={`text-body-md text-neutral-800 ${expanded ? '' : 'line-clamp-3'}`}>{displayResult.verdict}</p>
+              )}
+              {visibleTips.length > 0 && (
+                <ul className="flex flex-col gap-1.5">
+                  {visibleTips.map((tip, idx) => (
+                    <li key={idx} className="flex gap-2 text-body-sm text-neutral-600">
+                      <span className="mt-2 w-1 h-1 rounded-full bg-brand-navy shrink-0" />
+                      <span className={expanded ? '' : 'line-clamp-2'}>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {fitText && (
+                <p className={`text-body-sm text-neutral-600 ${expanded ? '' : 'line-clamp-2'}`}>
+                  <span className="font-semibold text-neutral-900">Phom dáng: </span>{fitText}
+                </p>
+              )}
+              {canExpand && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  className="self-start flex items-center gap-1 text-label-sm font-semibold text-brand-navy border-0 bg-transparent cursor-pointer"
+                >
+                  {expanded ? 'Thu gọn' : 'Xem thêm'}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </section>
+          )}
         </div>
       )}
     </div>

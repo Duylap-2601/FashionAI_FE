@@ -2,6 +2,7 @@
 
 import { useItemListViewTracking } from '@/features/analytics/hooks/use-item-list-view-tracking';
 import { suggestedProductToGaItem } from '@/features/analytics/services/ga-items';
+import { OutfitShowcaseCard } from '@/features/stylist/components/outfit-showcase-card';
 import { OutfitSuggestionCard } from '@/features/stylist/components/outfit-suggestion-card';
 import { SuggestedProductList } from '@/features/stylist/components/suggested-product-list';
 import { useOutfitSuggestionActions } from '@/features/stylist/hooks/use-outfit-suggestion-actions';
@@ -13,7 +14,11 @@ import { useMemo } from 'react';
 const NO_PRODUCTS: SuggestedProduct[] = [];
 
 /** Bộ phối + món lẻ AI gợi ý từ catalog, dùng chung cho AI Stylist và AI Chat. */
-export function OutfitSuggestionList({ viewKey, list, outfits, products = NO_PRODUCTS, layout = 'stack' }: OutfitSuggestionListProps) {
+// Showcase: vuốt ngang trên mobile, lưới từ md.
+const SHOWCASE_CLASS =
+  'flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-2 md:mx-0 md:px-0 md:pb-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible';
+
+export function OutfitSuggestionList({ viewKey, list, outfits, products = NO_PRODUCTS, layout = 'stack', variant = 'compact' }: OutfitSuggestionListProps) {
   // Một sản phẩm nằm ở nhiều bộ chỉ tính một vị trí trong list GA4.
   const gaItems = useMemo(
     () => collectSuggestedProducts(outfits, products).map((product, index) => suggestedProductToGaItem(product, list, index)),
@@ -29,15 +34,18 @@ export function OutfitSuggestionList({ viewKey, list, outfits, products = NO_PRO
   return (
     <div className="flex flex-col gap-3 w-full min-w-0">
       {outfits.length > 0 && (
-        <div className={layout === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'flex flex-col gap-3'}>
-          {outfits.map((outfit, idx) => (
-            <OutfitSuggestionCard
-              key={`${outfit.name}-${idx}`}
-              outfit={outfit}
-              onAddToCart={addOutfitToCart}
-              onSelectProduct={selectProduct}
-            />
-          ))}
+        <div className={variant === 'showcase' ? SHOWCASE_CLASS : layout === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'flex flex-col gap-3'}>
+          {outfits.map((outfit, idx) => {
+            const Card = variant === 'showcase' ? OutfitShowcaseCard : OutfitSuggestionCard;
+            return (
+              <Card
+                key={`${outfit.name}-${idx}`}
+                outfit={outfit}
+                onAddToCart={addOutfitToCart}
+                onSelectProduct={selectProduct}
+              />
+            );
+          })}
         </div>
       )}
       {products.length > 0 && (

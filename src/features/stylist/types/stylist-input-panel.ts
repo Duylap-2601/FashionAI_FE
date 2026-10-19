@@ -27,4 +27,6 @@ export interface StylistInputPanelProps {
   /** Đã bấm phân tích khi có ảnh mà chưa tick đồng ý. */
   showConsentError: boolean;
   isAnalyzing: boolean;
+  /** Đang sửa lại yêu cầu khi đã có kết quả: hiện nút quay lại kết quả. */
+  onCancelEdit?: () => void;
 }

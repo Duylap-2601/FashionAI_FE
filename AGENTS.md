@@ -126,7 +126,11 @@ src/
 │   │                        # types/outfit-suggestion.ts owns SuggestedProduct /
 │   │                        #   OutfitSuggestion (AI catalog picks, also used by chat)
 │   │                        # components: outfit-suggestion-list (+ -card,
-│   │                        #   suggested-product-list) shared with chat
+│   │                        #   suggested-product-list) shared with chat;
+│   │                        #   variant="showcase" (outfit-showcase-card) is
+│   │                        #   the AI Stylist page card. The page swaps the
+│   │                        #   form for stylist-brief-summary once a result
+│   │                        #   shows; history opens in a Sheet.
 │   ├── subscription/        # components/ constants/ hooks/ services/ types/
 │   └── try-on/              # components/ constants/ hooks/ services/ types/
 │                            # components: TryOnWorkspace, TryOnResult, TryOnHeader,
