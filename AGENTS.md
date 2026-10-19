@@ -39,6 +39,9 @@ src/
 │   │   ├── notifications/
 │   │   ├── orders/
 │   │   ├── payment/
+│   │   ├── privacy/         # Public policy pages (feature: policies):
+│   │   │                    #   privacy/, return-policy/, size-guide/,
+│   │   │                    #   terms/, warranty/
 │   │   ├── products/[id]/
 │   │   ├── profile/         # + history/, measurements/, orders/, reviews/,
 │   │   │                    #   stylist-history/ sub-pages
@@ -116,6 +119,10 @@ src/
 │   │                        # store: notificationStore.ts (Zustand)
 │   ├── orders/              # components/ constants/ hooks/ services/ types/
 │   ├── payments/            # components/ hooks/ services/ types/
+│   ├── policies/            # components/ constants/ types/
+│   │                        # Public policy pages rendered from typed content
+│   │                        # in constants/ (one PolicyDocument per page);
+│   │                        # policy-nav.ts lists the pages and contact info
 │   ├── products/            # components/ constants/ hooks/ services/ types/
 │   │                        # services: queries.ts, query-keys.ts, product-filters.ts,
 │   │                        #           products-utils.ts, combo-pricing.ts
@@ -214,6 +221,12 @@ src/
   legacy result/status screens but should not be offered for new checkout unless
   the backend provider is explicitly restored and verified.
 - Account: `auth`, `profile`, `measurements`, `subscription`.
+- Policies: `policies` owns the public return, warranty, size-guide, privacy and
+  terms pages. Policy text states real business rules (7-day issue window,
+  required measurements, payment and AI partners); when those rules change in
+  the backend or another feature, update the matching policy constants too.
+  The size guide reads measurement fields and the reference size chart from
+  `measurements` constants instead of copying them.
 - AI and interaction: `try-on`, `stylist`, `rack`, `chat`, `notifications`, `reviews`.
 - `admin` owns the dashboard. Collection/review management belongs to the relevant feature.
 - Quota belongs to `subscription`. History belongs to its business feature even when

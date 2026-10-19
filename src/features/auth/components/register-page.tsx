@@ -212,7 +212,7 @@ export default function Register() {
             </svg>
           </div>
           <span className="text-body-sm text-neutral-600 leading-snug">
-            Tôi đồng ý với <a href="#" className="text-brand-navy font-medium hover:underline">Điều khoản dịch vụ</a> và <a href="#" className="text-brand-navy font-medium hover:underline">Chính sách bảo mật</a>
+            Tôi đồng ý với <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-brand-navy font-medium hover:underline">Điều khoản dịch vụ</Link> và <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-brand-navy font-medium hover:underline">Chính sách bảo mật</Link>
           </span>
         </label>
 

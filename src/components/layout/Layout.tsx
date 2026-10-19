@@ -394,8 +394,9 @@ function MarketingFooter() {
               CHÍNH SÁCH
             </h4>
             <ul className="flex flex-col gap-3 text-body-sm text-neutral-400">
-              <li><Link href="/support" className="transition-colors hover:text-white">Chính sách đổi trả 7 ngày</Link></li>
-              <li><Link href="/profile/measurements" className="transition-colors hover:text-white">Hướng dẫn chọn size</Link></li>
+              <li><Link href="/return-policy" className="transition-colors hover:text-white">Chính sách đổi trả 7 ngày</Link></li>
+              <li><Link href="/warranty" className="transition-colors hover:text-white">Chính sách bảo hành</Link></li>
+              <li><Link href="/size-guide" className="transition-colors hover:text-white">Hướng dẫn chọn size</Link></li>
               <li><Link href="/privacy" className="transition-colors hover:text-white">Chính sách bảo mật</Link></li>
               <li><Link href="/terms" className="transition-colors hover:text-white">Điều khoản dịch vụ</Link></li>
               <li><Link href="/profile/orders" className="transition-colors hover:text-white">Tra cứu đơn hàng</Link></li>
