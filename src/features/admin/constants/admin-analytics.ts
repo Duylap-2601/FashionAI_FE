@@ -40,6 +40,31 @@ export const CHANNEL_LABELS: Record<string, string> = {
   Unassigned: 'Chưa phân loại',
 };
 
+export const SOURCE_LABELS: Record<string, string> = {
+  tiktok: 'TikTok',
+  facebook: 'Facebook',
+  'facebook.com': 'Facebook',
+  'l.facebook.com': 'Facebook',
+  'm.facebook.com': 'Facebook',
+  'lm.facebook.com': 'Facebook',
+  instagram: 'Instagram',
+  'instagram.com': 'Instagram',
+  'l.instagram.com': 'Instagram',
+  zalo: 'Zalo',
+  'zalo.me': 'Zalo',
+  youtube: 'YouTube',
+  'youtube.com': 'YouTube',
+  google: 'Google',
+  threads: 'Threads',
+  'threads.net': 'Threads',
+  x: 'X',
+  'x.com': 'X',
+  't.co': 'X',
+  shopee: 'Shopee',
+  'shopee.vn': 'Shopee',
+  '(direct)': 'Truy cập trực tiếp',
+};
+
 export const DEVICE_LABELS: Record<string, string> = {
   mobile: 'Điện thoại',
   desktop: 'Máy tính',
