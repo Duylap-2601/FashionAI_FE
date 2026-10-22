@@ -19,7 +19,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 
@@ -53,6 +53,32 @@ export function AnalyticsCard({
       </div>
       {children}
     </section>
+  );
+}
+
+export function AnalyticsNotConfiguredNotice() {
+  return (
+    <div className={CARD_CLASS}>
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-cream text-brand-navy">
+          <BarChart3 className="h-4 w-4" />
+        </div>
+        <div className="text-body-sm text-neutral-600">
+          <p className="font-bold text-neutral-900">Chưa kết nối Google Analytics 4</p>
+          <p className="mt-1">Backend chưa có cấu hình đọc dữ liệu GA4. Cần khai báo trên server:</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li>
+              <code className="text-[12px]">GA4_PROPERTY_ID</code>: số property GA4 (không phải mã G-XXXX).
+            </li>
+            <li>
+              <code className="text-[12px]">GA_SERVICE_ACCOUNT_EMAIL</code> và{' '}
+              <code className="text-[12px]">GA_PRIVATE_KEY</code>: lấy từ key service account, và thêm email service
+              account vào property với vai trò Viewer.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -41,6 +41,7 @@ export interface AnalyticsReport {
   devices: { device: string; activeUsers: number }[];
   cities: { city: string; activeUsers: number }[];
   features: { event: AnalyticsFeatureEvent; count: number; users: number }[];
+  platformSources: { source: string; users: number }[];
 }
 
 export interface AnalyticsRealtime {

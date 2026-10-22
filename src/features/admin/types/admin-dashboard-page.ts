@@ -1,7 +1,7 @@
 import type { BackendOrderStatus, OrderDisplayStatus, OrderPayment, OrderRefund } from '@/features/orders/types/orders';
 import type { LucideIcon } from 'lucide-react';
 
-export type AdminPage = 'dashboard' | 'analytics' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'order-issues' | 'coupons' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
+export type AdminPage = 'dashboard' | 'analytics' | 'platforms' | 'products' | 'collections' | 'users' | 'orders' | 'shipments' | 'order-issues' | 'coupons' | 'reviews' | 'shipping-settings' | 'live-try-on-settings' | 'webhook-failures' | 'reconciliation';
 
 export interface GhnPickupSettings {
   provinceV3Id?: string;

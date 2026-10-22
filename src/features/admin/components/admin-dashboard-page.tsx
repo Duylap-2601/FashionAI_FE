@@ -7,6 +7,7 @@ import { AdminOrderIssueModal } from '@/features/admin/components/admin-order-is
 import { AdminOrderIssuesPanel } from '@/features/admin/components/admin-order-issues-panel';
 import { AdminOrderModal } from '@/features/admin/components/admin-order-modal';
 import { AdminOrdersPanel } from '@/features/admin/components/admin-orders-panel';
+import { AdminPlatformsPanel } from '@/features/admin/components/admin-platforms-panel';
 import { AdminProductModal } from '@/features/admin/components/admin-product-modal';
 import { AdminProductsPanel } from '@/features/admin/components/admin-products-panel';
 import { AdminReconciliationPanel } from '@/features/admin/components/admin-reconciliation-panel';
@@ -143,6 +144,7 @@ function AdminDashboardContent() {
           )}
           {activeTab === 'shipping-settings' && <AdminShippingSettingsPanel />}
           {activeTab === 'analytics' && <AdminAnalyticsPanel />}
+          {activeTab === 'platforms' && <AdminPlatformsPanel />}
           {activeTab === 'live-try-on-settings' && <AdminLiveTryOnSettingsPanel />}
           {activeTab === 'collections' && <AdminCollectionManager />}
           {activeTab === 'reviews' && <AdminReviewTable />}

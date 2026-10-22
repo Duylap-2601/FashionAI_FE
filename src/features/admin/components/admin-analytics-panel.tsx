@@ -3,6 +3,7 @@
 import {
   AnalyticsFunnel,
   AnalyticsKpiTile,
+  AnalyticsNotConfiguredNotice,
   AnalyticsRankedTable,
   AnalyticsTrendChart,
 } from '@/features/admin/components/admin-analytics-charts';
@@ -13,6 +14,7 @@ import {
   DEVICE_LABELS,
   FEATURE_LABELS,
   GA4_CONSOLE_URL,
+  SOURCE_LABELS,
 } from '@/features/admin/constants/admin-analytics';
 import {
   formatCount,
@@ -24,7 +26,7 @@ import {
 import { fetchAnalyticsRealtime, fetchAnalyticsReport } from '@/features/admin/services/queries';
 import type { AnalyticsRange, AnalyticsRealtimeResult, AnalyticsReportResult } from '@/features/admin/types/admin-analytics';
 import { getErrorMessage } from '@/lib/errors';
-import { BarChart3, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
+import { ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 function isAbortError(error: unknown) {
@@ -33,30 +35,16 @@ function isAbortError(error: unknown) {
   return record.name === 'CanceledError' || record.name === 'AbortError' || record.code === 'ERR_CANCELED';
 }
 
-function NotConfiguredNotice() {
-  return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-cream text-brand-navy">
-          <BarChart3 className="h-4 w-4" />
-        </div>
-        <div className="text-body-sm text-neutral-600">
-          <p className="font-bold text-neutral-900">Chưa kết nối Google Analytics 4</p>
-          <p className="mt-1">Backend chưa có cấu hình đọc dữ liệu GA4. Cần khai báo trên server:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            <li>
-              <code className="text-[12px]">GA4_PROPERTY_ID</code>: số property GA4 (không phải mã G-XXXX).
-            </li>
-            <li>
-              <code className="text-[12px]">GA_SERVICE_ACCOUNT_EMAIL</code> và{' '}
-              <code className="text-[12px]">GA_PRIVATE_KEY</code>: lấy từ key service account, và thêm email service
-              account vào property với vai trò Viewer.
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
+/** Nhiều biến thể source (vd. facebook và l.facebook.com) gộp về cùng một nền tảng. */
+function platformRows(sources: { source: string; users: number }[]) {
+  const byLabel = new Map<string, number>();
+  for (const row of sources) {
+    const label = labelOf(SOURCE_LABELS, row.source);
+    byLabel.set(label, (byLabel.get(label) ?? 0) + row.users);
+  }
+  return [...byLabel.entries()]
+    .map(([label, users]) => ({ label, users }))
+    .sort((a, b) => b.users - a.users);
 }
 
 export function AdminAnalyticsPanel() {
@@ -165,7 +153,7 @@ export function AdminAnalyticsPanel() {
         </div>
       ) : null}
 
-      {report && !report.configured ? <NotConfiguredNotice /> : null}
+      {report && !report.configured ? <AnalyticsNotConfiguredNotice /> : null}
 
       {data ? (
         // Đổi khoảng thời gian thì giữ báo cáo cũ, làm mờ trong lúc tải để không nhảy layout.
@@ -219,17 +207,30 @@ export function AdminAnalyticsPanel() {
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <AnalyticsFunnel steps={data.funnel} />
-            <AnalyticsRankedTable
-              title="Nguồn truy cập"
-              description="Kênh mang người dùng tới website"
-              nameLabel="Kênh"
-              columns={[{ label: 'Phiên' }, { label: 'Người dùng' }, { label: 'Tương tác', format: formatPercent }]}
-              rows={data.channels.map((row) => ({
-                key: row.channel,
-                name: labelOf(CHANNEL_LABELS, row.channel),
-                values: [row.sessions, row.activeUsers, row.engagementRate],
-              }))}
-            />
+            <div className="flex flex-col gap-6">
+              <AnalyticsRankedTable
+                title="Kênh truy cập"
+                description="Kênh mang người dùng tới website"
+                nameLabel="Kênh"
+                columns={[{ label: 'Phiên' }, { label: 'Người dùng' }, { label: 'Tương tác', format: formatPercent }]}
+                rows={data.channels.map((row) => ({
+                  key: row.channel,
+                  name: labelOf(CHANNEL_LABELS, row.channel),
+                  values: [row.sessions, row.activeUsers, row.engagementRate],
+                }))}
+              />
+              <AnalyticsRankedTable
+                title="Nền tảng người dùng đến từ"
+                description="Theo thiết bị; một thiết bị có thể xuất hiện ở nhiều nền tảng"
+                nameLabel="Nền tảng"
+                columns={[{ label: 'Người dùng' }]}
+                rows={platformRows(data.platformSources ?? []).map((row) => ({
+                  key: row.label,
+                  name: row.label,
+                  values: [row.users],
+                }))}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

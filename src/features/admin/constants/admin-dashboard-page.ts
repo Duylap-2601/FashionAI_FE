@@ -18,6 +18,7 @@ import {
   Radio,
   RotateCcw,
   Scissors,
+  Share2,
   ShieldAlert,
   ShoppingBag,
   Tag,
@@ -26,7 +27,7 @@ import {
   XCircle
 } from 'lucide-react';
 
-export const ADMIN_PAGES: AdminPage[] = ['dashboard', 'analytics', 'products', 'collections', 'users', 'orders', 'shipments', 'order-issues', 'coupons', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
+export const ADMIN_PAGES: AdminPage[] = ['dashboard', 'analytics', 'platforms', 'products', 'collections', 'users', 'orders', 'shipments', 'order-issues', 'coupons', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
 
 export function isAdminPage(value: string | null | undefined): value is AdminPage {
   return Boolean(value && ADMIN_PAGES.includes(value as AdminPage));
@@ -36,6 +37,7 @@ export function isAdminPage(value: string | null | undefined): value is AdminPag
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'analytics', label: 'Phân tích', icon: BarChart3 },
+  { id: 'platforms', label: 'Nền tảng', icon: Share2 },
   { id: 'products', label: 'Sản phẩm', icon: Package },
   { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
   { id: 'users', label: 'Người dùng', icon: Users },
@@ -52,6 +54,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
 export const ADMIN_PAGE_TITLES: Record<AdminPage, string> = {
   dashboard: 'Tổng quan kinh doanh',
   analytics: 'Phân tích truy cập',
+  platforms: 'Nền tảng người dùng',
   products: 'Quản lý sản phẩm',
   collections: 'Quản lý bộ sưu tập',
   users: 'Quản lý người dùng',
