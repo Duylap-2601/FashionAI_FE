@@ -197,6 +197,12 @@ test('computeDashboardMetrics prefers /admin/stats and falls back to the loaded 
   // Backend cũ trả net chỉ của sản phẩm: cộng phần gói vào.
   assert.equal(fromStats.netRevenue, 900);
   assert.deepEqual([fromStats.avgOrderValue, fromStats.totalOrders, fromStats.totalReviews, fromStats.avgRating], [250, 10, 7, 4.8]);
+
+  const fromSnakeStats = metrics.computeDashboardMetrics({
+    ...input,
+    stats: { totalRevenue: 1000, product_revenue: 600, review_count: 9, avg_rating: 4.9 },
+  });
+  assert.deepEqual([fromSnakeStats.totalReviews, fromSnakeStats.avgRating], [9, 4.9]);
 });
 
 test('buildRevenueChart sums paid orders per day and scales points into the plot', () => {

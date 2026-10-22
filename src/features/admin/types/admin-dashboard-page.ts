@@ -71,6 +71,8 @@ export interface AdminProduct {
   material?: string;
   color?: string;
   colors?: ProductColor[];
+  reviewCount?: number;
+  avgRating?: number;
 }
 
 export interface AdminUser {

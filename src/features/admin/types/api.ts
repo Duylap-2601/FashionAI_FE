@@ -23,9 +23,11 @@ export interface AdminPaginatedResponse<T = unknown> {
   pagination?: AdminListMeta;
 }
 
-export interface AdminProductDto extends Omit<AdminProduct, 'image' | 'images' | 'price'> {
+export interface AdminProductDto extends Omit<AdminProduct, 'image' | 'images' | 'price' | 'avgRating'> {
   images?: AdminImageDto[];
   price: string | number;
+  reviewCount?: number;
+  avgRating?: number | string;
 }
 
 export interface AdminOrderDto {

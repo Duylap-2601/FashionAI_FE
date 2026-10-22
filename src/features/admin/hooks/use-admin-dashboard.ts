@@ -75,8 +75,8 @@ export function useAdminDashboard() {
 
   // Đánh giá chỉ hiện ở tab tổng quan: tải khi đang ở tab đó, sau mỗi lần tải dữ liệu xong.
   useEffect(() => {
-    if (activeTab === 'dashboard' && !isLoading) void fetchReviewStats(products.items);
-  }, [activeTab, isLoading, products.items, fetchReviewStats]);
+    if (activeTab === 'dashboard' && !isLoading) void fetchReviewStats();
+  }, [activeTab, isLoading, fetchReviewStats]);
 
   useAdminAutoRefresh({
     onRefresh: () => {

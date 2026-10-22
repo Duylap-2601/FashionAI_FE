@@ -76,6 +76,8 @@ export function toAdminProduct(p: AdminProductDto): AdminProduct {
     description: p.description,
     color: p.color,
     colors: Array.isArray(p.colors) ? p.colors : undefined,
+    reviewCount: typeof p.reviewCount === 'number' ? p.reviewCount : undefined,
+    avgRating: p.avgRating !== undefined && p.avgRating !== null ? Number(p.avgRating) : undefined,
   };
 }
 

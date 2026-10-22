@@ -104,10 +104,27 @@ export function computeDashboardMetrics({
     totalUsers: stats?.userCount ?? userSource.length,
     memberUsers: userSource.filter(u => u.tier === 'MEMBER').length,
     vipUsers: userSource.filter(u => u.tier === 'VIP').length,
-    totalReviews: typeof stats?.reviewCount === 'number' && stats.reviewCount > 0
-      ? stats.reviewCount
-      : (reviewsCount || (typeof stats?.totalReviews === 'number' ? stats.totalReviews : 0)),
-    avgRating: typeof stats?.avgRating === 'number' && stats.avgRating > 0 ? stats.avgRating : avgRating,
+    totalReviews: (() => {
+      const statsReviews = asNumber(
+        raw.reviewCount
+        ?? raw.totalReviews
+        ?? raw.review_count
+        ?? raw.total_reviews
+        ?? raw.reviewsCount
+        ?? raw.reviews_count
+        ?? raw.reviews
+      );
+      return typeof statsReviews === 'number' && statsReviews > 0 ? statsReviews : reviewsCount;
+    })(),
+    avgRating: (() => {
+      const statsRating = asNumber(
+        raw.avgRating
+        ?? raw.avg_rating
+        ?? raw.averageRating
+        ?? raw.average_rating
+      );
+      return typeof statsRating === 'number' && statsRating > 0 ? statsRating : avgRating;
+    })(),
     tryOnToday: stats?.tryOnToday ?? 0,
     tryOnCount: stats?.tryOnCount ?? 0,
     stylistCount: stats?.stylistCount ?? 0,
