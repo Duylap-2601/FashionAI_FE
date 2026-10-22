@@ -1,13 +1,13 @@
 'use client';
 
-import { updateGhnPickupSettings } from '@/features/admin/services/mutations';
+import { syncGhnLocations, updateGhnPickupSettings } from '@/features/admin/services/mutations';
 import { fetchGhnPickupSettings } from '@/features/admin/services/queries';
 import type { GhnPickupSettings } from '@/features/admin/types/admin-dashboard-page';
 import { getPostMergerProvinces, getPostMergerWards, getShippingCapabilities } from '@/features/checkout/services/ghn-location';
 import type { GhnCatalogOption } from '@/features/checkout/services/ghn-location';
 import { getErrorMessage } from '@/lib/errors';
-import { MapPin, Save, Truck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { AlertCircle, MapPin, RefreshCw, Save, Truck } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 function unwrapData<T>(value: unknown): T | null {
@@ -37,41 +37,44 @@ export function AdminShippingSettingsPanel() {
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
   const [isLoadingWards, setIsLoadingWards] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const isLoadingLocation = isLoading || isLoadingProvinces || isLoadingWards;
 
-  useEffect(() => {
-    let mounted = true;
-    const controller = new AbortController();
-    async function loadInitialData() {
-      setIsLoading(true);
-      setIsLoadingProvinces(true);
-      try {
-        const [settingsRes, capability] = await Promise.all([fetchGhnPickupSettings(), getShippingCapabilities(controller.signal)]);
-        if (!capability.catalogEnabled || !capability.catalogRevision) throw new Error('Danh mục địa chỉ GHN sau sáp nhập chưa sẵn sàng.');
-        const provinceList = await getPostMergerProvinces(capability.catalogRevision, controller.signal);
-        if (!mounted) return;
-        const currentSettings = unwrapData<GhnPickupSettings>(settingsRes) || { source: 'empty' };
-        setCatalogRevision(capability.catalogRevision);
-        setSettings(currentSettings);
-        setProvinces(provinceList);
-        setProvinceId(currentSettings.provinceV3Id || provinceList[0]?.id || '');
-        setWardId(currentSettings.wardV3Id || '');
-      } catch (error: unknown) {
-        if (isAbortError(error)) return;
-        toast.error(getErrorMessage(error, 'Không thể tải cấu hình GHN.'));
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-          setIsLoadingProvinces(false);
-        }
+  const loadInitialData = useCallback(async (signal?: AbortSignal) => {
+    setIsLoading(true);
+    setIsLoadingProvinces(true);
+    setLoadError(null);
+    try {
+      const [settingsRes, capability] = await Promise.all([fetchGhnPickupSettings(), getShippingCapabilities(signal)]);
+      if (!capability.catalogEnabled || !capability.catalogRevision) {
+        throw new Error('Danh mục địa chỉ GHN sau sáp nhập chưa sẵn sàng.');
       }
+      const provinceList = await getPostMergerProvinces(capability.catalogRevision, signal);
+      const currentSettings = unwrapData<GhnPickupSettings>(settingsRes) || { source: 'empty' };
+      setCatalogRevision(capability.catalogRevision);
+      setSettings(currentSettings);
+      setProvinces(provinceList);
+      setProvinceId(currentSettings.provinceV3Id || provinceList[0]?.id || '');
+      setWardId(currentSettings.wardV3Id || '');
+    } catch (error: unknown) {
+      if (isAbortError(error)) return;
+      const msg = getErrorMessage(error, 'Không thể tải cấu hình GHN.');
+      setLoadError(msg);
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+      setIsLoadingProvinces(false);
     }
-    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadInitialData(controller.signal);
     return () => {
-      mounted = false;
       controller.abort();
     };
-  }, []);
+  }, [loadInitialData]);
 
   useEffect(() => {
     let mounted = true;
@@ -102,6 +105,19 @@ export function AdminShippingSettingsPanel() {
     };
   }, [provinceId, catalogRevision]);
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      await syncGhnLocations();
+      toast.success('Đã đồng bộ danh mục địa chỉ GHN thành công!');
+      await loadInitialData();
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Đồng bộ danh mục GHN thất bại.'));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!provinceId || !wardId) {
       toast.error('Vui lòng chọn đủ Tỉnh/Thành và Phường/Xã lấy hàng.');
@@ -128,13 +144,46 @@ export function AdminShippingSettingsPanel() {
       </div>
 
       <div className="bg-white rounded-2xl border border-neutral-200 shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-neutral-100 flex items-center gap-2">
-          <Truck className="w-4 h-4 text-brand-navy" />
-          <h2 className="text-body-sm font-bold text-neutral-800">Địa chỉ lấy hàng</h2>
-          <span className="ml-auto text-label-xs text-neutral-400">
-            Nguồn: {settings?.source === 'database' ? 'Admin setting' : 'Chưa cấu hình'}
-          </span>
+        <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Truck className="w-4 h-4 text-brand-navy" />
+            <h2 className="text-body-sm font-bold text-neutral-800">Địa chỉ lấy hàng</h2>
+            <span className="ml-2 text-label-xs text-neutral-400">
+              Nguồn: {settings?.source === 'database' ? 'Admin setting' : 'Chưa cấu hình'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={isSyncing || isLoading}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-neutral-200 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ danh mục GHN'}
+          </button>
         </div>
+
+        {loadError && (
+          <div className="mx-6 mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-amber-950">Danh mục địa chỉ GHN chưa sẵn sàng hoặc đã hết hiệu lực</p>
+              <p className="mt-0.5 text-amber-800">{loadError}</p>
+              <p className="mt-1 text-amber-700">
+                Bấm nút <strong>&quot;Đồng bộ danh mục GHN&quot;</strong> ở góc trên bên phải để cập nhật dữ liệu mới nhất từ GHN.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="px-3 py-1.5 rounded-lg bg-amber-700 text-white font-semibold shrink-0 hover:bg-amber-800 disabled:opacity-50 transition-colors"
+            >
+              {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ ngay'}
+            </button>
+          </div>
+        )}
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>

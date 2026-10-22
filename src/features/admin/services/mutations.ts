@@ -61,6 +61,13 @@ export function updateGhnPickupSettings(payload: { provinceV3Id: string; wardV3I
   return api.put('/admin/settings/ghn-pickup', payload);
 }
 
+export function syncGhnLocations() {
+  return http.post<{ skipped: boolean; generation?: string; counts?: { provinces: number; wards: number } }>(
+    '/shipping/ghn-locations/sync',
+    {},
+  );
+}
+
 export function updateLiveTryOnSettings(payload: UpdateLiveTryOnSettingsInput) {
   return api.put('/admin/settings/live-try-on', payload);
 }

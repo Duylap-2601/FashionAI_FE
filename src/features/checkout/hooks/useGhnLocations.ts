@@ -33,6 +33,7 @@ export function usePostMergerProvinces(revision: string) {
     enabled: Boolean(revision),
     staleTime: GHN_LOCATION_STALE_TIME,
     gcTime: GHN_LOCATION_GC_TIME,
+    retry: 1,
   });
 
   return {
@@ -51,6 +52,7 @@ export function usePostMergerWards(provinceId: string, revision: string) {
     enabled: Boolean(provinceId && revision),
     staleTime: GHN_LOCATION_STALE_TIME,
     gcTime: GHN_LOCATION_GC_TIME,
+    retry: 1,
   });
 
   return {
