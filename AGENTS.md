@@ -327,8 +327,9 @@ src/
   collected but could not be applied to the order, so the user should see a clear
   refund/support message rather than a generic failure.
 - Admin GHN pickup origin is configured in the admin dashboard and persisted by
-  the backend. Keep the UI sending legacy GHN IDs/codes for province, district,
-  and ward; do not hard-code pickup address environment values in the frontend.
+  the backend. Keep the UI sending post-merger V3 province/ward IDs and
+  `addressLine` only; do not send district fields or hard-code pickup address
+  environment values in the frontend.
 - Preserve the `/api/backend` proxy and PWA `NetworkOnly` strategy for private APIs.
 - Google Analytics 4 loads through `GoogleAnalytics` from `@next/third-parties/google`
   in the root layout, never an inline `<script>` (eslint `next-script-for-ga`). A

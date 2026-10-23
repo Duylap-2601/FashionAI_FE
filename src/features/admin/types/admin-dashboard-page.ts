@@ -160,7 +160,6 @@ export interface AdminShipment {
     phone: string | null;
     address: string | null;
     provinceName?: string | null;
-    districtName?: string | null;
     wardName?: string | null;
   };
   canCancel?: boolean;

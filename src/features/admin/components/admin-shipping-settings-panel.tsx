@@ -33,6 +33,7 @@ export function AdminShippingSettingsPanel() {
   const [wards, setWards] = useState<GhnCatalogOption[]>([]);
   const [provinceId, setProvinceId] = useState('');
   const [wardId, setWardId] = useState('');
+  const [addressLine, setAddressLine] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
   const [isLoadingWards, setIsLoadingWards] = useState(false);
@@ -55,8 +56,9 @@ export function AdminShippingSettingsPanel() {
       setCatalogRevision(capability.catalogRevision);
       setSettings(currentSettings);
       setProvinces(provinceList);
-      setProvinceId(currentSettings.provinceV3Id || provinceList[0]?.id || '');
+      setProvinceId(currentSettings.provinceV3Id || '');
       setWardId(currentSettings.wardV3Id || '');
+      setAddressLine(currentSettings.addressLine || '');
     } catch (error: unknown) {
       if (isAbortError(error)) return;
       const msg = getErrorMessage(error, 'Không thể tải cấu hình GHN.');
@@ -90,7 +92,7 @@ export function AdminShippingSettingsPanel() {
         const list = await getPostMergerWards(provinceId, catalogRevision, controller.signal);
         if (!mounted) return;
         setWards(list);
-        setWardId((current) => current && list.some((item) => item.id === current) ? current : list[0]?.id || '');
+        setWardId((current) => current && list.some((item) => item.id === current) ? current : '');
       } finally {
         if (mounted) setIsLoadingWards(false);
       }
@@ -123,10 +125,14 @@ export function AdminShippingSettingsPanel() {
       toast.error('Vui lòng chọn đủ Tỉnh/Thành và Phường/Xã lấy hàng.');
       return;
     }
+    if (!addressLine.trim()) {
+      toast.error('Vui lòng nhập số nhà, tên đường lấy hàng.');
+      return;
+    }
     setIsSaving(true);
     try {
-      const res = await updateGhnPickupSettings({ provinceV3Id: provinceId, wardV3Id: wardId });
-      const updated = unwrapData<GhnPickupSettings>(res) || { provinceV3Id: provinceId, wardV3Id: wardId, source: 'database' };
+      const res = await updateGhnPickupSettings({ provinceV3Id: provinceId, wardV3Id: wardId, addressLine: addressLine.trim() });
+      const updated = unwrapData<GhnPickupSettings>(res) || { provinceV3Id: provinceId, wardV3Id: wardId, addressLine: addressLine.trim(), source: 'database' };
       setSettings(updated);
       toast.success('Đã lưu cấu hình lấy hàng GHN');
     } catch (error: unknown) {
@@ -212,6 +218,15 @@ export function AdminShippingSettingsPanel() {
               {!isLoadingWards && wards.length === 0 && <option value="">Không có dữ liệu Phường/Xã</option>}
               {wards.map((ward) => <option key={ward.id} value={ward.id}>{ward.name}</option>)}
             </select>
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Số nhà, tên đường *</label>
+            <input
+              value={addressLine}
+              onChange={(event) => setAddressLine(event.target.value)}
+              placeholder="Ví dụ: Long Thạnh Mỹ"
+              className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all"
+            />
           </div>
         </div>
 
