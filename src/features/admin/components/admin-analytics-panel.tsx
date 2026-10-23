@@ -14,20 +14,20 @@ import {
   DEVICE_LABELS,
   FEATURE_LABELS,
   GA4_CONSOLE_URL,
-  SOURCE_LABELS,
 } from '@/features/admin/constants/admin-analytics';
 import {
   formatCount,
   formatDuration,
   formatPercent,
   labelOf,
+  platformLabelOf,
   safeRatio,
 } from '@/features/admin/services/analytics-format';
 import { fetchAnalyticsRealtime, fetchAnalyticsReport } from '@/features/admin/services/queries';
 import type { AnalyticsRange, AnalyticsRealtimeResult, AnalyticsReportResult } from '@/features/admin/types/admin-analytics';
 import { getErrorMessage } from '@/lib/errors';
 import { ExternalLink, Loader2, RefreshCw } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 function isAbortError(error: unknown) {
   if (!error || typeof error !== 'object') return false;
@@ -39,7 +39,7 @@ function isAbortError(error: unknown) {
 function platformRows(sources: { source: string; users: number }[]) {
   const byLabel = new Map<string, number>();
   for (const row of sources) {
-    const label = labelOf(SOURCE_LABELS, row.source);
+    const label = platformLabelOf(row.source);
     byLabel.set(label, (byLabel.get(label) ?? 0) + row.users);
   }
   return [...byLabel.entries()]
@@ -47,19 +47,24 @@ function platformRows(sources: { source: string; users: number }[]) {
     .sort((a, b) => b.users - a.users);
 }
 
-export function AdminAnalyticsPanel() {
+/** `refreshSignal` tăng lên khi admin bấm nút làm mới trên header. */
+export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: number }) {
   const [range, setRange] = useState<AnalyticsRange>('28d');
   const [report, setReport] = useState<AnalyticsReportResult | null>(null);
   const [realtime, setRealtime] = useState<AnalyticsRealtimeResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const lastRefreshSignal = useRef(refreshSignal);
 
   useEffect(() => {
     const controller = new AbortController();
+    // Chỉ lần tải do nút làm mới mới bỏ qua cache 15 phút của backend.
+    const force = refreshSignal !== lastRefreshSignal.current;
+    lastRefreshSignal.current = refreshSignal;
     setIsLoading(true);
     setError(null);
-    fetchAnalyticsReport(range, { signal: controller.signal })
+    fetchAnalyticsReport(range, { signal: controller.signal }, force)
       .then(setReport)
       .catch((err: unknown) => {
         if (isAbortError(err)) return;
@@ -69,7 +74,7 @@ export function AdminAnalyticsPanel() {
         if (!controller.signal.aborted) setIsLoading(false);
       });
     return () => controller.abort();
-  }, [range, reloadKey]);
+  }, [range, reloadKey, refreshSignal]);
 
   const loadRealtime = useCallback((signal?: AbortSignal) => {
     fetchAnalyticsRealtime({ signal })
@@ -88,6 +93,13 @@ export function AdminAnalyticsPanel() {
     };
   }, [loadRealtime]);
 
+  useEffect(() => {
+    if (refreshSignal === 0) return;
+    const controller = new AbortController();
+    loadRealtime(controller.signal);
+    return () => controller.abort();
+  }, [refreshSignal, loadRealtime]);
+
   const rangeOption = ANALYTICS_RANGE_OPTIONS.find((option) => option.value === range) ?? ANALYTICS_RANGE_OPTIONS[1];
   const periodLabel = `${rangeOption.days} ngày trước đó`;
   const data = report?.configured ? report : null;
@@ -98,7 +110,8 @@ export function AdminAnalyticsPanel() {
         <div>
           <h1 className="text-heading-h2 font-bold text-neutral-900">Phân tích truy cập</h1>
           <p className="mt-1 text-body-sm text-neutral-500">
-            Nguồn Google Analytics 4 · số liệu trễ vài giờ · doanh thu và đơn hàng xem ở tab Dashboard
+            Nguồn Google Analytics 4 · số liệu trễ vài giờ · nút làm mới trên header bỏ qua cache 15 phút · doanh thu và đơn
+            hàng xem ở tab Dashboard
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -221,7 +234,7 @@ export function AdminAnalyticsPanel() {
               />
               <AnalyticsRankedTable
                 title="Nền tảng người dùng đến từ"
-                description="Theo thiết bị; một thiết bị có thể xuất hiện ở nhiều nền tảng"
+                description="Theo UTM hoặc tên miền giới thiệu; một người dùng có thể đến từ nhiều nền tảng"
                 nameLabel="Nền tảng"
                 columns={[{ label: 'Người dùng' }]}
                 rows={platformRows(data.platformSources ?? []).map((row) => ({
