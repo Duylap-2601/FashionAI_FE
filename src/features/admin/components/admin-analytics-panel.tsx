@@ -246,29 +246,17 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <AnalyticsRankedTable
-              title="Sản phẩm được quan tâm"
-              description="Theo lượt xem chi tiết sản phẩm"
-              nameLabel="Sản phẩm"
-              columns={[{ label: 'Lượt xem' }, { label: 'Thêm giỏ' }, { label: 'Đã mua' }]}
-              rows={data.topProducts.map((row) => ({
-                key: row.name,
-                name: labelOf({}, row.name),
-                values: [row.views, row.addedToCart, row.purchased],
-              }))}
-            />
-            <AnalyticsRankedTable
-              title="Trang xem nhiều"
-              nameLabel="Đường dẫn"
-              columns={[{ label: 'Lượt xem' }, { label: 'Người dùng' }]}
-              rows={data.topPages.map((row) => ({
-                key: row.path,
-                name: row.path,
-                values: [row.views, row.activeUsers],
-              }))}
-            />
-          </div>
+          <AnalyticsRankedTable
+            title="Sản phẩm được quan tâm"
+            description="Theo lượt xem chi tiết sản phẩm"
+            nameLabel="Sản phẩm"
+            columns={[{ label: 'Lượt xem' }, { label: 'Thêm giỏ' }, { label: 'Đã mua' }]}
+            rows={data.topProducts.map((row) => ({
+              key: row.name,
+              name: labelOf({}, row.name),
+              values: [row.views, row.addedToCart, row.purchased],
+            }))}
+          />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <AnalyticsRankedTable
