@@ -14,6 +14,8 @@ export function useShippingCapabilities() {
     queryFn: ({ signal }) => getShippingCapabilities(signal),
     staleTime: GHN_CAPABILITY_STALE_TIME,
     gcTime: GHN_LOCATION_GC_TIME,
+    refetchInterval: GHN_CAPABILITY_STALE_TIME,
+    refetchOnWindowFocus: true,
   });
 
   return {

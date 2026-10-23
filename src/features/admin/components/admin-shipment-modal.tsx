@@ -54,7 +54,7 @@ export function AdminShipmentModal({ shipment, onClose, onSync, onCancel, onSimu
               <p className="font-semibold text-neutral-900">{shipment.receiver.name || shipment.customer.name || '—'}</p>
               <p>Điện thoại: {shipment.receiver.phone || shipment.customer.phone || '—'}</p>
               <p>Địa chỉ: {shipment.receiver.address || '—'}</p>
-              <p>{[shipment.receiver.wardName, shipment.receiver.districtName, shipment.receiver.provinceName].filter(Boolean).join(', ') || '—'}</p>
+              <p>{[shipment.receiver.wardName, shipment.receiver.provinceName].filter(Boolean).join(', ') || '—'}</p>
             </div>
           </section>
 

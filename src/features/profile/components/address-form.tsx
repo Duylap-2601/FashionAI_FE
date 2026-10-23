@@ -38,11 +38,6 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
     refetch: refetchWards,
   } = usePostMergerWards(provinceId, catalogRevision);
 
-  const initialProvinceId = initial?.ghnProvinceV3Id;
-  const initialProvinceName = initial?.provinceName;
-  const initialWardId = initial?.ghnWardV3Id;
-  const initialWardName = initial?.wardName;
-
   useEffect(() => {
     setRecipientName(initial?.recipientName ?? '');
     setPhone(initial?.phone ?? '');
@@ -119,20 +114,17 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
               setWardId('');
             }}
             required
-            disabled={loadingCapability || loadingProvinces || (!catalogRevision && !initialProvinceId)}
+            disabled={loadingCapability || loadingProvinces || !catalogRevision}
           >
             <option value="">
               {loadingCapability || loadingProvinces
                 ? 'Đang tải Tỉnh/Thành...'
                 : hasProvinceError
                 ? '⚠️ Không thể tải danh mục Tỉnh/Thành'
-                : provinces.length === 0 && !initialProvinceName
+                : provinces.length === 0
                 ? 'Chưa có dữ liệu Tỉnh/Thành'
                 : 'Tỉnh/Thành sau sáp nhập'}
             </option>
-            {initialProvinceId && initialProvinceName && !provinces.some((item) => item.id === initialProvinceId) && (
-              <option value={initialProvinceId}>{initialProvinceName}</option>
-            )}
             {provinces.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
@@ -156,13 +148,10 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
                 ? '⚠️ Lỗi tải Phường/Xã'
                 : !provinceId
                 ? 'Chọn Tỉnh/Thành trước'
-                : wards.length === 0 && !initialWardName
+                : wards.length === 0
                 ? 'Chưa có dữ liệu Phường/Xã'
                 : 'Phường/Xã'}
             </option>
-            {initialWardId && initialWardName && !wards.some((item) => item.id === initialWardId) && (
-              <option value={initialWardId}>{initialWardName}</option>
-            )}
             {wards.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
