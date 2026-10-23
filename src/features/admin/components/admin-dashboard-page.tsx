@@ -32,6 +32,7 @@ function AdminDashboardContent() {
   const { logout, currentUser } = useAuth();
   const adminName = currentUser.name && currentUser.name !== 'Khách' ? currentUser.name : 'Admin FashionAI';
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [analyticsRefreshSignal, setAnalyticsRefreshSignal] = useState(0);
 
   const {
     activeTab,
@@ -62,6 +63,7 @@ function AdminDashboardContent() {
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const handleRefresh = useCallback(() => {
+    setAnalyticsRefreshSignal((signal) => signal + 1);
     void refresh();
   }, [refresh]);
   const handleLogout = useCallback(() => {
@@ -143,7 +145,7 @@ function AdminDashboardContent() {
             <AdminReconciliationPanel onStatsRefresh={overview.fetchStats} />
           )}
           {activeTab === 'shipping-settings' && <AdminShippingSettingsPanel />}
-          {activeTab === 'analytics' && <AdminAnalyticsPanel />}
+          {activeTab === 'analytics' && <AdminAnalyticsPanel refreshSignal={analyticsRefreshSignal} />}
           {activeTab === 'platforms' && <AdminPlatformsPanel />}
           {activeTab === 'live-try-on-settings' && <AdminLiveTryOnSettingsPanel />}
           {activeTab === 'collections' && <AdminCollectionManager />}

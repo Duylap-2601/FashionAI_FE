@@ -154,6 +154,24 @@ test('analytics formatting helpers', () => {
   assert.equal(format.labelOf({}, '(not set)'), 'Không xác định');
 });
 
+test('platform labels normalize UTM sources and referral domains', () => {
+  const load = createSourceLoader();
+  const { platformLabelOf } = load('@/features/admin/services/analytics-format');
+
+  assert.equal(platformLabelOf('tiktok'), 'TikTok');
+  assert.equal(platformLabelOf('www.tiktok.com'), 'TikTok');
+  assert.equal(platformLabelOf('l.facebook.com'), 'Facebook');
+  assert.equal(platformLabelOf('https://m.facebook.com/some/post'), 'Facebook');
+  assert.equal(platformLabelOf('accounts.google.com'), 'Google');
+  assert.equal(platformLabelOf('google.com.vn'), 'Google');
+  assert.equal(platformLabelOf('ig'), 'Instagram');
+  assert.equal(platformLabelOf('t.co'), 'X');
+  assert.equal(platformLabelOf('(direct)'), 'Truy cập trực tiếp');
+  assert.equal(platformLabelOf('(not set)'), 'Không xác định');
+  assert.equal(platformLabelOf(''), 'Không xác định');
+  assert.equal(platformLabelOf('news.example.com'), 'news.example.com');
+});
+
 test('admin analytics queries hit the GA4 report endpoints with the selected range', async () => {
   const calls = [];
   const load = createSourceLoader({
@@ -163,10 +181,12 @@ test('admin analytics queries hit the GA4 report endpoints with the selected ran
 
   await queries.fetchAnalyticsReport('7d');
   await queries.fetchAnalyticsRealtime();
+  await queries.fetchAnalyticsReport('28d', undefined, true);
 
   assert.equal(calls[0][0], '/admin/analytics/report');
   assert.deepEqual(plain(calls[0][1].params), { range: '7d' });
   assert.equal(calls[1][0], '/admin/analytics/realtime');
+  assert.deepEqual(plain(calls[2][1].params), { range: '28d', refresh: true });
 });
 
 test('checkout forwards GA4 ids and drops a session id without a client id', async () => {

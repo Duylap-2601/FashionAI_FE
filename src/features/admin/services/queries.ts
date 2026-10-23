@@ -37,8 +37,11 @@ export function fetchLiveTryOnSettings() {
   return http.get<LiveTryOnSettings>('/admin/settings/live-try-on');
 }
 
-export function fetchAnalyticsReport(range: AnalyticsRange, config?: HttpOptions) {
-  return http.get<AnalyticsReportResult>('/admin/analytics/report', { ...config, params: { range } });
+export function fetchAnalyticsReport(range: AnalyticsRange, config?: HttpOptions, refresh = false) {
+  return http.get<AnalyticsReportResult>('/admin/analytics/report', {
+    ...config,
+    params: refresh ? { range, refresh: true } : { range },
+  });
 }
 
 export function fetchAnalyticsRealtime(config?: HttpOptions) {

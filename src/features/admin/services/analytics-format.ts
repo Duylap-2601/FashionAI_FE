@@ -1,4 +1,4 @@
-import { NOT_SET_LABEL } from '@/features/admin/constants/admin-analytics';
+import { NOT_SET_LABEL, SOURCE_DOMAIN_LABELS, SOURCE_LABELS } from '@/features/admin/constants/admin-analytics';
 
 const countFormatter = new Intl.NumberFormat('vi-VN');
 const compactFormatter = new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 });
@@ -51,4 +51,31 @@ export function safeRatio(numerator: number, denominator: number) {
 export function labelOf(labels: Record<string, string>, value: string) {
   if (!value || value === '(not set)' || value === '(other)') return NOT_SET_LABEL;
   return labels[value] ?? value;
+}
+
+/** Bỏ scheme/đường dẫn và "www." để so tên miền; trả chuỗi rỗng nếu không phải host. */
+function toHost(value: string) {
+  try {
+    const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`);
+    return url.hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Nền tảng từ `sessionSource`: nhận utm_source (facebook, ig, ...) hoặc tên miền
+ * giới thiệu (l.facebook.com, accounts.google.com, ...), gộp tên miền con về một nền tảng.
+ */
+export function platformLabelOf(source: string) {
+  const value = source.trim().toLowerCase();
+  if (!value || value === '(not set)' || value === '(other)') return NOT_SET_LABEL;
+
+  const host = toHost(value);
+  const label = SOURCE_LABELS[value] ?? (host ? SOURCE_LABELS[host] : undefined);
+  if (label) return label;
+
+  const domain = host || value;
+  const match = SOURCE_DOMAIN_LABELS.find(([suffix]) => domain === suffix || domain.endsWith(`.${suffix}`));
+  return match?.[1] ?? domain;
 }
