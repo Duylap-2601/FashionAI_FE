@@ -290,7 +290,7 @@ export default function RackPage() {
       return;
     }
 
-    // Try-on studio supports up to 2 items (1 Upper + 1 Lower, or 1 Full body, or first 2 items)
+    // Try-on studio supports up to 3 items (Áo khoác + Áo trong + Quần/Váy, hoặc 1 Full body, hoặc tối đa 3 món)
     let selected = [...placedItems];
     const fullBody = selected.find(
       (i) => toBackendCategory(i.rackItem.product.category, i.rackItem.product.garmentType) === 'FULL_BODY'
@@ -298,19 +298,9 @@ export default function RackPage() {
 
     if (fullBody) {
       selected = [fullBody];
-    } else if (selected.length > 2) {
-      const upper = selected.find(
-        (i) => toBackendCategory(i.rackItem.product.category, i.rackItem.product.garmentType) === 'UPPER'
-      );
-      const lower = selected.find(
-        (i) => toBackendCategory(i.rackItem.product.category, i.rackItem.product.garmentType) === 'LOWER'
-      );
-      if (upper && lower) {
-        selected = [upper, lower];
-      } else {
-        selected = selected.slice(0, 2);
-      }
-      toast.info('Phòng thử AI hỗ trợ tối đa 2 món, đã chọn 2 trang phục chính');
+    } else if (selected.length > 3) {
+      selected = selected.slice(0, 3);
+      toast.info('Phòng thử AI hỗ trợ tối đa 3 món, đã chọn 3 trang phục chính');
     }
 
     const ids = selected.map((i) => i.rackItem.productId).join(',');

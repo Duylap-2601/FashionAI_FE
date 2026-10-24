@@ -10,6 +10,11 @@ export async function submitTryOn(payload: TryOnRequest) {
   if (payload.garments && payload.garments.length > 0) {
     payload.garments.forEach((g, idx) => {
       formData.append(`garments[${idx}][category]`, g.garmentCategory);
+      if (g.layerRole) {
+        formData.append(`garments[${idx}][layerRole]`, g.layerRole);
+      } else if (!g.productId && g.garmentImage) {
+        formData.append(`garments[${idx}][layerRole]`, 'INNER');
+      }
       if (g.productId) {
         formData.append(`garments[${idx}][productId]`, g.productId);
         if (g.color) {
@@ -23,12 +28,19 @@ export async function submitTryOn(payload: TryOnRequest) {
     if (payload.garments[0]?.productId) formData.append('productId', payload.garments[0].productId);
     if (payload.garments[0]?.garmentCategory) formData.append('garmentCategory', payload.garments[0].garmentCategory);
     if (payload.garments[0]?.garmentImage) formData.append('garmentImage', payload.garments[0].garmentImage);
+    const primaryRole = payload.garments[0]?.layerRole || payload.layerRole;
+    if (primaryRole) formData.append('layerRole', primaryRole);
     const primaryColor = payload.garments[0]?.color || payload.color;
     if (primaryColor) formData.append('color', primaryColor);
   } else {
     if (payload.garmentImage) formData.append('garmentImage', payload.garmentImage);
     if (payload.productId) formData.append('productId', payload.productId);
     if (payload.garmentCategory) formData.append('garmentCategory', payload.garmentCategory);
+    if (payload.layerRole) {
+      formData.append('layerRole', payload.layerRole);
+    } else if (payload.garmentImage && !payload.productId) {
+      formData.append('layerRole', 'INNER');
+    }
     if (payload.color) formData.append('color', payload.color);
   }
 

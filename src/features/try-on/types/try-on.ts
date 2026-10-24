@@ -3,6 +3,7 @@ export interface TryOnGarment {
   productId?: string | null;
   image?: string | null;
   color?: string | null;
+  layerRole?: 'OUTER' | 'INNER' | 'BASE' | 'BOTTOM' | string | null;
 }
 
 export interface TryOnResult {
@@ -27,6 +28,7 @@ export interface GarmentSlotInput {
   garmentImage?: File;
   imageUrl?: string;
   color?: string;
+  layerRole?: 'OUTER' | 'INNER' | 'BASE' | 'BOTTOM' | string;
 }
 
 export interface TryOnRequest {
@@ -37,4 +39,5 @@ export interface TryOnRequest {
   garmentImage?: File;
   garmentCategory?: 'UPPER' | 'LOWER' | 'FULL_BODY';
   color?: string;
+  layerRole?: 'OUTER' | 'INNER' | 'BASE' | 'BOTTOM' | string;
 }

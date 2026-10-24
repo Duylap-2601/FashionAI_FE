@@ -105,6 +105,13 @@ export default function TryOnHistoryPage() {
   const getGarmentsLabel = (item: TryOnResult) => {
     if (item.garments && Array.isArray(item.garments) && item.garments.length > 0) {
       const labels = item.garments.map((g) => {
+        if (g.layerRole) {
+          const role = g.layerRole.toUpperCase();
+          if (role === 'OUTER') return 'Áo khoác';
+          if (role === 'INNER') return 'Áo trong';
+          if (role === 'BASE') return 'Áo lót/thun';
+          if (role === 'BOTTOM') return 'Quần/Váy';
+        }
         const c = (g.category || '').toUpperCase();
         if (c.includes('UPPER') || c.includes('AO') || c.includes('TOP')) return 'Áo';
         if (c.includes('LOWER') || c.includes('QUAN') || c.includes('VAY') || c.includes('BOTTOM')) return 'Quần/Váy';

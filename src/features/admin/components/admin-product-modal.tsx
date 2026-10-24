@@ -1,6 +1,6 @@
 'use client';
 
-import type { GarmentCategory, GarmentType, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
+import type { GarmentCategory, GarmentType, LayerRole, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminProductModalProps } from '@/features/admin/types/admin-product-modal';
 import {
   Package,
@@ -25,6 +25,13 @@ const GARMENT_TYPES_BY_CATEGORY: Record<GarmentCategory, { value: GarmentType; l
   ],
 };
 
+const LAYER_ROLES: { value: LayerRole; label: string }[] = [
+  { value: 'OUTER', label: 'OUTER — Áo khoác ngoài / Blazer' },
+  { value: 'INNER', label: 'INNER — Áo trong / Sơ mi / Áo thun' },
+  { value: 'BASE', label: 'BASE — Áo lót / Áo giữ nhiệt (Base layer)' },
+  { value: 'BOTTOM', label: 'BOTTOM — Quần / Chân váy' },
+];
+
 export function AdminProductModal({ closeProductEditor, editingProduct, setEditingProduct, addColor, updateColor, removeColor, productImages, handleSelectImages, handleSetPrimaryImage, handleSetImageColor, handleRemoveImage, handleSaveProduct }: AdminProductModalProps) {
   const currentCategory = (editingProduct.category || 'UPPER') as GarmentCategory;
   const availableGarmentTypes = GARMENT_TYPES_BY_CATEGORY[currentCategory] || [];
@@ -32,12 +39,19 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
   const handleCategoryChange = (newCategory: GarmentCategory) => {
     const validTypes = GARMENT_TYPES_BY_CATEGORY[newCategory] || [];
     const isCurrentValid = validTypes.some(t => t.value === editingProduct.garmentType);
+    let newLayerRole = editingProduct.layerRole;
+    if (newCategory === 'LOWER' && editingProduct.layerRole !== 'BOTTOM') {
+      newLayerRole = 'BOTTOM';
+    } else if (newCategory === 'UPPER' && editingProduct.layerRole === 'BOTTOM') {
+      newLayerRole = null;
+    }
     setEditingProduct(prev => {
       if (!prev) return null;
       return {
         ...prev,
         category: newCategory,
         garmentType: isCurrentValid ? prev.garmentType : undefined,
+        layerRole: newLayerRole,
       };
     });
   };
@@ -127,6 +141,28 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
               {currentCategory === 'LOWER' && '• Quần (PANTS) → cần số đo đùi, ống quần | Chân váy (SKIRT) → không cần số đo đùi, ống'}
               {currentCategory === 'UPPER' && '• Áo sơ mi / Vest / Blazer → yêu cầu số đo vai, ngực, dài tay khi đặt may'}
               {currentCategory === 'FULL_BODY' && '• Đầm / Jumpsuit → yêu cầu số đo toàn thân (ngực, eo, mông, dài đầm)'}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-body-sm font-medium text-neutral-700 mb-1.5">
+              Lớp trang phục (Layer Role)
+              <span className="text-neutral-400 text-[12px] ml-1">(Dùng cho phòng thử AI & phối đồ đa lớp)</span>
+            </label>
+            <select
+              value={editingProduct.layerRole || ''}
+              onChange={e => setEditingProduct(prev => ({ ...prev, layerRole: (e.target.value as LayerRole) || null }))}
+              className="w-full h-10 px-3 rounded-lg border border-neutral-300"
+            >
+              <option value="">-- Mặc định (Tự động suy luận từ loại trang phục) --</option>
+              {LAYER_ROLES.map(role => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-label-sm text-neutral-400 mt-1.5">
+              • Cho phép chọn đồng thời áo khoác + áo trong + quần/váy (tối đa 3 món). Nếu để trống, backend sẽ tự động suy luận.
             </p>
           </div>
 

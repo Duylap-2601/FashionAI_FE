@@ -4,7 +4,7 @@ export type ProductPickerCategory = 'ALL' | 'UPPER' | 'LOWER' | 'FULL_BODY';
 
 export type GarmentMode = 'single' | 'combo';
 
-export type CatalogSlot = 'single' | 'upper' | 'lower';
+export type CatalogSlot = 'single' | 'upper' | 'lower' | 'outer';
 
 export interface TryOnErrorBody {
   code?: string;

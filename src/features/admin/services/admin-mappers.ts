@@ -68,6 +68,7 @@ export function toAdminProduct(p: AdminProductDto): AdminProduct {
     name: p.name,
     category: p.category as GarmentCategory,
     garmentType: p.garmentType,
+    layerRole: p.layerRole ?? null,
     price: Number(p.price),
     status: p.status as ProductStatus,
     image: p.garmentUrl || mainImage || ADMIN_PRODUCT_FALLBACK_IMAGE,

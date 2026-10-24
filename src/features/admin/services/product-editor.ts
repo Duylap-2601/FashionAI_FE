@@ -64,6 +64,8 @@ export interface CreateProductFormInput {
   name: string;
   price: number;
   category: string;
+  garmentType?: string | null;
+  layerRole?: import('@/features/admin/types/admin-dashboard-page').LayerRole | null;
   status?: string;
   material?: string;
   description?: string;
@@ -79,6 +81,8 @@ export function buildCreateProductForm(input: CreateProductFormInput): FormData 
   form.append('price', String(input.price));
   form.append('category', input.category);
   form.append('status', input.status || 'ACTIVE');
+  if (input.garmentType) form.append('garmentType', input.garmentType);
+  if (input.layerRole) form.append('layerRole', input.layerRole);
   if (input.material) form.append('material', input.material);
   if (input.description) form.append('description', input.description);
   const primaryColor = input.colors[0]?.name;

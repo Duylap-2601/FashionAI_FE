@@ -70,6 +70,7 @@ export function mapProduct(product: BackendProduct): Product {
     category: mapCategory(product.category),
     garmentCategory: toBackendCategory(product.category, product.garmentType as string),
     garmentType: (product.garmentType as import('@/features/products/types/products').GarmentType) || undefined,
+    layerRole: (product.layerRole as import('@/features/products/types/products').LayerRole) || null,
     image: mainImage,
     gallery,
     imageItems,

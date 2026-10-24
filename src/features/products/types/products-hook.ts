@@ -7,6 +7,7 @@ export interface BackendProduct {
   material?: string | null;
   category: string;
   garmentType?: GarmentType | string | null;
+  layerRole?: import('@/features/products/types/products').LayerRole | string | null;
   brand?: string | null;
   color?: string | null;
   colors?: ({ name: string; hex?: string } | string)[] | null;

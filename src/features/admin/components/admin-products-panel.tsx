@@ -168,8 +168,15 @@ export function AdminProductsPanel({
                   </div>
 
                   {/* Danh mục */}
-                  <div className="px-4 py-3.5 text-neutral-500 truncate">
-                    {CATEGORY_LABEL[p.category] || p.category}
+                  <div className="px-4 py-3.5 text-neutral-500">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="truncate">{CATEGORY_LABEL[p.category] || p.category}</span>
+                      {p.layerRole && (
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
+                          {p.layerRole}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Giá bán */}

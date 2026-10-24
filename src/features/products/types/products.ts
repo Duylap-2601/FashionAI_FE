@@ -1,5 +1,7 @@
 export type GarmentType = 'SHIRT' | 'VEST' | 'JACKET' | 'PANTS' | 'SKIRT' | 'DRESS' | 'JUMPSUIT';
 
+export type LayerRole = 'OUTER' | 'INNER' | 'BASE' | 'BOTTOM';
+
 export interface Product {
   id: string;
   name: string;
@@ -11,6 +13,7 @@ export interface Product {
   category: string;
   garmentCategory?: 'UPPER' | 'LOWER' | 'FULL_BODY';
   garmentType?: GarmentType;
+  layerRole?: LayerRole | null;
   image: string;
   gallery: string[];
   imageItems?: { url: string; colorName?: string | null; isMain?: boolean }[];

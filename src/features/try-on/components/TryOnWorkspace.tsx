@@ -16,6 +16,7 @@ function GarmentSlot({
   emptyLabel,
   onSelect,
   onSelectColor,
+  onClear,
 }: {
   title: string;
   product: Product | null;
@@ -24,6 +25,7 @@ function GarmentSlot({
   emptyLabel: string;
   onSelect: () => void;
   onSelectColor?: (color: string) => void;
+  onClear?: () => void;
 }) {
   const currentColor = selectedColor || product?.colors?.[0]?.name;
   const matchingImage = product?.imageItems?.find(
@@ -35,9 +37,20 @@ function GarmentSlot({
     <div className="p-4 bg-white rounded-2xl border border-[#E5DFD5]">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[13px] font-semibold text-[#5D1C34]">{title}</span>
-        <button type="button" onClick={onSelect} className="text-[13px] font-semibold text-[#5D1C34] hover:underline cursor-pointer">
-          {actionLabel}
-        </button>
+        <div className="flex items-center gap-2">
+          {product && onClear && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="text-[12px] font-medium text-neutral-400 hover:text-red-600 transition-colors cursor-pointer bg-transparent border-0"
+            >
+              Bỏ chọn
+            </button>
+          )}
+          <button type="button" onClick={onSelect} className="text-[13px] font-semibold text-[#5D1C34] hover:underline cursor-pointer">
+            {actionLabel}
+          </button>
+        </div>
       </div>
       {product ? (
         <div className="flex flex-col gap-3">
@@ -98,8 +111,10 @@ export function TryOnWorkspace({
   garmentMode,
   selectedProduct,
   selectedColor,
+  outerProduct,
   upperProduct,
   lowerProduct,
+  outerColor,
   upperColor,
   lowerColor,
   canGenerate,
@@ -112,8 +127,10 @@ export function TryOnWorkspace({
   onModeChange,
   onOpenCatalog,
   onSelectColor,
+  onSelectOuterColor,
   onSelectUpperColor,
   onSelectLowerColor,
+  onClearOuter,
   onGenerate,
   onDownload,
   onShare,
@@ -236,16 +253,26 @@ export function TryOnWorkspace({
         ) : (
           <div className="flex flex-col gap-4">
             <GarmentSlot
-              title="Món 1: Áo / Blazer (Upper)"
+              title="Món 1: Áo khoác / Blazer (Lớp ngoài - Tùy chọn)"
+              product={outerProduct || null}
+              selectedColor={outerColor}
+              actionLabel={outerProduct ? 'Đổi áo khoác' : '+ Thêm áo khoác'}
+              emptyLabel="Chưa chọn áo khoác (tùy chọn)"
+              onSelect={() => onOpenCatalog('outer')}
+              onSelectColor={onSelectOuterColor}
+              onClear={outerProduct ? onClearOuter : undefined}
+            />
+            <GarmentSlot
+              title="Món 2: Áo trong / Sơ mi / Áo thun (Lớp trong)"
               product={upperProduct}
               selectedColor={upperColor}
               actionLabel={upperProduct ? 'Đổi áo khác' : '+ Chọn áo'}
-              emptyLabel="Chưa chọn áo"
+              emptyLabel="Chưa chọn áo trong"
               onSelect={() => onOpenCatalog('upper')}
               onSelectColor={onSelectUpperColor}
             />
             <GarmentSlot
-              title="Món 2: Quần / Chân váy (Lower)"
+              title="Món 3: Quần / Chân váy (Lớp dưới)"
               product={lowerProduct}
               selectedColor={lowerColor}
               actionLabel={lowerProduct ? 'Đổi quần/váy' : '+ Chọn quần/váy'}
@@ -255,7 +282,7 @@ export function TryOnWorkspace({
             />
             <div className="p-3.5 bg-white rounded-xl border border-[#E5DFD5] text-[13px] text-neutral-600 flex items-center justify-between">
               <span>Phối bộ sẽ dùng:</span>
-              <span className="font-bold text-[#5D1C34]">2 lượt thử</span>
+              <span className="font-bold text-[#5D1C34]">{quotaCost} lượt thử</span>
             </div>
           </div>
         )}

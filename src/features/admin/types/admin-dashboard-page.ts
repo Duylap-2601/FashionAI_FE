@@ -39,6 +39,8 @@ export type GarmentCategory = 'UPPER' | 'LOWER' | 'FULL_BODY';
 
 export type GarmentType = 'SHIRT' | 'VEST' | 'JACKET' | 'PANTS' | 'SKIRT' | 'DRESS' | 'JUMPSUIT';
 
+export type LayerRole = 'OUTER' | 'INNER' | 'BASE' | 'BOTTOM';
+
 export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 
 export type UserTier = 'FREE' | 'MEMBER' | 'VIP';
@@ -62,6 +64,7 @@ export interface AdminProduct {
   name: string;
   category: GarmentCategory;
   garmentType?: GarmentType;
+  layerRole?: LayerRole | null;
   price: number;
   status: ProductStatus;
   image: string;

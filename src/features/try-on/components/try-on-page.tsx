@@ -104,8 +104,10 @@ function VirtualTryOnContent() {
   const [inputError, setInputError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialProduct);
   const [selectedColor, setSelectedColor] = useState<string | null>(() => resolveProductColor(initialProduct, initialColor));
+  const [outerProduct, setOuterProduct] = useState<Product | null>(null);
   const [upperProduct, setUpperProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null);
   const [lowerProduct, setLowerProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || null);
+  const [outerColor, setOuterColor] = useState<string | null>(null);
   const [upperColor, setUpperColor] = useState<string | null>(() => {
     const p = catalogProducts.find(item => (item.garmentCategory || toBackendCategory(item.category)) === 'UPPER');
     return resolveProductColor(p);
@@ -146,14 +148,19 @@ function VirtualTryOnContent() {
 
   useEffect(() => {
     if (rackIds && catalogProducts.length > 0) {
-      const ids = rackIds.split(',').filter(Boolean).slice(0, 2);
+      const ids = rackIds.split(',').filter(Boolean).slice(0, 3);
       if (ids.length === 1) {
         const match = catalogProducts.find(p => p.id === ids[0]);
         if (match) {
           const cat = match.garmentCategory || toBackendCategory(match.category);
           if (cat === 'UPPER') {
-            setUpperProduct(match);
-            setUpperColor(resolveProductColor(match));
+            if (match.layerRole === 'OUTER') {
+              setOuterProduct(match);
+              setOuterColor(resolveProductColor(match));
+            } else {
+              setUpperProduct(match);
+              setUpperColor(resolveProductColor(match));
+            }
           }
           if (cat === 'LOWER') {
             setLowerProduct(match);
@@ -164,41 +171,48 @@ function VirtualTryOnContent() {
           setGarmentMode('single');
         }
       } else if (ids.length >= 2) {
-        const p0 = catalogProducts.find(p => p.id === ids[0]);
-        const p1 = catalogProducts.find(p => p.id === ids[1]);
-        // Hai tab đều cần một sản phẩm "một món" để hiển thị: tải thẳng link bộ 2 món (catalog chưa có
-        // trong cache) thì món đó còn trống, nên lấy món đầu của bộ.
-        const first = p0 ?? p1;
+        const matched = ids
+          .map(id => catalogProducts.find(p => p.id === id))
+          .filter((p): p is Product => Boolean(p));
+
+        const first = matched[0];
         if (first) {
           setSelectedProduct(prev => prev ?? first);
           setSelectedColor(prev => prev ?? resolveProductColor(first));
         }
-        if (p0 && p1) {
-          const cat0 = p0.garmentCategory || toBackendCategory(p0.category);
-          const cat1 = p1.garmentCategory || toBackendCategory(p1.category);
-          if (cat0 === 'UPPER' && cat1 === 'LOWER') {
-            setUpperProduct(p0);
-            setUpperColor(resolveProductColor(p0));
-            setLowerProduct(p1);
-            setLowerColor(resolveProductColor(p1));
-          } else if (cat0 === 'LOWER' && cat1 === 'UPPER') {
-            setUpperProduct(p1);
-            setUpperColor(resolveProductColor(p1));
-            setLowerProduct(p0);
-            setLowerColor(resolveProductColor(p0));
+
+        let newOuter: Product | null = null;
+        let newUpper: Product | null = null;
+        let newLower: Product | null = null;
+
+        matched.forEach(p => {
+          const cat = p.garmentCategory || toBackendCategory(p.category);
+          const role = p.layerRole;
+
+          if (role === 'OUTER' || (!role && cat === 'UPPER' && (p.garmentType === 'JACKET' || p.garmentType === 'VEST'))) {
+            if (!newOuter) newOuter = p;
+            else if (!newUpper) newUpper = p;
+          } else if (role === 'BOTTOM' || cat === 'LOWER') {
+            if (!newLower) newLower = p;
           } else {
-            setUpperProduct(p0);
-            setUpperColor(resolveProductColor(p0));
-            setLowerProduct(p1);
-            setLowerColor(resolveProductColor(p1));
+            if (!newUpper) newUpper = p;
+            else if (!newOuter) newOuter = p;
           }
-          setGarmentMode('combo');
-        } else if (p0 || p1) {
-          const single = (p0 || p1)!;
-          setSelectedProduct(single);
-          setSelectedColor(resolveProductColor(single, initialColor));
-          setGarmentMode('single');
+        });
+
+        if (newOuter) {
+          setOuterProduct(newOuter);
+          setOuterColor(resolveProductColor(newOuter));
         }
+        if (newUpper) {
+          setUpperProduct(newUpper);
+          setUpperColor(resolveProductColor(newUpper));
+        }
+        if (newLower) {
+          setLowerProduct(newLower);
+          setLowerColor(resolveProductColor(newLower));
+        }
+        setGarmentMode('combo');
       }
     } else if (productId) {
       const match = catalogProducts.find(p => p.id === productId);
@@ -217,7 +231,7 @@ function VirtualTryOnContent() {
     if (catalogProducts.length > 0) {
       setUpperProduct(prev => {
         if (prev) return prev;
-        const u = catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null;
+        const u = catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER' && p.layerRole !== 'OUTER') || null;
         if (u) setUpperColor(resolveProductColor(u));
         return u;
       });
@@ -267,6 +281,9 @@ function VirtualTryOnContent() {
       setSelectedProduct(product);
       setSelectedColor(resolveProductColor(product));
       router.replace(`/try-on?productId=${product.id}`);
+    } else if (catalogSlot === 'outer') {
+      setOuterProduct(product);
+      setOuterColor(resolveProductColor(product));
     } else if (catalogSlot === 'upper') {
       setUpperProduct(product);
       setUpperColor(resolveProductColor(product));
@@ -311,9 +328,49 @@ function VirtualTryOnContent() {
       let payload: Parameters<typeof tryOnAsync>[0];
       if (garmentMode === 'combo') {
         const garments: GarmentSlotInput[] = [];
-        if (upperProduct) garments.push({ productId: upperProduct.id, garmentCategory: 'UPPER', color: upperColor || upperProduct.colors?.[0]?.name || undefined });
-        if (lowerProduct) garments.push({ productId: lowerProduct.id, garmentCategory: 'LOWER', color: lowerColor || lowerProduct.colors?.[0]?.name || undefined });
-        payload = { humanImage: currentHumanImage, garments, productId: upperProduct?.id || lowerProduct?.id };
+        if (outerProduct) {
+          garments.push({
+            productId: outerProduct.id,
+            garmentCategory: 'UPPER',
+            color: outerColor || outerProduct.colors?.[0]?.name || undefined,
+            layerRole: outerProduct.layerRole || 'OUTER',
+          });
+        }
+        if (upperProduct) {
+          garments.push({
+            productId: upperProduct.id,
+            garmentCategory: 'UPPER',
+            color: upperColor || upperProduct.colors?.[0]?.name || undefined,
+            layerRole: upperProduct.layerRole || 'INNER',
+          });
+        }
+        if (lowerProduct) {
+          garments.push({
+            productId: lowerProduct.id,
+            garmentCategory: 'LOWER',
+            color: lowerColor || lowerProduct.colors?.[0]?.name || undefined,
+            layerRole: lowerProduct.layerRole || 'BOTTOM',
+          });
+        }
+
+        if (garments.length === 0) {
+          setInputError('Vui lòng chọn ít nhất một trang phục để phối.');
+          setPageState('idle');
+          return;
+        }
+
+        // Validate layerRole: cảnh báo nếu có 2 món trùng lớp mặc (ví dụ 2 áo khoác)
+        const roles = garments.map(g => g.layerRole).filter(Boolean);
+        const hasDuplicateRole = roles.some((role, i) => roles.indexOf(role) !== i);
+        if (hasDuplicateRole) {
+          toast.warning('Bộ phối đang có 2 món cùng lớp mặc. Kết quả thử đồ có thể không tối ưu.');
+        }
+
+        payload = {
+          humanImage: currentHumanImage,
+          garments,
+          productId: upperProduct?.id || outerProduct?.id || lowerProduct?.id,
+        };
       } else {
         if (!selectedProduct?.id) return;
         const cat = selectedProduct.garmentCategory || toBackendCategory(selectedProduct.category);
@@ -322,7 +379,13 @@ function VirtualTryOnContent() {
           productId: selectedProduct.id,
           garmentCategory: cat,
           color: selectedColor || undefined,
-          garments: [{ productId: selectedProduct.id, garmentCategory: cat, color: selectedColor || undefined }],
+          layerRole: selectedProduct.layerRole || undefined,
+          garments: [{
+            productId: selectedProduct.id,
+            garmentCategory: cat,
+            color: selectedColor || undefined,
+            layerRole: selectedProduct.layerRole || undefined,
+          }],
         };
       }
 
@@ -448,7 +511,7 @@ function VirtualTryOnContent() {
     }
   };
 
-  const hasSelectedGarments = garmentMode === 'combo' ? Boolean(upperProduct || lowerProduct) : Boolean(selectedProduct?.id);
+  const hasSelectedGarments = garmentMode === 'combo' ? Boolean(outerProduct || upperProduct || lowerProduct) : Boolean(selectedProduct?.id);
   const canGenerate = userPhotoFile !== null && hasSelectedGarments && !isSubmitting && pageState !== 'loading';
 
   return (
@@ -458,8 +521,22 @@ function VirtualTryOnContent() {
         onClose={() => setShowCatalogModal(false)}
         products={catalogProducts}
         onSelectProduct={handleSelectProductFromCatalog}
-        currentProductId={catalogSlot === 'single' ? selectedProduct?.id : catalogSlot === 'upper' ? upperProduct?.id : lowerProduct?.id}
-        initialCategory={catalogSlot === 'upper' ? 'UPPER' : catalogSlot === 'lower' ? 'LOWER' : 'ALL'}
+        currentProductId={
+          catalogSlot === 'single'
+            ? selectedProduct?.id
+            : catalogSlot === 'outer'
+              ? outerProduct?.id
+              : catalogSlot === 'upper'
+                ? upperProduct?.id
+                : lowerProduct?.id
+        }
+        initialCategory={
+          catalogSlot === 'outer' || catalogSlot === 'upper'
+            ? 'UPPER'
+            : catalogSlot === 'lower'
+              ? 'LOWER'
+              : 'ALL'
+        }
       />
 
       {showQuotaModal && <QuotaExhaustedModal
@@ -521,8 +598,10 @@ function VirtualTryOnContent() {
             garmentMode={garmentMode}
             selectedProduct={selectedProduct}
             selectedColor={selectedColor}
+            outerProduct={outerProduct}
             upperProduct={upperProduct}
             lowerProduct={lowerProduct}
+            outerColor={outerColor}
             upperColor={upperColor}
             lowerColor={lowerColor}
             canGenerate={canGenerate}
@@ -535,8 +614,14 @@ function VirtualTryOnContent() {
             onModeChange={handleModeChange}
             onOpenCatalog={handleOpenCatalog}
             onSelectColor={setSelectedColor}
+            onSelectOuterColor={setOuterColor}
             onSelectUpperColor={setUpperColor}
             onSelectLowerColor={setLowerColor}
+            onClearOuter={() => {
+              setOuterProduct(null);
+              setOuterColor(null);
+              clearResult();
+            }}
             onGenerate={handleGenerate}
             onDownload={handleDownload}
             onShare={handleShare}
