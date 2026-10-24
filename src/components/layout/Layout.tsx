@@ -127,12 +127,17 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
     { label: 'AI Stylist', href: '#ai-stylist', sectionId: 'ai-stylist' },
     { label: 'Try-On', href: '#ai-try-on', sectionId: 'ai-try-on' },
   ];
+  const landingMenuLinks: NavLink[] = [
+    { label: 'Bộ sưu tập', href: '/products' },
+    { label: 'AI Stylist', href: stylistHref },
+    { label: 'Try-On', href: tryOnHref },
+  ];
   const navLinks: NavLink[] = currentUser.role === 'admin'
     ? [
       { label: 'Dashboard', href: '/admin/dashboard' },
     ]
     : variant === 'landing'
-      ? landingNavLinks
+      ? landingMenuLinks
       : [
         { label: 'Sản phẩm', href: '/products' },
         { label: 'Try-On', href: tryOnHref },
