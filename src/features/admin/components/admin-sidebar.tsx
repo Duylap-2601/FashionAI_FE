@@ -60,24 +60,33 @@ export const AdminSidebar = React.memo(function AdminSidebar({
         </div>
 
         <nav className="flex-1 px-3 py-3 flex flex-col gap-1 overflow-y-auto min-h-0 custom-scrollbar">
-          {ADMIN_NAV_ENTRIES.map((entry) => {
+          {ADMIN_NAV_ENTRIES.map((entry, index) => {
+            const isFirstSingleAfterGroups =
+              !entry.children &&
+              entry.id !== 'dashboard' &&
+              Boolean(ADMIN_NAV_ENTRIES[index - 1]?.children);
+
             // Trường hợp: Tab đơn (không có nhóm con)
             if (!entry.children) {
               const IconComponent = entry.icon;
               const active = activeTab === entry.id;
               return (
-                <button
-                  key={entry.id}
-                  onClick={() => onNavigate(entry.id)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-body-sm font-medium transition-all text-left w-full border-0 cursor-pointer ${
-                    active
-                      ? 'bg-white text-brand-navy shadow-xs font-semibold'
-                      : 'text-white/75 hover:text-white hover:bg-white/10 bg-transparent'
-                  }`}
-                >
-                  <IconComponent className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{entry.label}</span>
-                </button>
+                <React.Fragment key={entry.id}>
+                  {isFirstSingleAfterGroups && (
+                    <div className="my-1.5 border-t border-white/10" />
+                  )}
+                  <button
+                    onClick={() => onNavigate(entry.id)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-body-sm font-medium transition-all text-left w-full border-0 cursor-pointer ${
+                      active
+                        ? 'bg-white text-brand-navy shadow-xs font-semibold'
+                        : 'text-white/75 hover:text-white hover:bg-white/10 bg-transparent'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{entry.label}</span>
+                  </button>
+                </React.Fragment>
               );
             }
 

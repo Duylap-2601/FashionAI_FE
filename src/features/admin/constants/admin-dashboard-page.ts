@@ -51,20 +51,23 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
 ];
 
-/** Menu sidebar admin hỗ trợ các nhóm tab sổ xuống (collapsible accordion). */
+/** Menu sidebar admin hỗ trợ các nhóm tab sổ xuống (collapsible accordion).
+ * Các tab có tab con được ưu tiên xếp lên trên, các tab độc lập ở phía dưới.
+ */
 export const ADMIN_NAV_ENTRIES: AdminSidebarItem[] = [
+  // 1. Dashboard tổng quan
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+
+  // 2. Các nhóm có tab con (đẩy lên trên)
   {
-    id: 'group-analytics-platforms',
-    label: 'Phân tích & Nền tảng',
-    icon: BarChart3,
+    id: 'group-products-collections',
+    label: 'Sản phẩm & Bộ sưu tập',
+    icon: Package,
     children: [
-      { id: 'analytics', label: 'Phân tích', icon: BarChart3 },
-      { id: 'platforms', label: 'Nền tảng', icon: Share2 },
+      { id: 'products', label: 'Sản phẩm', icon: Package },
+      { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
     ],
   },
-  { id: 'products', label: 'Sản phẩm', icon: Package },
-  { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
   {
     id: 'group-orders-shipments',
     label: 'Đơn hàng & Vận đơn',
@@ -74,9 +77,6 @@ export const ADMIN_NAV_ENTRIES: AdminSidebarItem[] = [
       { id: 'shipments', label: 'Vận đơn', icon: Truck },
     ],
   },
-  { id: 'order-issues', label: 'Báo lỗi & Đổi trả', icon: ShieldAlert },
-  { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
-  { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
   {
     id: 'group-users-reviews',
     label: 'Người dùng & Đánh giá',
@@ -86,6 +86,20 @@ export const ADMIN_NAV_ENTRIES: AdminSidebarItem[] = [
       { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
     ],
   },
+  {
+    id: 'group-analytics-platforms',
+    label: 'Phân tích & Nền tảng',
+    icon: BarChart3,
+    children: [
+      { id: 'analytics', label: 'Phân tích', icon: BarChart3 },
+      { id: 'platforms', label: 'Nền tảng', icon: Share2 },
+    ],
+  },
+
+  // 3. Các tab đơn lẻ không có tab con (ở dưới)
+  { id: 'order-issues', label: 'Báo lỗi & Đổi trả', icon: ShieldAlert },
+  { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
+  { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
   { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
   { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
 ];
