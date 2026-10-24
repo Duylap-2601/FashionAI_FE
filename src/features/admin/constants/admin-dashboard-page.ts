@@ -1,4 +1,4 @@
-import type { AdminNavItem, AdminPage, AdminPagination, GarmentCategory, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
+import type { AdminNavItem, AdminPage, AdminPagination, AdminSidebarItem, GarmentCategory, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminOrderIssueFilters } from '@/features/admin/types/admin-order-issues-panel';
 import type { AdminOrderFilters } from '@/features/admin/types/admin-orders-panel';
 import type { AdminProductFilters } from '@/features/admin/types/admin-products-panel';
@@ -47,6 +47,45 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
   { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
   { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
+  { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
+  { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
+];
+
+/** Menu sidebar admin hỗ trợ các nhóm tab sổ xuống (collapsible accordion). */
+export const ADMIN_NAV_ENTRIES: AdminSidebarItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  {
+    id: 'group-analytics-platforms',
+    label: 'Phân tích & Nền tảng',
+    icon: BarChart3,
+    children: [
+      { id: 'analytics', label: 'Phân tích', icon: BarChart3 },
+      { id: 'platforms', label: 'Nền tảng', icon: Share2 },
+    ],
+  },
+  { id: 'products', label: 'Sản phẩm', icon: Package },
+  { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
+  {
+    id: 'group-orders-shipments',
+    label: 'Đơn hàng & Vận đơn',
+    icon: ShoppingBag,
+    children: [
+      { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
+      { id: 'shipments', label: 'Vận đơn', icon: Truck },
+    ],
+  },
+  { id: 'order-issues', label: 'Báo lỗi & Đổi trả', icon: ShieldAlert },
+  { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
+  { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
+  {
+    id: 'group-users-reviews',
+    label: 'Người dùng & Đánh giá',
+    icon: Users,
+    children: [
+      { id: 'users', label: 'Người dùng', icon: Users },
+      { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
+    ],
+  },
   { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
   { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
 ];

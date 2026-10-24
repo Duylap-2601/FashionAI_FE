@@ -249,6 +249,26 @@ export interface AdminNavItem {
   icon: LucideIcon;
 }
 
+export interface AdminNavSubItem {
+  id: AdminPage;
+  label: string;
+  icon: LucideIcon;
+}
+
+export type AdminSidebarItem =
+  | {
+      id: AdminPage;
+      label: string;
+      icon: LucideIcon;
+      children?: never;
+    }
+  | {
+      id: string;
+      label: string;
+      icon: LucideIcon;
+      children: AdminNavSubItem[];
+    };
+
 export type RevenueChartDays = 7 | 14 | 30;
 
 export interface RevenueChartPoint {
