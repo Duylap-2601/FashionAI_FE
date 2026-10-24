@@ -110,18 +110,27 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
   const stylistHref = currentUser.role === 'guest' ? '/login?callbackUrl=/ai-stylist' : '/ai-stylist';
   const rackHref = currentUser.role === 'guest' ? '/login?callbackUrl=/rack' : '/rack';
   const searchInputWidth = variant === 'landing'
-    ? 'w-[260px] focus:w-[300px] lg:w-[360px] lg:focus:w-[400px]'
+    ? 'w-[220px] focus:w-[260px] lg:w-[280px] lg:focus:w-[320px]'
     : 'w-[220px] focus:w-[260px] lg:w-[320px] lg:focus:w-[360px]';
+  const landingNavLinks = [
+    { label: 'Bộ sưu tập', href: '/#collections' },
+    { label: 'Sản phẩm', href: '/products' },
+    { label: 'Lookbook', href: '/#lookbook' },
+    { label: 'AI Stylist', href: stylistHref },
+    { label: 'Try-On', href: tryOnHref },
+  ];
   const navLinks = currentUser.role === 'admin'
     ? [
       { label: 'Dashboard', href: '/admin/dashboard' },
     ]
-    : [
-      { label: 'Sản phẩm', href: '/products' },
-      { label: 'Try-On', href: tryOnHref },
-      { label: 'Stylist', href: stylistHref },
-      { label: 'Trợ lý AI', href: chatHref },
-    ];
+    : variant === 'landing'
+      ? landingNavLinks
+      : [
+        { label: 'Sản phẩm', href: '/products' },
+        { label: 'Try-On', href: tryOnHref },
+        { label: 'Stylist', href: stylistHref },
+        { label: 'Trợ lý AI', href: chatHref },
+      ];
 
   const getTierColor = (tier?: string) => {
     switch (tier?.toLowerCase()) {
@@ -141,13 +150,13 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
 
   return (
     <>
-      <header className={`sticky top-0 z-50 shrink-0 border-b border-neutral-200 bg-white/95 backdrop-blur-md transition-all duration-300 ${pathname === '/search' ? 'hidden md:block' : ''}`}>
-        <div className="relative mx-auto flex h-[68px] max-w-[1400px] items-center gap-3 px-4 md:gap-4 md:px-8">
+      <header className={`sticky top-0 z-50 shrink-0 border-b backdrop-blur-md transition-all duration-300 ${variant === 'landing' ? 'border-landing-line/70 bg-landing-paper/90' : 'border-neutral-200 bg-white/95'} ${pathname === '/search' ? 'hidden md:block' : ''}`}>
+        <div className={`relative mx-auto flex max-w-[1400px] items-center gap-3 px-4 md:gap-4 md:px-8 ${variant === 'landing' ? 'h-[72px]' : 'h-[68px]'}`}>
           {/* Logo */}
           <div className="flex shrink-0 items-center gap-2 md:gap-8">
             <Link href="/" className="group flex flex-col items-center py-1">
               <Logo size="md" />
-              <span className="mt-0.5 hidden text-[9px] font-medium uppercase tracking-widest text-neutral-400 transition-colors group-hover:text-brand-navy sm:block">
+              <span className={`mt-0.5 hidden text-[9px] font-medium uppercase tracking-widest transition-colors sm:block ${variant === 'landing' ? 'text-landing-muted/75 group-hover:text-landing-oxblood' : 'text-neutral-400 group-hover:text-brand-navy'}`}>
                 Chuẩn dáng từ đầu, đẹp từng đường may
               </span>
               {currentUser.role === 'admin' && (
@@ -158,6 +167,20 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
             </Link>
           </div>
 
+          {variant === 'landing' && currentUser.role !== 'admin' ? (
+            <nav className="hidden items-center gap-5 xl:flex" aria-label="Điều hướng landing">
+              {landingNavLinks.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian/65 transition-colors hover:text-landing-oxblood"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
+
           {/* Right Actions */}
           <div className="ml-auto flex min-w-0 items-center justify-end gap-1.5 md:gap-3 lg:gap-4">
             <HeaderSearch className="order-2 shrink-0 sm:hidden" />
@@ -166,13 +189,13 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
               onSubmit={handleSearchSubmit}
               className="relative order-2 hidden min-w-0 shrink-0 items-center sm:flex md:order-none"
             >
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+              <Search className={`absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 ${variant === 'landing' ? 'text-landing-muted' : 'text-neutral-400'}`} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Bạn đang tìm sản phẩm gì?"
-                className={`h-10 rounded-full border border-neutral-200 bg-neutral-100 pl-11 pr-10 text-body-sm text-neutral-900 placeholder:text-neutral-400 transition-all focus:border-brand-navy focus:bg-white focus:outline-none ${searchInputWidth}`}
+                className={`h-10 border pl-11 pr-10 text-body-sm transition-all focus:outline-none ${variant === 'landing' ? 'rounded-none border-landing-line/70 bg-landing-ivory/70 text-landing-obsidian placeholder:text-landing-muted/70 focus:border-landing-oxblood focus:bg-landing-ivory' : 'rounded-full border-neutral-200 bg-neutral-100 text-neutral-900 placeholder:text-neutral-400 focus:border-brand-navy focus:bg-white'} ${searchInputWidth}`}
               />
               {searchQuery && (
                 <button
@@ -208,7 +231,7 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
               >
                 <ShoppingBag className="w-[18px] h-[18px] md:w-5 md:h-5" />
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-semantic-error rounded-full ring-2 ring-white text-[9px] flex items-center justify-center text-white font-bold animate-in zoom-in duration-200">
+                  <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-semantic-error rounded-full ring-2 text-[9px] flex items-center justify-center text-white font-bold animate-in zoom-in duration-200 ${variant === 'landing' ? 'ring-landing-paper' : 'ring-white'}`}>
                     {totalItems}
                   </span>
                 )}
@@ -224,7 +247,10 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
                 >
                   <UserIcon className="h-[18px] w-[18px]" />
                 </Link>
-                <Link href="/login" className="hidden rounded-full bg-brand-navy px-5 py-2 text-label-sm font-semibold text-white transition-colors hover:bg-brand-navy/90 md:order-none md:block">
+                <Link
+                  href="/login"
+                  className={`hidden px-5 py-2 text-label-sm font-semibold transition-colors md:order-none md:block ${variant === 'landing' ? 'rounded-none border border-landing-obsidian bg-transparent text-landing-obsidian hover:bg-landing-obsidian hover:text-landing-paper' : 'rounded-full bg-brand-navy text-white hover:bg-brand-navy/90'}`}
+                >
                   Đăng nhập
                 </Link>
               </>
@@ -250,7 +276,7 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
 
                 {/* Desktop Dropdown */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-[240px] bg-white rounded-xl shadow-lg border border-neutral-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 hidden md:block">
+                  <div className={`absolute right-0 top-full mt-2 w-[240px] rounded-xl border py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 hidden md:block ${variant === 'landing' ? 'border-landing-line bg-landing-paper shadow-md' : 'border-neutral-200 bg-white shadow-lg'}`}>
                     <div className="px-4 py-3 border-b border-neutral-100 flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-body-md shrink-0">
                         {currentUser.avatar ? <Image src={currentUser.avatar} alt="Avatar" width={40} height={40} unoptimized className="w-full h-full rounded-full object-cover" /> : displayInitial}
@@ -318,12 +344,12 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
               </button>
 
               {isNavMenuOpen && (
-                <nav className="absolute right-0 top-full z-50 mt-3 w-[240px] rounded-xl border border-neutral-200 bg-white p-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
+                <nav className={`absolute right-0 top-full z-50 mt-3 w-[240px] rounded-xl border p-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150 ${variant === 'landing' ? 'border-landing-line bg-landing-paper' : 'border-neutral-200 bg-white'}`}>
                   {navLinks.map((link) => (
                     <Link
                       key={link.label}
                       href={link.href}
-                      className={`block rounded-lg px-3 py-2.5 text-body-sm font-medium transition-colors hover:bg-neutral-50 hover:text-brand-navy ${pathname === link.href ? 'bg-brand-navy/5 text-brand-navy' : 'text-neutral-700'
+                      className={`block rounded-lg px-3 py-2.5 text-body-sm font-medium transition-colors ${variant === 'landing' ? 'text-landing-obsidian hover:bg-landing-ivory hover:text-landing-oxblood' : 'text-neutral-700 hover:bg-neutral-50 hover:text-brand-navy'} ${pathname === link.href ? (variant === 'landing' ? 'bg-landing-ivory text-landing-oxblood' : 'bg-brand-navy/5 text-brand-navy') : ''
                         }`}
                     >
                       {link.label}
@@ -363,76 +389,76 @@ export function SiteFooter({ variant = 'simple' }: { variant?: Exclude<FooterVar
 
 function MarketingFooter() {
   return (
-    <footer className="mt-auto border-t border-neutral-800 bg-[#0B1118] pt-16 pb-[96px] text-white md:pb-8">
+    <footer className="mt-auto overflow-hidden border-t border-landing-paper/10 bg-landing-obsidian pt-16 pb-[104px] text-landing-paper md:pb-10">
       <div className="mx-auto max-w-[1440px] px-4 md:px-8">
-        <div className="grid grid-cols-1 gap-10 border-b border-neutral-800/80 pb-14 md:grid-cols-2 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-10 border-b border-landing-paper/10 pb-14 md:grid-cols-2 lg:grid-cols-12">
           <div className="flex flex-col items-start lg:col-span-4">
-            <div className="mb-4">
-              <Logo size="md" variant="light" />
-            </div>
-            <p className="mb-6 max-w-sm text-body-sm leading-relaxed text-neutral-400">
-              Nền tảng thời trang công sở cao cấp tiên phong ứng dụng công nghệ thử đồ ảo AI. Chuẩn dáng từ đầu, đẹp từng đường may.
+            <Logo size="md" variant="light" />
+            <p className="mt-5 max-w-sm font-display text-2xl leading-tight text-landing-paper">
+              Chuẩn dáng từ đầu. Đẹp từng đường may.
+            </p>
+            <p className="mt-4 max-w-sm text-body-sm leading-relaxed text-landing-paper/55">
+              Thời trang công sở may đo, tuyển chọn cho nhịp sống hiện đại. Thử phom dáng bằng AI trước khi quyết định.
             </p>
           </div>
 
           <div className="lg:col-span-3">
-            <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-white">
-              BỘ SƯU TẬP & SẢN PHẨM
+            <h4 className="mb-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-brass">
+              Khám phá
             </h4>
-            <ul className="flex flex-col gap-3 text-body-sm text-neutral-400">
-              <li><a href="#collections" className="transition-colors hover:text-white">Bộ sưu tập mới 2026</a></li>
-              <li><Link href="/products" className="transition-colors hover:text-white">Blazer Nữ Công Sở</Link></li>
-              <li><Link href="/products" className="transition-colors hover:text-white">Suit Nguyên Bộ May Đo</Link></li>
-              <li><Link href="/products" className="transition-colors hover:text-white">Áo Sơ Mi Cao Cấp</Link></li>
-              <li><Link href="/products" className="transition-colors hover:text-white">Quần Tây & Chân Váy</Link></li>
-              <li><Link href="/try-on" className="font-medium text-white/90 transition-colors hover:text-white">✦ Phòng Thử Đồ AI Virtual Try-On</Link></li>
+            <ul className="flex flex-col gap-3 text-body-sm text-landing-paper/55">
+              <li><Link href="/#collections" className="transition-colors hover:text-landing-paper">Bộ sưu tập mới 2026</Link></li>
+              <li><Link href="/products" className="transition-colors hover:text-landing-paper">Toàn bộ sản phẩm</Link></li>
+              <li><Link href="/try-on" className="transition-colors hover:text-landing-paper">Phòng thử đồ AI</Link></li>
+              <li><Link href="/ai-stylist" className="transition-colors hover:text-landing-paper">AI Stylist</Link></li>
+              <li><Link href="/products" className="transition-colors hover:text-landing-paper">Blazer và suit</Link></li>
             </ul>
           </div>
 
           <div className="lg:col-span-2">
-            <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-white">
-              CHÍNH SÁCH
+            <h4 className="mb-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-brass">
+              Chính sách
             </h4>
-            <ul className="flex flex-col gap-3 text-body-sm text-neutral-400">
-              <li><Link href="/return-policy" className="transition-colors hover:text-white">Chính sách đổi trả 7 ngày</Link></li>
-              <li><Link href="/warranty" className="transition-colors hover:text-white">Chính sách bảo hành</Link></li>
-              <li><Link href="/size-guide" className="transition-colors hover:text-white">Hướng dẫn chọn size</Link></li>
-              <li><Link href="/privacy" className="transition-colors hover:text-white">Chính sách bảo mật</Link></li>
-              <li><Link href="/terms" className="transition-colors hover:text-white">Điều khoản dịch vụ</Link></li>
-              <li><Link href="/profile/orders" className="transition-colors hover:text-white">Tra cứu đơn hàng</Link></li>
+            <ul className="flex flex-col gap-3 text-body-sm text-landing-paper/55">
+              <li><Link href="/return-policy" className="transition-colors hover:text-landing-paper">Đổi trả 7 ngày</Link></li>
+              <li><Link href="/warranty" className="transition-colors hover:text-landing-paper">Bảo hành</Link></li>
+              <li><Link href="/size-guide" className="transition-colors hover:text-landing-paper">Hướng dẫn chọn size</Link></li>
+              <li><Link href="/privacy" className="transition-colors hover:text-landing-paper">Bảo mật</Link></li>
+              <li><Link href="/terms" className="transition-colors hover:text-landing-paper">Điều khoản</Link></li>
+              <li><Link href="/profile/orders" className="transition-colors hover:text-landing-paper">Tra cứu đơn hàng</Link></li>
             </ul>
           </div>
 
           <div className="lg:col-span-3">
-            <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-white">
-              THÔNG TIN LIÊN HỆ
+            <h4 className="mb-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-brass">
+              Liên hệ
             </h4>
-            <div className="flex flex-col gap-3 text-body-sm text-neutral-400">
+            <div className="flex flex-col gap-3 text-body-sm text-landing-paper/55">
               <div className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500" />
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-landing-brass" />
                 <span>Số 126 Nguyễn Thị Minh Khai, Phường 6, Quận 3, TP. Hồ Chí Minh</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 shrink-0 text-neutral-500" />
+                <Phone className="h-4 w-4 shrink-0 text-landing-brass" />
                 <span>Hotline: 1900 6868 (8:30 - 22:00)</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <Mail className="h-4 w-4 shrink-0 text-neutral-500" />
+                <Mail className="h-4 w-4 shrink-0 text-landing-brass" />
                 <span>contact@fashionai.vn</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <Clock className="h-4 w-4 shrink-0 text-neutral-500" />
+                <Clock className="h-4 w-4 shrink-0 text-landing-brass" />
                 <span>Mở cửa tất cả các ngày trong tuần</span>
               </div>
             </div>
 
             <div className="mt-6">
-              <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+              <div className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-paper/40">
                 Phương thức thanh toán
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {['VNPAY', 'MoMo'].map((item) => (
-                  <span key={item} className="rounded border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-[10px] font-bold text-neutral-300">
+                {['COD', 'Chuyển khoản', 'ZaloPay'].map((item) => (
+                  <span key={item} className="border border-landing-paper/15 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-landing-paper/55">
                     {item}
                   </span>
                 ))}
@@ -441,16 +467,22 @@ function MarketingFooter() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-4 pt-8 text-xs text-neutral-500 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-4 pt-8 text-[11px] text-landing-paper/35 sm:flex-row">
           <div>
-            &copy; 2026 StAle. FashionAI. Bản quyền thuộc về FashionAI Team. All rights reserved.
+            &copy; 2026 StAle. FashionAI. Bản quyền thuộc về FashionAI Team.
           </div>
-          <div className="flex items-center gap-6">
-            <Link href="/privacy" className="transition-colors hover:text-neutral-300">Bảo mật</Link>
-            <Link href="/terms" className="transition-colors hover:text-neutral-300">Điều khoản</Link>
-            <Link href="/products" className="transition-colors hover:text-neutral-300">Sitemap</Link>
-            <button type="button" onClick={openCookieSettings} className="transition-colors hover:text-neutral-300">Cài đặt cookie</button>
+          <div className="flex flex-wrap items-center gap-5">
+            <Link href="/privacy" className="transition-colors hover:text-landing-paper">Bảo mật</Link>
+            <Link href="/terms" className="transition-colors hover:text-landing-paper">Điều khoản</Link>
+            <Link href="/" className="transition-colors hover:text-landing-paper">Trang chủ</Link>
+            <button type="button" onClick={openCookieSettings} className="transition-colors hover:text-landing-paper">Cài đặt cookie</button>
           </div>
+        </div>
+
+        <div aria-hidden="true" className="mt-8 select-none overflow-hidden border-t border-landing-paper/10 pt-6">
+          <span className="block font-display text-[clamp(4rem,14vw,13rem)] leading-[0.8] tracking-[-0.05em] text-landing-paper/10">
+            StAle.
+          </span>
         </div>
       </div>
     </footer>
@@ -494,7 +526,7 @@ export function AppLayout({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-sans text-neutral-900 selection:bg-brand-navy selection:text-white">
+    <div className={`flex flex-col min-h-screen font-sans ${variant === 'landing' ? 'bg-landing-paper text-landing-obsidian selection:bg-landing-oxblood selection:text-landing-paper' : 'bg-white text-neutral-900 selection:bg-brand-navy selection:text-white'}`}>
       {beforeHeader}
       <Navigation variant={variant} onOpenCart={() => setIsCartOpen(true)} totalItems={totalItems} />
       <div className={`flex-1 w-full ${contentPadding} ${contentClassName}`}>

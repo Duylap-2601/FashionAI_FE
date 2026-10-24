@@ -1,94 +1,142 @@
 'use client';
 
-import { ArrowRight, Camera, CheckCircle2 } from 'lucide-react';
+import { LandingSectionHeading } from '@/features/home/components/LandingSectionHeading';
+import { LANDING_MEDIA } from '@/features/home/constants/landing-media';
+import type { Product } from '@/features/products/types/products';
+import { ArrowUpRight, Camera, Shirt, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
-export function AiTryOnFeatureBanner() {
+interface AiTryOnFeatureBannerProps {
+  previewProduct?: Product;
+}
+
+const STEPS = [
+  {
+    icon: Shirt,
+    title: 'Chọn món đồ',
+    body: 'Mở catalog và chọn thiết kế bạn muốn xem trên phom dáng của mình.',
+  },
+  {
+    icon: Camera,
+    title: 'Tải ảnh hoặc mở camera',
+    body: 'Đứng thẳng, ánh sáng đủ và giữ toàn thân trong khung hình.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Xem kết quả',
+    body: 'Đối chiếu phom dáng, màu sắc và chi tiết trước khi thêm vào giỏ.',
+  },
+] as const;
+
+export function AiTryOnFeatureBanner({ previewProduct }: AiTryOnFeatureBannerProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageSrc = previewProduct && !imageFailed ? previewProduct.image : LANDING_MEDIA.tryOn;
+  const tryOnHref = previewProduct ? `/try-on?productId=${previewProduct.id}` : '/try-on';
+
   return (
-    <section className="py-16 md:py-24 md:block hidden bg-gradient-to-b from-white to-[#F9F7F5] border-t border-neutral-200 ">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-8">
-        <div className="bg-[#1A1A24] rounded-3xl overflow-hidden shadow-2xl border border-white/10 p-8 sm:p-12 lg:p-16 relative">
-          {/* Ambient Glow */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-radial from-[#5D1C34]/40 via-[#A67D44]/15 to-transparent blur-3xl pointer-events-none" />
+    <section id="ai-try-on" className="relative scroll-mt-24 overflow-hidden bg-landing-paper py-16 md:py-24">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-6 top-10 font-display text-[14rem] leading-none text-landing-obsidian/[0.04] sm:text-[20rem]"
+      >
+        05
+      </span>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center relative z-10">
-            {/* Left: Content & 3 Steps */}
-            <div className="lg:col-span-7 flex flex-col items-start">
-              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-gold/15 border border-brand-gold/30 text-brand-gold text-xs font-bold uppercase tracking-wider mb-6">
-                CÔNG NGHỆ THỬ ĐỒ ĐỘC QUYỀN
-              </span>
+      <div className="relative mx-auto max-w-[1440px] px-4 md:px-8">
+        <div className="grid gap-12 lg:grid-cols-12 lg:items-start lg:gap-16">
+          <div className="lg:col-span-6">
+            <LandingSectionHeading
+              chapter="05"
+              eyebrow="AI Try-On"
+              title="Thử phom dáng trước khi quyết định."
+              description="Chọn một thiết kế, tải ảnh của bạn hoặc mở camera. Phòng thử sẽ ghép món đồ lên dáng người thật để bạn xem chi tiết."
+            />
 
-              <h2 className="text-[28px] sm:text-[38px] md:text-[44px] font-extrabold text-white tracking-tight leading-tight mb-4">
-                THỬ ĐỒ ẢO BẰNG AI <br className="hidden sm:inline" />
-                <span className="text-brand-gold">TRƯỚC KHI QUYẾT ĐỊNH MUA</span>
-              </h2>
+            <ol className="mt-8 space-y-5">
+              {STEPS.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                  <li key={step.title} className="flex gap-4 border-t border-landing-line/60 pt-4">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-landing-line text-landing-oxblood">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-[10px] tracking-[0.18em] text-landing-brass-ink">
+                          0{index + 1}
+                        </span>
+                        <h3 className="text-sm font-semibold text-landing-obsidian">{step.title}</h3>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-landing-muted">{step.body}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
 
-              <p className="text-white/75 text-body-md leading-relaxed mb-10 max-w-xl">
-                Không cần đến showroom hay băn khoăn về phom dáng. Công nghệ AI FASHN v1.6 cho phép bạn ghép trực tiếp bất kỳ món đồ nào từ bộ sưu tập lên ảnh thật của chính mình.
-              </p>
-
-              {/* 3 Steps */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full mb-10">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col">
-                  <span className="text-xs font-bold text-brand-gold tracking-widest uppercase mb-2">BƯỚC 01</span>
-                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white mb-3">
-                  </div>
-                  <h4 className="text-white font-semibold text-body-sm mb-1">Chọn trang phục</h4>
-                  <p className="text-white/60 text-xs leading-relaxed">Chọn món đồ bạn muốn thử từ các bộ sưu tập.</p>
-                </div>
-
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col">
-                  <span className="text-xs font-bold text-brand-gold tracking-widest uppercase mb-2">BƯỚC 02</span>
-                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white mb-3">
-                    <Camera className="w-5 h-5 text-brand-gold" />
-                  </div>
-                  <h4 className="text-white font-semibold text-body-sm mb-1">Tải ảnh của bạn</h4>
-                  <p className="text-white/60 text-xs leading-relaxed">Ảnh chụp rõ toàn thân đứng thẳng tự nhiên.</p>
-                </div>
-
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col">
-                  <span className="text-xs font-bold text-brand-gold tracking-widest uppercase mb-2">BƯỚC 03</span>
-                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white mb-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <h4 className="text-white font-semibold text-body-sm mb-1">Xem kết quả 30s</h4>
-                  <p className="text-white/60 text-xs leading-relaxed">AI xuất ảnh chân thực chuẩn phom để bạn ưng ý.</p>
-                </div>
-              </div>
-
-              {/* CTA button */}
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/try-on"
-                className="h-13 px-8 rounded-full bg-brand-gold hover:bg-[#b58b52] text-brand-navy font-bold text-body-sm inline-flex items-center gap-3 shadow-xl hover:scale-103 active:scale-97 transition-all duration-200"
+                className="group inline-flex h-12 items-center justify-center gap-2 bg-landing-oxblood px-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper transition-colors hover:bg-landing-obsidian"
               >
-                <span>TRẢI NGHIỆM VIRTUAL TRY-ON NGAY</span>
-                <ArrowRight className="w-4 h-4" />
+                Mở phòng thử AI
+                <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              </Link>
+              <Link
+                href={tryOnHref}
+                className="inline-flex h-12 items-center justify-center border border-landing-obsidian/25 px-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-obsidian transition-colors hover:border-landing-obsidian hover:bg-landing-obsidian hover:text-landing-paper"
+              >
+                Thử với sản phẩm này
               </Link>
             </div>
+          </div>
 
-            {/* Right: Visual Before/After Demo Preview */}
-            <div className="lg:col-span-5 flex justify-center">
-              <div className="relative w-full max-w-[380px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/15">
-                <Image
-                  src="https://images.unsplash.com/photo-1616065297556-f05bc00c9a3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=85"
-                  alt="AI Virtual Try On Result"
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 380px"
-                  className="object-cover object-top"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          <div className="mx-auto w-full max-w-[420px] lg:col-span-4 lg:col-start-9 lg:justify-self-end">
+            <div className="relative aspect-[4/5] overflow-hidden bg-landing-ivory">
+              <Image
+                src={imageSrc}
+                alt={previewProduct ? `Xem trước thử đồ AI cho ${previewProduct.name}` : 'Xem trước phòng thử đồ AI'}
+                fill
+                sizes="(max-width: 1024px) 420px, 420px"
+                className="object-cover object-top"
+                onError={() => setImageFailed(true)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-landing-obsidian/70 via-transparent to-landing-obsidian/10" />
 
-                <div className="absolute top-4 right-4 px-3 py-1 bg-emerald-500/90 backdrop-blur-sm text-white text-[11px] font-bold uppercase rounded-full shadow-md flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Kết quả AI thử đồ
+              <div className="pointer-events-none absolute inset-4 border border-landing-paper/20" aria-hidden="true" />
+              <span className="pointer-events-none absolute left-4 top-4 h-6 w-6 border-l border-t border-landing-paper/70" aria-hidden="true" />
+              <span className="pointer-events-none absolute right-4 top-4 h-6 w-6 border-r border-t border-landing-paper/70" aria-hidden="true" />
+              <span className="pointer-events-none absolute bottom-4 left-4 h-6 w-6 border-b border-l border-landing-paper/70" aria-hidden="true" />
+              <span className="pointer-events-none absolute bottom-4 right-4 h-6 w-6 border-b border-r border-landing-paper/70" aria-hidden="true" />
+
+              <div className="absolute left-6 top-6 flex items-center gap-2" aria-hidden="true">
+                <span className="h-1.5 w-1.5 rounded-full bg-landing-brass" />
+                <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-landing-paper/80">
+                  Try-On Studio
+                </span>
+              </div>
+              <span
+                className="absolute right-6 top-6 font-mono text-[9px] uppercase tracking-[0.2em] text-landing-paper/60"
+                aria-hidden="true"
+              >
+                Frame 01
+              </span>
+
+              <div className="absolute inset-x-6 bottom-6 flex items-end justify-between gap-4 border-t border-landing-paper/20 pt-4">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-landing-brass">
+                    {previewProduct ? 'Sản phẩm đang chọn' : 'Ảnh minh hoạ'}
+                  </p>
+                  <p className="mt-1 font-display text-xl leading-tight text-landing-paper">
+                    {previewProduct?.name || 'Chọn một thiết kế để bắt đầu'}
+                  </p>
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-landing-paper/50">
+                    {previewProduct ? 'Xem trước bằng ảnh sản phẩm' : 'Chưa chọn sản phẩm'}
+                  </p>
                 </div>
-
-                <div className="absolute bottom-6 left-6 right-6 text-white">
-                  <div className="text-xs text-brand-gold font-bold uppercase tracking-wider mb-1">Mẫu thử</div>
-                  <div className="text-body-md font-bold text-white mb-1">Blazer Nữ Công Sở Dáng Ôm</div>
-                  <div className="text-xs text-white/70">Độ chuẩn xác 95% • Tự động điều chỉnh theo số đo</div>
-                </div>
+                <Sparkles className="h-5 w-5 shrink-0 text-landing-brass" aria-hidden="true" />
               </div>
             </div>
           </div>
