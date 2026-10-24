@@ -31,6 +31,12 @@ import React, { useEffect, useRef, useState } from 'react';
 type LayoutVariant = 'app' | 'landing';
 type FooterVariant = 'simple' | 'marketing' | 'none';
 
+interface NavLink {
+  label: string;
+  href: string;
+  sectionId?: string;
+}
+
 interface NavigationProps {
   variant?: LayoutVariant;
   onOpenCart: () => void;
@@ -112,14 +118,14 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
   const searchInputWidth = variant === 'landing'
     ? 'w-[220px] focus:w-[260px] lg:w-[280px] lg:focus:w-[320px]'
     : 'w-[220px] focus:w-[260px] lg:w-[320px] lg:focus:w-[360px]';
-  const landingNavLinks = [
-    { label: 'Bộ sưu tập', href: '/#collections' },
-    { label: 'Sản phẩm', href: '/products' },
-    { label: 'Lookbook', href: '/#lookbook' },
-    { label: 'AI Stylist', href: stylistHref },
-    { label: 'Try-On', href: tryOnHref },
+  const landingNavLinks: NavLink[] = [
+    { label: 'Bộ sưu tập', href: '#collections', sectionId: 'collections' },
+    { label: 'Sản phẩm', href: '#featured-products', sectionId: 'featured-products' },
+    { label: 'Lookbook', href: '#lookbook', sectionId: 'lookbook' },
+    { label: 'AI Stylist', href: '#ai-stylist', sectionId: 'ai-stylist' },
+    { label: 'Try-On', href: '#ai-try-on', sectionId: 'ai-try-on' },
   ];
-  const navLinks = currentUser.role === 'admin'
+  const navLinks: NavLink[] = currentUser.role === 'admin'
     ? [
       { label: 'Dashboard', href: '/admin/dashboard' },
     ]
@@ -131,6 +137,21 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
         { label: 'Stylist', href: stylistHref },
         { label: 'Trợ lý AI', href: chatHref },
       ];
+
+  const handleSectionScroll = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    sectionId: string,
+  ) => {
+    event.preventDefault();
+    const target = document.getElementById(sectionId);
+    if (!target) {
+      router.push(`/#${sectionId}`);
+      return;
+    }
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.history.replaceState(null, '', `#${sectionId}`);
+    setIsNavMenuOpen(false);
+  };
 
   const getTierColor = (tier?: string) => {
     switch (tier?.toLowerCase()) {
@@ -170,13 +191,16 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
           {variant === 'landing' && currentUser.role !== 'admin' ? (
             <nav className="hidden items-center gap-5 xl:flex" aria-label="Điều hướng landing">
               {landingNavLinks.map((link) => (
-                <Link
+                <a
                   key={link.label}
                   href={link.href}
+                  onClick={(event) => {
+                    if (link.sectionId) handleSectionScroll(event, link.sectionId);
+                  }}
                   className="text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian/65 transition-colors hover:text-landing-oxblood"
                 >
                   {link.label}
-                </Link>
+                </a>
               ))}
             </nav>
           ) : null}
@@ -345,16 +369,34 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
 
               {isNavMenuOpen && (
                 <nav className={`absolute right-0 top-full z-50 mt-3 w-[240px] rounded-xl border p-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150 ${variant === 'landing' ? 'border-landing-line bg-landing-paper' : 'border-neutral-200 bg-white'}`}>
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.label}
-                      href={link.href}
-                      className={`block rounded-lg px-3 py-2.5 text-body-sm font-medium transition-colors ${variant === 'landing' ? 'text-landing-obsidian hover:bg-landing-ivory hover:text-landing-oxblood' : 'text-neutral-700 hover:bg-neutral-50 hover:text-brand-navy'} ${pathname === link.href ? (variant === 'landing' ? 'bg-landing-ivory text-landing-oxblood' : 'bg-brand-navy/5 text-brand-navy') : ''
-                        }`}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                  {navLinks.map((link) => {
+                    const className = `block rounded-lg px-3 py-2.5 text-body-sm font-medium transition-colors ${variant === 'landing' ? 'text-landing-obsidian hover:bg-landing-ivory hover:text-landing-oxblood' : 'text-neutral-700 hover:bg-neutral-50 hover:text-brand-navy'} ${pathname === link.href ? (variant === 'landing' ? 'bg-landing-ivory text-landing-oxblood' : 'bg-brand-navy/5 text-brand-navy') : ''
+                      }`;
+                    const sectionId = link.sectionId;
+
+                    if (sectionId) {
+                      return (
+                        <a
+                          key={link.label}
+                          href={link.href}
+                          onClick={(event) => handleSectionScroll(event, sectionId)}
+                          className={className}
+                        >
+                          {link.label}
+                        </a>
+                      );
+                    }
+
+                    return (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        className={className}
+                      >
+                        {link.label}
+                      </Link>
+                    );
+                  })}
                 </nav>
               )}
             </div>

@@ -118,6 +118,7 @@ export function HeroBanner({ collections }: HeroBannerProps) {
         <div className="absolute inset-0 bg-gradient-to-r from-landing-obsidian via-landing-obsidian/75 to-landing-obsidian/10" />
         <div className="absolute inset-0 bg-gradient-to-t from-landing-obsidian via-landing-obsidian/15 to-landing-obsidian/20" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_45%,rgba(93,28,52,0.22),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_left,rgba(17,16,15,0.72)_0%,rgba(17,16,15,0.3)_42%,transparent_66%)]" />
       </div>
 
       <p className="sr-only" aria-live="polite">
@@ -167,6 +168,37 @@ export function HeroBanner({ collections }: HeroBannerProps) {
             </Link>
           </div>
         </div>
+
+        <motion.div
+          className="pointer-events-none absolute right-20 top-48 hidden xl:block"
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 0.9,
+            delay: shouldReduceMotion ? 0 : 0.3,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          aria-hidden="true"
+        >
+          <div className="relative">
+            <div className="relative flex flex-col items-end">
+              <div className="flex items-center gap-3">
+                <span className="h-px w-12 bg-landing-brass/55" />
+                <span className="font-mono text-[10px] font-medium uppercase tracking-[0.34em] text-landing-brass/90">
+                  Atelier N° 01
+                </span>
+              </div>
+              <Image
+                src="/icons/brand-wordmark-paper.png"
+                alt=""
+                width={747}
+                height={307}
+                className="mt-6 h-[clamp(4.5rem,7.5vw,7.5rem)] w-auto"
+              />
+              <span className="mt-6 h-px w-24 bg-gradient-to-l from-landing-brass/60 to-transparent" />
+            </div>
+          </div>
+        </motion.div>
 
         <div className="mt-16 flex flex-col gap-6 border-t border-landing-paper/15 pt-5 sm:flex-row sm:items-end sm:justify-between">
           <span className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55">
