@@ -8,7 +8,7 @@ import type { ProductGridProps } from '@/features/home/types/product-grid';
 import { GARMENT_TYPE_TABS } from '@/features/products/constants/product-filters';
 import { matchesGarmentType } from '@/features/products/services/product-filters';
 import type { Product } from '@/features/products/types/products';
-import { ArrowUpRight, Eye, ShoppingBag, Sparkles, Star } from 'lucide-react';
+import { ArrowUpRight, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -189,27 +189,20 @@ export function ProductGrid({
                         onClick={(event) => handleQuickAdd(product, event)}
                         className="flex h-10 flex-1 items-center justify-center gap-1.5 bg-landing-obsidian text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-paper transition-colors hover:bg-landing-oxblood disabled:opacity-50"
                         title="Thêm vào giỏ hàng"
+                        aria-label="Thêm vào giỏ hàng"
                       >
                         <ShoppingBag className="h-3.5 w-3.5" />
-                        <span>Thêm giỏ</span>
+                        <span className="hidden sm:inline">Thêm giỏ</span>
                       </button>
                       <button
                         type="button"
                         onClick={(event) => handleTryOn(product, event)}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center border border-landing-line bg-landing-paper/95 text-landing-oxblood backdrop-blur-sm transition-colors hover:bg-landing-oxblood hover:text-landing-paper"
+                        className="flex h-10 flex-1 items-center justify-center border border-landing-line bg-landing-paper/95 text-landing-oxblood backdrop-blur-sm transition-colors hover:bg-landing-oxblood hover:text-landing-paper sm:w-10 sm:flex-none"
                         title="Thử đồ AI"
                         aria-label="Thử đồ AI"
                       >
                         <Sparkles className="h-4 w-4" />
                       </button>
-                      <Link
-                        href={`/products/${product.id}`}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center border border-landing-line bg-landing-paper/90 text-landing-obsidian transition-colors hover:bg-landing-obsidian hover:text-landing-paper"
-                        title="Xem chi tiết"
-                        aria-label="Xem chi tiết"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Link>
                     </div>
                   </div>
 

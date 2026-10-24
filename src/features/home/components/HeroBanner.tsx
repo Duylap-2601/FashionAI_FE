@@ -125,7 +125,7 @@ export function HeroBanner({ collections }: HeroBannerProps) {
         {activeSlide.name}
       </p>
 
-      <div className="relative z-10 mx-auto flex min-h-[720px] w-full max-w-[1440px] flex-col justify-between px-4 pb-8 pt-20 md:min-h-[800px] md:px-8 md:pb-10 md:pt-28 lg:min-h-[860px] lg:pt-32">
+      <div className="relative z-10 mx-auto flex min-h-[560px] w-full max-w-[1440px] flex-col justify-between px-4 pb-8 pt-14 sm:px-6 sm:pt-20 md:min-h-[800px] md:px-8 md:pb-10 md:pt-28 lg:min-h-[860px] lg:pt-32">
         <div className="max-w-[720px]">
           <div className="flex items-center gap-3 text-landing-label font-semibold uppercase tracking-[0.22em] text-landing-brass">
             <span className="h-px w-12 bg-landing-brass" />
@@ -140,11 +140,11 @@ export function HeroBanner({ collections }: HeroBannerProps) {
               exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              <h1 className="mt-7 font-display text-landing-display tracking-[-0.025em] text-landing-paper">
+              <h1 className="mt-6 font-display text-[clamp(2.1rem,10.5vw,2.7rem)] leading-[1.1] tracking-[-0.025em] text-landing-paper sm:mt-7 sm:text-landing-display">
                 <span className="block">
                   Mặc đúng <em className="font-normal italic text-landing-brass">dáng</em>.
                 </span>
-                <span className="mt-8 block">
+                <span className="mt-3 block sm:mt-6 lg:mt-8">
                   Sống đúng <em className="font-normal italic text-landing-brass">chất</em>.
                 </span>
               </h1>
@@ -152,7 +152,7 @@ export function HeroBanner({ collections }: HeroBannerProps) {
             </motion.div>
           </AnimatePresence>
 
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:items-center">
             <Link
               href="#collections"
               className="group inline-flex h-12 items-center justify-center gap-3 border border-landing-paper bg-landing-paper px-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-obsidian transition-colors hover:border-landing-brass hover:bg-landing-brass"
@@ -166,6 +166,19 @@ export function HeroBanner({ collections }: HeroBannerProps) {
             >
               Thử đồ AI
             </Link>
+          </div>
+
+          <div className="mt-8 flex items-center justify-between gap-4 border-t border-landing-paper/15 pt-4 md:hidden">
+            <span className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55">
+              {String(safeIndex + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+            </span>
+            <HeroPagination
+              slides={slides}
+              activeIndex={safeIndex}
+              onSelect={setActiveIndex}
+              onPrev={handlePrev}
+              onNext={handleNext}
+            />
           </div>
         </div>
 
@@ -200,48 +213,18 @@ export function HeroBanner({ collections }: HeroBannerProps) {
           </div>
         </motion.div>
 
-        <div className="mt-16 flex flex-col gap-6 border-t border-landing-paper/15 pt-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mt-16 hidden items-end justify-between gap-6 border-t border-landing-paper/15 pt-5 md:flex">
           <span className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55">
             {String(safeIndex + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
           </span>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5" aria-label="Chọn bộ sưu tập">
-              {slides.map((slide, index) => (
-                <button
-                  key={slide.id}
-                  type="button"
-                  onClick={() => setActiveIndex(index)}
-                  aria-label={`Xem ${slide.name}`}
-                  aria-current={safeIndex === index ? 'true' : undefined}
-                  className={cn(
-                    'h-1.5 transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-brass',
-                    safeIndex === index
-                      ? 'w-8 bg-landing-brass'
-                      : 'w-3 bg-landing-paper/30 hover:bg-landing-paper/60',
-                  )}
-                />
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={handlePrev}
-              disabled={slides.length <= 1}
-              aria-label="Bộ sưu tập trước"
-              className="flex h-11 w-11 items-center justify-center border border-landing-paper/25 text-landing-paper transition-colors hover:border-landing-paper hover:bg-landing-paper hover:text-landing-obsidian disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={slides.length <= 1}
-              aria-label="Bộ sưu tập tiếp theo"
-              className="flex h-11 w-11 items-center justify-center border border-landing-paper/25 text-landing-paper transition-colors hover:border-landing-paper hover:bg-landing-paper hover:text-landing-obsidian disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          <HeroPagination
+            slides={slides}
+            activeIndex={safeIndex}
+            onSelect={setActiveIndex}
+            onPrev={handlePrev}
+            onNext={handleNext}
+          />
         </div>
       </div>
 
@@ -249,5 +232,55 @@ export function HeroBanner({ collections }: HeroBannerProps) {
         Saigon / Issue 01 / 2026
       </div>
     </section>
+  );
+}
+
+interface HeroPaginationProps {
+  slides: HeroSlide[];
+  activeIndex: number;
+  onSelect: (index: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
+function HeroPagination({ slides, activeIndex, onSelect, onPrev, onNext }: HeroPaginationProps) {
+  return (
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5" aria-label="Chọn bộ sưu tập">
+        {slides.map((slide, index) => (
+          <button
+            key={slide.id}
+            type="button"
+            onClick={() => onSelect(index)}
+            aria-label={`Xem ${slide.name}`}
+            aria-current={activeIndex === index ? 'true' : undefined}
+            className={cn(
+              'h-1.5 transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-brass',
+              activeIndex === index
+                ? 'w-8 bg-landing-brass'
+                : 'w-3 bg-landing-paper/30 hover:bg-landing-paper/60',
+            )}
+          />
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={onPrev}
+        disabled={slides.length <= 1}
+        aria-label="Bộ sưu tập trước"
+        className="flex h-11 w-11 items-center justify-center border border-landing-paper/25 text-landing-paper transition-colors hover:border-landing-paper hover:bg-landing-paper hover:text-landing-obsidian disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={slides.length <= 1}
+        aria-label="Bộ sưu tập tiếp theo"
+        className="flex h-11 w-11 items-center justify-center border border-landing-paper/25 text-landing-paper transition-colors hover:border-landing-paper hover:bg-landing-paper hover:text-landing-obsidian disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
   );
 }

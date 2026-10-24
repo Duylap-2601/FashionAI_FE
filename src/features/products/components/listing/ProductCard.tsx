@@ -49,11 +49,12 @@ export function ProductCard({ product, pinned, onToggleRack, onAddToCart }: Prod
               e.stopPropagation();
               onAddToCart(product);
             }}
-            className="h-8 flex-1 rounded-md bg-brand-navy text-white text-[11px] font-bold shadow-sm flex items-center justify-center gap-1.5 hover:bg-brand-navy/90"
+            className="h-8 w-8 shrink-0 rounded-md bg-brand-navy text-white text-[11px] font-bold shadow-sm flex items-center justify-center gap-1.5 hover:bg-brand-navy/90 sm:w-auto sm:flex-1"
             title="Thêm nhanh vào giỏ"
+            aria-label="Thêm nhanh vào giỏ"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Thêm giỏ</span>
+            <span className="hidden sm:inline">Thêm giỏ</span>
           </button>
           <button
             type="button"

@@ -13,8 +13,10 @@ import { HeaderSearch } from '@/features/products/components/HeaderSearch';
 import { SEARCH_HISTORY_KEY } from '@/features/products/constants/header-search';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import {
+  Banknote,
   Bell,
   Clock,
+  Landmark,
   LogOut, Mail, MapPin, Menu, Package, Phone, Ruler,
   ShoppingBag,
   Star,
@@ -429,6 +431,28 @@ export function SiteFooter({ variant = 'simple' }: { variant?: Exclude<FooterVar
   );
 }
 
+function PaymentMethodIcon({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className="flex h-10 w-10 items-center justify-center border border-landing-paper/15 bg-landing-paper/[0.03] text-landing-paper/55 transition-colors hover:border-landing-brass/60 hover:bg-landing-brass/10 hover:text-landing-paper"
+    >
+      {children}
+    </span>
+  );
+}
+
+function ZaloPayMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <rect width="24" height="24" rx="6" fill="#0068FF" />
+      <path d="M7.5 6.5h9v2.4l-5.6 6.2h5.6v2.4h-9v-2.4l5.6-6.2H7.5V6.5Z" fill="#fff" />
+    </svg>
+  );
+}
+
 function MarketingFooter() {
   return (
     <footer className="mt-auto overflow-hidden border-t border-landing-paper/10 bg-landing-obsidian pt-16 pb-[104px] text-landing-paper md:pb-10">
@@ -499,11 +523,15 @@ function MarketingFooter() {
                 Phương thức thanh toán
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {['COD', 'Chuyển khoản', 'ZaloPay'].map((item) => (
-                  <span key={item} className="border border-landing-paper/15 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-landing-paper/55">
-                    {item}
-                  </span>
-                ))}
+                <PaymentMethodIcon label="Thanh toán khi nhận hàng (COD)">
+                  <Banknote className="h-[18px] w-[18px]" />
+                </PaymentMethodIcon>
+                <PaymentMethodIcon label="Chuyển khoản ngân hàng">
+                  <Landmark className="h-[18px] w-[18px]" />
+                </PaymentMethodIcon>
+                <PaymentMethodIcon label="Ví ZaloPay">
+                  <ZaloPayMark className="h-5 w-5" />
+                </PaymentMethodIcon>
               </div>
             </div>
           </div>
