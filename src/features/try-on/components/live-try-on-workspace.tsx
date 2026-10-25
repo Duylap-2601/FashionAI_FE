@@ -4,11 +4,12 @@ import type { Product } from '@/features/products/types/products';
 import { getValidProductColors, normalizeProductColorName, resolveProductImageForColor } from '@/features/products/services/products-utils';
 import { useLiveTryOnQuota } from '@/features/subscription/hooks/useQuota';
 import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
+import { useAutoCapture, type LiveCapture } from '@/features/try-on/hooks/use-live-auto-capture';
 import type { LiveTryOnSessionItem } from '@/features/try-on/types/live-try-on';
 import { trackEvent } from '@/lib/analytics';
-import { ArrowRight, Camera, Check, ChevronDown, CirclePause, Expand, Image as ImageIcon, Layers, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer } from 'lucide-react';
+import { ArrowRight, Camera, CameraOff, Check, ChevronDown, CirclePause, Download, Expand, Image as ImageIcon, Layers, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer, Trash2, X, Aperture } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const LAYER_ROLE_LABELS: Record<string, string> = {
   OUTER: 'Lớp ngoài',
@@ -68,6 +69,8 @@ export function LiveTryOnWorkspace({
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const live = useLiveTryOn();
+  const autoCapture = useAutoCapture(remoteVideoRef, live.status === 'live', live.sessionId);
+  const [viewingCapture, setViewingCapture] = useState<LiveCapture | null>(null);
   const { cameraStream, remoteStream, markFirstFrame } = live;
   const { quota, isLoading, isError, refetch } = useLiveTryOnQuota();
   const activeSession = live.status === 'ended' ? null : quota?.activeSession;
@@ -189,6 +192,70 @@ export function LiveTryOnWorkspace({
                   <span className="pr-2 pl-1 text-[10px] font-medium text-neutral-200">
                     {live.appliedGarment.items.length} món
                   </span>
+                </div>
+              )}
+              {/* --- Auto-capture controls overlay --- */}
+              {isLive && (
+                <div className="absolute right-4 top-4 flex items-center gap-1.5">
+                  {autoCapture.isAutoCapturing && (
+                    <span className="flex items-center gap-1.5 rounded-full bg-[#211B1B]/75 px-2.5 py-1.5 text-[10px] font-medium text-white backdrop-blur-md">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                      </span>
+                      Tự chụp
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={autoCapture.captureNow}
+                    title="Chụp ngay"
+                    className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30 ${buttonFocus}`}
+                  >
+                    <Aperture size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => autoCapture.setAutoCapture(!autoCapture.isAutoCapturing)}
+                    title={autoCapture.isAutoCapturing ? 'Tắt tự chụp' : 'Bật tự chụp'}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md transition-colors ${buttonFocus} ${autoCapture.isAutoCapturing ? 'bg-[#5D1C34]/80 text-white hover:bg-[#5D1C34]' : 'bg-white/20 text-white/60 hover:bg-white/30 hover:text-white'}`}
+                  >
+                    {autoCapture.isAutoCapturing ? <Camera size={16} /> : <CameraOff size={16} />}
+                  </button>
+                </div>
+              )}
+              {/* --- Captures thumbnail strip --- */}
+              {autoCapture.captures.length > 0 && (isLive || isPaused) && (
+                <div className="absolute bottom-14 left-4 right-28 sm:right-36">
+                  <div className="flex items-end gap-2 overflow-x-auto rounded-xl bg-[#211B1B]/60 p-2 backdrop-blur-md scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                    {autoCapture.captures.map((cap, idx) => (
+                      <button
+                        key={cap.id}
+                        type="button"
+                        onClick={() => setViewingCapture(cap)}
+                        className={`group/thumb relative shrink-0 overflow-hidden rounded-lg border border-white/20 transition-all hover:border-white/50 hover:scale-105 ${buttonFocus}`}
+                        title={`Ảnh chụp ${idx + 1} — ${new Date(cap.capturedAt).toLocaleTimeString('vi-VN')}`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={cap.dataUrl} alt={`Ảnh chụp ${idx + 1}`} className="h-14 w-11 object-cover sm:h-16 sm:w-12" />
+                        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent py-0.5 text-center text-[8px] text-white">
+                          {new Date(cap.capturedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <span className="text-[10px] text-white/50">{autoCapture.captures.length} ảnh đã chụp</span>
+                    {autoCapture.captures.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={autoCapture.clearCaptures}
+                        className={`text-[10px] text-white/50 hover:text-white/80 ${buttonFocus}`}
+                      >
+                        Xoá tất cả
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
               <div className={`absolute bottom-4 right-4 w-[88px] overflow-hidden rounded-2xl border border-white/30 bg-[#332E2B] shadow-lg sm:w-[112px] ${cameraStream ? '' : 'hidden'}`}>
@@ -380,6 +447,17 @@ export function LiveTryOnWorkspace({
           <button type="button" disabled={hasSession || isBusy} onClick={onSwitchToPhoto} className={`flex min-h-11 w-full items-center justify-center gap-2 text-[12px] text-[#8A7871] hover:text-[#5D1C34] ${buttonFocus}`}><ImageIcon size={15} />Thử bằng ảnh<ArrowRight size={14} /></button>
         </div>
       </div>
+      {/* --- Full-screen capture viewer --- */}
+      {viewingCapture && (
+        <CaptureViewer
+          capture={viewingCapture}
+          captures={autoCapture.captures}
+          onClose={() => setViewingCapture(null)}
+          onNavigate={setViewingCapture}
+          onDownload={autoCapture.downloadCapture}
+          onRemove={(c) => { autoCapture.removeCapture(c.id); setViewingCapture(null); }}
+        />
+      )}
     </section>
   );
 }
@@ -530,4 +608,107 @@ function reasonLabel(reason?: string) {
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+// ---------------------------------------------------------------------------
+// Capture Viewer Modal
+// ---------------------------------------------------------------------------
+
+function CaptureViewer({
+  capture,
+  captures,
+  onClose,
+  onNavigate,
+  onDownload,
+  onRemove,
+}: {
+  capture: LiveCapture;
+  captures: LiveCapture[];
+  onClose: () => void;
+  onNavigate: (c: LiveCapture) => void;
+  onDownload: (c: LiveCapture) => void;
+  onRemove: (c: LiveCapture) => void;
+}) {
+  const idx = captures.findIndex((c) => c.id === capture.id);
+  const hasPrev = idx > 0;
+  const hasNext = idx < captures.length - 1;
+
+  useEffect(() => {
+    const handle = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft' && hasPrev) onNavigate(captures[idx - 1]);
+      if (e.key === 'ArrowRight' && hasNext) onNavigate(captures[idx + 1]);
+    };
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
+  }, [onClose, onNavigate, captures, idx, hasPrev, hasNext]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-label="Xem ảnh chụp"
+    >
+      <div className="relative flex max-h-[90svh] max-w-[90vw] flex-col items-center">
+        {/* Top bar */}
+        <div className="mb-3 flex w-full items-center justify-between gap-4">
+          <span className="rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-medium text-white">
+            {idx + 1} / {captures.length} — {new Date(capture.capturedAt).toLocaleTimeString('vi-VN')}
+          </span>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => onDownload(capture)} className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 ${buttonFocus}`} title="Tải xuống">
+              <Download size={16} />
+            </button>
+            <button type="button" onClick={() => onRemove(capture)} className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-red-300 transition-colors hover:bg-red-500/30 ${buttonFocus}`} title="Xoá ảnh này">
+              <Trash2 size={16} />
+            </button>
+            <button type="button" onClick={onClose} className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 ${buttonFocus}`} title="Đóng">
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+        {/* Image */}
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={capture.dataUrl} alt={`Ảnh chụp thử đồ ${idx + 1}`} className="max-h-[75svh] max-w-full object-contain" />
+        </div>
+        {/* Navigation arrows */}
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            type="button"
+            disabled={!hasPrev}
+            onClick={() => hasPrev && onNavigate(captures[idx - 1])}
+            className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 disabled:opacity-30 ${buttonFocus}`}
+            aria-label="Ảnh trước"
+          >
+            <ArrowRight size={18} className="rotate-180" />
+          </button>
+          {/* Thumbnail strip */}
+          <div className="flex items-center gap-1.5 overflow-x-auto px-1">
+            {captures.map((c, i) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => onNavigate(c)}
+                className={`shrink-0 overflow-hidden rounded-md border-2 transition-all ${buttonFocus} ${c.id === capture.id ? 'border-[#5D1C34] scale-110' : 'border-white/20 opacity-60 hover:opacity-100'}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.dataUrl} alt={`Ảnh ${i + 1}`} className="h-10 w-8 object-cover" />
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            disabled={!hasNext}
+            onClick={() => hasNext && onNavigate(captures[idx + 1])}
+            className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 disabled:opacity-30 ${buttonFocus}`}
+            aria-label="Ảnh tiếp"
+          >
+            <ArrowRight size={18} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
