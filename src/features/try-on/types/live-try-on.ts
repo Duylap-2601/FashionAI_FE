@@ -2,12 +2,31 @@ export type LiveTryOnStatus = 'idle' | 'requesting-camera' | 'preparing-garment'
 
 export type LiveTryOnServerStatus = 'ACTIVE' | 'PAUSING' | 'PAUSED' | 'RESUMING' | 'ENDING' | 'ENDED' | 'EXPIRED' | 'FAILED';
 
+export type LiveTryOnLayerRole = 'OUTER' | 'INNER' | 'BOTTOM' | 'FULL_BODY';
+
+export interface LiveTryOnComboItem {
+  productId: string;
+  name: string;
+  imageUrl: string;
+  layerRole: LiveTryOnLayerRole;
+  category: 'UPPER' | 'LOWER' | 'FULL_BODY';
+  color?: string | null;
+  isPrimary?: boolean;
+}
+
 export interface LiveTryOnGarment {
   productId: string;
   imageUrl: string;
   prompt: string;
   category: 'UPPER' | 'LOWER' | 'FULL_BODY';
+  layerRole?: LiveTryOnLayerRole;
   color?: string | null;
+  items?: LiveTryOnComboItem[];
+}
+
+export interface LiveTryOnSessionItem {
+  productId: string;
+  color?: string;
 }
 
 export interface LiveTryOnSessionResponse {

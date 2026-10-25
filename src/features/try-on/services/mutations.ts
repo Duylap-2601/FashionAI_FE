@@ -1,7 +1,8 @@
 import type { TryOnRequest, TryOnResult } from '@/features/try-on/types/try-on';
-import type { LiveTryOnEndResponse, LiveTryOnSessionResponse, LiveTryOnSessionStatusResponse } from '@/features/try-on/types/live-try-on';
+import type { LiveTryOnEndResponse, LiveTryOnGarment, LiveTryOnSessionItem, LiveTryOnSessionResponse, LiveTryOnSessionStatusResponse } from '@/features/try-on/types/live-try-on';
 import { getAuthSnapshot } from '@/features/auth/store/authStore';
 import { http } from '@/lib/http';
+import { getValidAccessToken } from '@/lib/api';
 
 export async function submitTryOn(payload: TryOnRequest) {
   const formData = new FormData();
@@ -44,6 +45,36 @@ export async function submitTryOn(payload: TryOnRequest) {
     if (payload.color) formData.append('color', payload.color);
   }
 
+  // In browser, use raw fetch directly to /api/try-on —
+  // the dedicated Next.js route handler with a 5-minute maxDuration.
+  // In non-browser / test environments, use http.post('/try-on').
+  if (typeof window !== 'undefined' && typeof fetch === 'function') {
+    const accessToken = await getValidAccessToken();
+
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), 290_000); // 4m50s client guard
+
+    try {
+      const res = await fetch('/api/try-on', {
+        method: 'POST',
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        body: formData,
+        signal: ac.signal,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw Object.assign(new Error(err?.message ?? 'Try-on failed'), { status: res.status, data: err });
+      }
+
+      // Unwrap backend envelope: { data: TryOnResult } or TryOnResult directly
+      const json = await res.json() as { data?: TryOnResult } | TryOnResult;
+      return ('data' in json && json.data !== undefined ? json.data : json) as TryOnResult;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   return http.post<TryOnResult, FormData>('/try-on', formData, {
     timeout: 180000,
   });
@@ -60,13 +91,31 @@ export async function deleteManyTryOnHistory(ids: string[]) {
   return ids;
 }
 
-export async function createLiveTryOnSession(productId: string, idempotencyKey: string, signal?: AbortSignal, color?: string) {
-  const body: { productId: string; color?: string } = { productId };
-  if (color) body.color = color;
-  return http.post<LiveTryOnSessionResponse, { productId: string; color?: string }>('/try-on/live/sessions', body, {
+export async function createLiveTryOnSession(
+  items: LiveTryOnSessionItem[] | string,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+  color?: string,
+) {
+  const body = Array.isArray(items)
+    ? { items }
+    : { productId: items, ...(color ? { color } : {}) };
+  return http.post<LiveTryOnSessionResponse, typeof body>('/try-on/live/sessions', body, {
     headers: { 'Idempotency-Key': idempotencyKey },
     signal,
   });
+}
+
+export async function previewLiveTryOnGarment(
+  items: LiveTryOnSessionItem[],
+  signal?: AbortSignal,
+): Promise<LiveTryOnGarment> {
+  const res = await http.post<{ garment: LiveTryOnGarment } | LiveTryOnGarment, { items: LiveTryOnSessionItem[] }>(
+    '/try-on/live/garments/preview',
+    { items },
+    { signal },
+  );
+  return res && typeof res === 'object' && 'garment' in res && res.garment ? res.garment : (res as LiveTryOnGarment);
 }
 
 export async function endLiveTryOnSession(sessionId: string, reason = 'client_end') {

@@ -24,9 +24,15 @@ const nextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
     formats: ['image/avif', 'image/webp'],
+    // Cache successfully optimised images for 30 days
     minimumCacheTTL: 2592000,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Use a custom Cloudinary loader so the Next.js <Image> component builds
+    // native Cloudinary transformation URLs instead of proxying through
+    // /_next/image (which fetches the origin and times out on large images).
+    // For non-Cloudinary URLs the loader falls back to the default behaviour.
+    loaderFile: './src/lib/cloudinary-image-loader.ts',
   },
   eslint: {
     dirs: ['src'],

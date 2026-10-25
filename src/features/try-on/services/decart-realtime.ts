@@ -17,7 +17,7 @@ export interface DecartRealtimeCallbacks {
 interface DecartConnectionShape {
   disconnect?: () => void | Promise<void>;
   close?: () => void | Promise<void>;
-  set?: (state: { prompt: string; image: Blob | string }) => void | Promise<void>;
+  set?: (state: { prompt: string; image: Blob | string; enhance?: boolean }) => void | Promise<void>;
   setImage?: (image: Blob | string) => void | Promise<void>;
   on?: (event: string, listener: (...args: unknown[]) => void) => void;
   off?: (event: string, listener: (...args: unknown[]) => void) => void;
@@ -59,7 +59,7 @@ export async function connectDecartRealtime(
   const garmentImage = reference?.image ?? await fetchGarmentBlob(session.garment.imageUrl);
   callbacks.onDiagnostic?.(`garment downloaded ${Math.round(garmentImage.size / 1024)}KB`);
   if (connection.set) {
-    await connection.set({ prompt: reference?.prompt ?? session.garment.prompt, image: garmentImage });
+    await connection.set({ prompt: reference?.prompt ?? session.garment.prompt, image: garmentImage, enhance: false });
     callbacks.onDiagnostic?.('garment state applied');
   }
   const remoteStream = await remoteStreamWaiter.promise;

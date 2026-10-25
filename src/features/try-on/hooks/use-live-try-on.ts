@@ -1,11 +1,9 @@
 'use client';
 
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { fetchLiveTryOnGarment } from '@/features/try-on/services/queries';
-import { prepareLiveOutfitReference } from '@/features/try-on/services/live-outfit-reference';
 import { createLiveTryOnSession, endLiveTryOnSession, pauseLiveTryOnSession, pauseLiveTryOnSessionKeepalive, resumeLiveTryOnSession } from '@/features/try-on/services/mutations';
 import { connectDecartRealtime, getDecartRealtimeVideoConstraints, type LiveConnection } from '@/features/try-on/services/decart-realtime';
-import type { LiveTryOnGarment, LiveTryOnSessionResponse, LiveTryOnStatus } from '@/features/try-on/types/live-try-on';
+import type { LiveTryOnGarment, LiveTryOnSessionItem, LiveTryOnSessionResponse, LiveTryOnStatus } from '@/features/try-on/types/live-try-on';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function useLiveTryOn() {
@@ -124,7 +122,13 @@ export function useLiveTryOn() {
     }, 500);
   }, [cleanup, clearCountdown]);
 
-  const start = useCallback(async (productId: string, resumeSessionId?: string, lowerProductId?: string, color?: string, lowerColor?: string) => {
+  const start = useCallback(async (
+    target: LiveTryOnSessionItem[] | string,
+    resumeSessionId?: string,
+    lowerProductId?: string,
+    color?: string,
+    lowerColor?: string,
+  ) => {
     const epoch = epochRef.current + 1;
     epochRef.current = epoch;
     const abort = new AbortController();
@@ -137,6 +141,18 @@ export function useLiveTryOn() {
     setDiagnostic(null);
     setStatus('requesting-camera');
 
+    let sessionItems: LiveTryOnSessionItem[];
+    if (Array.isArray(target)) {
+      sessionItems = target;
+    } else if (typeof target === 'string') {
+      sessionItems = [{ productId: target, ...(color ? { color } : {}) }];
+      if (lowerProductId) {
+        sessionItems.push({ productId: lowerProductId, ...(lowerColor ? { color: lowerColor } : {}) });
+      }
+    } else {
+      sessionItems = [];
+    }
+
     try {
       const videoConstraints = await getDecartRealtimeVideoConstraints();
       const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
@@ -147,18 +163,13 @@ export function useLiveTryOn() {
       cameraRef.current = stream;
       setCameraStream(stream);
 
-      setStatus('preparing-garment');
-      const outfitReference = lowerProductId
-        ? await Promise.all([
-          fetchLiveTryOnGarment(productId, abort.signal, color),
-          fetchLiveTryOnGarment(lowerProductId, abort.signal, lowerColor),
-        ]).then(([upper, lower]) => prepareLiveOutfitReference(upper, lower, abort.signal))
-        : undefined;
-      if (epochRef.current !== epoch) return;
       setStatus('connecting');
+      const switchProductId = typeof target === 'string' && resumeSessionId ? target : undefined;
+      const switchColor = typeof target === 'string' && resumeSessionId ? color : undefined;
       const session = resumeSessionId
-        ? await resumeLiveTryOnSession(resumeSessionId, productId, color)
-        : await createLiveTryOnSession(productId, crypto.randomUUID(), abort.signal, color);
+        ? await resumeLiveTryOnSession(resumeSessionId, switchProductId, switchColor)
+        : await createLiveTryOnSession(sessionItems, crypto.randomUUID(), abort.signal);
+
       setStatus('preparing-garment');
       await preloadImage(session.garment.imageUrl, abort.signal);
       setSessionId(session.sessionId);
@@ -176,7 +187,7 @@ export function useLiveTryOn() {
           onError: (message) => setError(message),
           onGenerationTick: undefined,
           onDiagnostic: (message) => setDiagnostic(message),
-        }, outfitReference),
+        }),
         30000,
         'Không thể kết nối Decart trong thời gian cho phép.',
       );
@@ -274,7 +285,7 @@ export function useLiveTryOn() {
 
 const LIVE_SESSION_STORAGE_KEY = 'fashionai.liveTryOn.session.v1';
 
-function storeSession(session: LiveTryOnSessionResponse) {
+function _storeSession(session: LiveTryOnSessionResponse) {
   try {
     sessionStorage.setItem(LIVE_SESSION_STORAGE_KEY, JSON.stringify(session));
   } catch {
@@ -282,12 +293,12 @@ function storeSession(session: LiveTryOnSessionResponse) {
   }
 }
 
-function readStoredSession(productId?: string): LiveTryOnSessionResponse | null {
+function _readStoredSession(productId?: string): LiveTryOnSessionResponse | null {
   try {
     const raw = sessionStorage.getItem(LIVE_SESSION_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as LiveTryOnSessionResponse;
-    if (productId && parsed.garment.productId !== productId) return null;
+    if (productId && parsed.garment.productId !== productId && !parsed.garment.items?.some((it) => it.productId === productId)) return null;
     if (new Date(parsed.connection.tokenExpiresAt).getTime() <= Date.now()) return null;
     return parsed;
   } catch {
@@ -295,7 +306,7 @@ function readStoredSession(productId?: string): LiveTryOnSessionResponse | null 
   }
 }
 
-function clearStoredSession() {
+function _clearStoredSession() {
   try {
     sessionStorage.removeItem(LIVE_SESSION_STORAGE_KEY);
   } catch {

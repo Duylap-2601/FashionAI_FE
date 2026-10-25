@@ -4,10 +4,18 @@ import type { Product } from '@/features/products/types/products';
 import { getValidProductColors, normalizeProductColorName, resolveProductImageForColor } from '@/features/products/services/products-utils';
 import { useLiveTryOnQuota } from '@/features/subscription/hooks/useQuota';
 import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
+import type { LiveTryOnSessionItem } from '@/features/try-on/types/live-try-on';
 import { trackEvent } from '@/lib/analytics';
 import { ArrowRight, Camera, Check, ChevronDown, CirclePause, Expand, Image as ImageIcon, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef } from 'react';
+
+const LAYER_ROLE_LABELS: Record<string, string> = {
+  OUTER: 'Lớp ngoài',
+  INNER: 'Lớp trong',
+  BOTTOM: 'Phần dưới',
+  FULL_BODY: 'Toàn thân',
+};
 
 interface LiveTryOnWorkspaceProps {
   selectedProduct: Product;
@@ -101,8 +109,25 @@ export function LiveTryOnWorkspace({
   }, [live.status]);
 
   const start = () => {
-    const primaryColor = outfitMode ? upperColor : selectedColor;
-    if (primaryProduct && canStart) void live.start(primaryProduct.id, resumeId, outfitMode ? lowerProduct?.id : undefined, primaryColor || undefined, outfitMode ? lowerColor || undefined : undefined);
+    if (!canStart) return;
+    if (resumeId) {
+      const switchedProduct = !outfitMode && selectedProduct && activeSession?.productId && selectedProduct.id !== activeSession.productId
+        ? selectedProduct.id
+        : undefined;
+      const switchedColor = switchedProduct ? (selectedColor || undefined) : undefined;
+      void live.start(switchedProduct ?? [], resumeId, undefined, switchedColor);
+      return;
+    }
+    const items: LiveTryOnSessionItem[] = [];
+    if (outfitMode) {
+      if (upperProduct) items.push({ productId: upperProduct.id, ...(upperColor ? { color: upperColor } : {}) });
+      if (lowerProduct) items.push({ productId: lowerProduct.id, ...(lowerColor ? { color: lowerColor } : {}) });
+    } else {
+      if (selectedProduct) items.push({ productId: selectedProduct.id, ...(selectedColor ? { color: selectedColor } : {}) });
+    }
+    if (items.length > 0) {
+      void live.start(items);
+    }
   };
 
   return (
@@ -134,6 +159,20 @@ export function LiveTryOnWorkspace({
               <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#211B1B]/75 px-3 py-2 text-[11px] font-medium text-white backdrop-blur-md" role="status">
                 <span className={`h-1.5 w-1.5 rounded-full ${isLive ? 'bg-[#B8D9B0]' : isPaused ? 'bg-[#EBC790]' : 'bg-white/50'}`} />{statusLabel}
               </div>
+              {live.appliedGarment?.items && live.appliedGarment.items.length > 0 && (isLive || isPaused) && (
+                <div className="absolute left-4 top-14 flex items-center gap-1.5 rounded-full bg-[#211B1B]/75 p-1 text-[11px] text-white backdrop-blur-md">
+                  {live.appliedGarment.items.map((item) => (
+                    <div key={item.productId} title={`${item.name} (${LAYER_ROLE_LABELS[item.layerRole] || item.layerRole})`} className="relative h-6 w-6 overflow-hidden rounded-full border border-white/20 bg-white/10">
+                      {item.imageUrl && (
+                        <Image src={item.imageUrl} alt={item.name} fill sizes="24px" unoptimized className="object-cover" />
+                      )}
+                    </div>
+                  ))}
+                  <span className="pr-2 pl-1 text-[10px] font-medium text-neutral-200">
+                    {live.appliedGarment.items.length} món
+                  </span>
+                </div>
+              )}
               <div className={`absolute bottom-4 right-4 w-[88px] overflow-hidden rounded-2xl border border-white/30 bg-[#332E2B] shadow-lg sm:w-[112px] ${cameraStream ? '' : 'hidden'}`}>
                 <video ref={cameraVideoRef} autoPlay muted playsInline aria-label="Camera gốc của bạn" className="aspect-[3/4] w-full object-cover" />
                 <span className="absolute inset-x-0 bottom-0 bg-black/50 py-1 text-center text-[10px] text-white">Camera của bạn</span>
@@ -170,6 +209,47 @@ export function LiveTryOnWorkspace({
               {isPaused ? <RefreshCw size={14} className="mt-0.5 shrink-0" /> : <CirclePause size={14} className="mt-0.5 shrink-0" />}
               {isPaused ? 'Chọn lại món bạn thích. Nhấn Tiếp tục để mặc trang phục mới.' : isLive ? 'Muốn đổi đồ? Nhấn Tạm dừng trước khi chọn món mới.' : 'Thử cả bộ vẫn dùng chung thời gian của một phiên.'}
             </p>
+            {live.appliedGarment?.items && live.appliedGarment.items.length > 0 && (
+              <div className="mt-4 border-t border-[#E9E0D9] pt-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#865C68]">
+                    Đang hiển thị trên camera
+                  </span>
+                  <span className="rounded-full bg-[#5D1C34]/10 px-2 py-0.5 text-[10px] font-semibold text-[#5D1C34]">
+                    {live.appliedGarment.items.length} món
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {live.appliedGarment.items.map((item) => (
+                    <div key={item.productId} className="flex items-center gap-2.5 rounded-xl border border-[#ECE3DB] bg-[#FAF7F4] p-2">
+                      <div className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg bg-white">
+                        {item.imageUrl ? (
+                          <Image src={item.imageUrl} alt={item.name} fill sizes="40px" unoptimized className="object-contain p-1 mix-blend-multiply" />
+                        ) : (
+                          <Shirt size={16} className="m-auto text-[#AC9185]" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="rounded bg-[#F0E6DE] px-1.5 py-0.5 text-[9px] font-semibold text-[#6E4B41]">
+                            {LAYER_ROLE_LABELS[item.layerRole] || item.layerRole}
+                          </span>
+                          {item.isPrimary && (
+                            <span className="rounded bg-[#5D1C34] px-1.5 py-0.5 text-[9px] font-medium text-white">
+                              Chính
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 truncate text-[12px] font-medium text-[#302323]">{item.name}</p>
+                        {item.color && (
+                          <p className="text-[10px] text-[#8D7871]">Màu: {item.color}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-40 rounded-[22px] border border-[#E2D4CA] bg-[#FFFDF9]/95 p-3 shadow-[0_4px_32px_rgba(48,35,35,0.16)] backdrop-blur-xl md:bottom-4 md:left-auto md:right-6 md:w-[400px] lg:static lg:w-auto lg:p-5 lg:shadow-none" aria-label="Điều khiển phiên thử trực tiếp">
