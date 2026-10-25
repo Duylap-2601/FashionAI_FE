@@ -149,10 +149,18 @@
   --color-chart-track: var(--chart-track);
 
   /* Fonts */
-  --font-sans: 'Be Vietnam Pro', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
-  --font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --font-sans: 'Be Vietnam Pro',
+  'Noto Sans',
+  'Helvetica Neue',
+  Arial,
+  sans-serif;
+  --font-display: var(--font-playfair),
+  'Playfair Display',
+  Georgia,
+  serif;
   --font-serif: var(--font-sans);
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-mono: 'JetBrains Mono',
+  monospace;
 
   /* Typography */
   --text-display-xl: 48px;
@@ -279,4 +287,3 @@
     background-position: 0 0, 3px 4px;
   }
 }
-

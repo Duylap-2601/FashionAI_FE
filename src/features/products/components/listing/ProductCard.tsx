@@ -185,14 +185,14 @@ export function ProductCard({
 
         <Link
           href={`/products/${product.id}`}
-          className="mt-2 line-clamp-2 font-display text-[1.05rem] leading-snug text-landing-obsidian transition-colors hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-landing-oxblood"
+          className="font-medium mt-2 line-clamp-2 font-display text-lg leading-snug text-landing-obsidian transition-colors hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-landing-oxblood"
         >
           {product.name}
         </Link>
 
         <div className="mt-auto pt-3 flex items-baseline justify-between gap-2 border-t border-landing-line/60">
           <div className="flex flex-wrap items-baseline gap-1.5">
-            <span className="font-mono text-[12px] font-medium tracking-[0.02em] text-landing-oxblood">
+            <span className="font-mono text-base font-medium tracking-[0.02em] text-landing-oxblood">
               {product.price}
             </span>
             {hasDiscount && (product.originalPriceFormatted || product.originalPrice) ? (

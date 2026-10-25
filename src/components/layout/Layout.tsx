@@ -514,7 +514,7 @@ function MarketingFooter() {
             <div className="flex flex-col gap-3 text-body-sm text-landing-paper/55">
               <div className="flex items-start gap-2.5">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-landing-brass" />
-                <span>Số 126 Nguyễn Thị Minh Khai, Phường 6, Quận 3, TP. Hồ Chí Minh</span>
+                <span>551/10 Tô Ngọc Vân, Thới An, Hồ Chí Minh</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="h-4 w-4 shrink-0 text-landing-brass" />
@@ -522,7 +522,9 @@ function MarketingFooter() {
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="h-4 w-4 shrink-0 text-landing-brass" />
-                <span>contact@fashionai.vn</span>
+                <a href="mailto:staie.project@gmail.com" className="transition-colors hover:text-landing-paper">
+                  staie.project@gmail.com
+                </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Clock className="h-4 w-4 shrink-0 text-landing-brass" />

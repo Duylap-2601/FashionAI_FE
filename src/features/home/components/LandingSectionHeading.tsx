@@ -4,7 +4,7 @@ import React from 'react';
 interface LandingSectionHeadingProps {
   chapter: string;
   eyebrow: string;
-  title: React.ReactNode;
+  title?: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
   inverted?: boolean;
@@ -32,7 +32,7 @@ export function LandingSectionHeading({
         <div className="flex items-start gap-4 sm:gap-6">
           <span
             className={cn(
-              'shrink-0 pt-1 font-mono text-[11px] tracking-[0.2em]',
+              'shrink-0 pt-1 font-mono text-lg tracking-[0.2em]',
               inverted ? 'text-landing-brass' : 'text-landing-brass-ink',
             )}
           >
@@ -41,20 +41,20 @@ export function LandingSectionHeading({
           <div className="min-w-0">
             <p
               className={cn(
-                'text-landing-label font-semibold uppercase tracking-[0.22em]',
+                'text-2xl font-semibold uppercase tracking-[0.22em]',
                 inverted ? 'text-landing-brass' : 'text-landing-brass-ink',
               )}
             >
               {eyebrow}
             </p>
-            <h2
+            {title && <h2
               className={cn(
                 'mt-3 font-display text-landing-h2',
                 inverted ? 'text-landing-paper' : 'text-landing-obsidian',
               )}
             >
               {title}
-            </h2>
+            </h2>}
             {description ? (
               <p
                 className={cn(

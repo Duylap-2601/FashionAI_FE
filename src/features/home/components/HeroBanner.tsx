@@ -2,7 +2,7 @@
 
 import { cn } from '@/components/ui/utils';
 import type { HeroBannerProps } from '@/features/home/types/hero-banner';
-import { HERO_FALLBACK, LANDING_MEDIA } from '@/features/home/constants/landing-media';
+import { HERO_LOCAL_SLIDES } from '@/features/home/constants/landing-media';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import Image from 'next/image';
@@ -23,36 +23,21 @@ export function HeroBanner({ collections }: HeroBannerProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
-  const localHeroImages = [
-    LANDING_MEDIA.hero,
-    LANDING_MEDIA.look01,
-    LANDING_MEDIA.look02,
-    LANDING_MEDIA.look03,
-  ];
-
   const slides: HeroSlide[] =
     collections.length > 0
       ? collections.map((collection, index) => {
-        const fallbackImage = localHeroImages[index % localHeroImages.length] || LANDING_MEDIA.hero;
+        const localFallback = HERO_LOCAL_SLIDES[index % HERO_LOCAL_SLIDES.length] ?? HERO_LOCAL_SLIDES[0];
         const coverImage = collection.thumbnail || collection.coverImages?.find(Boolean);
 
         return {
           id: collection.id,
           name: collection.name,
           season: collection.season || 'BỘ SƯU TẬP 2026',
-          image: coverImage || fallbackImage,
-          fallbackImage,
+          image: coverImage || localFallback.image,
+          fallbackImage: localFallback.image,
         };
       })
-      : [
-        {
-          id: HERO_FALLBACK.id,
-          name: HERO_FALLBACK.name,
-          season: HERO_FALLBACK.season,
-          image: HERO_FALLBACK.image,
-          fallbackImage: HERO_FALLBACK.image,
-        },
-      ];
+      : HERO_LOCAL_SLIDES.map((s) => ({ ...s }));
 
   const safeIndex = activeIndex % slides.length;
   const activeSlide = slides[safeIndex] ?? slides[0];

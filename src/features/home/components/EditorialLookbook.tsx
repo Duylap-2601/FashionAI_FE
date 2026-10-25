@@ -59,13 +59,11 @@ export function EditorialLookbook({ images, collection }: EditorialLookbookProps
 
   return (
     <section id="lookbook" className="scroll-mt-24 bg-landing-obsidian py-16 text-landing-paper md:py-16">
-      <div className="mx-auto max-w-[1440px] px-4 md:px-8">
+      <div className="mx-auto max-w-360 px-4 md:px-8">
         <LandingSectionHeading
           inverted
           chapter="04"
           eyebrow="Lookbook"
-          title={'Những lát cắt của sự tự tin.'}
-          // description={'Từ phòng họp đến buổi tối, mỗi lớp áo là một cách nói về sự chỉn chu và tự do.'}
           action={(
             <Link
               href="/try-on"

@@ -103,7 +103,7 @@ export function LandingFooter() {
             <div className="flex flex-col gap-3 text-body-sm text-neutral-400">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-neutral-500 shrink-0 mt-0.5" />
-                <span>Số 126 Nguyễn Thị Minh Khai, Phường 6, Quận 3, TP. Hồ Chí Minh</span>
+                <span>551/10 Tô Ngọc Vân, Thới An, Hồ Chí Minh</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-neutral-500 shrink-0" />
@@ -111,7 +111,9 @@ export function LandingFooter() {
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-neutral-500 shrink-0" />
-                <span>contact@fashionai.vn</span>
+                <a href="mailto:staie.project@gmail.com" className="transition-colors hover:text-white">
+                  staie.project@gmail.com
+                </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Clock className="w-4 h-4 text-neutral-500 shrink-0" />

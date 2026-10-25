@@ -63,7 +63,7 @@ export function CollectionCarousel({
                   alt={`${collection.name} - ${collection.season || 'Bộ sưu tập 2026'}`}
                   fill
                   sizes="(max-width: 768px) 78vw, (max-width: 1280px) 45vw, 25vw"
-                  className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                  className="object-cover object-[50%_0%] origin-top transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                   onError={() => {
                     setFailedImages((prev) => ({ ...prev, [collection.id]: true }));
                   }}
