@@ -43,6 +43,7 @@ interface NavigationProps {
   variant?: LayoutVariant;
   onOpenCart: () => void;
   totalItems: number;
+  showInlineNav?: boolean;
 }
 
 interface AppLayoutProps {
@@ -54,9 +55,15 @@ interface AppLayoutProps {
   showBottomTab?: boolean;
   showFooter?: boolean;
   contentClassName?: string;
+  showInlineNav?: boolean;
 }
 
-export function Navigation({ variant = 'app', onOpenCart, totalItems }: NavigationProps) {
+export function Navigation({
+  variant = 'app',
+  onOpenCart,
+  totalItems,
+  showInlineNav,
+}: NavigationProps) {
   const { currentUser, logout } = useAuth();
   // Lấy name từ API /users/me để tránh mojibake từ session
   const { profile } = useUserProfile();
@@ -68,6 +75,8 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const isLandingPage = pathname === '/';
+  const shouldShowInlineNav = showInlineNav ?? (isLandingPage && variant === 'landing');
   const router = useRouter();
 
   const handleLogout = () => {
@@ -136,14 +145,12 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
     ? [
       { label: 'Dashboard', href: '/admin/dashboard' },
     ]
-    : variant === 'landing'
-      ? landingMenuLinks
-      : [
-        { label: 'Sản phẩm', href: '/products' },
-        { label: 'Try-On', href: tryOnHref },
-        { label: 'Stylist', href: stylistHref },
-        { label: 'Trợ lý AI', href: chatHref },
-      ];
+    : [
+      { label: 'Sản phẩm', href: '/products' },
+      { label: 'Try-On', href: tryOnHref },
+      { label: 'AI Stylist', href: stylistHref },
+      { label: 'Trợ lý AI', href: chatHref },
+    ];
 
   const handleSectionScroll = (
     event: React.MouseEvent<HTMLAnchorElement>,
@@ -182,7 +189,7 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
         <div className={`relative mx-auto flex max-w-[1400px] items-center gap-3 px-4 md:gap-4 md:px-8 ${variant === 'landing' ? 'h-[72px]' : 'h-[68px]'}`}>
           {/* Logo */}
           <div className="flex shrink-0 items-center gap-2 md:gap-8">
-            <Link href="/" className="group flex flex-col items-center py-1">
+            <Link href="/" className="group flex flex-col items-center py-1 px-2">
               <Logo size="md" />
               <span className={`mt-0.5 hidden text-[9px] font-medium uppercase tracking-widest transition-colors sm:block ${variant === 'landing' ? 'text-landing-muted/75 group-hover:text-landing-oxblood' : 'text-neutral-400 group-hover:text-brand-navy'}`}>
                 Chuẩn dáng từ đầu, đẹp từng đường may
@@ -195,7 +202,7 @@ export function Navigation({ variant = 'app', onOpenCart, totalItems }: Navigati
             </Link>
           </div>
 
-          {variant === 'landing' && currentUser.role !== 'admin' ? (
+          {shouldShowInlineNav && currentUser.role !== 'admin' ? (
             <nav className="hidden items-center gap-5 xl:flex" aria-label="Điều hướng landing">
               {landingNavLinks.map((link) => (
                 <a
@@ -573,6 +580,7 @@ export function AppLayout({
   showBottomTab = true,
   showFooter,
   contentClassName = '',
+  showInlineNav,
 }: AppLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -603,7 +611,12 @@ export function AppLayout({
   return (
     <div className={`flex flex-col min-h-screen font-sans ${variant === 'landing' ? 'bg-landing-paper text-landing-obsidian selection:bg-landing-oxblood selection:text-landing-paper' : 'bg-white text-neutral-900 selection:bg-brand-navy selection:text-white'}`}>
       {beforeHeader}
-      <Navigation variant={variant} onOpenCart={() => setIsCartOpen(true)} totalItems={totalItems} />
+      <Navigation
+        variant={variant}
+        onOpenCart={() => setIsCartOpen(true)}
+        totalItems={totalItems}
+        showInlineNav={showInlineNav}
+      />
       <div className={`flex-1 w-full ${contentPadding} ${contentClassName}`}>
         {children}
       </div>
