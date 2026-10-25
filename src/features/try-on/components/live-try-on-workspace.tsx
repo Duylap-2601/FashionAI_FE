@@ -6,7 +6,7 @@ import { useLiveTryOnQuota } from '@/features/subscription/hooks/useQuota';
 import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
 import type { LiveTryOnSessionItem } from '@/features/try-on/types/live-try-on';
 import { trackEvent } from '@/lib/analytics';
-import { ArrowRight, Camera, Check, ChevronDown, CirclePause, Expand, Image as ImageIcon, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer } from 'lucide-react';
+import { ArrowRight, Camera, Check, ChevronDown, CirclePause, Expand, Image as ImageIcon, Layers, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 
@@ -19,19 +19,24 @@ const LAYER_ROLE_LABELS: Record<string, string> = {
 
 interface LiveTryOnWorkspaceProps {
   selectedProduct: Product;
+  outerProduct?: Product | null;
   upperProduct: Product | null;
   lowerProduct: Product | null;
   selectedColor?: string | null;
+  outerColor?: string | null;
   upperColor?: string | null;
   lowerColor?: string | null;
+  onOpenOuterCatalog?: () => void;
   onOpenUpperCatalog: () => void;
   onOpenLowerCatalog: () => void;
   onOpenCatalog: () => void;
   onSelectColor: (color: string) => void;
+  onSelectOuterColor?: (color: string) => void;
   onSelectUpperColor: (color: string) => void;
   onSelectLowerColor: (color: string) => void;
+  onClearOuter?: () => void;
   onSwitchToPhoto: () => void;
-  /** Chế độ áo + quần dùng chung với Thử bằng ảnh, để đổi tab không mất bộ đang chọn. */
+  /** Chế độ phối bộ dùng chung với Thử bằng ảnh, để đổi tab không mất bộ đang chọn. */
   outfitMode: boolean;
   onOutfitModeChange: (combo: boolean) => void;
 }
@@ -40,17 +45,22 @@ const buttonFocus = 'focus-visible:outline-none focus-visible:ring-2 focus-visib
 
 export function LiveTryOnWorkspace({
   selectedProduct,
+  outerProduct,
   upperProduct,
   lowerProduct,
   selectedColor,
+  outerColor,
   upperColor,
   lowerColor,
+  onOpenOuterCatalog,
   onOpenUpperCatalog,
   onOpenLowerCatalog,
   onOpenCatalog,
   onSelectColor,
+  onSelectOuterColor,
   onSelectUpperColor,
   onSelectLowerColor,
+  onClearOuter,
   onSwitchToPhoto,
   outfitMode,
   onOutfitModeChange,
@@ -69,13 +79,20 @@ export function LiveTryOnWorkspace({
   const hasSession = Boolean(currentSessionId);
   const otherSessionRunning = Boolean(activeSession && activeSession.status !== 'PAUSED' && !live.sessionId);
   const selectionLocked = isBusy || isLive || otherSessionRunning;
-  const primaryProduct = outfitMode ? upperProduct : selectedProduct;
-  const productsReady = Boolean(primaryProduct && isUuid(primaryProduct.id) && (!outfitMode || (lowerProduct && isUuid(lowerProduct.id))));
+  const selectedCount = outfitMode
+    ? [outerProduct, upperProduct, lowerProduct].filter(Boolean).length
+    : 1;
+  const comboValid = Boolean(
+    (upperProduct && isUuid(upperProduct.id)) ||
+    (lowerProduct && isUuid(lowerProduct.id)) ||
+    (outerProduct && isUuid(outerProduct.id))
+  );
+  const productsReady = outfitMode ? comboValid : Boolean(selectedProduct && isUuid(selectedProduct.id));
   const seconds = live.sessionId ? live.remainingSeconds : activeSession?.remainingSeconds ?? Math.min(quota?.remaining ?? 0, quota?.maxDurationSeconds ?? 0);
   const lowTime = hasSession && seconds > 0 && seconds <= 10;
   const canStart = productsReady && (!hasSession || isPaused) && !isBusy && !isLive && !otherSessionRunning && !isLoading && !isError && Boolean(quota?.enabled && quota.eligible) && seconds > 0;
   const statusLabel = isPaused ? 'Đã tạm dừng' : isLive ? 'Đang thử trực tiếp' : busyLabel(live.status) ?? (live.status === 'ended' ? 'Phiên đã kết thúc' : 'Sẵn sàng thử đồ');
-  const unavailable = isLoading ? 'Đang kiểm tra thời gian thử đồ…' : isError ? 'Chưa tải được thời gian sử dụng. Vui lòng thử lại.' : quota && !quota.enabled ? 'Thử đồ trực tiếp hiện đang tạm nghỉ. Bạn vẫn có thể thử bằng ảnh.' : quota && !quota.eligible ? reasonLabel(quota.disabledReason) : otherSessionRunning ? 'Bạn có phiên đang mở ở nơi khác. Kết thúc phiên đó để bắt đầu tại đây.' : !productsReady ? (outfitMode ? 'Chọn đủ áo và quần để bắt đầu.' : 'Chọn một sản phẩm để bắt đầu thử đồ.') : !hasSession && seconds <= 0 && quota ? 'Bạn đã dùng hết thời gian thử trực tiếp hôm nay.' : null;
+  const unavailable = isLoading ? 'Đang kiểm tra thời gian thử đồ…' : isError ? 'Chưa tải được thời gian sử dụng. Vui lòng thử lại.' : quota && !quota.enabled ? 'Thử đồ trực tiếp hiện đang tạm nghỉ. Bạn vẫn có thể thử bằng ảnh.' : quota && !quota.eligible ? reasonLabel(quota.disabledReason) : otherSessionRunning ? 'Bạn có phiên đang mở ở nơi khác. Kết thúc phiên đó để bắt đầu tại đây.' : !productsReady ? (outfitMode ? 'Chọn ít nhất một món để bắt đầu phối bộ.' : 'Chọn một sản phẩm để bắt đầu thử đồ.') : !hasSession && seconds <= 0 && quota ? 'Bạn đã dùng hết thời gian thử trực tiếp hôm nay.' : null;
 
   useEffect(() => {
     const video = cameraVideoRef.current;
@@ -120,10 +137,11 @@ export function LiveTryOnWorkspace({
     }
     const items: LiveTryOnSessionItem[] = [];
     if (outfitMode) {
-      if (upperProduct) items.push({ productId: upperProduct.id, ...(upperColor ? { color: upperColor } : {}) });
-      if (lowerProduct) items.push({ productId: lowerProduct.id, ...(lowerColor ? { color: lowerColor } : {}) });
+      if (outerProduct && isUuid(outerProduct.id)) items.push({ productId: outerProduct.id, ...(outerColor ? { color: outerColor } : {}) });
+      if (upperProduct && isUuid(upperProduct.id)) items.push({ productId: upperProduct.id, ...(upperColor ? { color: upperColor } : {}) });
+      if (lowerProduct && isUuid(lowerProduct.id)) items.push({ productId: lowerProduct.id, ...(lowerColor ? { color: lowerColor } : {}) });
     } else {
-      if (selectedProduct) items.push({ productId: selectedProduct.id, ...(selectedColor ? { color: selectedColor } : {}) });
+      if (selectedProduct && isUuid(selectedProduct.id)) items.push({ productId: selectedProduct.id, ...(selectedColor ? { color: selectedColor } : {}) });
     }
     if (items.length > 0) {
       void live.start(items);
@@ -187,24 +205,108 @@ export function LiveTryOnWorkspace({
           <div className="rounded-[24px] border border-[#E9E0D9] bg-white p-4 sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h3 className="text-[16px] font-semibold text-[#302323]">Bạn muốn mặc gì?</h3>
-              <span className="text-[11px] text-[#8D7871]">{outfitMode ? '02 món đồ' : '01 món đồ'}</span>
+              <span className="text-[11px] text-[#8D7871]">{outfitMode ? `${String(selectedCount).padStart(2, '0')} món đồ` : '01 món đồ'}</span>
             </div>
             <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-[#F4F0EC] p-1" role="group" aria-label="Chế độ trang phục">
-              {[{ label: 'Một món', combo: false }, { label: 'Áo + quần', combo: true }].map(({ label, combo }) => (
-                <button key={label} type="button" aria-pressed={outfitMode === combo} disabled={selectionLocked} onClick={() => onOutfitModeChange(combo)} className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-[13px] font-semibold transition-colors ${buttonFocus} ${outfitMode === combo ? 'bg-white text-[#5D1C34] shadow-sm' : 'text-[#8A7871] hover:text-[#5D1C34]'}`}>{outfitMode === combo && <Check size={14} />}{label}</button>
+              {[{ label: 'Một món', combo: false }, { label: 'Phối bộ', combo: true }].map(({ label, combo }) => (
+                <button
+                  key={label}
+                  type="button"
+                  aria-pressed={outfitMode === combo}
+                  disabled={selectionLocked}
+                  onClick={() => onOutfitModeChange(combo)}
+                  className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-[13px] font-semibold transition-colors ${buttonFocus} ${outfitMode === combo ? 'bg-white text-[#5D1C34] shadow-sm' : 'text-[#8A7871] hover:text-[#5D1C34]'}`}
+                >
+                  {combo && <Layers size={14} />}
+                  {outfitMode === combo && !combo && <Check size={14} />}
+                  {label}
+                </button>
               ))}
             </div>
-            <div className={outfitMode ? 'grid grid-cols-1 min-[380px]:grid-cols-2 gap-3' : ''}>
-              {outfitMode ? <><GarmentCard label="Áo" product={upperProduct} onSelect={onOpenUpperCatalog} disabled={selectionLocked} color={upperColor} /><GarmentCard label="Quần" product={lowerProduct} onSelect={onOpenLowerCatalog} disabled={selectionLocked} color={lowerColor} /></> : <GarmentCard label="Trang phục" product={selectedProduct} onSelect={onOpenCatalog} disabled={selectionLocked} horizontal color={selectedColor} />}
+            <div className={outfitMode ? 'space-y-3' : ''}>
+              {outfitMode ? (
+                <>
+                  <div className="space-y-1.5">
+                    <GarmentCard
+                      label="Áo khoác"
+                      title="Món 1: Áo khoác / Blazer"
+                      subLabel="Lớp ngoài - Tùy chọn"
+                      product={outerProduct || null}
+                      onSelect={onOpenOuterCatalog || (() => {})}
+                      onClear={outerProduct && onClearOuter ? onClearOuter : undefined}
+                      disabled={selectionLocked}
+                      color={outerColor}
+                      horizontal
+                    />
+                    <ColorSelector
+                      product={outerProduct || null}
+                      selectedColor={outerColor}
+                      onSelectColor={onSelectOuterColor || (() => {})}
+                      disabled={isBusy || isLive || otherSessionRunning}
+                      label="Màu áo khoác"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <GarmentCard
+                      label="Áo"
+                      title="Món 2: Áo trong / Sơ mi / Áo thun"
+                      subLabel="Lớp trong"
+                      product={upperProduct}
+                      onSelect={onOpenUpperCatalog}
+                      disabled={selectionLocked}
+                      color={upperColor}
+                      horizontal
+                    />
+                    <ColorSelector
+                      product={upperProduct}
+                      selectedColor={upperColor}
+                      onSelectColor={onSelectUpperColor}
+                      disabled={isBusy || isLive || otherSessionRunning}
+                      label="Màu áo trong"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <GarmentCard
+                      label="Quần"
+                      title="Món 3: Quần / Chân váy"
+                      subLabel="Lớp dưới"
+                      product={lowerProduct}
+                      onSelect={onOpenLowerCatalog}
+                      disabled={selectionLocked}
+                      color={lowerColor}
+                      horizontal
+                    />
+                    <ColorSelector
+                      product={lowerProduct}
+                      selectedColor={lowerColor}
+                      onSelectColor={onSelectLowerColor}
+                      disabled={isBusy || isLive || otherSessionRunning}
+                      label="Màu quần / váy"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <GarmentCard
+                    label="Trang phục"
+                    product={selectedProduct}
+                    onSelect={onOpenCatalog}
+                    disabled={selectionLocked}
+                    horizontal
+                    color={selectedColor}
+                  />
+                  <ColorSelector
+                    product={selectedProduct}
+                    selectedColor={selectedColor}
+                    onSelectColor={onSelectColor}
+                    disabled={isBusy || isLive || otherSessionRunning}
+                    label="Màu trang phục"
+                  />
+                </>
+              )}
             </div>
-            {outfitMode ? (
-              <div className="mt-4 grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
-                <ColorSelector product={upperProduct} selectedColor={upperColor} onSelectColor={onSelectUpperColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu áo" />
-                <ColorSelector product={lowerProduct} selectedColor={lowerColor} onSelectColor={onSelectLowerColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu quần" />
-              </div>
-            ) : (
-              <ColorSelector product={selectedProduct} selectedColor={selectedColor} onSelectColor={onSelectColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu trang phục" />
-            )}
             <p className={`mt-4 flex items-start gap-2 text-[12px] leading-5 ${isPaused ? 'text-[#5D1C34]' : 'text-[#8A7871]'}`}>
               {isPaused ? <RefreshCw size={14} className="mt-0.5 shrink-0" /> : <CirclePause size={14} className="mt-0.5 shrink-0" />}
               {isPaused ? 'Chọn lại món bạn thích. Nhấn Tiếp tục để mặc trang phục mới.' : isLive ? 'Muốn đổi đồ? Nhấn Tạm dừng trước khi chọn món mới.' : 'Thử cả bộ vẫn dùng chung thời gian của một phiên.'}
@@ -282,17 +384,94 @@ export function LiveTryOnWorkspace({
   );
 }
 
-function GarmentCard({ label, product, onSelect, disabled, horizontal = false, color }: { label: string; product: Product | null; onSelect: () => void; disabled: boolean; horizontal?: boolean; color?: string | null }) {
+function GarmentCard({
+  label,
+  title,
+  subLabel,
+  product,
+  onSelect,
+  onClear,
+  disabled,
+  horizontal = false,
+  color,
+}: {
+  label: string;
+  title?: string;
+  subLabel?: string;
+  product: Product | null;
+  onSelect: () => void;
+  onClear?: () => void;
+  disabled: boolean;
+  horizontal?: boolean;
+  color?: string | null;
+}) {
   const resolvedImage = product ? resolveProductImageForColor(product, color) : null;
   const displayImage = resolvedImage?.url || product?.image;
+  const displayTitle = title || label;
 
   return (
-    <button type="button" onClick={onSelect} disabled={disabled} aria-label={`${product ? 'Đổi' : 'Chọn'} ${label.toLowerCase()}${product ? `: ${product.name}` : ''}`} className={`group w-full min-w-0 overflow-hidden rounded-2xl border border-[#E8DED6] bg-[#FCFAF7] text-left transition-colors hover:border-[#B49789] ${buttonFocus} ${horizontal ? 'flex items-center gap-4 p-3' : 'p-2.5 max-[379px]:flex max-[379px]:items-center max-[379px]:gap-3'}`}>
-      <div className={`relative flex items-center justify-center rounded-xl bg-[#F1EBE5] ${horizontal ? 'h-28 w-24 shrink-0' : 'mb-3 aspect-[4/3] w-full max-[379px]:mb-0 max-[379px]:h-24 max-[379px]:w-20 max-[379px]:shrink-0'}`}>
-        {product && displayImage ? <Image src={displayImage} alt={product.name} fill sizes={horizontal ? '96px' : '(max-width: 640px) 40vw, 180px'} unoptimized className="object-contain p-2 mix-blend-multiply" /> : <Plus size={24} strokeWidth={1.2} className="text-[#AC9185]" />}
+    <div className={`group w-full min-w-0 overflow-hidden rounded-2xl border border-[#E8DED6] bg-[#FCFAF7] transition-colors hover:border-[#B49789] ${horizontal ? 'p-3' : 'p-2.5'}`}>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-[#5D1C34] truncate">
+            {displayTitle}
+            {subLabel && <span className="ml-1.5 font-normal text-[10px] text-[#987C70]">({subLabel})</span>}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {product && onClear && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={onClear}
+              className={`text-[11px] font-semibold text-neutral-400 hover:text-red-600 transition-colors cursor-pointer bg-transparent border-0 ${buttonFocus}`}
+            >
+              Bỏ chọn
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={onSelect}
+            className={`inline-flex items-center gap-1 text-[11px] font-semibold text-[#5D1C34] hover:underline cursor-pointer bg-transparent border-0 ${buttonFocus}`}
+          >
+            {product ? 'Đổi món' : '+ Chọn ngay'}
+            <ArrowRight size={11} />
+          </button>
+        </div>
       </div>
-      <div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[#987C70]">{label}</p><p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-[#43312C]">{product?.name ?? `Chọn ${label.toLowerCase()} của bạn`}</p><span className="mt-2 inline-flex min-h-6 items-center gap-1 text-[11px] font-medium text-[#6C3045]">{product ? 'Đổi món' : 'Chọn ngay'}<ArrowRight size={12} /></span></div>
-    </button>
+
+      <button
+        type="button"
+        onClick={onSelect}
+        disabled={disabled}
+        aria-label={`${product ? 'Đổi' : 'Chọn'} ${label.toLowerCase()}${product ? `: ${product.name}` : ''}`}
+        className={`w-full text-left bg-transparent border-0 cursor-pointer p-0 ${buttonFocus} ${horizontal ? 'flex items-center gap-3.5' : 'flex items-center gap-3'}`}
+      >
+        <div className={`relative flex items-center justify-center rounded-xl bg-[#F1EBE5] shrink-0 ${horizontal ? 'h-20 w-18' : 'h-18 w-16'}`}>
+          {product && displayImage ? (
+            <Image src={displayImage} alt={product.name} fill sizes="80px" unoptimized className="object-contain p-1.5 mix-blend-multiply" />
+          ) : (
+            <Plus size={22} strokeWidth={1.2} className="text-[#AC9185]" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-[13px] font-semibold leading-5 text-[#43312C]">
+            {product?.name ?? `Chưa chọn ${label.toLowerCase()}`}
+          </p>
+          {product?.price && (
+            <p className="mt-0.5 text-[12px] text-neutral-500 font-medium">
+              {product.price}
+            </p>
+          )}
+          {!product && (
+            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[#6C3045]">
+              Nhấn để chọn món
+            </span>
+          )}
+        </div>
+      </button>
+    </div>
   );
 }
 

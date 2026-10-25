@@ -573,17 +573,22 @@ function VirtualTryOnContent() {
         ) : tryOnMode === 'live' && selectedProduct ? (
           <LiveTryOnWorkspace
             selectedProduct={selectedProduct}
+            outerProduct={outerProduct}
             upperProduct={upperProduct}
             lowerProduct={lowerProduct}
             selectedColor={selectedColor}
+            outerColor={outerColor}
             upperColor={upperColor}
             lowerColor={lowerColor}
+            onOpenOuterCatalog={() => handleOpenCatalog('outer')}
             onOpenUpperCatalog={() => handleOpenCatalog('upper')}
             onOpenLowerCatalog={() => handleOpenCatalog('lower')}
             onOpenCatalog={() => handleOpenCatalog('single')}
             onSelectColor={setSelectedColor}
+            onSelectOuterColor={setOuterColor}
             onSelectUpperColor={setUpperColor}
             onSelectLowerColor={setLowerColor}
+            onClearOuter={() => { setOuterProduct(null); setOuterColor(null); }}
             onSwitchToPhoto={() => handleTryOnModeChange('photo')}
             outfitMode={garmentMode === 'combo'}
             onOutfitModeChange={(combo) => handleModeChange(combo ? 'combo' : 'single')}
