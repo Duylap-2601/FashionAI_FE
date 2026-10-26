@@ -435,6 +435,22 @@ File: `src/features/products/components/listing/ProductList.tsx`
 
 Grid: `grid-cols-2`, then `md:grid-cols-3 lg:grid-cols-4`. With the sidebar open: `md:grid-cols-2 lg:grid-cols-3`.
 
+## Account Pages
+
+### `AccountShell` and account pages
+
+Files: `src/features/profile/components/account-shell.tsx`, `src/features/profile/components/account-ui.tsx`
+
+Contract:
+
+- Wraps `/profile`, `/profile/measurements`, `/profile/orders`, `/profile/reviews` and `/notifications`. Menu items come from `src/features/profile/constants/account-nav.ts`.
+- From `lg`: `200px` sticky menu at `top-[105px]` (header `73px` plus `32px`), active item has a `2px` oxblood left rule on a brass hairline. Below `lg`: an underline tab row that scrolls horizontally inside the page gutter.
+- Page header: brass label, `text-landing-h2` Playfair title, one muted sentence, optional actions on the right.
+- `account-ui.tsx` primitives: `AccountSection` (hairline top, Playfair `1.375rem` heading, optional right action), `AccountStatePanel` (empty and error), `AccountPagination` (square arrows, mono `page / total`), `AccountDialog` (Radix, `z-[100]`/`z-[101]`, bottom sheet below `sm`), `AccountConfirmDialog`, plus `accountButtonClassName` (`primary` oxblood fill, `outline` hairline, `danger` destructive outline, `quiet` text) and `accountInputClassName`.
+- `OrderStatusLabel` renders a dot and an uppercase label from `STATUS_CONFIG` in `src/features/orders/constants/profile-orders-page.ts`; tones map to brass, oxblood, sage, taupe and destructive.
+- `StarRating` takes `tone="landing"` for oxblood stars on paper; admin keeps the default amber.
+- Only backend-backed controls: profile edits the name only, measurements save the backend fields, notification tabs are not shown because the list endpoint does not filter by type.
+
 ## State Matrix
 
 | Element | Default | Hover | Focus-visible | Active / selected | Disabled |
@@ -540,6 +556,8 @@ Rules:
 | Products filters | `src/features/products/components/listing/FilterSections.tsx`, `ProductFilterPanels.tsx` |
 | Products results and grid | `src/features/products/components/listing/ProductResultsHeader.tsx`, `ProductList.tsx` |
 | Filter and sort constants | `src/features/products/constants/product-filters.ts` |
+| Account shell and primitives | `src/features/profile/components/account-shell.tsx`, `account-ui.tsx` |
+| Account pages | `profile-page.tsx`, `profile-measurements-page.tsx`, `profile-orders-page.tsx`, `profile-reviews-page.tsx`, `notifications-page.tsx` |
 
 ## Do Not
 
@@ -589,3 +607,4 @@ Manual checks:
 | 2026-10-25 | Lookbook contract: one capped `3/4` plate with side details and thumbnails so each look fits on screen |
 | 2026-10-25 | Landing data and imagery now come from the API; local media is fallback-only |
 | 2026-10-26 | Products listing contract: toolbar, filter panels, results header, grid states, sticky offsets; fixed the `ProductCard` file path |
+| 2026-10-26 | `AccountShell` contract for the five account pages, account primitives, order status tones and the landing tone of `StarRating` |

@@ -1,23 +1,67 @@
 'use client';
-import { getErrorMessage } from '@/lib/errors';
-
 
 import { BodyDiagram } from '@/features/measurements/components/body-diagram';
 import { MeasurementInput } from '@/features/measurements/components/measurement-input';
 import { SectionHeader } from '@/features/measurements/components/section-header';
-import { allMeasurementFields, LOWER_FIELDS, OVERVIEW_FIELDS, UPPER_FIELDS } from '@/features/measurements/constants/profile-measurements-page';
+import {
+  allMeasurementFields,
+  LOWER_FIELDS,
+  MEASUREMENT_CATEGORY_LABELS,
+  OVERVIEW_FIELDS,
+  UPPER_FIELDS,
+} from '@/features/measurements/constants/profile-measurements-page';
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
+import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
 import { validate } from '@/features/measurements/services/measurement-validation';
 import { queryKeys as measurementsQueryKeys } from '@/features/measurements/services/query-keys';
-import type { BodyType, Gender } from '@/features/measurements/types/profile-measurements-page';
+import type { FigureVariant, MeasurementField } from '@/features/measurements/types/profile-measurements-page';
+import { accountButtonClassName, accountFocusRing, accountLabelClassName } from '@/features/profile/components/account-ui';
+import { getErrorMessage } from '@/lib/errors';
+import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  AlertCircle,
-  Info,
-  Save
-} from 'lucide-react';
+import { Check } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+
+const FIELD_GROUPS: { title: string; subtitle: string; fields: MeasurementField[] }[] = [
+  { title: 'Tổng quan', subtitle: 'Chiều cao, cân nặng', fields: OVERVIEW_FIELDS },
+  { title: 'Thân trên', subtitle: 'Áo sơ mi, blazer, vest', fields: UPPER_FIELDS },
+  { title: 'Thân dưới', subtitle: 'Quần tây, chân váy', fields: LOWER_FIELDS },
+];
+
+const FIGURE_OPTIONS: { id: FigureVariant; label: string }[] = [
+  { id: 'female', label: 'Nữ' },
+  { id: 'male', label: 'Nam' },
+];
+
+function SavedReadiness() {
+  const { byCategory, isLoading, isError } = useMeasurementsCompleteness();
+  if (isLoading) return <div className="h-16 animate-pulse bg-landing-taupe/30" />;
+  if (isError || byCategory.length === 0) return null;
+
+  return (
+    <div>
+      <p className={accountLabelClassName}>Đủ để đặt may</p>
+      <ul className="mt-2 divide-y divide-landing-line/60">
+        {byCategory.map((category) => (
+          <li key={category.category} className="flex items-baseline justify-between gap-3 py-2 text-sm">
+            <span className="text-landing-obsidian">{MEASUREMENT_CATEGORY_LABELS[category.category] ?? category.category}</span>
+            {category.complete ? (
+              <span className="inline-flex items-center gap-1 text-landing-sage-ink">
+                <Check className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" /> Đủ
+              </span>
+            ) : (
+              <span className="text-landing-brass-ink" title={category.missing.map((field) => field.label).join(', ')}>
+                Thiếu {category.missing.length}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1 text-xs text-landing-muted">Tính theo số đo đã lưu.</p>
+    </div>
+  );
+}
 
 export function MeasurementsTab() {
   const { measurements, isLoading, updateMeasurements, isUpdating } = useMeasurements();
@@ -25,8 +69,7 @@ export function MeasurementsTab() {
 
   const [initialValues, setInitialValues] = useState<Record<string, string>>({});
   const [values, setValues] = useState<Record<string, string>>({});
-  const [bodyType, setBodyType] = useState<BodyType>('regular');
-  const [gender, setGender] = useState<Gender>('female');
+  const [figure, setFigure] = useState<FigureVariant>('female');
 
   const prefillDone = React.useRef(false);
   useEffect(() => {
@@ -53,7 +96,8 @@ export function MeasurementsTab() {
     }
   }, [measurements]);
 
-  const isDirty = allMeasurementFields.some(f => (values[f.id] || '') !== (initialValues[f.id] || ''));
+  const changedCount = allMeasurementFields.filter(f => (values[f.id] || '') !== (initialValues[f.id] || '')).length;
+  const isDirty = changedCount > 0;
   const allValid = allMeasurementFields.every(f => {
     const val = values[f.id];
     if (!val || String(val).trim() === '') return true;
@@ -61,6 +105,7 @@ export function MeasurementsTab() {
   });
 
   const set = (id: string, v: string) => setValues(p => ({ ...p, [id]: v }));
+  const resetChanges = () => setValues({ ...initialValues });
 
   const handleSave = () => {
     if (!allValid) {
@@ -81,7 +126,7 @@ export function MeasurementsTab() {
 
     updateMeasurements(body, {
       onSuccess: () => {
-        toast.success('Đã lưu số đo cơ thể thành công!');
+        toast.success('Đã lưu số đo');
         setInitialValues({ ...values });
         queryClient.invalidateQueries({ queryKey: measurementsQueryKeys.measurementsCompleteness() });
       },
@@ -92,144 +137,100 @@ export function MeasurementsTab() {
     });
   };
 
-  const bodyTypes: { id: BodyType; label: string; desc: string }[] = [
-    { id: 'slim', label: 'Mảnh mai', desc: 'Vai hẹp, eo thon' },
-    { id: 'regular', label: 'Cân đối', desc: 'Tỷ lệ hài hòa' },
-    { id: 'athletic', label: 'Thể thao', desc: 'Vai rộng, cơ bắp' },
-    { id: 'plus', label: 'Plus size', desc: 'Dáng đầy đặn' },
-  ];
-
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-8 flex justify-center items-center h-[400px]">
-        <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+      <div className="grid gap-10 xl:grid-cols-[210px_minmax(0,1fr)]">
+        <div className="h-[360px] animate-pulse bg-landing-taupe/30" />
+        <div className="space-y-4">
+          {[0, 1, 2, 3].map((key) => (
+            <div key={key} className="h-16 animate-pulse bg-landing-taupe/30" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      {isDirty && (
-        <div className="sticky top-[72px] z-20 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between shadow-sm backdrop-blur-sm">
-          <div className="flex items-center gap-2 text-amber-700 text-label-sm font-medium">
-            <AlertCircle className="w-4 h-4" /> Bạn có thay đổi chưa lưu
-          </div>
+    <div className="flex flex-col gap-8">
+      {isDirty ? (
+        <div
+          role="status"
+          className="sticky top-[73px] z-20 -mx-4 flex flex-wrap items-center justify-between gap-3 border-y border-landing-line bg-landing-paper px-4 py-3 md:mx-0 md:border-x"
+        >
+          <p className="flex items-center gap-2 text-sm text-landing-obsidian">
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-landing-oxblood" />
+            {changedCount} số đo chưa lưu
+          </p>
           <div className="flex gap-2">
-            <button onClick={() => setValues({ ...initialValues })} className="px-3 py-1.5 text-label-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">Hủy</button>
-            <button onClick={handleSave} disabled={!allValid || isUpdating} className="px-4 py-1.5 bg-brand-navy text-white rounded-lg text-label-sm font-medium hover:bg-brand-navy/90 transition-colors disabled:opacity-50">Lưu</button>
+            <button type="button" onClick={resetChanges} disabled={isUpdating} className={accountButtonClassName('outline', 'sm')}>
+              Hoàn tác
+            </button>
+            <button type="button" onClick={handleSave} disabled={!allValid || isUpdating} className={accountButtonClassName('primary', 'sm')}>
+              {isUpdating ? 'Đang lưu' : 'Lưu'}
+            </button>
           </div>
         </div>
-      )}
+      ) : null}
 
-      <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl">
-        <Info className="w-4 h-4 text-semantic-info shrink-0 mt-0.5" />
-        <p className="text-body-sm text-blue-700">Dùng thước dây mềm, đo sát người nhưng không siết. Nhờ người khác đo giúp sẽ cho kết quả chính xác hơn.</p>
-      </div>
-
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="px-6 md:px-8 py-5 border-b border-neutral-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-heading-h3 font-semibold text-neutral-900">Số đo cơ thể</h2>
-            <p className="text-body-sm text-neutral-500 mt-0.5">Giúp AI thử đồ chính xác và gợi ý size phù hợp</p>
-          </div>
-        </div>
-
-        <div className="p-6 md:p-8 flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
-          {/* Sticky Visual Side */}
-          <div className="w-full lg:w-[320px] shrink-0 lg:sticky lg:top-[88px]">
-            <div className="bg-neutral-50 rounded-xl border border-neutral-100 p-5 flex flex-col items-center">
-              <BodyDiagram values={values} gender={gender} />
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col gap-8">
-            <div>
-              <SectionHeader title="Tổng quan" subtitle="Thông tin cơ bản về cơ thể" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {OVERVIEW_FIELDS.map(f => (
-                  <MeasurementInput
-                    key={f.id}
-                    field={f}
-                    value={values[f.id] || ''}
-                    initialValue={initialValues[f.id] || ''}
-                    onChange={v => set(f.id, v)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <SectionHeader title="Dáng người" subtitle="Giúp AI tối ưu kết quả thử đồ" />
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {bodyTypes.map(bt => (
-                  <button
-                    key={bt.id}
-                    type="button"
-                    onClick={() => setBodyType(bt.id)}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-center ${bodyType === bt.id
-                        ? 'border-brand-navy bg-brand-navy/5'
-                        : 'border-neutral-200 hover:border-brand-navy/30 bg-white'
-                      }`}
-                  >
-                    <span className={`text-label-md font-semibold ${bodyType === bt.id ? 'text-brand-navy' : 'text-neutral-700'}`}>
-                      {bt.label}
-                    </span>
-                    <span className="text-label-sm text-neutral-500">{bt.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <SectionHeader title="Thân trên" subtitle="Áo sơ mi, blazer, vest" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {UPPER_FIELDS.map(f => (
-                  <MeasurementInput
-                    key={f.id}
-                    field={f}
-                    value={values[f.id] || ''}
-                    initialValue={initialValues[f.id] || ''}
-                    onChange={v => set(f.id, v)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <SectionHeader title="Thân dưới" subtitle="Quần tây, chân váy" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {LOWER_FIELDS.map(f => (
-                  <MeasurementInput
-                    key={f.id}
-                    field={f}
-                    value={values[f.id] || ''}
-                    initialValue={initialValues[f.id] || ''}
-                    onChange={v => set(f.id, v)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-5 border-t border-neutral-100">
-              <button
-                onClick={handleSave}
-                disabled={!isDirty || !allValid || isUpdating}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-label-md font-semibold transition-all ${isDirty && allValid
-                    ? 'bg-brand-navy text-white hover:bg-brand-navy/90 shadow-md'
-                    : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
-                  }`}
-              >
-                <Save className="w-4 h-4" /> {isUpdating ? 'Đang lưu số đo...' : 'Lưu số đo'}
-              </button>
-              {isDirty && (
+      <div className="grid gap-10 xl:grid-cols-[210px_minmax(0,1fr)] xl:gap-12">
+        <aside className="grid grid-cols-[132px_minmax(0,1fr)] gap-5 sm:grid-cols-[168px_minmax(0,1fr)] sm:gap-8 xl:sticky xl:top-[105px] xl:grid-cols-1 xl:self-start">
+          <div className="border border-landing-line bg-landing-ivory/50 px-3 pb-4 pt-3">
+            <div role="group" aria-label="Dáng của hình minh họa" className="mb-3 grid grid-cols-2 border border-landing-line">
+              {FIGURE_OPTIONS.map((option) => (
                 <button
-                  onClick={() => setValues({ ...initialValues })}
-                  className="px-6 py-2.5 rounded-xl text-label-md font-medium border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors"
+                  key={option.id}
+                  type="button"
+                  aria-pressed={figure === option.id}
+                  onClick={() => setFigure(option.id)}
+                  className={cn(
+                    'h-8 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors',
+                    figure === option.id ? 'bg-landing-obsidian text-landing-paper' : 'text-landing-muted hover:text-landing-oxblood',
+                    accountFocusRing,
+                  )}
                 >
-                  Hủy
+                  {option.label}
                 </button>
-              )}
+              ))}
             </div>
+            <BodyDiagram values={values} figure={figure} />
+          </div>
+
+          <div className="flex flex-col gap-6">
+            <SavedReadiness />
+            <p className="border-l-2 border-landing-brass pl-3 text-xs leading-relaxed text-landing-muted">
+              Dùng thước dây mềm, đo sát người nhưng không siết. Nhờ người khác đo giúp sẽ chính xác hơn.
+            </p>
+          </div>
+        </aside>
+
+        <div className="flex min-w-0 flex-col gap-10">
+          {FIELD_GROUPS.map((group) => (
+            <div key={group.title}>
+              <SectionHeader title={group.title} subtitle={group.subtitle} />
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+                {group.fields.map(f => (
+                  <MeasurementInput
+                    key={f.id}
+                    field={f}
+                    value={values[f.id] || ''}
+                    initialValue={initialValues[f.id] || ''}
+                    onChange={v => set(f.id, v)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="flex flex-wrap items-center gap-3 border-t border-landing-line pt-6">
+            <button type="button" onClick={handleSave} disabled={!isDirty || !allValid || isUpdating} className={accountButtonClassName('primary')}>
+              {isUpdating ? 'Đang lưu số đo' : 'Lưu số đo'}
+            </button>
+            {isDirty ? (
+              <button type="button" onClick={resetChanges} disabled={isUpdating} className={accountButtonClassName('outline')}>
+                Hoàn tác
+              </button>
+            ) : null}
+            {!allValid ? <p className="text-xs text-destructive">Sửa các ô đang báo lỗi trước khi lưu.</p> : null}
           </div>
         </div>
       </div>

@@ -121,7 +121,9 @@ src/
 │   ├── collections/         # components/ hooks/ services/ types/
 │   ├── home/                # components/ constants/ types/
 │   ├── measurements/        # components/ constants/ hooks/ services/ types/
-│   ├── notifications/       # components/ constants/ hooks/ services/ store/ types/
+│   ├── notifications/       # components/ hooks/ services/ store/ types/
+│   │                        # hooks: use-open-notification (mark read + route,
+│   │                        #        shared by the bell panel and /notifications)
 │   │                        # store: notificationStore.ts (Zustand)
 │   ├── orders/              # components/ constants/ hooks/ services/ types/
 │   ├── payments/            # components/ hooks/ services/ types/
@@ -132,7 +134,13 @@ src/
 │   ├── products/            # components/ constants/ hooks/ services/ types/
 │   │                        # services: queries.ts, query-keys.ts, product-filters.ts,
 │   │                        #           products-utils.ts, combo-pricing.ts
-│   ├── profile/             # components/ hooks/ services/ types/
+│   ├── profile/             # components/ constants/ hooks/ services/ types/
+│   │                        # components: account-shell (menu + page header shared
+│   │                        #   by /profile, /profile/measurements, /profile/orders,
+│   │                        #   /profile/reviews, /notifications), account-ui
+│   │                        #   (section, dialog, pagination, button/input classes);
+│   │                        #   other features import these for account pages
+│   │                        # constants: account-nav.ts (account menu, tier labels)
 │   ├── rack/                # components/ hooks/ services/ types/
 │   ├── reviews/             # components/ constants/ hooks/ services/ types/
 │   ├── stylist/             # components/ constants/ hooks/ services/ types/

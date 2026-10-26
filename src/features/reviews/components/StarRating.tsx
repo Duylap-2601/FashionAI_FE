@@ -12,12 +12,15 @@ export function StarRating({
   showValue = false,
   className = '',
   readOnly = false,
+  tone = 'default',
 }: StarRatingProps) {
   const [hoverValue, setHoverValue] = useState<number | null>(null);
   const isInteractive = !readOnly && typeof onChange === 'function';
 
   const starSizeClass = SIZE_MAP[size] || SIZE_MAP.md;
   const displayRating = hoverValue !== null ? hoverValue : value;
+  const filledClass = tone === 'landing' ? 'text-landing-oxblood fill-landing-oxblood' : 'text-[#F59E0B] fill-[#F59E0B]';
+  const emptyClass = tone === 'landing' ? 'text-landing-taupe fill-transparent' : 'text-neutral-200 fill-neutral-100';
 
   return (
     <div className={`inline-flex items-center gap-1 ${className}`}>
@@ -35,24 +38,21 @@ export function StarRating({
               onMouseEnter={() => isInteractive && setHoverValue(starIndex)}
               onMouseLeave={() => isInteractive && setHoverValue(null)}
               className={`relative transition-transform ${isInteractive
-                  ? 'cursor-pointer hover:scale-115 active:scale-95 focus:outline-none'
+                  ? 'cursor-pointer hover:scale-115 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-current'
                   : 'cursor-default pointer-events-none'
                 }`}
               aria-label={`${starIndex} sao`}
             >
               {isHalf ? (
                 <div className="relative">
-                  <Star className={`${starSizeClass} text-neutral-200 fill-neutral-200`} />
+                  <Star className={`${starSizeClass} ${emptyClass}`} />
                   <div className="absolute inset-0 overflow-hidden w-1/2">
-                    <Star className={`${starSizeClass} text-[#F59E0B] fill-[#F59E0B]`} />
+                    <Star className={`${starSizeClass} ${filledClass}`} />
                   </div>
                 </div>
               ) : (
                 <Star
-                  className={`${starSizeClass} transition-colors ${isFull
-                      ? 'text-[#F59E0B] fill-[#F59E0B]'
-                      : 'text-neutral-200 fill-neutral-100'
-                    }`}
+                  className={`${starSizeClass} transition-colors ${isFull ? filledClass : emptyClass}`}
                 />
               )}
             </button>
@@ -61,7 +61,7 @@ export function StarRating({
       </div>
 
       {showValue && (
-        <span className="text-body-sm font-semibold text-neutral-700 ml-1">
+        <span className={tone === 'landing' ? 'ml-1 font-mono text-xs text-landing-obsidian' : 'text-body-sm font-semibold text-neutral-700 ml-1'}>
           {Number(value).toFixed(1)}
         </span>
       )}

@@ -1,115 +1,117 @@
 'use client';
 
-import { FILTER_TABS, STATUS_CONFIG, STEPS } from '@/features/orders/constants/profile-orders-page';
-import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
 import { useCart } from '@/features/cart/hooks/use-cart';
-import { useCancelOrder, useConfirmDelivery, useInfiniteOrders } from '@/features/orders/hooks/useOrders';
-import type { BackendOrderStatus, Order, OrderItem } from '@/features/orders/types/orders';
-import { WriteReviewModal } from '@/features/reviews/components/WriteReviewModal';
+import { OrderStatusLabel } from '@/features/orders/components/order-status-label';
 import {
-  CheckCircle2,
-  ChevronDown, ChevronRight, ChevronUp,
-  Copy, ExternalLink,
-  MapPin, Phone,
-  Search,
-  ShoppingBag,
-  Star
-} from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+  FILTER_TABS,
+  ORDER_IMAGE_FALLBACK,
+  ORDER_STEPS,
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_STATUS_LABELS,
+  STATUS_CONFIG,
+} from '@/features/orders/constants/profile-orders-page';
+import { useCancelOrder, useConfirmDelivery, useInfiniteOrders } from '@/features/orders/hooks/useOrders';
+import {
+  formatOrderDate,
+  formatVnd,
+  getOrderCode,
+  getOrderItemImage,
+  getOrderItemName,
+  getOrderTotal,
+} from '@/features/orders/services/order-display';
+import type { Order, OrderItem } from '@/features/orders/types/orders';
+import { AccountShell } from '@/features/profile/components/account-shell';
+import {
+  AccountConfirmDialog,
+  AccountStatePanel,
+  accountButtonClassName,
+  accountFocusRing,
+  accountInputClassName,
+  accountLabelClassName,
+} from '@/features/profile/components/account-ui';
+import { WriteReviewModal } from '@/features/reviews/components/WriteReviewModal';
+import { cn } from '@/lib/utils';
+import { Check, ChevronDown, Copy, Search } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useEffect, useRef, useState } from 'react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-function fmt(n: number) {
-  return n.toLocaleString('vi-VN') + 'đ';
-}
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function fmtDateFull(iso: string) {
-  return new Date(iso).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
-}
-
-function TrackingBar({ status }: { status: string }) {
-  const step = STATUS_CONFIG[status]?.step ?? 0;
-  if (step < 0) return null;
-
+function OrderThumb({ item, className }: { item: OrderItem; className?: string }) {
+  const [src, setSrc] = useState(() => getOrderItemImage(item));
   return (
-    <div className="flex items-start gap-0 w-full overflow-x-auto no-scrollbar pb-1">
-      {STEPS.map((label, i) => {
-        const done = i <= step;
-        const active = i === step;
-        return (
-          <React.Fragment key={label}>
-            <div className="flex flex-col items-center gap-1.5 shrink-0 min-w-[74px]">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-colors ${done
-                  ? 'bg-brand-navy border-brand-navy'
-                  : 'bg-white border-neutral-300'
-                }`}>
-                {done && <CheckCircle2 className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
-              </div>
-              <span className={`text-[10px] font-medium text-center leading-tight ${active ? 'text-brand-navy' : done ? 'text-neutral-600' : 'text-neutral-400'
-                }`}>{label}</span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div className={`h-[2px] flex-1 mx-1 mb-4 rounded-full transition-colors ${i < step ? 'bg-brand-navy' : 'bg-neutral-200'
-                }`} />
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
+    <span className={cn('relative block shrink-0 overflow-hidden rounded-[2px] bg-landing-paper', className)}>
+      <Image src={src} alt={getOrderItemName(item)} fill sizes="64px" className="object-cover" onError={() => setSrc(ORDER_IMAGE_FALLBACK)} />
+    </span>
   );
 }
 
-function getProductImage(item: OrderItem) {
-  if (item.productImageSnapshot) {
-    return item.productImageSnapshot;
-  }
-  if (item.product?.images) {
-    try {
-      const parsed = typeof item.product.images === 'string' ? JSON.parse(item.product.images) : item.product.images;
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed[0].url || parsed[0];
-      }
-    } catch {
-      // Fallback
-    }
-  }
-  return 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=120&h=160&fit=crop&auto=format';
+function OrderProgress({ step }: { step: number }) {
+  return (
+    <ol className="grid grid-cols-5 gap-1.5" aria-label="Tiến độ đơn hàng">
+      {ORDER_STEPS.map((label, index) => {
+        const done = index <= step;
+        const current = index === step;
+        return (
+          <li key={label} aria-current={current ? 'step' : undefined}>
+            <span aria-hidden="true" className={cn('block h-0.5', done ? 'bg-landing-oxblood' : 'bg-landing-taupe/60')} />
+            <span
+              className={cn(
+                'mt-2 block text-[11px] leading-snug',
+                current ? 'font-medium text-landing-oxblood' : done ? 'text-landing-obsidian/80' : 'text-landing-muted',
+              )}
+            >
+              {label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function SummaryRow({ label, children, strong = false }: { label: string; children: React.ReactNode; strong?: boolean }) {
+  return (
+    <div className={cn('flex items-baseline justify-between gap-4 py-1.5', strong && 'mt-1 border-t border-landing-line/70 pt-3')}>
+      <dt className={cn('text-sm', strong ? 'font-medium text-landing-obsidian' : 'text-landing-muted')}>{label}</dt>
+      <dd className={cn('text-right text-sm', strong ? 'font-mono text-base text-landing-oxblood' : 'text-landing-obsidian')}>{children}</dd>
+    </div>
+  );
 }
 
 function OrderCard({
   order,
   onReviewItem,
+  onRequestCancel,
 }: {
   order: Order;
-  onReviewItem?: (item: OrderItem, orderId: string) => void;
+  onReviewItem: (item: OrderItem, orderId: string) => void;
+  onRequestCancel: (order: Order) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { cancelOrder, isCancelling } = useCancelOrder();
+  const [copied, setCopied] = useState(false);
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
-  const [copied, setCopied] = useState(false);
 
   const status = order.status || 'CREATED';
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.CREATED;
-  const Icon = cfg.icon;
-  const statusLabel = order.displayStatus?.label ?? cfg.label;
-  const orderCode = `ORD-${order.orderCode}`;
+  const step = (STATUS_CONFIG[status] ?? STATUS_CONFIG.CREATED).step;
+  const orderCode = getOrderCode(order);
+  const carrierLabel = order.displayStatus && order.displayStatus.source !== 'ORDER' ? order.displayStatus.label : null;
+  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const detailId = `order-${order.id}-detail`;
+  const shippingFee = order.shippingFeeVnd ?? order.shippingFee;
+  const discount = order.discountVnd ?? order.discountAmount;
+  const latestEvent = order.history?.[order.history.length - 1];
+  const shippingAddress = [order.shippingInfo?.address, order.shippingInfo?.wardName, order.shippingInfo?.provinceName].filter(Boolean).join(', ');
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(orderCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  const handleCancel = () => {
-    if (confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${orderCode}?`)) {
-      cancelOrder(order.id);
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(orderCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error('Không sao chép được mã đơn.');
     }
   };
 
@@ -125,12 +127,12 @@ function OrderCard({
     order.items.forEach(item => {
       addToCart({
         productId: item.productId,
-        name: item.product?.name || 'Sản phẩm công sở',
+        name: getOrderItemName(item),
         price: item.price,
         quantity: item.quantity,
         color: item.color || undefined,
         type: item.comboType,
-        image: getProductImage(item),
+        image: getOrderItemImage(item),
         variant: `Màu: ${item.color || 'Mặc định'} · May đo`
       });
     });
@@ -138,238 +140,183 @@ function OrderCard({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-      {/* Card header */}
-      <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-100">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Link href={`/orders/${order.id}`} className="text-body-sm font-semibold text-neutral-900 hover:text-brand-navy hover:underline">
-              #{orderCode}
+    <article className="border border-landing-line bg-landing-ivory/50">
+      <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 border-b border-landing-line/70 px-4 py-3 sm:px-5">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="flex items-center">
+            <Link href={`/orders/${order.id}`} className={cn('font-mono text-sm text-landing-obsidian transition-colors hover:text-landing-oxblood', accountFocusRing)}>
+              {orderCode}
             </Link>
-            <button onClick={copyCode} title="Sao chép mã" className="text-neutral-400 hover:text-brand-navy transition-colors">
-              {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-semantic-success" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
-          </div>
-          <span className="text-label-sm text-neutral-400">{fmtDate(order.createdAt)}</span>
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-semibold ${cfg.badge}`}>
-            <Icon className="w-3 h-3" />
-            {statusLabel}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-body-md font-bold text-brand-navy">{fmt(order.totalVnd ?? order.totalAmount)}</span>
-          <button
-            onClick={() => setExpanded(v => !v)}
-            className="flex items-center gap-1 text-label-sm font-medium text-neutral-500 hover:text-brand-navy transition-colors font-sans border-0 bg-transparent cursor-pointer"
-          >
-            Chi tiết {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Items preview (always visible) */}
-      <div className="px-5 py-4 flex items-center gap-3">
-        <div className="flex -space-x-3">
-          {order.items.slice(0, 3).map(item => (
-            <Image
-              key={item.id}
-              src={getProductImage(item)}
-              alt={item.product?.name || 'Sản phẩm'}
-              width={48}
-              height={56}
-              className="w-12 h-14 rounded-lg object-cover border-2 border-white shadow-sm"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
-              }}
-            />
-          ))}
-          {order.items.length > 3 && (
-            <div className="w-12 h-14 rounded-lg bg-neutral-100 border-2 border-white flex items-center justify-center text-label-sm font-semibold text-neutral-500">
-              +{order.items.length - 3}
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <p className="text-body-sm font-medium text-neutral-900 truncate">
-            {order.items[0]?.product?.name || 'Sản phẩm công sở'}
-          </p>
-          {order.items.length > 1 && (
-            <p className="text-label-sm text-neutral-500">và {order.items.length - 1} sản phẩm khác</p>
-          )}
-        </div>
-
-        {/* CTA actions */}
-        <div className="ml-auto flex items-center gap-2 shrink-0">
-          <Link
-            href={`/orders/${order.id}`}
-            className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 border border-neutral-200 text-neutral-600 rounded-lg text-label-sm font-medium hover:bg-neutral-50 transition-colors"
-          >
-            Xem trang đơn <ExternalLink className="w-3 h-3" />
-          </Link>
-          {order.allowedActions?.confirmDelivery && (
             <button
               type="button"
-              onClick={handleConfirmDelivery}
-              disabled={isConfirmingDelivery}
-              className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-label-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-55 cursor-pointer"
+              onClick={copyCode}
+              aria-label={copied ? 'Đã sao chép mã đơn' : `Sao chép mã ${orderCode}`}
+              className={cn('flex h-8 w-8 items-center justify-center text-landing-muted transition-colors hover:text-landing-oxblood', accountFocusRing)}
             >
-              {isConfirmingDelivery ? 'Đang xác nhận...' : 'Đã nhận hàng'}
+              {copied ? <Check className="h-3.5 w-3.5 text-landing-sage-ink" strokeWidth={2} /> : <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />}
             </button>
-          )}
-          {status === 'COMPLETED' && (
-            <Link
-              href="/try-on"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-brand-navy/8 text-brand-navy rounded-lg text-label-sm font-medium hover:bg-brand-navy/12 transition-colors"
-            >
-              Try-On lại
-            </Link>
-          )}
-          {order.allowedActions?.cancel && (
-            <button
-              onClick={handleCancel}
-              disabled={isCancelling}
-              className="px-3 py-1.5 border border-red-200 text-red-600 rounded-lg text-label-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-55"
-            >
-              Hủy đơn
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleReorder}
-            className="px-3 py-1.5 bg-brand-navy text-white rounded-lg text-label-sm font-semibold hover:bg-brand-navy/90 transition-colors flex items-center gap-1 cursor-pointer"
-          >
-            <ShoppingBag className="w-3 h-3" /> Mua lại
-          </button>
+          </span>
+          <span className="text-xs text-landing-muted">Đặt ngày {formatOrderDate(order.createdAt)}</span>
         </div>
+        <div className="flex flex-col items-start gap-1 sm:items-end">
+          <OrderStatusLabel status={status} />
+          {carrierLabel ? <span className="text-xs text-landing-muted">Vận chuyển: {carrierLabel}</span> : null}
+        </div>
+      </header>
+
+      <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex shrink-0 -space-x-3">
+            {order.items.slice(0, 3).map(item => (
+              <OrderThumb key={item.id} item={item} className="h-[60px] w-12 border-2 border-landing-paper" />
+            ))}
+            {order.items.length > 3 ? (
+              <span className="flex h-[60px] w-12 items-center justify-center border-2 border-landing-paper bg-landing-taupe/40 font-mono text-xs text-landing-obsidian">
+                +{order.items.length - 3}
+              </span>
+            ) : null}
+          </div>
+          <div className="min-w-0">
+            <p className="product-name-line line-clamp-1 text-landing-obsidian">{order.items[0] ? getOrderItemName(order.items[0]) : 'Đơn may đo'}</p>
+            <p className="mt-0.5 text-xs text-landing-muted">
+              {order.items.length > 1 ? `và ${order.items.length - 1} món khác · ` : ''}
+              {itemCount} sản phẩm
+            </p>
+          </div>
+        </div>
+        <p className="font-mono text-base text-landing-oxblood">{formatVnd(getOrderTotal(order))}</p>
       </div>
 
-      {/* Expandable detail */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="border-t border-neutral-100 px-5 py-5 flex flex-col gap-6">
+      {order.allowedActions?.updateMeasurement ? (
+        <p className="mx-4 mb-4 border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-sm text-landing-obsidian sm:mx-5">
+          Shop cần bạn xem lại số đo cho đơn này.{' '}
+          <Link href={`/orders/${order.id}`} className={cn('text-landing-oxblood underline underline-offset-4', accountFocusRing)}>
+            Mở đơn
+          </Link>
+        </p>
+      ) : null}
 
-              {/* Tracking bar */}
-              {STATUS_CONFIG[status]?.step >= 0 && (
-                <div>
-                  <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">Trạng thái vận chuyển</p>
-                  <TrackingBar status={status} />
-                </div>
-              )}
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-landing-line/70 px-4 py-3 sm:px-5">
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          aria-expanded={expanded}
+          aria-controls={detailId}
+          className={cn('inline-flex min-h-9 items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-muted transition-colors hover:text-landing-oxblood', accountFocusRing)}
+        >
+          {expanded ? 'Thu gọn' : 'Chi tiết'}
+          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+        <div className="flex flex-wrap gap-2">
+          {order.allowedActions?.cancel ? (
+            <button type="button" onClick={() => onRequestCancel(order)} className={accountButtonClassName('danger', 'sm')}>
+              Hủy đơn
+            </button>
+          ) : null}
+          {order.allowedActions?.confirmDelivery ? (
+            <button type="button" onClick={handleConfirmDelivery} disabled={isConfirmingDelivery} className={accountButtonClassName('primary', 'sm')}>
+              {isConfirmingDelivery ? 'Đang xác nhận' : 'Đã nhận hàng'}
+            </button>
+          ) : null}
+          <button type="button" onClick={handleReorder} className={accountButtonClassName('outline', 'sm')}>
+            Mua lại
+          </button>
+          <Link href={`/orders/${order.id}`} className={accountButtonClassName('outline', 'sm')}>
+            Xem đơn
+          </Link>
+        </div>
+      </footer>
 
-              {/* Items detail */}
-              <div>
-                <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">Sản phẩm</p>
-                <div className="flex flex-col gap-3">
-                  {order.items.map(item => (
-                    <div key={item.id} className="flex items-center gap-4">
-                      <Image
-                        src={getProductImage(item)}
-                        alt={item.product?.name || 'Sản phẩm'}
-                        width={56}
-                        height={72}
-                        className="w-14 h-18 rounded-lg object-cover border border-neutral-100 shrink-0"
-                        style={{ height: 72 }}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-body-sm font-semibold text-neutral-900 truncate">{item.product?.name || 'Sản phẩm công sở'}</p>
-                        <p className="text-label-sm text-neutral-500 mt-0.5">Màu: {item.color || 'Mặc định'} · May đo</p>
-                        <p className="text-label-sm text-neutral-500 mt-0.5">x{item.quantity}</p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-body-sm font-bold text-brand-navy">{fmt(item.price * item.quantity)}</span>
-                        {status === 'COMPLETED' && onReviewItem && (
-                          <button
-                            type="button"
-                            onClick={() => onReviewItem(item, order.id)}
-                            className="px-3 py-1.5 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-label-sm font-semibold transition-colors flex items-center gap-1 cursor-pointer"
-                          >
-                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                            Đánh giá
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      {expanded ? (
+        <div id={detailId} className="flex flex-col gap-7 border-t border-landing-line/70 px-4 py-5 sm:px-5">
+          {step >= 0 ? <OrderProgress step={step} /> : null}
 
-              {/* Summary + Address */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">Địa chỉ nhận hàng</p>
-                  <div className="flex flex-col gap-1.5 text-body-sm text-neutral-700">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
-                      <span>{order.shippingInfo?.address}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-neutral-400 shrink-0" />
-                      <span>{order.shippingInfo?.phone}</span>
-                    </div>
+          <div>
+            <p className={accountLabelClassName}>Sản phẩm</p>
+            <ul className="mt-3 divide-y divide-landing-line/60">
+              {order.items.map(item => (
+                <li key={item.id} className="flex items-center gap-4 py-3">
+                  <OrderThumb item={item} className="h-[72px] w-14" />
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/products/${item.productId}`}
+                      className={cn('product-name-line line-clamp-2 text-landing-obsidian transition-colors hover:text-landing-oxblood', accountFocusRing)}
+                    >
+                      {getOrderItemName(item)}
+                    </Link>
+                    <p className="mt-1 text-xs text-landing-muted">
+                      Màu: {item.color || 'Mặc định'} · May đo · SL {item.quantity}
+                    </p>
                   </div>
-                </div>
-                <div>
-                  <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">Thanh toán</p>
-                  <div className="flex flex-col gap-2 text-body-sm">
-                    <div className="flex justify-between text-neutral-600">
-                      <span>Phí giao hàng</span>
-                      <span>{fmt(order.shippingFeeVnd ?? order.shippingFee)}</span>
-                    </div>
-                    {((order.discountVnd !== undefined && order.discountVnd > 0) || order.discountAmount > 0) && (
-                      <div className="flex justify-between text-neutral-600">
-                        <span>Giảm giá</span>
-                        <span>-{fmt(order.discountVnd ?? order.discountAmount)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-neutral-600">
-                      <span>Thanh toán</span>
-                      <span>{order.paymentStatus || 'Chưa xác định'}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-brand-navy pt-2 border-t border-neutral-100">
-                      <span>Tổng cộng</span>
-                      <span>{fmt(order.totalVnd ?? order.totalAmount)}</span>
-                    </div>
-                    <p className="text-label-sm text-neutral-500 mt-1">Phương thức: {order.paymentMethod}</p>
-                    {order.history && order.history.length > 0 ? (
-                      <p className="text-label-sm text-neutral-500 mt-1">Mốc mới nhất: {order.history[order.history.length - 1]?.publicMessage || order.history[order.history.length - 1]?.toStatus}</p>
-                    ) : (
-                      <p className="text-label-sm text-neutral-500 mt-1">Chưa có lịch sử chi tiết</p>
-                    )}
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span className="font-mono text-sm text-landing-obsidian">{formatVnd(item.lineTotalVnd ?? item.price * item.quantity)}</span>
+                    {status === 'COMPLETED' ? (
+                      <button type="button" onClick={() => onReviewItem(item, order.id)} className={accountButtonClassName('outline', 'sm')}>
+                        Đánh giá
+                      </button>
+                    ) : null}
                   </div>
-                </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="grid gap-7 sm:grid-cols-2 sm:gap-10">
+            <div>
+              <p className={accountLabelClassName}>Giao đến</p>
+              <div className="mt-3 space-y-1 text-sm text-landing-obsidian">
+                {order.shippingInfo?.name ? <p className="font-medium">{order.shippingInfo.name}</p> : null}
+                {order.shippingInfo?.phone ? <p className="font-mono text-xs">{order.shippingInfo.phone}</p> : null}
+                <p className="leading-relaxed text-landing-muted">{shippingAddress || 'Chưa có địa chỉ'}</p>
               </div>
+              {latestEvent?.publicMessage ? (
+                <p className="mt-4 text-xs leading-relaxed text-landing-muted">
+                  Cập nhật mới nhất: <span className="text-landing-obsidian">{latestEvent.publicMessage}</span>
+                </p>
+              ) : null}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            <div>
+              <p className={accountLabelClassName}>Thanh toán</p>
+              <dl className="mt-2">
+                <SummaryRow label="Phương thức">{PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod}</SummaryRow>
+                <SummaryRow label="Trạng thái">
+                  {order.paymentStatus ? PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus : 'Chưa xác định'}
+                </SummaryRow>
+                <SummaryRow label="Phí giao hàng">
+                  <span className="font-mono">{formatVnd(shippingFee)}</span>
+                </SummaryRow>
+                {discount > 0 ? (
+                  <SummaryRow label="Giảm giá">
+                    <span className="font-mono">-{formatVnd(discount)}</span>
+                  </SummaryRow>
+                ) : null}
+                <SummaryRow label="Tổng cộng" strong>
+                  {formatVnd(getOrderTotal(order))}
+                </SummaryRow>
+              </dl>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </article>
   );
 }
 
-function EmptyOrders() {
+function OrdersSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-20 h-20 bg-brand-navy/5 rounded-2xl flex items-center justify-center mb-5">
-        <ShoppingBag className="w-9 h-9 text-brand-navy/40" />
-      </div>
-      <h3 className="text-heading-h3 font-semibold text-neutral-900 mb-2">Chưa có đơn hàng nào</h3>
-      <p className="text-body-sm text-neutral-500 mb-6 max-w-[280px]">Hãy khám phá bộ sưu tập và đặt đơn hàng đầu tiên của bạn.</p>
-      <Link
-        href="/products"
-        className="flex items-center gap-2 px-6 py-3 bg-brand-navy text-white rounded-xl text-label-sm font-semibold hover:bg-brand-navy/90 transition-colors"
-      >
-        Xem sản phẩm <ChevronRight className="w-4 h-4" />
-      </Link>
+    <div className="flex flex-col gap-4" aria-hidden="true">
+      {[0, 1, 2].map((key) => (
+        <div key={key} className="border border-landing-line">
+          <div className="h-12 border-b border-landing-line/70 bg-landing-ivory/50" />
+          <div className="flex items-center gap-4 p-5">
+            <div className="h-[60px] w-12 animate-pulse bg-landing-taupe/40" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-1/2 animate-pulse bg-landing-taupe/40" />
+              <div className="h-3 w-1/4 animate-pulse bg-landing-taupe/30" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -378,21 +325,16 @@ export default function OrdersPage() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [reviewModalItem, setReviewModalItem] = useState<{ item: OrderItem; orderId: string } | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const filterStatusMap: Record<string, BackendOrderStatus | undefined> = {
-    all: undefined,
-    pending: 'CREATED',
-    tailoring: 'PROCESSING',
-    processing: 'PROCESSING',
-    ready_to_ship: 'READY_TO_SHIP',
-    completed: 'COMPLETED',
-    cancelled: 'CANCELLED',
-  };
-  const queryStatus = filterStatusMap[activeFilter] ?? (activeFilter === 'shipping' || activeFilter === 'delivered' ? undefined : activeFilter.toUpperCase() as BackendOrderStatus);
-  const { orders, meta, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteOrders({
+  const { cancelOrder, isCancelling } = useCancelOrder();
+
+  const activeTab = FILTER_TABS.find((tab) => tab.id === activeFilter) ?? FILTER_TABS[0];
+  const trimmedSearch = search.trim();
+  const { orders, meta, isLoading, isError, refetch, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteOrders({
     limit: 20,
-    status: queryStatus,
-    search: search.trim() || undefined,
+    status: activeTab.status,
+    search: trimmedSearch || undefined,
   });
 
   useEffect(() => {
@@ -412,111 +354,156 @@ export default function OrdersPage() {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const countByStatus = (id: string) => {
-    if (id === activeFilter) return meta.total;
-    if (id === 'all') return orders.length;
-    const status = filterStatusMap[id];
-    if (!status) return orders.length;
-    return orders.filter(o => o.status === status).length;
+  const confirmCancel = () => {
+    if (!cancelTarget) return;
+    cancelOrder(cancelTarget.id, {
+      onSuccess: () => {
+        toast.success(`Đã hủy đơn ${getOrderCode(cancelTarget)}`);
+        setCancelTarget(null);
+      },
+      onError: () => toast.error('Không hủy được đơn lúc này. Vui lòng thử lại.'),
+    });
   };
 
+  const isFiltered = activeTab.status !== undefined || trimmedSearch.length > 0;
+
   return (
-    <div className="min-h-screen bg-brand-cream pb-16 md:pb-12">
-      {/* Page header */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-[900px] mx-auto px-4 md:px-8 py-6 md:py-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-heading-h1 font-bold text-brand-navy">Đơn hàng</h1>
-              <p className="text-body-sm text-neutral-500 mt-1">Theo dõi và quản lý tất cả đơn hàng của bạn</p>
-            </div>
-            {/* Search */}
-            <div className="relative w-full sm:w-[240px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Tìm mã đơn, sản phẩm..."
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-body-sm focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/15 transition-colors"
-              />
-            </div>
-          </div>
+    <AccountShell
+      title="Đơn hàng"
+      description="Theo dõi đơn may đo từ lúc đặt, duyệt số đo, may cho tới khi giao."
+      actions={
+        <div className="relative w-full md:w-[260px]">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-landing-muted" strokeWidth={1.75} aria-hidden="true" />
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            aria-label="Tìm đơn hàng"
+            placeholder="Tìm mã đơn, sản phẩm…"
+            className={cn(accountInputClassName, 'pl-9 [&::-webkit-search-cancel-button]:appearance-none')}
+          />
         </div>
-      </div>
-
-      <div className="max-w-[900px] mx-auto px-4 md:px-8 py-6">
-
-        {/* Filter tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-6 no-scrollbar">
+      }
+    >
+      <div className="relative mb-6">
+        <div role="tablist" aria-label="Lọc theo trạng thái" className="no-scrollbar flex gap-6 overflow-x-auto border-b border-landing-line pr-8">
           {FILTER_TABS.map(tab => {
-            const count = countByStatus(tab.id);
+            const selected = activeFilter === tab.id;
             return (
               <button
                 key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
                 onClick={() => setActiveFilter(tab.id)}
-                className={`shrink-0 flex items-center gap-1.5 h-9 px-4 rounded-full text-label-sm font-semibold transition-colors border-0 cursor-pointer ${activeFilter === tab.id
-                    ? 'bg-brand-navy text-white'
-                    : 'bg-white border border-neutral-200 text-neutral-600 hover:border-brand-navy/30'
-                  }`}
+                className={cn(
+                  'relative h-11 shrink-0 whitespace-nowrap text-sm transition-colors',
+                  selected
+                    ? 'font-medium text-landing-oxblood after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-landing-oxblood'
+                    : 'text-landing-obsidian/70 hover:text-landing-oxblood',
+                  accountFocusRing,
+                )}
               >
                 {tab.label}
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeFilter === tab.id ? 'bg-white/20 text-white' : 'bg-neutral-100 text-neutral-500'
-                  }`}>
-                  {count}
-                </span>
               </button>
             );
           })}
         </div>
-
-        {/* Orders list */}
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : orders.length === 0 ? (
-          <EmptyOrders />
-        ) : (
-          <>
-            <StaggerContainer className="flex flex-col gap-4">
-              {orders.map(order => (
-                <StaggerItem key={order.id}>
-                  <OrderCard
-                    order={order}
-                    onReviewItem={(item, orderId) => setReviewModalItem({ item, orderId })}
-                  />
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-            <div ref={loadMoreRef} className="flex justify-center py-8">
-              {isFetchingNextPage ? (
-                <div className="w-6 h-6 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
-              ) : hasNextPage ? (
-                <button
-                  type="button"
-                  onClick={() => fetchNextPage()}
-                  className="px-5 py-2.5 bg-white border border-neutral-200 rounded-xl text-label-sm font-semibold text-neutral-700 hover:border-brand-navy/30 transition-colors"
-                >
-                  Tải thêm đơn hàng
-                </button>
-              ) : null}
-            </div>
-          </>
-        )}
+        <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-landing-paper to-transparent" />
       </div>
 
+      {!isLoading && !isError && orders.length > 0 ? (
+        <p className="mb-4 text-xs text-landing-muted" aria-live="polite">
+          <span className="font-mono text-landing-obsidian">{meta.total}</span> đơn
+          {activeTab.status ? ` ${activeTab.label.toLowerCase()}` : ''}
+          {trimmedSearch ? ` khớp “${trimmedSearch}”` : ''}
+        </p>
+      ) : null}
+
+      {isLoading ? (
+        <OrdersSkeleton />
+      ) : isError ? (
+        <AccountStatePanel
+          tone="error"
+          title="Không tải được đơn hàng"
+          description="Kiểm tra kết nối rồi thử lại."
+          action={
+            <button type="button" onClick={() => refetch()} className={accountButtonClassName('outline')}>
+              Thử lại
+            </button>
+          }
+        />
+      ) : orders.length === 0 ? (
+        isFiltered ? (
+          <AccountStatePanel
+            title="Không có đơn phù hợp"
+            description={trimmedSearch ? 'Thử mã đơn khác hoặc bỏ bớt từ khóa.' : 'Chưa có đơn nào ở trạng thái này.'}
+            action={
+              <button type="button" onClick={() => { setActiveFilter('all'); setSearch(''); }} className={accountButtonClassName('outline')}>
+                Xem tất cả đơn
+              </button>
+            }
+          />
+        ) : (
+          <AccountStatePanel
+            title="Chưa có đơn hàng nào"
+            description="Chọn một thiết kế, lưu số đo và đặt đơn may đo đầu tiên."
+            action={
+              <Link href="/products" className={accountButtonClassName('primary')}>
+                Xem sản phẩm
+              </Link>
+            }
+          />
+        )
+      ) : (
+        <>
+          <div className="flex flex-col gap-4">
+            {orders.map(order => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onReviewItem={(item, orderId) => setReviewModalItem({ item, orderId })}
+                onRequestCancel={setCancelTarget}
+              />
+            ))}
+          </div>
+          <div ref={loadMoreRef} className="flex justify-center py-8">
+            {isFetchingNextPage ? (
+              <p className="text-xs text-landing-muted">Đang tải thêm đơn…</p>
+            ) : hasNextPage ? (
+              <button type="button" onClick={() => fetchNextPage()} className={accountButtonClassName('outline')}>
+                Tải thêm đơn hàng
+              </button>
+            ) : null}
+          </div>
+        </>
+      )}
+
+      <AccountConfirmDialog
+        open={cancelTarget !== null}
+        onOpenChange={(open) => { if (!open) setCancelTarget(null); }}
+        title="Hủy đơn hàng?"
+        description={
+          cancelTarget
+            ? `Đơn ${getOrderCode(cancelTarget)} chưa thanh toán sẽ bị hủy và không khôi phục được.`
+            : ''
+        }
+        confirmLabel="Hủy đơn"
+        isPending={isCancelling}
+        onConfirm={confirmCancel}
+      />
+
       {/* Modal viết review khi click từ đơn hàng đã nhận */}
-      {reviewModalItem && (
+      {reviewModalItem ? (
         <WriteReviewModal
-          isOpen={!!reviewModalItem}
+          isOpen
           onClose={() => setReviewModalItem(null)}
           productId={reviewModalItem.item.productId}
-          productName={reviewModalItem.item.product?.name || 'Sản phẩm'}
-          productImage={getProductImage(reviewModalItem.item)}
+          productName={getOrderItemName(reviewModalItem.item)}
+          productImage={getOrderItemImage(reviewModalItem.item)}
           orderId={reviewModalItem.orderId}
         />
-      )}
-    </div>
+      ) : null}
+    </AccountShell>
   );
 }
