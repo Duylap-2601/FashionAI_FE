@@ -6,10 +6,10 @@
 | --- | --- |
 | Version | 1.0 |
 | Status | Approved direction, implementation in progress |
-| Scope | Public landing page at `/`, landing header, landing footer, announcement bar |
+| Scope | Public landing page at `/`, products listing at `/products`, landing header, landing footer, announcement bar |
 | Owner | StAle. frontend team |
 | Related docs | `docs/design-system.md`, `docs/table-design.md`, `AGENTS.md` |
-| Last updated | 2026-10-25 |
+| Last updated | 2026-10-26 |
 
 ## Design Read
 
@@ -225,6 +225,45 @@ Removed from the previous page:
 - Phone, address, and email remain the existing business values.
 - Footer spacing includes the mobile bottom-tab clearance.
 
+## Products Page
+
+Scope: the catalog at `/products`. It uses the landing tokens, the landing header variant, and the shared `ProductCard`, but it is a working page, not an editorial chapter. There is no chapter number, no masthead, and no breadcrumb: the toolbar sits directly under the header so products start above the fold on mobile.
+
+### Structure
+
+| Order | Element | Notes |
+| --- | --- | --- |
+| 1 | Header | Landing variant. The header search (desktop input and mobile icon) is hidden on `/products`; the toolbar search replaces it. |
+| 2 | Toolbar | Sticky under the header at `72px`, paper at `95%` with blur, one hairline at the bottom |
+| 3 | Filter sidebar | Desktop only, toggled by `Bộ lọc`, sticky under the toolbar |
+| 4 | Results header | Mono product count, page index on desktop, removable filter chips, `Xoá tất cả` |
+| 5 | Product grid | Shared `ProductCard` |
+| 6 | Pagination or load more | Numbered pagination from `md`; below `md`, infinite load with `Xem thêm` and a hairline progress bar |
+
+### Toolbar
+
+- Garment tabs are uppercase underlined text tabs with `aria-pressed`, the same treatment as the landing filter tabs. Tabs show no counts.
+- Search is a square `2px` input on ivory. It filters as the user types (300ms debounce) and has a clear button.
+- `Bộ lọc` is a square outline button that shows the number of active sidebar filters and fills oxblood while the sidebar is open.
+- Sort is a native select from `md`. Below `md` it is an icon button that opens a sort sheet.
+- Below `xl` the toolbar has two rows (search and buttons, then tabs). Tabs scroll horizontally and fade at the right edge. From `xl` everything fits in one row.
+- There is no grid or list toggle.
+
+### Filters
+
+- Groups in order: `Danh mục` (checkboxes), `Màu sắc` (swatch buttons with names and `aria-pressed`), `Khoảng giá` (range input with a mono value).
+- Light swatches (`Trắng`, `Kem`, `Be`) carry a taupe border and a dark check.
+- Filters apply immediately. The desktop sidebar has no `Áp dụng` button.
+- Mobile filter and sort open as bottom sheets with a focus trap and Esc to close, layered above the bottom tab bar. The filter sheet footer has `Xoá tất cả` and `Xem N sản phẩm`.
+
+### Grid And States
+
+- Two columns on mobile, three on tablet, four on desktop. With the sidebar open: two at `md`, three from `lg`.
+- Loading uses a taupe skeleton in the same grid.
+- Empty uses an ivory block with one sentence and `Xoá bộ lọc`.
+- When the API fails and fallback products show, an ivory notice offers `Thử lại`.
+- Changing a filter or page scrolls back to the top of the grid only when the user has scrolled past it.
+
 ## Responsive Behavior
 
 | Breakpoint | Hero | Collections | Products | Lookbook |
@@ -319,6 +358,8 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | API-first landing data | Products, collections, and their images now come from the backend; local media is fallback-only |
 | Compact AI try-on preview | The image supports the three steps instead of competing with them |
 | No hero tagline or collection label | The two-line headline and CTAs carry the first screen without clutter |
+| No masthead or breadcrumb on `/products` | The catalog is a working page; products start right under the toolbar |
+| One search field on `/products` | The header and toolbar searches duplicated each other, and the header search did not filter while already on the page |
 | Single-plate lookbook viewer | A row of three cards read as a second collection grid; one capped portrait plate with side details keeps the lookbook distinct and fully visible on screen |
 
 ## Acceptance Criteria
@@ -333,6 +374,7 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 - Header and footer changes do not affect non-landing routes.
 - `npm run lint`, `npm run typecheck`, `npm test`, and `npm run check:architecture` pass.
 - Mobile, tablet, and desktop layouts have no horizontal overflow.
+- `/products` shows one search field, no masthead or breadcrumb, and no dead controls.
 
 ## Changelog
 
@@ -342,4 +384,5 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | 2026-10-25 | Synced docs with the full-bleed hero without tagline, local-first media, display line-height `1.1`, and compact AI try-on preview |
 | 2026-10-25 | Lookbook is a single capped portrait plate with side details and thumbnails, not a horizontal card row |
 | 2026-10-25 | Landing now reads real products and collections from the API, including cover, lookbook, and product images; local media is fallback-only |
+| 2026-10-26 | Added the products page spec: toolbar, filters, grid states, and one search field |
 

@@ -1,33 +1,58 @@
+import { cn } from '@/components/ui/utils';
 import type { ProductResultsHeaderProps } from '@/features/products/types/product-results-header';
-import { ArrowUpDown, SlidersHorizontal, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
-export function ProductResultsHeader({ filteredCount, activeChips, onOpenFilters, onOpenSort, onClearAll }: ProductResultsHeaderProps) {
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+
+export function ProductResultsHeader({
+  filteredCount,
+  isLoading,
+  currentPage,
+  totalPages,
+  showPageIndex,
+  activeChips,
+  onClearAll,
+}: ProductResultsHeaderProps) {
   return (
-    <div className="flex items-center gap-3 mb-6 flex-wrap min-h-[32px]">
-      <span className="text-body-sm font-medium text-neutral-900">{filteredCount} sản phẩm</span>
-
-      <div className="ml-auto flex items-center gap-3 md:hidden">
-        <button onClick={onOpenSort} className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#5D1C34] underline underline-offset-4">
-          <ArrowUpDown className="w-3.5 h-3.5" /> Sắp xếp
-        </button>
-        <button onClick={onOpenFilters} className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#5D1C34] underline underline-offset-4">
-          <SlidersHorizontal className="w-3.5 h-3.5" /> Lọc
-        </button>
+    <div className="mb-8 border-b border-landing-line/70 pb-4">
+      <div className="flex items-baseline justify-between gap-4 font-mono text-[11px] uppercase tracking-[0.2em] text-landing-muted">
+        <p aria-live="polite">
+          {isLoading ? 'Đang tải sản phẩm' : (
+            <>
+              <span className="text-landing-obsidian">{filteredCount}</span> sản phẩm
+            </>
+          )}
+        </p>
+        {showPageIndex && totalPages > 1 ? (
+          <p>
+            Trang <span className="text-landing-obsidian">{currentPage}</span> / {totalPages}
+          </p>
+        ) : null}
       </div>
 
-      {activeChips.length > 0 && (
-        <>
-          <div className="hidden md:block w-px h-4 bg-neutral-300 mx-1"></div>
-          {activeChips.map(chip => (
-            <div key={chip.id} onClick={chip.onRemove} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 rounded-full text-[12px] font-medium text-neutral-700 hover:bg-neutral-200 transition-colors cursor-pointer">
-              {chip.label} <X className="w-3 h-3 text-neutral-500 hover:text-neutral-900" />
-            </div>
+      {activeChips.length > 0 ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {activeChips.map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={chip.onRemove}
+              aria-label={`Bỏ lọc ${chip.label}`}
+              className={cn('inline-flex h-8 items-center gap-1.5 rounded-[2px] border border-landing-line bg-landing-ivory/70 px-2.5 text-xs text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood', focusRing)}
+            >
+              {chip.label}
+              <X className="h-3 w-3" strokeWidth={1.75} />
+            </button>
           ))}
-          <button onClick={onClearAll} className="hidden md:inline text-[12px] font-semibold text-brand-navy hover:underline ml-2">
+          <button
+            type="button"
+            onClick={onClearAll}
+            className={cn('ml-1 h-8 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-oxblood underline-offset-4 transition-colors hover:underline', focusRing)}
+          >
             Xoá tất cả
           </button>
-        </>
-      )}
+        </div>
+      ) : null}
     </div>
   );
 }

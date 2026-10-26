@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the implementation contract for the landing experience at `/`. It extends the existing StAle. design tokens. It does not replace the app-wide tokens, table system, or admin styles.
+This document is the implementation contract for the landing experience at `/` and the products listing at `/products`. It extends the existing StAle. design tokens. It does not replace the app-wide tokens, table system, or admin styles.
 
 Read `DESIGN.md` for the narrative and section intent. Read this file for tokens, component APIs, states, and code placement.
 
@@ -212,7 +212,7 @@ States:
 
 ### `ProductCard`
 
-File: `src/features/home/components/ProductGrid.tsx`
+File: `src/features/products/components/listing/ProductCard.tsx`. The landing `ProductGrid` and the products page both render this one component.
 
 Visual contract:
 
@@ -354,6 +354,86 @@ Contract:
 - Landing login control is square, not a pill.
 - Footer payment methods are `COD`, `Chuyển khoản`, `ZaloPay`.
 - Footer includes a mobile bottom-tab clearance.
+- The header search (desktop input and mobile icon) is hidden on `/products`, which has its own toolbar search.
+
+## Products Listing
+
+Page: `src/features/products/components/products-page.tsx`, rendered by `src/app/(main)/products/page.tsx`. The page owns filter state, queries, and scrolling; the components below only render.
+
+### Sticky Offsets
+
+| Element | Below `xl` | From `xl` |
+| --- | --- | --- |
+| `ProductToolbar` | `top: 72px`, `105px` tall | `top: 72px`, `57px` tall |
+| `DesktopFilterSidebar` (`md` and up) | `top: 201px` | `top: 153px` |
+| Results `scroll-margin-top` | `193px` mobile, `201px` from `md` | `153px` |
+
+The header is `72px` plus a `1px` hairline. The toolbar has only a bottom border, so when it sticks its top edge sits under the header hairline. If the header or toolbar height changes, update these offsets together.
+
+### `ProductToolbar`
+
+File: `src/features/products/components/listing/ProductToolbar.tsx`
+
+```ts
+interface ProductToolbarProps {
+  categories: CategoryCount[];
+  activeTab: string;
+  searchQuery: string;
+  isFilterOpen: boolean;
+  activeFilterCount: number;
+  sortBy: SortBy;
+  onSelectTab: (tab: string) => void;
+  onSearchChange: (value: string) => void;
+  onToggleFilters: () => void;
+  onOpenSort: () => void;
+  onSortChange: (sort: SortBy) => void;
+}
+```
+
+Contract:
+
+- Renders `CategoryTabs`, the search field with a visible clear button, `Bộ lọc`, and sort.
+- Sort is a native `select` from `md`. Below `md`, an icon button calls `onOpenSort`.
+- `Bộ lọc` sets `aria-expanded` and fills oxblood while open.
+- Sort options come from `SORT_OPTIONS` in `constants/product-filters.ts`.
+
+### `CategoryTabs`
+
+File: `src/features/products/components/listing/CategoryTabs.tsx`
+
+- A `role="group"` row of buttons with `aria-pressed`. The active tab gets oxblood text and a `1px` oxblood underline.
+- Below `xl` the row scrolls horizontally, bleeds to the page edge, and fades over the last `32px`.
+
+### Filter Panels
+
+Files: `src/features/products/components/listing/FilterSections.tsx`, `src/features/products/components/listing/ProductFilterPanels.tsx`
+
+- `FilterSections` renders `Danh mục`, `Màu sắc`, and `Khoảng giá`. Groups are separated by hairlines and headed by brass-ink labels.
+- Category rows are real checkboxes (`sr-only` input with a styled box). Swatches are buttons with `aria-pressed` and a visible name. Light swatches are flagged with `light: true` in `AVAILABLE_COLORS`.
+- The price range reads its bounds from `PRICE_FILTER`.
+- `DesktopFilterSidebar` is an `aside` that is visible from `md`. Render it only when the breakpoint is resolved to desktop.
+- `MobileFilterSheet` and `MobileSortSheet` are Radix Dialog bottom sheets at `z-[100]`, above the bottom tab bar (`z-[90]`). Pass `open` only when the breakpoint is resolved to mobile, so a hidden dialog never traps focus on desktop.
+
+### `ProductResultsHeader`
+
+File: `src/features/products/components/listing/ProductResultsHeader.tsx`
+
+- Mono count in a polite live region, `Đang tải sản phẩm` while loading, and `Trang X / Y` on desktop.
+- Active filters render as square removable chips, followed by `Xoá tất cả`.
+
+### `ProductList`
+
+File: `src/features/products/components/listing/ProductList.tsx`
+
+| State | Visual |
+| --- | --- |
+| Loading | Taupe skeleton, 8 cards, same grid |
+| Empty | Ivory block, one sentence, `Xoá bộ lọc` |
+| API error with fallback data | Ivory notice with `Thử lại` |
+| Desktop | Pagination: `Trang trước`, mono page numbers, `Trang sau`. The current page is oxblood with `aria-current="page"` |
+| Mobile | `shown / total` count, hairline progress bar, and `Xem thêm`. The page also loads the next page ahead with an IntersectionObserver on the same block |
+
+Grid: `grid-cols-2`, then `md:grid-cols-3 lg:grid-cols-4`. With the sidebar open: `md:grid-cols-2 lg:grid-cols-3`.
 
 ## State Matrix
 
@@ -419,6 +499,12 @@ Contract:
 | Landing shell | `src/components/layout/Layout.tsx` |
 | Shared heading | `src/features/home/components/LandingSectionHeading.tsx` |
 | Shared reveal | `src/features/home/components/LandingReveal.tsx` |
+| Shared product card | `src/features/products/components/listing/ProductCard.tsx` |
+| Products page composition | `src/features/products/components/products-page.tsx` |
+| Products toolbar and tabs | `src/features/products/components/listing/ProductToolbar.tsx`, `CategoryTabs.tsx` |
+| Products filters | `src/features/products/components/listing/FilterSections.tsx`, `ProductFilterPanels.tsx` |
+| Products results and grid | `src/features/products/components/listing/ProductResultsHeader.tsx`, `ProductList.tsx` |
+| Filter and sort constants | `src/features/products/constants/product-filters.ts` |
 
 ## Do Not
 
@@ -434,6 +520,9 @@ Contract:
 - Do not promise a discount in the newsletter.
 - Do not change the app header outside the landing variant.
 - Do not add a new font family without updating this document.
+- Do not show the header search on `/products` or add a second search field to that page.
+- Do not add a masthead or breadcrumb to `/products`.
+- Do not add a grid or list toggle unless a list view exists.
 
 ## Verification
 
@@ -464,3 +553,4 @@ Manual checks:
 | 2026-10-25 | Synced display metrics, full-bleed hero rules, local-first media, and the compact AI try-on preview |
 | 2026-10-25 | Lookbook contract: one capped `3/4` plate with side details and thumbnails so each look fits on screen |
 | 2026-10-25 | Landing data and imagery now come from the API; local media is fallback-only |
+| 2026-10-26 | Products listing contract: toolbar, filter panels, results header, grid states, sticky offsets; fixed the `ProductCard` file path |

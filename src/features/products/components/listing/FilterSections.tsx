@@ -1,101 +1,151 @@
-import { AVAILABLE_COLORS } from '@/features/products/constants/product-filters';
+import { cn } from '@/components/ui/utils';
+import { AVAILABLE_COLORS, PRICE_FILTER } from '@/features/products/constants/product-filters';
 import type { FilterSectionProps } from '@/features/products/types/filter-sections';
 import { Check } from 'lucide-react';
+import React, { useId } from 'react';
+
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+
+function formatVnd(value: number) {
+  return `${value.toLocaleString('vi-VN')} ₫`;
+}
+
+function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  const headingId = useId();
+  return (
+    <section aria-labelledby={headingId} className="border-t border-landing-line/70 py-6 first:border-t-0 first:pt-0">
+      <h3 id={headingId} className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function SubCategoryFilter({ subCategoryCounts, selectedSubCategories, onToggleSubCategory }: Pick<FilterSectionProps, 'subCategoryCounts' | 'selectedSubCategories' | 'onToggleSubCategory'>) {
+  return (
+    <FilterGroup title="Danh mục">
+      <ul className="flex flex-col">
+        {subCategoryCounts.map((item) => {
+          const isChecked = selectedSubCategories.includes(item.name);
+          return (
+            <li key={item.name}>
+              <label className="group flex min-h-11 cursor-pointer items-center gap-3 text-sm text-landing-obsidian/80 transition-colors hover:text-landing-obsidian">
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => onToggleSubCategory(item.name)}
+                  className="peer sr-only"
+                />
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-[2px] border transition-colors',
+                    'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-landing-oxblood',
+                    isChecked
+                      ? 'border-landing-oxblood bg-landing-oxblood text-landing-paper'
+                      : 'border-landing-obsidian/40 group-hover:border-landing-oxblood',
+                  )}
+                >
+                  {isChecked ? <Check className="h-3 w-3" strokeWidth={2.5} /> : null}
+                </span>
+                <span className={cn('flex-1', isChecked && 'font-medium text-landing-obsidian')}>{item.name}</span>
+                {typeof item.count === 'number' ? (
+                  <span className="font-mono text-[11px] text-landing-muted">{item.count}</span>
+                ) : null}
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </FilterGroup>
+  );
+}
+
+function ColorFilter({ selectedColors, onToggleColor }: Pick<FilterSectionProps, 'selectedColors' | 'onToggleColor'>) {
+  return (
+    <FilterGroup title="Màu sắc">
+      <div className="grid grid-cols-3 gap-x-2 gap-y-3">
+        {AVAILABLE_COLORS.map((swatch) => {
+          const isSelected = selectedColors.includes(swatch.name);
+          return (
+            <button
+              key={swatch.name}
+              type="button"
+              onClick={() => onToggleColor(swatch.name)}
+              aria-pressed={isSelected}
+              className={cn('group flex min-h-11 flex-col items-center gap-2 py-1 text-[11px] transition-colors', focusRing)}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'flex h-7 w-7 items-center justify-center rounded-full ring-offset-[3px] ring-offset-landing-paper transition-shadow',
+                  swatch.light && 'border border-landing-taupe',
+                  isSelected ? 'ring-1 ring-landing-oxblood' : 'group-hover:ring-1 group-hover:ring-landing-line',
+                )}
+                style={{ backgroundColor: swatch.color }}
+              >
+                {isSelected ? (
+                  <Check
+                    className={cn('h-3.5 w-3.5', swatch.light ? 'text-landing-obsidian' : 'text-landing-paper')}
+                    strokeWidth={2.25}
+                  />
+                ) : null}
+              </span>
+              <span className={isSelected ? 'font-semibold text-landing-obsidian' : 'text-landing-muted group-hover:text-landing-obsidian'}>
+                {swatch.name}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </FilterGroup>
+  );
+}
 
 function PriceFilter({ currentPriceRange, maxPriceLimit, onPriceChange }: Pick<FilterSectionProps, 'currentPriceRange' | 'maxPriceLimit' | 'onPriceChange'>) {
+  const inputId = useId();
+  const isUnlimited = currentPriceRange >= maxPriceLimit;
+  const valueLabel = isUnlimited ? 'Mọi mức giá' : `Dưới ${formatVnd(currentPriceRange)}`;
+
   return (
-    <div>
-      <h3 className="text-label-sm font-semibold mb-3">Khoảng giá tối đa</h3>
+    <FilterGroup title="Khoảng giá">
+      <label htmlFor={inputId} className="mb-3 block font-mono text-[13px] text-landing-obsidian">
+        {valueLabel}
+      </label>
       <input
+        id={inputId}
         type="range"
-        min={200000}
+        min={PRICE_FILTER.min}
         max={maxPriceLimit}
-        step={100000}
+        step={PRICE_FILTER.step}
         value={currentPriceRange}
-        onChange={(e) => onPriceChange(Number(e.target.value))}
-        className="w-full accent-brand-navy cursor-pointer"
+        onChange={(event) => onPriceChange(Number(event.target.value))}
+        aria-valuetext={valueLabel}
+        className={cn('h-6 w-full cursor-pointer accent-landing-oxblood', focusRing)}
       />
-      <div className="text-[13px] font-medium text-neutral-600 text-center mt-2">
-        Dưới {currentPriceRange.toLocaleString('vi-VN')}đ
+      <div aria-hidden="true" className="mt-1 flex justify-between font-mono text-[10px] uppercase tracking-[0.12em] text-landing-muted">
+        <span>{formatVnd(PRICE_FILTER.min)}</span>
+        <span>{formatVnd(maxPriceLimit)}</span>
       </div>
-    </div>
-  );
-}
-
-function ColorFilter({ selectedColors, onToggleColor, mobile = false }: Pick<FilterSectionProps, 'selectedColors' | 'onToggleColor' | 'mobile'>) {
-  return (
-    <div>
-      <h3 className="text-label-sm font-semibold mb-4">Màu sắc</h3>
-      <div className={mobile ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-5 gap-3'}>
-        {AVAILABLE_COLORS.map(c => {
-          const isSelected = selectedColors.includes(c.name);
-          return mobile ? (
-            <button key={c.name} type="button" onClick={() => onToggleColor(c.name)} className="flex flex-col items-center gap-1.5 text-[11px] text-neutral-600">
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${c.border ? 'border border-neutral-300' : ''} ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`} style={{ backgroundColor: c.color }}>
-                {isSelected && <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />}
-              </span>
-              <span>{c.name}</span>
-            </button>
-          ) : (
-            <div key={c.name} onClick={() => onToggleColor(c.name)} className="relative group cursor-pointer flex flex-col items-center">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${c.border ? 'border border-neutral-300' : ''} ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`} style={{ backgroundColor: c.color }}>
-                {isSelected && <Check className={`w-3.5 h-3.5 ${c.color === '#FFFFFF' ? 'text-black' : 'text-white'}`} />}
-              </div>
-              <div className="absolute -top-8 bg-brand-navy text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                {c.name}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function SubCategoryFilter({ subCategoryCounts, selectedSubCategories, onToggleSubCategory, mobile = false }: Pick<FilterSectionProps, 'subCategoryCounts' | 'selectedSubCategories' | 'onToggleSubCategory' | 'mobile'>) {
-  return (
-    <div>
-      <h3 className="text-label-sm font-semibold mb-4">{mobile ? 'Danh mục chi tiết' : 'Danh mục'}</h3>
-      <div className={mobile ? 'grid grid-cols-1 gap-2.5' : 'flex flex-col gap-3'}>
-        {subCategoryCounts.map(item => {
-          const isChecked = selectedSubCategories.includes(item.name);
-          const checkBox = (
-            <span className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-brand-navy border-brand-navy' : 'border-neutral-300 bg-white'}`}>
-              {isChecked && <Check className="w-3 h-3 text-white" />}
-            </span>
-          );
-
-          return mobile ? (
-            <button key={item.name} type="button" onClick={() => onToggleSubCategory(item.name)} className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${isChecked ? 'border-brand-navy bg-brand-navy/5' : 'border-neutral-200 bg-white'}`}>
-              <span className="flex items-center gap-3 text-body-sm font-medium text-neutral-700">{checkBox}{item.name}</span>
-              {typeof item.count === 'number' && <span className="text-[12px] text-neutral-400">({item.count})</span>}
-            </button>
-          ) : (
-            <label key={item.name} onClick={() => onToggleSubCategory(item.name)} className="flex items-center justify-between cursor-pointer group">
-              <span className="flex items-center gap-3">
-                {checkBox}
-                <span className="text-body-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">{item.name}</span>
-              </span>
-              {typeof item.count === 'number' && <span className="text-[12px] text-neutral-400">({item.count})</span>}
-            </label>
-          );
-        })}
-      </div>
-    </div>
+    </FilterGroup>
   );
 }
 
 export function FilterSections(props: FilterSectionProps) {
   return (
-    <>
-      <PriceFilter {...props} />
-      <ColorFilter selectedColors={props.selectedColors} onToggleColor={props.onToggleColor} mobile={props.mobile} />
+    <div>
       <SubCategoryFilter
         subCategoryCounts={props.subCategoryCounts}
         selectedSubCategories={props.selectedSubCategories}
         onToggleSubCategory={props.onToggleSubCategory}
-        mobile={props.mobile}
       />
-    </>
+      <ColorFilter selectedColors={props.selectedColors} onToggleColor={props.onToggleColor} />
+      <PriceFilter
+        currentPriceRange={props.currentPriceRange}
+        maxPriceLimit={props.maxPriceLimit}
+        onPriceChange={props.onPriceChange}
+      />
+    </div>
   );
 }

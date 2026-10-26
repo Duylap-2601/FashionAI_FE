@@ -1,22 +1,22 @@
-import type { ActiveChip, SortBy, SubCategoryCount } from '@/features/products/types/product-filters';
+import type { FilterSectionProps } from '@/features/products/types/filter-sections';
+import type { ActiveChip, SortBy } from '@/features/products/types/product-filters';
 
-export interface FilterPanelProps {
-  activeChips: ActiveChip[];
-  currentPriceRange: number;
-  maxPriceLimit: number;
-  selectedColors: string[];
-  subCategoryCounts: SubCategoryCount[];
-  selectedSubCategories: string[];
-  filteredCount: number;
-  onClose: () => void;
+export interface DesktopFilterSidebarProps extends FilterSectionProps {
+  hasActiveFilters: boolean;
   onClearAll: () => void;
-  onPriceChange: (value: number) => void;
-  onToggleColor: (color: string) => void;
-  onToggleSubCategory: (category: string) => void;
 }
 
-export interface SortPanelProps {
+export interface MobileFilterSheetProps extends FilterSectionProps {
+  open: boolean;
+  activeChips: ActiveChip[];
+  filteredCount: number;
+  onOpenChange: (open: boolean) => void;
+  onClearAll: () => void;
+}
+
+export interface MobileSortSheetProps {
+  open: boolean;
   sortBy: SortBy;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   onSortChange: (sort: SortBy) => void;
 }

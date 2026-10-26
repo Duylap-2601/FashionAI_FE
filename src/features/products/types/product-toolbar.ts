@@ -4,10 +4,12 @@ export interface ProductToolbarProps {
   categories: CategoryCount[];
   activeTab: string;
   searchQuery: string;
-  isSidebarOpen: boolean;
+  isFilterOpen: boolean;
+  activeFilterCount: number;
   sortBy: SortBy;
   onSelectTab: (tab: string) => void;
   onSearchChange: (value: string) => void;
-  onToggleSidebar: () => void;
+  onToggleFilters: () => void;
+  onOpenSort: () => void;
   onSortChange: (sort: SortBy) => void;
 }
