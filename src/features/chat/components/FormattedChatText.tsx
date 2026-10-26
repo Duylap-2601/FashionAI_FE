@@ -109,7 +109,7 @@ export function InlineFormatter({ text }: { text: string }) {
     // Render formatted piece
     if (best.type === 'bold') {
       parts.push(
-        <strong key={`b_${keyIdx++}`} className="font-semibold text-neutral-950">
+        <strong key={`b_${keyIdx++}`} className="font-semibold text-landing-obsidian">
           {best.inner}
         </strong>
       );
@@ -117,7 +117,7 @@ export function InlineFormatter({ text }: { text: string }) {
       parts.push(
         <code
           key={`c_${keyIdx++}`}
-          className="px-1.5 py-0.5 rounded bg-neutral-100 text-[#5D1C34] font-mono text-[12px] font-medium border border-neutral-200/60"
+          className="rounded-[2px] border border-landing-line bg-landing-paper px-1.5 py-0.5 font-mono text-[12px] text-landing-oxblood"
         >
           {best.inner}
         </code>
@@ -129,14 +129,14 @@ export function InlineFormatter({ text }: { text: string }) {
           href={best.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#5D1C34] font-medium underline underline-offset-2 hover:text-[#7A2544] transition-colors"
+          className="font-medium text-landing-oxblood underline underline-offset-2 transition-colors hover:text-landing-obsidian"
         >
           {best.label}
         </a>
       );
     } else if (best.type === 'italic') {
       parts.push(
-        <em key={`i_${keyIdx++}`} className="italic text-neutral-700">
+        <em key={`i_${keyIdx++}`} className="italic text-landing-obsidian/80">
           {best.inner}
         </em>
       );
@@ -300,7 +300,7 @@ export function FormattedChatText({ text, isStreaming }: FormattedChatTextProps)
   }
 
   return (
-    <div className="space-y-3 text-[13.5px] sm:text-[14px] leading-[1.7] text-neutral-800 break-words">
+    <div className="space-y-3 break-words text-[14px] leading-[1.7] text-landing-obsidian sm:text-[14.5px]">
       {blocks.map((block, idx) => {
         if (block.type === 'spacer') {
           return <div key={idx} className="h-1.5" />;
@@ -309,20 +309,20 @@ export function FormattedChatText({ text, isStreaming }: FormattedChatTextProps)
         if (block.type === 'heading') {
           if (block.level === 1) {
             return (
-              <h3 key={idx} className="text-base font-bold text-neutral-900 mt-2.5 mb-1 text-[#5D1C34]">
+              <h3 key={idx} className="mb-1 mt-2.5 font-display text-lg text-landing-obsidian">
                 <InlineFormatter text={block.content} />
               </h3>
             );
           }
           if (block.level === 2) {
             return (
-              <h4 key={idx} className="text-[14.5px] font-bold text-[#5D1C34] mt-2 mb-0.5">
+              <h4 key={idx} className="mb-0.5 mt-2 text-[14.5px] font-semibold text-landing-oxblood">
                 <InlineFormatter text={block.content} />
               </h4>
             );
           }
           return (
-            <h5 key={idx} className="text-[13.5px] font-semibold text-neutral-900 mt-1.5">
+            <h5 key={idx} className="mt-1.5 text-[13.5px] font-semibold text-landing-obsidian">
               <InlineFormatter text={block.content} />
             </h5>
           );
@@ -332,7 +332,7 @@ export function FormattedChatText({ text, isStreaming }: FormattedChatTextProps)
           return (
             <div
               key={idx}
-              className="border-l-2 border-[#5D1C34] bg-amber-50/50 rounded-r-lg px-3 py-2 text-neutral-700 italic text-[13px] my-1"
+              className="my-1 border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-[13px] italic text-landing-obsidian/80"
             >
               <InlineFormatter text={block.content} />
             </div>
@@ -343,7 +343,7 @@ export function FormattedChatText({ text, isStreaming }: FormattedChatTextProps)
           return (
             <pre
               key={idx}
-              className="p-3 bg-neutral-900 text-neutral-100 rounded-xl text-xs overflow-x-auto my-2 font-mono leading-relaxed"
+              className="my-2 overflow-x-auto rounded-[2px] bg-landing-obsidian p-3 font-mono text-xs leading-relaxed text-landing-paper"
             >
               <code>{block.content}</code>
             </pre>
@@ -357,7 +357,7 @@ export function FormattedChatText({ text, isStreaming }: FormattedChatTextProps)
                 <div key={itemIdx} className="space-y-2">
                   {/* Step header */}
                   <div className="flex items-start gap-2.5">
-                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#5D1C34]/10 text-[#5D1C34] text-[11px] font-bold shrink-0 mt-0.5 select-none ring-1 ring-[#5D1C34]/20">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 select-none items-center justify-center font-mono text-[11px] text-landing-brass-ink">
                       {item.num}
                     </span>
                     <div className="flex-1 min-w-0 pt-0.5">
@@ -367,10 +367,10 @@ export function FormattedChatText({ text, isStreaming }: FormattedChatTextProps)
 
                   {/* Sub-items under this step */}
                   {item.subItems && item.subItems.length > 0 && (
-                    <div className="pl-7 space-y-1.5 border-l border-neutral-200/60 ml-2.5">
+                    <div className="ml-2.5 space-y-1.5 border-l border-landing-line/70 pl-7">
                       {item.subItems.map((sub, sIdx) => (
-                        <div key={sIdx} className="flex items-start gap-2 text-neutral-700 text-[13px] leading-relaxed">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#A67D44] shrink-0 mt-2" />
+                        <div key={sIdx} className="flex items-start gap-2 text-[13px] leading-relaxed text-landing-obsidian/80">
+                          <span className="mt-2 h-1 w-1 shrink-0 bg-landing-brass" />
                           <div className="flex-1 min-w-0">
                             <InlineFormatter text={sub} />
                           </div>
@@ -389,7 +389,7 @@ export function FormattedChatText({ text, isStreaming }: FormattedChatTextProps)
             <div key={idx} className="space-y-2 my-1.5 pl-1">
               {block.items.map((item, itemIdx) => (
                 <div key={itemIdx} className="flex items-start gap-2.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#A67D44] shrink-0 mt-2" />
+                  <span className="mt-2 h-1 w-1 shrink-0 bg-landing-brass" />
                   <div className="flex-1 min-w-0">
                     <InlineFormatter text={item} />
                   </div>

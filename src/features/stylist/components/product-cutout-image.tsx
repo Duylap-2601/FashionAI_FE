@@ -24,7 +24,7 @@ export function ProductCutoutImage({ product, alt, onSelect }: ProductCutoutImag
     </div>
   ) : (
     <div className="w-full h-full flex items-center justify-center">
-      <Package className="w-5 h-5 text-neutral-300" />
+      <Package className="h-5 w-5 text-landing-taupe" strokeWidth={1.75} />
     </div>
   );
 

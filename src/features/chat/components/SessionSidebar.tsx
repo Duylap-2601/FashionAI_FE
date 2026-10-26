@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/components/ui/utils';
 import type { SessionSidebarProps } from '@/features/chat/types/session-sidebar';
 import { ChatSession } from '@/features/chat/types/chat';
 import {
@@ -9,10 +10,12 @@ import {
   Plus,
   Search,
   Trash2,
-  X,
-  Zap
+  X
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
+
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+const iconButton = `flex h-8 w-8 items-center justify-center rounded-[2px] transition-colors ${focusRing}`;
 
 export function SessionSidebar({
   sessions,
@@ -82,162 +85,167 @@ export function SessionSidebar({
   // Quota Calculations
   const quotaUsed = quota?.used ?? 0;
   const quotaLimit = quota?.limit ?? 50;
-  const isUnlimited = Boolean(quota?.unlimited || quota?.tier?.toLowerCase() === 'vip');
-  const quotaRemaining = isUnlimited ? null : Math.max(0, quotaLimit - quotaUsed);
+  const tier = quota?.tier?.toLowerCase();
+  const isUnlimited = Boolean(quota?.unlimited || tier === 'vip');
   const quotaPercent = isUnlimited ? 0 : Math.min(100, Math.round((quotaUsed / quotaLimit) * 100));
   const isNearLimit = quotaPercent >= 85;
 
   return (
-    <aside className="w-full h-full flex flex-col bg-white border-r border-neutral-200/80 select-none">
+    <aside className="flex h-full w-full select-none flex-col border-r border-landing-line/70 bg-landing-ivory text-landing-obsidian">
 
       {/* Header with New Chat Button */}
-      <div className="p-4 border-b border-neutral-100 space-y-3">
+      <div className="space-y-3 border-b border-landing-line/70 p-4">
         <button
           type="button"
           onClick={() => {
             onNewChat();
             if (onClose) onClose();
           }}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-navy hover:bg-brand-navy/90 active:scale-[0.99] text-white rounded-xl font-bold text-body-sm transition-all shadow-xs group cursor-pointer"
+          className={`group flex h-11 w-full items-center justify-center gap-2 rounded-[2px] bg-landing-oxblood text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper transition-colors hover:bg-landing-oxblood/90 ${focusRing}`}
         >
-          <Plus className="w-4 h-4 transition-transform group-hover:rotate-90 duration-200" />
+          <Plus className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90 motion-reduce:transition-none" strokeWidth={1.75} />
           <span>Cuộc trò chuyện mới</span>
         </button>
 
         {/* Search filter */}
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-landing-muted" strokeWidth={1.75} aria-hidden="true" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm đoạn chat..."
-            className="w-full pl-8 pr-3 py-2 text-body-sm bg-neutral-50 border border-neutral-200/70 rounded-lg text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-brand-navy/60 focus:bg-white transition-colors"
+            placeholder="Tìm đoạn chat"
+            aria-label="Tìm đoạn chat"
+            className={`h-10 w-full rounded-[2px] border border-landing-line bg-landing-paper/60 pl-8 pr-9 text-sm text-landing-obsidian placeholder:text-landing-muted/70 transition-colors hover:border-landing-brass ${focusRing}`}
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700"
+              aria-label="Xoá từ khoá"
+              className={cn(iconButton, 'absolute right-0.5 top-1/2 h-9 w-9 -translate-y-1/2 text-landing-muted hover:text-landing-oxblood')}
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="h-3.5 w-3.5" strokeWidth={1.75} />
             </button>
           )}
         </div>
       </div>
 
       {/* Session list area */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5 no-scrollbar">
+      <div className="no-scrollbar flex-1 space-y-6 overflow-y-auto py-4">
         {isLoading ? (
-          <div className="space-y-2.5 px-2">
+          <div className="space-y-2 px-4" aria-busy="true">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-10 bg-neutral-100 animate-pulse rounded-lg" />
+              <div key={i} className="h-10 bg-landing-taupe/35 motion-safe:animate-pulse" />
             ))}
           </div>
         ) : groupedSessions.length === 0 ? (
-          <div className="text-center py-10 px-4">
-            <MessageSquare className="w-8 h-8 text-neutral-300 mx-auto mb-2" />
-            <p className="text-body-sm text-neutral-500 font-medium">
+          <div className="px-6 py-10 text-center">
+            <MessageSquare className="mx-auto mb-3 h-7 w-7 text-landing-taupe" strokeWidth={1.5} />
+            <p className="text-sm font-medium text-landing-obsidian">
               {searchQuery ? 'Không tìm thấy kết quả' : 'Chưa có đoạn chat nào'}
             </p>
-            <p className="text-[12px] text-neutral-400 mt-1">
+            <p className="mt-1 text-xs text-landing-muted">
               Bắt đầu trò chuyện để lưu lại lịch sử
             </p>
           </div>
         ) : (
           groupedSessions.map((group) => (
             <div key={group.label} className="space-y-1">
-              <div className="px-3 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+              <p className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink">
                 {group.label}
-              </div>
+              </p>
 
-              <div className="space-y-0.5">
+              <ul>
                 {group.items.map((sess) => {
                   const isActive = sess.id === currentSessionId;
                   const isEditing = editingId === sess.id;
                   const isConfirming = confirmDeleteId === sess.id;
 
                   return (
-                    <div
+                    <li
                       key={sess.id}
-                      onClick={() => {
-                        if (!isEditing && !isConfirming) {
-                          onSelectSession(sess.id);
-                          if (onClose) onClose();
-                        }
-                      }}
-                      className={`group/item relative flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all ${isActive
-                          ? 'bg-[#5D1C34]/10 text-brand-navy font-semibold'
-                          : 'hover:bg-neutral-100 text-neutral-700 font-medium'
-                        }`}
-                    >
-                      {/* Active indicator bar */}
-                      {isActive && (
-                        <span className="absolute left-0 top-2 bottom-2 w-1 bg-[#5D1C34] rounded-r-full" />
+                      className={cn(
+                        'group/item relative flex items-center transition-colors',
+                        isActive
+                          ? 'bg-landing-paper before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:bg-landing-oxblood'
+                          : 'hover:bg-landing-paper/60',
                       )}
-
-                      {/* Title or Edit Input */}
+                    >
                       {isEditing ? (
                         <form
                           onSubmit={(e) => handleSaveRename(sess.id, e)}
-                          className="flex items-center gap-1.5 w-full mr-1"
-                          onClick={(e) => e.stopPropagation()}
+                          className="flex w-full items-center gap-1.5 px-3 py-1.5"
                         >
                           <input
                             type="text"
                             value={editTitle}
                             autoFocus
+                            aria-label="Tên đoạn chat"
                             onChange={(e) => setEditTitle(e.target.value)}
                             onBlur={() => handleSaveRename(sess.id)}
-                            className="flex-1 px-2 py-1 text-body-sm bg-white border border-brand-navy rounded-md focus:outline-none"
+                            className={`h-9 flex-1 rounded-[2px] border border-landing-oxblood bg-landing-paper px-2 text-sm ${focusRing}`}
                           />
-                          <button
-                            type="submit"
-                            className="p-1 text-green-700 hover:bg-green-50 rounded"
-                          >
-                            <Check className="w-3.5 h-3.5" />
+                          <button type="submit" aria-label="Lưu tên" className={`text-landing-sage-ink hover:bg-landing-ivory ${iconButton}`}>
+                            <Check className="h-3.5 w-3.5" strokeWidth={2} />
                           </button>
                         </form>
                       ) : (
-                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <button
+                          type="button"
+                          aria-current={isActive ? 'true' : undefined}
+                          disabled={isConfirming}
+                          onClick={() => {
+                            onSelectSession(sess.id);
+                            if (onClose) onClose();
+                          }}
+                          className={cn(
+                            'flex min-h-11 w-full min-w-0 items-center gap-2.5 py-2 pl-4 pr-3 text-left text-sm transition-[padding] group-focus-within/item:pr-20 group-hover/item:pr-20 [@media(hover:none)]:pr-20',
+                            focusRing,
+                            'focus-visible:-outline-offset-2',
+                            isConfirming && 'pr-28',
+                            isActive ? 'font-semibold text-landing-obsidian' : 'text-landing-obsidian/80',
+                          )}
+                        >
                           <MessageSquare
-                            className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#5D1C34]' : 'text-neutral-400 group-hover/item:text-neutral-600'
-                              }`}
+                            className={`h-4 w-4 shrink-0 ${isActive ? 'text-landing-oxblood' : 'text-landing-muted'}`}
+                            strokeWidth={1.75}
                           />
-                          <span className="text-body-sm truncate block">
+                          <span className="block truncate">
                             {sess.title || 'Cuộc trò chuyện mới'}
                           </span>
-                        </div>
+                        </button>
                       )}
 
                       {/* Action buttons (Rename / Delete) */}
                       {!isEditing && (
                         <div
-                          className={`flex items-center gap-1 shrink-0 ${isConfirming
-                              ? 'opacity-100'
-                              : 'opacity-0 group-hover/item:opacity-100 transition-opacity'
+                          className={`absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 ${isConfirming
+                            ? 'opacity-100'
+                            : 'opacity-0 transition-opacity group-focus-within/item:opacity-100 group-hover/item:opacity-100 [@media(hover:none)]:opacity-100'
                             }`}
-                          onClick={(e) => e.stopPropagation()}
                         >
                           {isConfirming ? (
-                            <div className="flex items-center gap-1 bg-red-50 p-1 rounded-lg border border-red-200">
-                              <span className="text-[11px] font-bold text-red-700 px-1">Xóa?</span>
+                            <div className="flex items-center gap-1 rounded-[2px] border border-destructive/40 bg-landing-paper p-0.5">
+                              <span className="px-1.5 text-[11px] font-semibold text-destructive">Xóa?</span>
                               <button
                                 type="button"
+                                aria-label="Xác nhận xóa"
                                 onClick={() => {
                                   onDeleteSession(sess.id);
                                   setConfirmDeleteId(null);
                                 }}
-                                className="p-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                                className={`bg-destructive text-landing-paper hover:opacity-90 ${iconButton}`}
                               >
-                                <Check className="w-3 h-3" />
+                                <Check className="h-3.5 w-3.5" strokeWidth={2} />
                               </button>
                               <button
                                 type="button"
+                                aria-label="Huỷ xóa"
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="p-1 text-neutral-500 hover:bg-neutral-200 rounded transition-colors"
+                                className={`text-landing-muted hover:text-landing-obsidian ${iconButton}`}
                               >
-                                <X className="w-3 h-3" />
+                                <X className="h-3.5 w-3.5" strokeWidth={1.75} />
                               </button>
                             </div>
                           ) : (
@@ -247,80 +255,71 @@ export function SessionSidebar({
                                   type="button"
                                   onClick={(e) => handleStartRename(sess, e)}
                                   title="Đổi tên"
-                                  className="p-1 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-200/60 rounded-md transition-colors"
+                                  aria-label={`Đổi tên ${sess.title || 'cuộc trò chuyện'}`}
+                                  className={`text-landing-muted hover:text-landing-oxblood ${iconButton}`}
                                 >
-                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <Edit2 className="h-3.5 w-3.5" strokeWidth={1.75} />
                                 </button>
                               )}
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteId(sess.id)}
                                 title="Xóa đoạn chat"
-                                className="p-1 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                aria-label={`Xóa ${sess.title || 'cuộc trò chuyện'}`}
+                                className={`text-landing-muted hover:text-destructive ${iconButton}`}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
                               </button>
                             </>
                           )}
                         </div>
                       )}
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             </div>
           ))
         )}
       </div>
 
-      {/* Footer Quota Card */}
-      <div className="p-3.5 border-t border-neutral-200/80 bg-neutral-50/70">
-        <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-brand-gold fill-brand-gold" />
-              <span className="text-[12px] font-bold text-neutral-800">Lượt Chatbot</span>
-            </div>
-            <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${quota?.tier?.toLowerCase() === 'vip'
-                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                  : quota?.tier?.toLowerCase() === 'member'
-                    ? 'bg-[#5D1C34]/10 text-[#5D1C34] border border-[#5D1C34]/20'
-                    : 'bg-neutral-100 text-neutral-600'
-                }`}
-            >
-              {quota?.tier || 'Free'}
-            </span>
-          </div>
-
-          {/* Quota metric */}
-          <div className="flex items-center justify-between text-[12px]">
-            <span className="text-neutral-500 font-medium">Hôm nay</span>
-            <span className="font-bold text-neutral-900">
-              {isUnlimited ? (
-                <span className="text-emerald-700">Không giới hạn (VIP)</span>
-              ) : (
-                <>
-                  <strong className={isNearLimit ? 'text-red-600' : 'text-neutral-900'}>
-                    {quotaUsed}
-                  </strong>
-                  <span className="text-neutral-400 font-normal"> / {quotaLimit} lượt</span>
-                </>
-              )}
-            </span>
-          </div>
-
-          {/* Progress bar */}
-          {!isUnlimited && (
-            <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-300 rounded-full ${isNearLimit ? 'bg-red-500' : quotaPercent > 60 ? 'bg-amber-500' : 'bg-brand-navy'
-                  }`}
-                style={{ width: `${quotaPercent}%` }}
-              />
-            </div>
-          )}
+      {/* Footer Quota */}
+      <div className="border-t border-landing-line/70 px-4 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink">Lượt chat hôm nay</span>
+          <span
+            className={cn(
+              'rounded-[2px] border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]',
+              tier === 'vip'
+                ? 'border-landing-brass text-landing-brass-ink'
+                : tier === 'member'
+                  ? 'border-landing-oxblood/40 text-landing-oxblood'
+                  : 'border-landing-line text-landing-muted',
+            )}
+          >
+            {quota?.tier || 'Free'}
+          </span>
         </div>
+
+        <p className="mt-2 font-mono text-sm" aria-live="polite">
+          {isUnlimited ? (
+            <span className="text-landing-sage-ink">Không giới hạn</span>
+          ) : (
+            <>
+              <span className={isNearLimit ? 'text-destructive' : 'text-landing-obsidian'}>{quotaUsed}</span>
+              <span className="text-landing-muted"> / {quotaLimit} lượt</span>
+            </>
+          )}
+        </p>
+
+        {!isUnlimited && (
+          <div className="mt-2 h-0.5 w-full overflow-hidden bg-landing-line" aria-hidden="true">
+            <div
+              className={`h-full transition-[width] duration-300 ${isNearLimit ? 'bg-destructive' : quotaPercent > 60 ? 'bg-landing-brass' : 'bg-landing-oxblood'}`}
+              style={{ width: `${quotaPercent}%` }}
+            />
+          </div>
+        )}
       </div>
     </aside>
   );
