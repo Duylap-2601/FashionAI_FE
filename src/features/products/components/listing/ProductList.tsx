@@ -5,14 +5,14 @@ import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, MoreHorizontal } fro
 
 function ProductSkeletonGrid({ isSidebarOpen }: { isSidebarOpen: boolean }) {
   return (
-    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-2.5 md:gap-3 mb-12`}>
+    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${isSidebarOpen ? 'xl:grid-cols-4' : 'xl:grid-cols-5'} gap-x-3 gap-y-10 sm:gap-x-4 sm:gap-y-12 mb-12`}>
       {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} className="bg-white border border-neutral-100 rounded-lg overflow-hidden animate-pulse">
-          <div className="aspect-[3/4] bg-neutral-200" />
-          <div className="p-2.5 flex flex-col gap-1.5">
-            <div className="h-2.5 w-16 bg-neutral-200 rounded" />
-            <div className="h-3 w-3/4 bg-neutral-200 rounded" />
-            <div className="h-3 w-1/2 bg-neutral-200 rounded mt-1" />
+        <div key={i} className="flex flex-col animate-pulse">
+          <div className="aspect-[3/4] bg-landing-line/60" />
+          <div className="pt-4 flex flex-col gap-2">
+            <div className="h-2.5 w-16 bg-landing-line/60" />
+            <div className="h-4 w-3/4 bg-landing-line/60" />
+            <div className="h-3 w-1/2 bg-landing-line/60 mt-1" />
           </div>
         </div>
       ))}
@@ -22,15 +22,18 @@ function ProductSkeletonGrid({ isSidebarOpen }: { isSidebarOpen: boolean }) {
 
 function EmptyProducts({ onClearAll }: { onClearAll: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in duration-500">
-      <div className="w-24 h-24 bg-neutral-50 rounded-full flex items-center justify-center mb-6">
-        <svg className="w-10 h-10 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <div className="flex flex-col items-center justify-center py-24 text-center border border-landing-line/70 bg-landing-paper px-6 my-8">
+      <div className="w-16 h-16 bg-landing-ivory rounded-full flex items-center justify-center mb-4">
+        <svg className="w-8 h-8 text-landing-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
       </div>
-      <h3 className="text-[20px] font-bold text-brand-navy mb-2 tracking-tight">Không tìm thấy sản phẩm phù hợp</h3>
-      <p className="text-body-md text-neutral-500 mb-8 max-w-[320px]">Thử bỏ một vài bộ lọc để xem thêm sản phẩm.</p>
-      <button onClick={onClearAll} className="px-6 py-3 border border-neutral-200 text-neutral-700 text-body-sm font-medium rounded-xl hover:bg-neutral-50 transition-colors">
+      <h3 className="font-display text-[20px] text-landing-obsidian mb-2">Không tìm thấy sản phẩm phù hợp</h3>
+      <p className="text-landing-body text-landing-muted mb-6 max-w-[320px]">Thử bỏ một vài bộ lọc để xem thêm sản phẩm.</p>
+      <button
+        onClick={onClearAll}
+        className="px-6 py-2.5 bg-landing-obsidian text-landing-paper hover:bg-landing-oxblood text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors"
+      >
         Xóa tất cả bộ lọc
       </button>
     </div>
@@ -123,12 +126,10 @@ export function ProductList({
   currentPage,
   totalPages,
   loadMoreRef,
-  isPinned,
   onRetry,
   onClearAll,
   onLoadMore,
   onPageChange,
-  onToggleRack,
   onAddToCart,
 }: ProductListProps) {
   return (
@@ -151,14 +152,13 @@ export function ProductList({
         <>
           <StaggerContainer
             animateOnMount
-            className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${isSidebarOpen ? 'xl:grid-cols-5' : 'xl:grid-cols-6'} gap-2.5 md:gap-3 mb-12 transition-all duration-300`}
+            className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${isSidebarOpen ? 'xl:grid-cols-4' : 'xl:grid-cols-5'} gap-x-3 gap-y-10 sm:gap-x-4 sm:gap-y-12 mb-12 transition-all duration-300`}
           >
-            {products.map(product => (
+            {products.map((product, idx) => (
               <StaggerItem key={product.id} className="group">
                 <ProductCard
                   product={product}
-                  pinned={isPinned(product.id)}
-                  onToggleRack={onToggleRack}
+                  imagePriority={idx < 4}
                   onAddToCart={onAddToCart}
                 />
               </StaggerItem>

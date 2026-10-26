@@ -1,0 +1,345 @@
+﻿# StAle. FashionAI - Landing Page Design Brief
+
+## Metadata
+
+| Field | Value |
+| --- | --- |
+| Version | 1.0 |
+| Status | Approved direction, implementation in progress |
+| Scope | Public landing page at `/`, landing header, landing footer, announcement bar |
+| Owner | StAle. frontend team |
+| Related docs | `docs/design-system.md`, `docs/table-design.md`, `AGENTS.md` |
+| Last updated | 2026-10-25 |
+
+## Design Read
+
+A premium Vietnamese office-fashion e-commerce landing page for style-conscious professionals. The visual language is editorial luxury, not generic SaaS or cosmetic commerce. It should feel like a fashion magazine cover translated into a storefront: paper, ink, hairlines, large serif type, and product photography that is allowed to breathe.
+
+## Brand Context
+
+StAle. sells tailored office wear and uses AI try-on as a practical purchase aid, not as a gimmick. The landing page must do three jobs in order:
+
+1. Establish taste and trust within the first viewport.
+2. Make the current collection and representative products easy to browse.
+3. Remove fit anxiety by making AI try-on and AI Stylist visible on desktop and mobile.
+
+The page is a marketing surface, but every control must either navigate, filter, add to cart, or start a real try-on flow. Decorative controls are not allowed.
+
+## Audit Of The Previous Landing
+
+| Problem | Impact |
+| --- | --- |
+| Teal announcement and newsletter bars competed with the burgundy brand color | Brand recall was diluted |
+| Two product grids plus a sale banner created three competing commerce moments | The page had no single browsing path |
+| AI try-on and newsletter were hidden on mobile | The strongest USP disappeared on the majority viewport |
+| Unverified claims such as `98.4%`, `< 0.1s`, `FPS 60`, and vendor names | Reduced trust and created compliance risk |
+| Five-column product grid made product cards cramped | Weak product presentation at 1024-1440 |
+| Collection cards and product cards used similar rounded cards | Users could not tell "browse a chapter" from "buy a product" |
+| Missing try-on icon and a non-functional wishlist-style control | Broken affordance |
+| Footer advertised VNPAY and MoMo although ZaloPay is the active online flow | Payment information was inaccurate |
+
+## Direction: Atelier Paper - Saigon Editorial
+
+The page is structured like a small printed issue. Each section is a chapter with a number, a hairline rule, and one clear editorial idea. Photography is framed like plates in a lookbook. Type does the luxury work, so surfaces stay quiet.
+
+### Six Principles
+
+1. **Editorial before commerce.** A section earns its place by advancing the story, not by filling a grid.
+2. **Paper and ink.** The default surface is warm paper with near-black ink. Dark sections are deliberate chapter breaks.
+3. **One accent.** Oxblood is the action color. Brass is a line and detail color, never a large fill.
+4. **Motion is punctuation.** Reveals and crossfades clarify sequence. They do not perform.
+5. **Every control is real.** No dead hearts, no fake success states, no invented statistics.
+6. **Mobile keeps the USP.** AI try-on and the newsletter are first-class mobile sections.
+
+### Visual Dials
+
+| Dial | Value | Consequence |
+| --- | --- | --- |
+| Design variance | 7 / 10 | Asymmetric lookbook, large ghost numerals, editorial headers |
+| Motion intensity | 5 / 10 | Slow image crossfades, one-time reveals, restrained hover |
+| Visual density | 3 / 10 | Generous section padding, one idea per chapter |
+
+## Palette
+
+Source: brand reference `public/images/image-1.png` (REGAL palette) plus existing app tokens. This palette is brand-owned, not a default warm-craft theme.
+
+| Token | Hex | Role | Usage |
+| --- | --- | --- | --- |
+| `landing-paper` | `#EFE9E1` | Primary surface | Landing background, header |
+| `landing-ivory` | `#FDF8F6` | Raised surface | Product info, newsletter inset |
+| `landing-obsidian` | `#11100F` | Ink and dark chapters | Text, lookbook, footer |
+| `landing-oxblood` | `#5D1C34` | Action accent | Primary CTA, active state, focus |
+| `landing-brass` | `#A67D44` | Decorative accent | Hairlines, large ornament, dark-section labels |
+| `landing-brass-ink` | `#7C5722` | Accessible brass text | Small labels on paper |
+| `landing-taupe` | `#CDBCAB` | Warm neutral | Dividers, image placeholders |
+| `landing-sage` | `#899481` | Support neutral | New badges, quiet blocks |
+| `landing-sage-ink` | `#59654F` | Accessible sage text | Small text on paper |
+| `landing-muted` | `#6B625A` | Secondary text | Descriptions on paper |
+| `landing-line` | `rgba(166, 125, 68, 0.38)` | Hairline | Section rules, card borders |
+
+Rules:
+
+- Do not use bright gold `#FFD93D` on the landing page.
+- Do not use teal `#15434e` on the landing page.
+- Brass is never used for body-size text on paper. Use `landing-brass-ink`.
+- Oxblood fills are reserved for primary actions and selection states.
+- Dark sections use paper text, not pure white, except for the logo.
+
+## Typography
+
+| Role | Family | Notes |
+| --- | --- | --- |
+| Display | Playfair Display | Headlines, collection names, large numerals. Italic is used sparingly for one emphasized word. |
+| Body | Be Vietnam Pro | Navigation, paragraphs, product metadata, forms. |
+| Mono | JetBrains Mono | Chapter numbers, prices, frame labels, issue metadata. |
+
+Rules:
+
+- Playfair is loaded through `next/font/google` with the Vietnamese subset.
+- Display line-height is `1.1` with `-0.025em` tracking, enough room for Vietnamese diacritics above and below the baseline.
+- Eyebrows and labels are uppercase with `0.18em` to `0.24em` tracking.
+- Vietnamese diacritics must be visually checked at every display size.
+- Product names use Playfair Display only at 16px and up (product detail title, grid cards). Compact lists (cart, checkout, search, try-on, stylist) use Be Vietnam Pro 500 at 14px. Use the `product-name-title`, `product-name-card` and `product-name-line` utilities from `theme.css` instead of ad-hoc classes.
+- Do not use more than one serif family.
+- Do not use em-dashes in UI copy. Use a period, comma, or colon.
+
+## Layout System
+
+- Max content width: `1440px`.
+- Page gutter: `16px` mobile, `24px` tablet, `32px` desktop.
+- Section rhythm: `64px` mobile, `96px` tablet, `128px` desktop.
+- Hero: full-bleed image, paper text overlay, minimum `720px` mobile and `860px` desktop.
+- Collections: one column on mobile, two on tablet, four on desktop.
+- Products: two columns on mobile, three on tablet, four on desktop.
+- Lookbook: one featured portrait plate per view on desktop, with look details and thumbnail navigation beside it. The plate uses the full `3/4` image and never extends past the viewport.
+- Editorial sections use hairline rules, not cards with shadows.
+- Corners are square or `2px`. Pills are reserved for status and filters, not every control.
+
+## Page Narrative
+
+| Chapter | Section | Surface | Purpose |
+| --- | --- | --- | --- |
+| 00 | Announcement | Obsidian | Service news, one line at a time |
+| 01 | Hero | Full-bleed image | Set the season and promise, two CTAs |
+| 02 | Collections | Paper | Choose a chapter and update the product grid |
+| 03 | Featured products | Ivory | Browse, filter, quick-add, try on |
+| 04 | Lookbook | Obsidian | Show styling range and aspiration |
+| 05 | AI Try-On | Paper | Explain the real flow in three steps |
+| 06 | AI Stylist | Ivory | Show a three-piece capsule and open the stylist |
+| 07 | Newsletter and footer | Paper then obsidian | Capture email, close the issue |
+
+Removed from the previous page:
+
+- The sale banner between collections and products.
+- The second best-seller product grid.
+- Vendor names and unverified performance numbers.
+- The dead heart control.
+- The teal announcement and newsletter surfaces.
+
+## Section Specifications
+
+### Announcement
+
+- Height: `40px`.
+- Four messages, `5s` interval, `4.5s` acceptable if the copy is short.
+- Auto-play pauses on hover, focus, and reduced-motion preference.
+- Internal links use `next/link`.
+- One live region, no layout shift.
+
+### Header
+
+- Sticky, `72px` tall on landing, paper background at `92%` opacity with blur.
+- Logo, five inline links at `xl`, search, rack, cart, account.
+- Inline links: Collections, Products, Lookbook, AI Stylist, Try-On.
+- Login control is a square outline button on landing, not a pill.
+- The existing app header remains unchanged for non-landing routes.
+
+### Hero
+
+- Full-bleed portrait photography with `object-cover` and a left-to-right obsidian gradient.
+- One two-line headline and two CTAs. No supporting tagline.
+- Headline: `Máº·c Ä‘Ãºng dÃ¡ng. Sá»‘ng Ä‘Ãºng cháº¥t.` rendered as two explicit block lines with one italic accent per line.
+- Primary CTA: `KhÃ¡m phÃ¡ bá»™ sÆ°u táº­p` to `#collections`.
+- Secondary CTA: `Thá»­ Ä‘á»“ AI` to `/try-on`.
+- Slide metadata: index and previous and next controls. Do not repeat the collection name or season over the image.
+- Auto-play `6s`, pause on hover and focus, disabled under reduced motion.
+- Slides are built from published collections and use each collection's real cover image. The local campaign image is only a fallback when the collection has no cover or the remote image fails. Never return `null`; use the local fallback when the list is empty.
+- The first image is `priority`; other slide images load normally.
+
+### Collections
+
+- Header includes chapter `02`, eyebrow, serif title, and a link to `/products`.
+- Four editorial panels, one per published collection.
+- Panels are image-first with an overlaid chapter number, season, name, tagline, item count, and `Má»Ÿ chÆ°Æ¡ng`.
+- The selected panel gets a brass inset rule and `Äang xem`, not a rounded ring.
+- Selecting a panel updates the product grid and scrolls to `#featured-products`.
+- Panels are buttons with `aria-pressed`; no `div` click handlers.
+- Collection panels must not look like product cards. They have no white metadata block below the image and no add-to-cart control.
+
+### Featured Products
+
+- Header includes chapter `03`, the selected collection name, and a link to `/products`.
+- Filter tabs are underlined text tabs, not filled pills.
+- Four columns desktop, two columns mobile.
+- Card: image, brand, serif product name, price in mono, rating when real, quick add, try-on, detail.
+- Hover reveals the second gallery image when available.
+- Try-on uses a visible `Sparkles` icon and links to `/try-on?productId=...`.
+- Badges: sale in oxblood, new in sage.
+- Empty state uses ivory surface and a single sentence.
+
+### Lookbook
+
+- Chapter `04`, obsidian surface.
+- One featured portrait plate at a time, with look details, previous and next controls, and a three-thumbnail selector beside it. It must not become another row of collection-style cards.
+- The plate is `3/4`, matching the portrait source, and capped at `min(62svh, 600px)` tall so the full look fits on screen.
+- Details show `Look 01 / 03`, the look title, the styling note, and `Thử outfit này`.
+- Thumbnails are small `3/4` buttons with `aria-pressed`; the active one gets a brass border.
+- The plate crossfades between looks, with no auto-play.
+- Each look links to the try-on flow.
+- Lookbook plates come from the selected collection's `lookbookImages` or `coverImages`. The local plate is used only when the collection has no images or a remote image fails.
+
+### AI Try-On
+
+- Chapter `05`, paper surface.
+- Left: heading, honest copy, three steps, primary and secondary CTA.
+- Right: a compact framed image, `420px` wide on desktop and aligned with the height of the left copy. It must not become a second full-width hero.
+- The frame carries corner marks, `TRY-ON STUDIO`, `FRAME 01`, and `áº¢NH MINH HOáº `.
+- No vendor names, accuracy percentages, latency claims, or fake result badges.
+- Steps: choose garment, upload photo or open camera, review and add to cart.
+- Visible on mobile. No `hidden md:block`.
+
+### AI Stylist
+
+- Chapter `06`, ivory surface.
+- Left: one sentence about styling with real catalog products, CTA to `/ai-stylist`.
+- Right: a three-piece capsule from the current catalog, labeled `Lá»›p ngoÃ i`, `Ná»n`, `Äiá»ƒm nháº¥n`.
+- Capsule cards are minimal image-and-text links, visually distinct from product cards.
+- No "add whole outfit" action in this phase. The CTA is the only conversion point.
+
+### Newsletter And Footer
+
+- Chapter `07`.
+- Newsletter uses paper surface with an ivory inset, one email field, one submit button, inline validation, and an honest success message.
+- Do not promise a discount that is not implemented.
+- Footer is the back cover: obsidian, four columns, payment methods `COD`, `Chuyá»ƒn khoáº£n`, `ZaloPay`, and a large ghost wordmark.
+- Phone, address, and email remain the existing business values.
+- Footer spacing includes the mobile bottom-tab clearance.
+
+## Responsive Behavior
+
+| Breakpoint | Hero | Collections | Products | Lookbook |
+| --- | --- | --- | --- | --- |
+| 390 | Text overlay, controls below copy | 1 column | 2 columns | 1 column |
+| 768 | Text overlay, larger headline | 2 columns | 3 columns | 1 column |
+| 1024 | Wider copy block | 2 columns | 3 columns | Plate and details side by side |
+| 1280 | Inline nav visible | 4 columns | 4 columns | Plate and details side by side |
+| 1440 | Full container | 4 columns | 4 columns | Plate and details side by side |
+
+No horizontal overflow at any breakpoint. Anchors must not hide behind the sticky header; use `scroll-mt`.
+
+## Motion
+
+| Element | Behavior |
+| --- | --- |
+| Hero image | `900ms` crossfade, no aggressive zoom |
+| Hero copy | `500ms` fade and `12px` rise when the slide changes |
+| Section reveal | `700ms` fade and `24px` rise, once |
+| Product image hover | `500ms` scale to `1.03` |
+| Collection image hover | `700ms` scale to `1.04` |
+| Buttons | `150-200ms` color and border transitions |
+
+Reduced motion:
+
+- No auto-play.
+- No reveal transform, content is immediately visible.
+- No image scale on hover.
+- Keep color and focus transitions.
+
+## Accessibility
+
+- Text contrast meets WCAG AA. Brass text on paper uses `landing-brass-ink`.
+- Interactive targets are at least `44px` where practical.
+- Focus rings use oxblood on paper and brass on dark.
+- Collection panels are buttons with `aria-pressed`.
+- Carousel controls have Vietnamese labels and a live region for the active slide.
+- Auto-play pauses on hover and focus.
+- Images have meaningful Vietnamese alt text.
+- Forms have labels, inline errors, and `aria-live`.
+- The page is fully keyboard navigable.
+
+## Performance
+
+- Hero first image uses `priority`; all other images are lazy by default.
+- Use `next/image` with correct `sizes` for every fill image.
+- No background video and no large WebGL scene on the landing page.
+- Motion is transform and opacity only.
+- Avoid layout shift by reserving aspect ratios for all media.
+- Target LCP under `2.5s` on desktop and CLS under `0.1`.
+
+## Asset Strategy
+
+Real API data is the source of truth. Products, collection names, seasons, counts, cover images, and lookbook images come from the backend. The local manifest below is fallback-only media.
+
+| Slot | Fallback asset |
+| --- | --- |
+| Hero | `public/images/726470431_1311184104081177_6052756217829444481_n.png` |
+| Look 01 | `public/images/731163514_999523332788054_1114320478812927640_n.png` |
+| Look 02 | `public/images/726470431_1311184104081177_6052756217829444481_n.png` |
+| Look 03 | `public/images/731199294_3955961871204172_1445370375731306017_n.png` |
+| AI try-on preview | `public/images/731163514_999523332788054_1114320478812927640_n.png` |
+| Product fallback | `public/images/731163514_999523332788054_1114320478812927640_n.png` |
+
+The hero uses `collection.coverImages[0]`, collection panels use the first cover image, the lookbook uses `lookbookImages` or `coverImages`, and the AI try-on preview uses the selected product image. Fallback media is centralized in `src/features/home/constants/landing-media.ts` and is only used when the API has no image or a remote image fails.
+
+The real campaign images may be portrait or landscape. The hero keeps a full-bleed composition with `object-position` set to `50% 0%` so the face and garment remain in frame. If the real campaign focal point differs, tune the hero focal point without changing the data flow.
+
+## Copy Rules
+
+- Vietnamese first, sentence case for body, uppercase for labels.
+- No emoji in UI copy.
+- No vendor names in customer-facing AI copy.
+- No performance or accuracy numbers unless the backend exposes a verified metric.
+- No promises of discounts or email delivery that the product does not implement.
+- Use `Thá»­ Ä‘á»“ AI`, not `Virtual Try-On` in Vietnamese UI.
+- Use `AI Stylist` as the product name.
+- Prices use the existing formatted product values.
+
+## Decisions Log
+
+| Decision | Reason |
+| --- | --- |
+| Docs first | The page has many new tokens and component contracts; implementation needs a single source of truth |
+| Full-bleed hero | Agreed direction; portrait mock works with focal-point cropping |
+| Collection panels differ from product cards | Two different jobs: browse a chapter vs buy a product |
+| No sale banner | It interrupted the collection-to-product path |
+| One product grid | Keeps a single browsing moment |
+| Landing-only header and footer restyle | Limits risk to authenticated app pages |
+| AI Stylist CTA only | The add-whole-outfit flow is not part of this phase |
+| Honest AI copy | Removes vendor names and unverified metrics |
+| API-first landing data | Products, collections, and their images now come from the backend; local media is fallback-only |
+| Compact AI try-on preview | The image supports the three steps instead of competing with them |
+| No hero tagline or collection label | The two-line headline and CTAs carry the first screen without clutter |
+| Single-plate lookbook viewer | A row of three cards read as a second collection grid; one capped portrait plate with side details keeps the lookbook distinct and fully visible on screen |
+
+## Acceptance Criteria
+
+- `/` renders the eight chapters above in order.
+- No sale banner and no second product grid.
+- Hero never renders empty and always shows a usable CTA.
+- Collection panels are keyboard-operable and visually distinct from product cards.
+- Product try-on controls show a visible icon and navigate to a real try-on URL.
+- AI Try-On and newsletter are visible at `390px`.
+- No teal, bright gold, fake statistics, or vendor names on the landing page.
+- Header and footer changes do not affect non-landing routes.
+- `npm run lint`, `npm run typecheck`, `npm test`, and `npm run check:architecture` pass.
+- Mobile, tablet, and desktop layouts have no horizontal overflow.
+
+## Changelog
+
+| Date | Change |
+| --- | --- |
+| 2026-10-25 | Initial approved direction |
+| 2026-10-25 | Synced docs with the full-bleed hero without tagline, local-first media, display line-height `1.1`, and compact AI try-on preview |
+| 2026-10-25 | Lookbook is a single capped portrait plate with side details and thumbnails, not a horizontal card row |
+| 2026-10-25 | Landing now reads real products and collections from the API, including cover, lookbook, and product images; local media is fallback-only |
+

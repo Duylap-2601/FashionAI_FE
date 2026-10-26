@@ -16,6 +16,7 @@ import ProductImageViewer from '@/features/products/components/ProductImageViewe
 import { COMBO_OPTIONS } from '@/features/products/constants/product-detail-config';
 import { PRODUCTS } from '@/features/products/constants/products';
 import { useProduct, useProductCatalog } from '@/features/products/hooks/useProducts';
+import { getProductImageItems, normalizeColorName, resolveDefaultImageIndex } from '@/features/products/services/products-utils';
 import type { ComboType } from '@/features/products/types/product-detail-config';
 import type { Product } from '@/features/products/types/products';
 import { usePinToRack, useRackItems, useUnpinFromRack } from '@/features/rack/hooks/useRack';
@@ -26,8 +27,6 @@ import { X } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-
-type ProductImageItem = { url: string; colorName?: string | null; isMain?: boolean };
 
 type ProductSelection = {
   productId: string;
@@ -44,18 +43,6 @@ function isComboProduct(product?: Product) {
   );
 }
 
-function normalizeColorName(color?: string | null) {
-  return color?.trim().toLowerCase() || '';
-}
-
-function getProductImageItems(product: Product): ProductImageItem[] {
-  if (product.imageItems && product.imageItems.length > 0) return product.imageItems;
-  if (product.gallery && product.gallery.length > 0) {
-    return product.gallery.map((url, index) => ({ url, colorName: null, isMain: index === 0 }));
-  }
-  return [{ url: product.image, colorName: null, isMain: true }];
-}
-
 function findValidProductColor(product: Product, color?: string | null) {
   const normalized = normalizeColorName(color);
   if (!normalized) return undefined;
@@ -64,23 +51,6 @@ function findValidProductColor(product: Product, color?: string | null) {
 
 function resolveDefaultColor(product: Product, requestedColor?: string | null) {
   return findValidProductColor(product, requestedColor) || product.colors?.[0]?.name || 'Trắng';
-}
-
-function resolveDefaultImageIndex(product: Product, selectedColor: string) {
-  const imageItems = getProductImageItems(product);
-  const selectedColorName = normalizeColorName(selectedColor);
-  const matchingColorIndex = imageItems.findIndex(
-    item => normalizeColorName(item.colorName) === selectedColorName
-  );
-  if (matchingColorIndex !== -1) return matchingColorIndex;
-
-  const genericIndex = imageItems.findIndex(item => item.colorName == null);
-  if (genericIndex !== -1) return genericIndex;
-
-  const mainIndex = imageItems.findIndex(item => item.isMain);
-  if (mainIndex !== -1) return mainIndex;
-
-  return 0;
 }
 
 function resolveInitialProductSelection(product: Product, requestedColor?: string | null): ProductSelection {

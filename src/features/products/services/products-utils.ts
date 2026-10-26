@@ -1,6 +1,38 @@
 import type { Product } from '@/features/products/types/products';
 import type { BackendProduct } from '@/features/products/types/products-hook';
 
+type ProductImageItem = NonNullable<Product['imageItems']>[number];
+
+export function normalizeColorName(color?: string | null) {
+  return color?.trim().toLowerCase() || '';
+}
+
+export function getProductImageItems(product: Product): ProductImageItem[] {
+  if (product.imageItems && product.imageItems.length > 0) return product.imageItems;
+  if (product.gallery && product.gallery.length > 0) {
+    return product.gallery.map((url, index) => ({ url, colorName: null, isMain: index === 0 }));
+  }
+  return [{ url: product.image, colorName: null, isMain: true }];
+}
+
+/** Ảnh cho một màu: ảnh gắn đúng màu, nếu không có thì ảnh không gắn màu, rồi tới ảnh chính. */
+export function resolveDefaultImageIndex(product: Product, selectedColor: string) {
+  const imageItems = getProductImageItems(product);
+  const selectedColorName = normalizeColorName(selectedColor);
+  const matchingColorIndex = imageItems.findIndex(
+    item => normalizeColorName(item.colorName) === selectedColorName
+  );
+  if (matchingColorIndex !== -1) return matchingColorIndex;
+
+  const genericIndex = imageItems.findIndex(item => item.colorName == null);
+  if (genericIndex !== -1) return genericIndex;
+
+  const mainIndex = imageItems.findIndex(item => item.isMain);
+  if (mainIndex !== -1) return mainIndex;
+
+  return 0;
+}
+
 export function parseProductImageItems(product: BackendProduct): { url: string; colorName?: string | null; isMain?: boolean }[] {
   const list: { url: string; colorName?: string | null; isMain?: boolean }[] = [];
   if (Array.isArray(product.images) && product.images.length > 0) {

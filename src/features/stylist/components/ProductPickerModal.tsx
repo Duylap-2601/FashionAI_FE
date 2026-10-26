@@ -76,7 +76,7 @@ export function ProductPickerModal({
                 />
                 <div className="flex-col flex justify-between min-w-0 py-0.5">
                   <div>
-                    <h4 className="text-[12px] font-bold text-brand-navy line-clamp-1 leading-snug">
+                    <h4 className="product-name-line text-landing-obsidian line-clamp-1">
                       {p.name}
                     </h4>
                     <span className="text-[10px] text-neutral-400 font-semibold uppercase mt-0.5 block">

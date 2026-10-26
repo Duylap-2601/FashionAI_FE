@@ -2,51 +2,67 @@
 
 import { MESSAGES } from '@/features/home/constants/announcement-bar';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useReducedMotion } from 'motion/react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export function AnnouncementBar() {
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const shouldReduceMotion = useReducedMotion();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIdx((prev) => (prev + 1) % MESSAGES.length);
-    }, 4500);
-    return () => clearInterval(timer);
-  }, []);
+    if (shouldReduceMotion || isPaused) return;
+    const timer = window.setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % MESSAGES.length);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [isPaused, shouldReduceMotion]);
 
   const handlePrev = () => {
-    setCurrentIdx((prev) => (prev - 1 + MESSAGES.length) % MESSAGES.length);
+    setCurrentIndex((prev) => (prev - 1 + MESSAGES.length) % MESSAGES.length);
   };
 
   const handleNext = () => {
-    setCurrentIdx((prev) => (prev + 1) % MESSAGES.length);
+    setCurrentIndex((prev) => (prev + 1) % MESSAGES.length);
   };
 
-  const current = MESSAGES[currentIdx];
+  const current = MESSAGES[currentIndex] ?? MESSAGES[0];
 
   return (
-    <div className="w-full bg-[#15434e] text-white text-[11px] md:text-[12px] font-medium tracking-wider h-[38px] flex items-center justify-between px-3 md:px-8 border-b border-[#1b505c] select-none z-50 relative">
+    <div
+      role="region"
+      aria-label="Thông báo cửa hàng"
+      className="relative z-50 flex h-10 w-full items-center justify-between border-b border-landing-paper/10 bg-landing-obsidian px-2 text-landing-paper/80 select-none md:px-6"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+    >
       <button
+        type="button"
         onClick={handlePrev}
-        className="text-white/60 hover:text-white transition-colors p-1"
-        aria-label="Previous announcement"
+        className="flex h-10 w-10 items-center justify-center text-landing-paper/45 transition-colors hover:text-landing-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-landing-brass"
+        aria-label="Thông báo trước"
       >
-        <ChevronLeft className="w-3.5 h-3.5" />
+        <ChevronLeft className="h-3.5 w-3.5" />
       </button>
 
-      <a
+      <Link
         href={current.link}
-        className="flex items-center gap-2 hover:underline underline-offset-4 text-center truncate max-w-[85%] md:max-w-none transition-all duration-300"
+        className="flex min-w-0 items-center gap-2.5 text-center text-[9px] font-semibold uppercase tracking-[0.18em] transition-colors hover:text-landing-paper md:text-[10px]"
       >
-        <span>{current.text}</span>
-      </a>
+        <span className="hidden h-1 w-1 shrink-0 rounded-full bg-landing-brass sm:block" aria-hidden="true" />
+        <span className="truncate" aria-live="polite">{current.text}</span>
+      </Link>
 
       <button
+        type="button"
         onClick={handleNext}
-        className="text-white/60 hover:text-white transition-colors p-1"
-        aria-label="Next announcement"
+        className="flex h-10 w-10 items-center justify-center text-landing-paper/45 transition-colors hover:text-landing-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-landing-brass"
+        aria-label="Thông báo tiếp theo"
       >
-        <ChevronRight className="w-3.5 h-3.5" />
+        <ChevronRight className="h-3.5 w-3.5" />
       </button>
     </div>
   );

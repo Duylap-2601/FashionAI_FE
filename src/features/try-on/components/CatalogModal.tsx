@@ -17,7 +17,7 @@ export function SelectedProductCard({ product, onReplace }: { product: Product; 
       </div>
       <div className="flex flex-col gap-1 flex-1 min-w-0">
         <p className="text-label-sm text-neutral-500">{product.brand}</p>
-        <p className="text-body-sm font-medium text-neutral-900 leading-snug line-clamp-2">{product.name}</p>
+        <p className="product-name-line text-landing-obsidian line-clamp-2">{product.name}</p>
         <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{product.price}</p>
       </div>
       <button onClick={onReplace} type="button" className="shrink-0 text-label-sm font-semibold text-[#5D1C34] hover:text-[#5D1C34]/80 transition-colors flex items-center gap-1 whitespace-nowrap bg-transparent border-0 cursor-pointer">
@@ -79,7 +79,7 @@ export function CatalogModal({ isOpen, onClose, onSelectProduct, products, curre
                 </div>
                 <div className="flex-col flex flex-1 justify-between min-w-0 w-full gap-2 py-0.5">
                   <div>
-                    <h4 className="text-[12px] font-bold text-[#5D1C34] line-clamp-2 break-words leading-snug sm:pr-4">{p.name}</h4>
+                    <h4 className="product-name-line text-landing-obsidian line-clamp-2 break-words sm:pr-4">{p.name}</h4>
                     <span className="text-[10px] text-neutral-500 font-semibold mt-0.5 block truncate">{p.brand}</span>
                   </div>
                   <span className="text-[12px] font-bold text-[#5D1C34]">{p.price}</span>

@@ -61,7 +61,7 @@ function GarmentSlot({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-body-sm font-bold text-brand-navy truncate">{product.name}</h4>
+              <h4 className="product-name-line text-landing-obsidian truncate">{product.name}</h4>
               <p className="text-[12px] text-neutral-500">{product.price}</p>
             </div>
           </div>

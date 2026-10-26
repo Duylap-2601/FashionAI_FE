@@ -105,7 +105,7 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
                     </Link>
                     <div className="flex-1 flex flex-col justify-between py-1">
                       <div className="pr-8">
-                        <h3 className="text-body-sm font-medium text-brand-navy line-clamp-1 mb-1">
+                        <h3 className="product-name-line text-landing-obsidian line-clamp-1 mb-1">
                           <Link
                             href={`/products/${item.productId || item.id}`}
                             onClick={onClose}
