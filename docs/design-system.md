@@ -451,6 +451,18 @@ Contract:
 - `StarRating` takes `tone="landing"` for oxblood stars on paper; admin keeps the default amber.
 - Only backend-backed controls: profile edits the name only, measurements save the backend fields, notification tabs are not shown because the list endpoint does not filter by type.
 
+## Try-On
+
+Files: `src/features/try-on/components/try-on-page.tsx`, `TryOnHeader.tsx`, `TryOnWorkspace.tsx`, `live-try-on-workspace.tsx`, `garment-slot.tsx`
+
+- `TryOnHeader`: brass label, Playfair title, mode copy, `TryOnSegmented` mode switch (`aria-pressed`, oxblood fill when selected) and the photo quota in mono. `SubscriptionNotice` is an ivory block with a brass left rule.
+- `garment-slot.tsx` exports `GarmentSlot` (`78x104` ivory thumbnail button, brass label, `product-name-line`, mono price, quiet `Đổi món` / `Bỏ chọn`), `GarmentColorPicker` (`role="radiogroup"`, square chips with a round swatch, hidden below two valid colours), `TryOnSegmented`, `tryOnButtonClassName` (`primary`, `outline`, `quiet`, `inverse`) and `tryOnFocusRing`.
+- Live stage: `bg-landing-obsidian`, square, `lg:h-[640px]`. Stage buttons are `40px` square obsidian chips with a paper hairline and `aria-label`s. The capture viewer is a Radix dialog over `obsidian/90` with arrow-key navigation.
+- Session dock: `fixed inset-x-0 bottom-[64px]` on mobile (flush above the `64px` bottom tab bar), `md:bottom-4 md:right-6 md:w-[400px]` with a hairline border, static in the side column from `lg`.
+- Photo frame: `aspect-[3/4]`, `max-w-[540px]`, hairline border on ivory. The empty state is a dashed taupe frame with `Chọn ảnh` (primary) and `Chụp ảnh` (outline). The before/after slider uses square `Trước` / `Sau` tags and a range input for keyboard use.
+- `CatalogModal`: Radix dialog at `z-[100]`/`z-[101]`, bottom sheet below `sm`, underline category tabs, `3/4` product tiles with an oxblood border and check when selected.
+- `SubscriptionRequiredModal` (subscription feature) uses the same paper dialog and lists Member and VIP from `usePlans()`.
+
 ## State Matrix
 
 | Element | Default | Hover | Focus-visible | Active / selected | Disabled |
@@ -558,6 +570,7 @@ Rules:
 | Filter and sort constants | `src/features/products/constants/product-filters.ts` |
 | Account shell and primitives | `src/features/profile/components/account-shell.tsx`, `account-ui.tsx` |
 | Account pages | `profile-page.tsx`, `profile-measurements-page.tsx`, `profile-orders-page.tsx`, `profile-reviews-page.tsx`, `notifications-page.tsx` |
+| Try-on page | `try-on-page.tsx`, `TryOnHeader.tsx`, `TryOnWorkspace.tsx`, `live-try-on-workspace.tsx`, `garment-slot.tsx` |
 
 ## Do Not
 
@@ -608,3 +621,4 @@ Manual checks:
 | 2026-10-25 | Landing data and imagery now come from the API; local media is fallback-only |
 | 2026-10-26 | Products listing contract: toolbar, filter panels, results header, grid states, sticky offsets; fixed the `ProductCard` file path |
 | 2026-10-26 | `AccountShell` contract for the five account pages, account primitives, order status tones and the landing tone of `StarRating` |
+| 2026-10-26 | Try-on contract: header mode switch, shared garment slot and colour picker, live stage and session dock, photo frame, catalog dialog |

@@ -11,8 +11,8 @@ test('paused outfit keeps the session timer and allows resume even when daily fr
   assert.match(html, /Phiên còn 00:42/);
   assert.match(html, /Đã tạm dừng/);
   assert.ok(!button(html, 'Tiếp tục thử').includes(' disabled='));
-  assert.ok(!button(html, 'Đổi áo:').includes(' disabled='));
-  assert.ok(!button(html, 'Đổi quần:').includes(' disabled='));
+  assert.ok(!button(html, 'Đổi lớp trong:').includes(' disabled='));
+  assert.ok(!button(html, 'Đổi phần dưới:').includes(' disabled='));
   assert.ok(button(html, 'Kết thúc'));
   assert.doesNotMatch(html, /thử nghiệm|SDK|lease|Decart state/);
 });
@@ -22,7 +22,7 @@ test('active session prominently offers pause and locks outfit selection', () =>
   assert.match(html, /Phiên còn 00:08/);
   assert.match(html, /Sắp hết thời gian/);
   assert.ok(!button(html, 'Tạm dừng').includes(' disabled='));
-  assert.ok(button(html, 'Đổi áo:').includes(' disabled='));
+  assert.ok(button(html, 'Đổi lớp trong:').includes(' disabled='));
   assert.ok(button(html, 'Kết thúc'));
 });
 

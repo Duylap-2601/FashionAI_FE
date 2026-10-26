@@ -20,20 +20,20 @@ export function ComparisonSlider({ before, after }: { before: string; after: str
   };
 
   return (
-    <div ref={containerRef} className="relative aspect-[3/4] w-full select-none overflow-hidden rounded-2xl border border-[#E5DFD5] bg-white cursor-col-resize touch-none" onPointerDown={handlePointer} onPointerMove={(event) => { if (event.buttons === 1) updatePosition(event.clientX); }}>
-      <Image src={after} alt="Kết quả thử trang phục" fill sizes="(max-width: 1024px) 100vw, 58vw" unoptimized className="object-contain p-2" draggable={false} />
-      <div className="absolute inset-0 overflow-hidden bg-white" style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}>
-        <Image src={before} alt="Ảnh gốc trước khi thử" fill sizes="(max-width: 1024px) 100vw, 58vw" unoptimized className="object-contain p-2" draggable={false} />
+    <div ref={containerRef} className="relative aspect-[3/4] w-full cursor-col-resize touch-none select-none overflow-hidden border border-landing-line bg-landing-ivory" onPointerDown={handlePointer} onPointerMove={(event) => { if (event.buttons === 1) updatePosition(event.clientX); }}>
+      <Image src={after} alt="Kết quả thử trang phục" fill sizes="(max-width: 1024px) 100vw, 560px" unoptimized className="object-contain" draggable={false} />
+      <div className="absolute inset-0 overflow-hidden bg-landing-ivory" style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}>
+        <Image src={before} alt="Ảnh gốc trước khi thử" fill sizes="(max-width: 1024px) 100vw, 560px" unoptimized className="object-contain" draggable={false} />
       </div>
-      <div className="absolute top-0 bottom-0 w-[2px] bg-white shadow-lg pointer-events-none" style={{ left: `${position}%`, transform: 'translateX(-50%)' }}>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 bg-white rounded-full shadow-lg border border-[#E5DFD5] flex items-center justify-center">
-          <div className="flex gap-0.5"><div className="w-[3px] h-4 rounded-full bg-neutral-400" /><div className="w-[3px] h-4 rounded-full bg-neutral-400" /></div>
+      <div className="pointer-events-none absolute bottom-0 top-0 w-px bg-landing-paper" style={{ left: `${position}%` }}>
+        <div className="absolute left-1/2 top-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center border border-landing-line bg-landing-paper">
+          <div className="flex gap-1" aria-hidden="true"><div className="h-3.5 w-px bg-landing-obsidian/50" /><div className="h-3.5 w-px bg-landing-obsidian/50" /></div>
         </div>
       </div>
       <label className="sr-only" htmlFor="try-on-comparison">So sánh ảnh gốc và kết quả thử đồ</label>
-      <input id="try-on-comparison" type="range" min="0" max="100" value={Math.round(position)} onChange={(event) => setPosition(Number(event.target.value))} className="absolute inset-x-4 bottom-4 h-2 accent-[#5D1C34] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5D1C34] focus-visible:ring-offset-2" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(position)} />
-      <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/55 backdrop-blur-sm rounded-full text-white text-[11px] font-medium pointer-events-none">Ảnh gốc</div>
-      <div className="absolute top-3 right-3 px-2.5 py-1 bg-[#5D1C34]/85 backdrop-blur-sm rounded-full text-white text-[11px] font-medium pointer-events-none">Kết quả</div>
+      <input id="try-on-comparison" type="range" min="0" max="100" value={Math.round(position)} onChange={(event) => setPosition(Number(event.target.value))} className="absolute inset-x-4 bottom-4 h-2 accent-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood" />
+      <span className="pointer-events-none absolute left-3 top-3 bg-landing-obsidian/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-paper">Trước</span>
+      <span className="pointer-events-none absolute right-3 top-3 bg-landing-oxblood px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-paper">Sau</span>
     </div>
   );
 }

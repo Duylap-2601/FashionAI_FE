@@ -606,7 +606,9 @@ export function AppLayout({
   const isChat = pathname === '/chat';
   const isSearch = pathname === '/search';
   const { isCartOpen, setIsCartOpen, totalItems } = useCart();
-  const shouldShowFloatingChat = showFloatingChat ?? (!isChat && !isSearch);
+  // Phòng thử có thanh điều khiển phiên ở góc dưới; nút chat nổi sẽ đè lên nút Bắt đầu.
+  const isTryOn = pathname === '/try-on';
+  const shouldShowFloatingChat = showFloatingChat ?? (!isChat && !isSearch && !isTryOn);
   const shouldShowFooter = showFooter ?? (footerVariant !== 'none' && !isChat && !isSearch);
   const resolvedFooterVariant = footerVariant === 'none' ? 'simple' : footerVariant;
   const shouldShowBottomTab = showBottomTab && !isChat && !isSearch;

@@ -276,6 +276,16 @@ Routes: `/profile`, `/profile/measurements`, `/profile/orders`, `/profile/review
 - Order filters send exactly one backend status each, following the real flow `CREATED → MEASUREMENT_REVIEW → TAILORING → READY_TO_SHIP → SHIPPING → DELIVERED → COMPLETED`.
 - Dialogs (change password, cancel order, delete review, write review) use one paper Radix dialog that sits above the mobile bottom tab bar and becomes a bottom sheet below `sm`.
 
+## Try-On Page
+
+Route: `/try-on`. Two modes share one page: `Trực tiếp` (camera, the default) and `Bằng ảnh` (upload a photo). The mode switch sits in the page header next to the title, with the remaining photo quota under it in photo mode.
+
+- Header: brass `Phòng thử` label, Playfair `Thử đồ AI`, one sentence that changes with the mode. No separate hero block.
+- Live mode: the camera stage is the one obsidian surface on the page, square, with paper text and brass hairlines. Overlays (status, applied garments, auto-capture) are square obsidian chips without blur. The session dock (timer in mono, `Bắt đầu thử đồ`, `Tạm dừng`, `Kết thúc`) sits in the side column from `lg`, floats bottom-right at `md`, and is a full-width paper bar above the bottom tab bar on mobile. The floating chat is hidden on `/try-on` so it never covers the dock.
+- Photo mode: a `3/4` paper frame for the upload, the photo or the before/after slider, capped at `540px` wide. The side column holds the garment slots and the oxblood `Thử trang phục` button with the quota cost.
+- Both modes use the same garment slot (ivory thumbnail, brass layer label, product name, mono price, `Đổi món` / `Bỏ chọn`) and the same colour picker (shown only when a product has two or more valid colours).
+- Only real controls: there is no sample-photo button, because a stock photo cannot be submitted. The upgrade dialog reads plan prices and try-on limits from `GET /payments/plans` instead of hard-coding them.
+
 ## Responsive Behavior
 
 | Breakpoint | Hero | Collections | Products | Lookbook |
@@ -409,6 +419,7 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | Single-plate lookbook viewer | A row of three cards read as a second collection grid; one capped portrait plate with side details keeps the lookbook distinct and fully visible on screen |
 | One account shell | The five account pages share one menu and heading so moving between them does not change the frame |
 | Honest account controls | Fields and filters the backend ignores were removed instead of restyled: profile phone, birthday, gender, job and address; body type; preferred sizes; notification type tabs |
+| Mode switch in the try-on header | Live and photo are two ways to do the same job; the switch belongs to the page, not to either workspace |
 
 ## Acceptance Criteria
 
@@ -434,4 +445,5 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | 2026-10-25 | Landing now reads real products and collections from the API, including cover, lookbook, and product images; local media is fallback-only |
 | 2026-10-26 | Added the products page spec: toolbar, filters, grid states, and one search field |
 | 2026-10-26 | Account pages (profile, measurements, orders, reviews, notifications) on one `AccountShell`, with controls limited to what the backend stores |
+| 2026-10-26 | Try-on page (live and photo modes) on Atelier Paper, with shared garment slots, a real-price upgrade dialog and no sample-photo control |
 
