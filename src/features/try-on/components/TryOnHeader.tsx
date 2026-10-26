@@ -1,55 +1,101 @@
-import { Crown } from 'lucide-react';
+import { TryOnSegmented, tryOnButtonClassName, tryOnLabelClassName } from '@/features/try-on/components/garment-slot';
+import type { UserQuota } from '@/features/subscription/types/quota';
+import { cn } from '@/lib/utils';
+import { Camera, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 
-export function QuotaBadge({ count, limit }: { count: number; limit: number | null }) {
-  const isUnlimited = !Number.isFinite(count) || limit === null;
+export type TryOnMode = 'live' | 'photo';
+
+const MODE_COPY: Record<TryOnMode, string> = {
+  live: 'Mặc thử trên chính bạn qua camera. Tạm dừng để đổi món, phiên tính theo thời gian.',
+  photo: 'Tải một ảnh toàn thân, AI ghép trang phục lên ảnh và lưu kết quả vào lịch sử.',
+};
+
+/** Lượt thử bằng ảnh còn lại hôm nay; ẩn khi chưa tải được quota hoặc gói không có lượt. */
+function PhotoQuota({ quota }: { quota?: UserQuota }) {
+  if (!quota) return null;
+  const unlimited = quota.unlimited || quota.limit === null;
+  const limit = quota.limit ?? 0;
+  if (!unlimited && limit === 0) return null;
+  const remaining = unlimited ? null : Math.max(0, limit - quota.used);
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label-sm font-semibold ${count > 0 || isUnlimited ? 'bg-brand-navy/8 text-brand-navy border border-brand-navy/20' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${count > 0 || isUnlimited ? 'bg-brand-navy' : 'bg-red-500'}`} />
-      {isUnlimited ? 'Không giới hạn lượt thử' : count > 0 ? `Còn ${count} / ${limit} lượt hôm nay` : 'Hết lượt hôm nay'}
-    </span>
+    <p className={cn('text-xs', remaining === 0 ? 'text-destructive' : 'text-landing-muted')} aria-live="polite">
+      {unlimited ? (
+        'Không giới hạn lượt'
+      ) : remaining === 0 ? (
+        'Hết lượt thử bằng ảnh hôm nay'
+      ) : (
+        <>
+          Còn <span className="font-mono text-landing-obsidian">{remaining}/{limit}</span> lượt hôm nay
+        </>
+      )}
+    </p>
   );
 }
 
-export function TryOnHeader({ remainingQuota, limitQuota, isBlocked, showQuota = true }: { remainingQuota: number; limitQuota: number | null; isBlocked: boolean; showQuota?: boolean }) {
+export function TryOnHeader({
+  mode,
+  onModeChange,
+  modeDisabled,
+  quota,
+  isBlocked,
+}: {
+  mode: TryOnMode;
+  onModeChange: (mode: TryOnMode) => void;
+  modeDisabled: boolean;
+  quota?: UserQuota;
+  isBlocked: boolean;
+}) {
   return (
-    <div className="bg-white border-b border-neutral-200 w-full">
-      <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-heading-h1 font-bold text-brand-navy">Phòng thử đồ</h1>
-            <p className="text-body-sm text-neutral-500 mt-1">Thử trang phục ngay trên bạn qua camera hoặc bằng ảnh</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Lượt thử chỉ áp dụng cho thử bằng ảnh; thử trực tiếp tính theo thời gian ở khung điều khiển. */}
-            {showQuota && <QuotaBadge count={remainingQuota} limit={limitQuota} />}
-            {isBlocked && <Link
-              href="/subscription"
-              className="px-3.5 py-1.5 bg-[#5D1C34] text-white rounded-full text-label-sm font-bold hover:bg-[#5D1C34]/90 transition-colors shadow-2xs flex items-center gap-1.5"
-            ><Crown className="w-3.5 h-3.5" /> Nâng cấp</Link>}
-          </div>
-        </div>
+    <header className="mb-8 flex flex-col gap-6 border-b border-landing-line pb-6 lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0">
+        <p className={tryOnLabelClassName}>Phòng thử</p>
+        <h1 className="mt-3 font-display text-landing-h2 text-landing-obsidian">Thử đồ AI</h1>
+        <p className="mt-3 max-w-xl text-landing-body text-landing-muted">{MODE_COPY[mode]}</p>
       </div>
-    </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:flex-col lg:items-end">
+        <TryOnSegmented
+          ariaLabel="Cách thử đồ"
+          value={mode}
+          onChange={onModeChange}
+          disabled={modeDisabled}
+          className="w-full sm:w-auto"
+          options={[
+            { value: 'live', label: 'Trực tiếp', icon: <Camera className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" /> },
+            { value: 'photo', label: 'Bằng ảnh', icon: <ImageIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" /> },
+          ]}
+        />
+        {mode === 'photo' ? (
+          <div className="flex items-center gap-4">
+            <PhotoQuota quota={quota} />
+            {isBlocked ? (
+              <Link href="/subscription" className={tryOnButtonClassName('outline', 'sm')}>
+                Nâng cấp gói
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </header>
   );
 }
 
 export function SubscriptionNotice({ isSubscriptionExpired }: { isSubscriptionExpired: boolean }) {
   return (
-    <div className="p-4 md:p-5 bg-brand-navy/5 border border-brand-navy/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 shadow-xs">
-      <div className="flex items-start gap-3.5">
-        <div className="p-2.5 bg-brand-navy/10 rounded-xl text-brand-navy shrink-0 mt-0.5"><Crown className="w-5 h-5" /></div>
-        <div>
-          <h3 className="text-body-md font-bold text-brand-navy">{isSubscriptionExpired ? 'Gói cước của bạn đã hết hạn' : 'Tính năng Thử đồ AI yêu cầu gói trả tiền (MEMBER hoặc VIP)'}</h3>
-          <p className="text-body-sm text-neutral-700 mt-0.5 leading-relaxed">{isSubscriptionExpired ? 'Vui lòng gia hạn gói để tiếp tục trải nghiệm tính năng thử đồ 3D / AI cá nhân hóa.' : 'Tài khoản FREE hiện không hỗ trợ tính năng thử đồ. Hãy nâng cấp ngay để nhận 5 – 10 lượt thử trang phục mỗi ngày!'}</p>
-        </div>
+    <div className="mb-8 flex flex-col gap-4 border-l-2 border-landing-brass bg-landing-ivory px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="font-display text-xl leading-tight text-landing-obsidian">
+          {isSubscriptionExpired ? 'Gói thành viên đã hết hạn' : 'Thử bằng ảnh cần gói Member hoặc VIP'}
+        </p>
+        <p className="mt-1 text-sm text-landing-muted">
+          {isSubscriptionExpired
+            ? 'Gia hạn gói để tiếp tục thử bằng ảnh.'
+            : 'Gói miễn phí chưa có lượt thử bằng ảnh. Member và VIP có lượt mới mỗi ngày.'}
+        </p>
       </div>
-      <Link
-        href="/subscription"
-        className="px-5 py-2.5 bg-[#5D1C34] text-white rounded-xl text-body-sm font-bold shrink-0 hover:bg-[#5D1C34]/90 transition-colors shadow-sm"
-      >
-        {isSubscriptionExpired ? 'Gia hạn gói' : 'Xem các gói Member'} &rarr;
+      <Link href="/subscription" className={tryOnButtonClassName('primary')}>
+        {isSubscriptionExpired ? 'Gia hạn gói' : 'Xem các gói'}
       </Link>
     </div>
   );

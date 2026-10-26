@@ -12,9 +12,9 @@ import { SubscriptionRequiredModal } from '@/features/subscription/components/Su
 import { useLiveTryOnQuota, useQuota } from '@/features/subscription/hooks/useQuota';
 import { CatalogModal } from '@/features/try-on/components/CatalogModal';
 import { SubscriptionNotice, TryOnHeader } from '@/features/try-on/components/TryOnHeader';
+import { tryOnLabelClassName } from '@/features/try-on/components/garment-slot';
 import { TryOnWorkspace } from '@/features/try-on/components/TryOnWorkspace';
 import { LiveTryOnWorkspace } from '@/features/try-on/components/live-try-on-workspace';
-import { MOCK_USER_PHOTO } from '@/features/try-on/constants/try-on-types';
 import { useTryOn } from '@/features/try-on/hooks/useTryOn';
 import type { GarmentSlotInput } from '@/features/try-on/types/try-on';
 import type { CatalogSlot, GarmentMode, PageState, TryOnErrorBody } from '@/features/try-on/types/try-on-types';
@@ -137,8 +137,6 @@ function VirtualTryOnContent() {
   }, [rawExpiresAt, userTier]);
   const isBlocked = userTier === 'FREE' || isSubscriptionExpired;
   const quotaCost = garmentMode === 'combo' ? 2 : 1;
-  const remainingQuota = quota ? (quota.limit === null ? Infinity : Math.max(0, quota.limit - quota.used)) : (isBlocked ? 0 : 5);
-  const limitQuota = quota?.limit ?? (userTier === 'VIP' ? 10 : userTier === 'MEMBER' ? 5 : 0);
 
   const clearResult = () => {
     setResultPhotoUrl(null);
@@ -451,14 +449,6 @@ function VirtualTryOnContent() {
     }
   }, [liveQuota, liveQuotaError, tryOnMode, tryOnModeTouched]);
 
-  const handleUseMockPhoto = () => {
-    if (pageState === 'loading') return;
-    clearResult();
-    setInputError(null);
-    setUserPhotoUrl(MOCK_USER_PHOTO);
-    setUserPhotoFile(null);
-  };
-
   const handleTryAnother = () => {
     setResultPhotoUrl(null);
     setResultSourcePhotoUrl(null);
@@ -555,87 +545,88 @@ function VirtualTryOnContent() {
 
       <input ref={cameraInputRef} type="file" accept="image/png,image/jpeg" capture="user" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0]); e.currentTarget.value = ''; }} />
 
-      <TryOnHeader remainingQuota={remainingQuota} limitQuota={limitQuota} isBlocked={isBlocked} showQuota={tryOnMode === 'photo'} />
-
-      <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-10">
-        {isBlocked && tryOnMode === 'photo' && <SubscriptionNotice isSubscriptionExpired={isSubscriptionExpired} />}
-
-        <div className="mb-5 inline-flex rounded-2xl border border-[#E5DFD5] bg-white p-1 shadow-sm">
-          <button type="button" onClick={() => handleTryOnModeChange('live')} disabled={pageState === 'loading'} className={`rounded-xl px-5 py-2 text-label-sm font-semibold transition-colors disabled:opacity-60 ${tryOnMode === 'live' ? 'bg-[#5D1C34] text-white' : 'text-neutral-600 hover:bg-[#F9F7F5]'}`}>Thử trực tiếp</button>
-          <button type="button" onClick={() => handleTryOnModeChange('photo')} disabled={pageState === 'loading'} className={`rounded-xl px-5 py-2 text-label-sm font-semibold transition-colors disabled:opacity-60 ${tryOnMode === 'photo' ? 'bg-[#5D1C34] text-white' : 'text-neutral-600 hover:bg-[#F9F7F5]'}`}>Thử bằng ảnh</button>
-        </div>
-
-        {catalogProducts.length === 0 ? (
-          <div className="rounded-2xl border border-[#E5DFD5] bg-white p-8 text-center shadow-sm">
-            <h2 className="text-[20px] font-semibold text-[#1A1917]">Chưa có sản phẩm từ backend</h2>
-            <p className="mt-2 text-body-sm text-neutral-600">Phòng thử hiện chỉ dùng sản phẩm thật trong catalog. Vui lòng kiểm tra API sản phẩm hoặc thêm sản phẩm ACTIVE có garmentUrl.</p>
-          </div>
-        ) : tryOnMode === 'live' && selectedProduct ? (
-          <LiveTryOnWorkspace
-            selectedProduct={selectedProduct}
-            outerProduct={outerProduct}
-            upperProduct={upperProduct}
-            lowerProduct={lowerProduct}
-            selectedColor={selectedColor}
-            outerColor={outerColor}
-            upperColor={upperColor}
-            lowerColor={lowerColor}
-            onOpenOuterCatalog={() => handleOpenCatalog('outer')}
-            onOpenUpperCatalog={() => handleOpenCatalog('upper')}
-            onOpenLowerCatalog={() => handleOpenCatalog('lower')}
-            onOpenCatalog={() => handleOpenCatalog('single')}
-            onSelectColor={setSelectedColor}
-            onSelectOuterColor={setOuterColor}
-            onSelectUpperColor={setUpperColor}
-            onSelectLowerColor={setLowerColor}
-            onClearOuter={() => { setOuterProduct(null); setOuterColor(null); }}
-            onSwitchToPhoto={() => handleTryOnModeChange('photo')}
-            outfitMode={garmentMode === 'combo'}
-            onOutfitModeChange={(combo) => handleModeChange(combo ? 'combo' : 'single')}
-          />
-        ) : selectedProduct ? (
-          <TryOnWorkspace
-            userPhotoUrl={userPhotoUrl}
-            resultPhotoUrl={resultPhotoUrl}
-            resultSourcePhotoUrl={resultSourcePhotoUrl}
-            isLoading={pageState === 'loading'}
-            inputError={inputError}
-            garmentMode={garmentMode}
-            selectedProduct={selectedProduct}
-            selectedColor={selectedColor}
-            outerProduct={outerProduct}
-            upperProduct={upperProduct}
-            lowerProduct={lowerProduct}
-            outerColor={outerColor}
-            upperColor={upperColor}
-            lowerColor={lowerColor}
-            canGenerate={canGenerate}
-            isSubmitting={isSubmitting || pageState === 'loading'}
+      <div className="landing-paper-texture">
+        <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-6 md:px-8 md:pt-10">
+          <TryOnHeader
+            mode={tryOnMode}
+            onModeChange={handleTryOnModeChange}
+            modeDisabled={pageState === 'loading'}
+            quota={quota}
             isBlocked={isBlocked}
-            quotaCost={quotaCost}
-            onFileSelect={handleFileSelect}
-            onCameraSelect={() => cameraInputRef.current?.click()}
-            onUseMockPhoto={handleUseMockPhoto}
-            onModeChange={handleModeChange}
-            onOpenCatalog={handleOpenCatalog}
-            onSelectColor={setSelectedColor}
-            onSelectOuterColor={setOuterColor}
-            onSelectUpperColor={setUpperColor}
-            onSelectLowerColor={setLowerColor}
-            onClearOuter={() => {
-              setOuterProduct(null);
-              setOuterColor(null);
-              clearResult();
-            }}
-            onGenerate={handleGenerate}
-            onDownload={handleDownload}
-            onShare={handleShare}
-            onTryAnother={handleTryAnother}
-            onChangePhoto={handleChangePhoto}
           />
-        ) : null}
 
-        <div className="h-8" />
+          {isBlocked && tryOnMode === 'photo' && <SubscriptionNotice isSubscriptionExpired={isSubscriptionExpired} />}
+
+          {catalogProducts.length === 0 ? (
+            <div className="flex flex-col items-center border border-landing-line bg-landing-ivory/60 px-6 py-14 text-center">
+              <p className={tryOnLabelClassName}>Phòng thử</p>
+              <h2 className="mt-3 font-display text-2xl leading-tight text-landing-obsidian">Chưa có trang phục để thử</h2>
+              <p className="mt-2 max-w-sm text-sm text-landing-muted">Phòng thử chỉ dùng sản phẩm đang bán trong cửa hàng. Vui lòng quay lại sau.</p>
+            </div>
+          ) : tryOnMode === 'live' && selectedProduct ? (
+            <LiveTryOnWorkspace
+              selectedProduct={selectedProduct}
+              outerProduct={outerProduct}
+              upperProduct={upperProduct}
+              lowerProduct={lowerProduct}
+              selectedColor={selectedColor}
+              outerColor={outerColor}
+              upperColor={upperColor}
+              lowerColor={lowerColor}
+              onOpenOuterCatalog={() => handleOpenCatalog('outer')}
+              onOpenUpperCatalog={() => handleOpenCatalog('upper')}
+              onOpenLowerCatalog={() => handleOpenCatalog('lower')}
+              onOpenCatalog={() => handleOpenCatalog('single')}
+              onSelectColor={setSelectedColor}
+              onSelectOuterColor={setOuterColor}
+              onSelectUpperColor={setUpperColor}
+              onSelectLowerColor={setLowerColor}
+              onClearOuter={() => { setOuterProduct(null); setOuterColor(null); }}
+              onSwitchToPhoto={() => handleTryOnModeChange('photo')}
+              outfitMode={garmentMode === 'combo'}
+              onOutfitModeChange={(combo) => handleModeChange(combo ? 'combo' : 'single')}
+            />
+          ) : selectedProduct ? (
+            <TryOnWorkspace
+              userPhotoUrl={userPhotoUrl}
+              resultPhotoUrl={resultPhotoUrl}
+              resultSourcePhotoUrl={resultSourcePhotoUrl}
+              isLoading={pageState === 'loading'}
+              inputError={inputError}
+              garmentMode={garmentMode}
+              selectedProduct={selectedProduct}
+              selectedColor={selectedColor}
+              outerProduct={outerProduct}
+              upperProduct={upperProduct}
+              lowerProduct={lowerProduct}
+              outerColor={outerColor}
+              upperColor={upperColor}
+              lowerColor={lowerColor}
+              canGenerate={canGenerate}
+              isSubmitting={isSubmitting || pageState === 'loading'}
+              isBlocked={isBlocked}
+              quotaCost={quotaCost}
+              onFileSelect={handleFileSelect}
+              onCameraSelect={() => cameraInputRef.current?.click()}
+              onModeChange={handleModeChange}
+              onOpenCatalog={handleOpenCatalog}
+              onSelectColor={setSelectedColor}
+              onSelectOuterColor={setOuterColor}
+              onSelectUpperColor={setUpperColor}
+              onSelectLowerColor={setLowerColor}
+              onClearOuter={() => {
+                setOuterProduct(null);
+                setOuterColor(null);
+                clearResult();
+              }}
+              onGenerate={handleGenerate}
+              onDownload={handleDownload}
+              onShare={handleShare}
+              onTryAnother={handleTryAnother}
+              onChangePhoto={handleChangePhoto}
+            />
+          ) : null}
+        </div>
       </div>
     </>
   );
@@ -644,7 +635,11 @@ function VirtualTryOnContent() {
 export default function VirtualTryOn() {
   return (
     <Suspense
-      fallback={<div className="flex justify-center items-center py-40 bg-brand-cream min-h-screen"><div className="w-10 h-10 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" /></div>}
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="Đang mở phòng thử">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-landing-taupe border-t-landing-oxblood motion-reduce:animate-none" />
+        </div>
+      }
     >
       <VirtualTryOnContent />
     </Suspense>

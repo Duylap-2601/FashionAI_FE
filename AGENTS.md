@@ -153,11 +153,14 @@ src/
 │   │                        #   form for stylist-brief-summary once a result
 │   │                        #   shows; history opens in a Sheet.
 │   ├── subscription/        # components/ constants/ hooks/ services/ types/
-│   └── try-on/              # components/ constants/ hooks/ services/ types/
-│                            # components: TryOnWorkspace, TryOnResult, TryOnHeader,
-│                            #             UploadZone, GenerateButton, LoadingOverlay,
+│   └── try-on/              # components/ hooks/ services/ types/
+│                            # components: try-on-page (mode switch, state, quota),
+│                            #             TryOnHeader, TryOnWorkspace (photo),
+│                            #             live-try-on-workspace (camera),
+│                            #             garment-slot (slot, colour picker,
+│                            #             segmented control, button classes shared
+│                            #             by both modes), UploadZone, GenerateButton,
 │                            #             ComparisonSlider, CatalogModal,
-│                            #             live-try-on-workspace, try-on-page,
 │                            #             profile-history-page
 ├── components/
 │   ├── figma/               # ImageWithFallback.tsx
