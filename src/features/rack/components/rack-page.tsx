@@ -573,7 +573,7 @@ export default function RackPage() {
                             <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
                               {item.product.brand || 'StAle. SIGNATURE'}
                             </span>
-                            <h4 className="text-body-sm font-semibold text-brand-navy line-clamp-1 leading-snug">
+                            <h4 className="product-name-line text-landing-obsidian line-clamp-1">
                               {item.product.name}
                             </h4>
                             <div className="mt-1 flex items-center justify-between">

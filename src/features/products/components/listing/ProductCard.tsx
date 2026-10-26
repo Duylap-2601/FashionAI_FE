@@ -169,7 +169,7 @@ export function ProductCard({
 
       <div className="pt-4 flex flex-1 flex-col">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-[9px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+          <span className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
             {product.brand || 'StAle. Signature'}
           </span>
           {showRating && hasRating ? (
@@ -185,7 +185,7 @@ export function ProductCard({
 
         <Link
           href={`/products/${product.id}`}
-          className="font-medium mt-2 line-clamp-2 font-display text-lg leading-snug text-landing-obsidian transition-colors hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-landing-oxblood"
+          className="product-name-card mt-2 mb-3 line-clamp-2 text-landing-obsidian transition-colors hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-landing-oxblood"
         >
           {product.name}
         </Link>

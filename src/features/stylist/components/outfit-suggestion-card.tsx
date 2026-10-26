@@ -35,7 +35,7 @@ function OutfitItemRow({ item, onSelectProduct }: {
         <span className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400">
           {OUTFIT_ROLE_LABELS[item.role]}
         </span>
-        <p className={`text-body-sm font-semibold leading-snug line-clamp-2 ${product.available ? 'text-neutral-900 group-hover/item:text-brand-navy' : 'text-neutral-500'}`}>
+        <p className={`product-name-line line-clamp-2 ${product.available ? 'text-neutral-900 group-hover/item:text-brand-navy' : 'text-neutral-500'}`}>
           {product.name}
         </p>
         <div className="flex items-center gap-2 mt-0.5">

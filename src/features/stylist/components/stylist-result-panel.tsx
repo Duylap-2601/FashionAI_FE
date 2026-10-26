@@ -165,7 +165,7 @@ export function StylistResultPanel({ resultRef, displayResult, catalogProducts }
                           <span className="relative w-9 h-12 shrink-0 rounded-lg overflow-hidden bg-brand-cream">
                             {product.image && <Image src={product.image} alt={product.name} fill sizes="36px" className="object-contain" />}
                           </span>
-                          <span className="min-w-0 flex-1 truncate text-body-sm text-neutral-700 group-hover:text-brand-navy">{product.name}</span>
+                          <span className="product-name-line min-w-0 flex-1 truncate text-neutral-700 group-hover:text-brand-navy">{product.name}</span>
                           <span className="shrink-0 text-label-sm font-semibold text-neutral-900">{product.price}</span>
                         </Link>
                       ))}

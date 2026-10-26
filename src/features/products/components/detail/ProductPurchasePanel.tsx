@@ -114,7 +114,7 @@ export function ProductPurchasePanel({
       <div className="mb-6">
         <div className="text-[11px] font-bold text-[#8B8880] uppercase tracking-widest mb-3">{product.brand || 'FASHIONAI COLLECTION'}</div>
         <div className="inline-block px-3 py-1 bg-neutral-100 text-neutral-600 rounded-full text-[12px] font-medium mb-4">{product.category}</div>
-        <h1 className="text-[32px] font-bold text-brand-navy leading-tight tracking-tight mb-4">{product.name}</h1>
+        <h1 className="product-name-title text-landing-obsidian mb-4">{product.name}</h1>
         <button type="button" onClick={() => document.getElementById('product-reviews')?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-2 cursor-pointer group text-left" title="Cuộn xuống xem đánh giá chi tiết">
           <StarRating value={reviewStats?.avgRating || 0} size="sm" readOnly />
           <span className="font-semibold text-brand-navy text-body-sm group-hover:underline">{reviewStats?.avgRating ? Number(reviewStats.avgRating).toFixed(1) : '5.0'}</span>

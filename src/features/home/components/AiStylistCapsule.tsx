@@ -86,7 +86,7 @@ export function AiStylistCapsule({ products }: AiStylistCapsuleProps) {
                   <p className="mt-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-landing-brass-ink">
                     {ROLES[index]}
                   </p>
-                  <p className="mt-1 line-clamp-2 font-display text-sm leading-snug text-landing-obsidian transition-colors group-hover:text-landing-oxblood">
+                  <p className="product-name-line mt-1 line-clamp-2 text-landing-obsidian transition-colors group-hover:text-landing-oxblood">
                     {product.name}
                   </p>
                   <p className="mt-1 font-mono text-[10px] text-landing-muted">{product.price}</p>

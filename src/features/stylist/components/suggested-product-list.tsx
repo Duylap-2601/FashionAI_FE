@@ -24,7 +24,7 @@ export function SuggestedProductList({ products, onAddToCart, onSelectProduct }:
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className={`text-body-sm font-semibold leading-snug line-clamp-2 ${product.available ? 'text-neutral-900 group-hover/prod:text-brand-navy' : 'text-neutral-500'}`}>
+                <p className={`product-name-line line-clamp-2 ${product.available ? 'text-neutral-900 group-hover/prod:text-brand-navy' : 'text-neutral-500'}`}>
                   {product.name}
                 </p>
                 <span className={`text-label-sm font-bold ${product.available ? 'text-brand-navy' : 'text-neutral-400 line-through'}`}>

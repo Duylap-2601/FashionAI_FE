@@ -19,12 +19,12 @@ export function SuggestedProductCard({ product, onAddToCart, onSelectProduct }: 
             <Link
               href={`/products/${product.id}`}
               onClick={() => onSelectProduct(product)}
-              className="text-body-sm font-semibold text-neutral-900 leading-snug line-clamp-2 hover:text-brand-navy"
+              className="product-name-line text-neutral-900 line-clamp-2 hover:text-brand-navy"
             >
               {product.name}
             </Link>
           ) : (
-            <p className="text-body-sm font-semibold text-neutral-400 leading-snug line-clamp-2 line-through">{product.name}</p>
+            <p className="product-name-line text-neutral-400 line-clamp-2 line-through">{product.name}</p>
           )}
           <p className={`mt-1 text-body-md font-bold ${product.available ? 'text-brand-navy' : 'text-semantic-error'}`}>
             {product.available ? formatVnd(product.price) : 'Ngừng bán'}

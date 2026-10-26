@@ -99,6 +99,7 @@ Rules:
 - Display line-height is `1.1` with `-0.025em` tracking, enough room for Vietnamese diacritics above and below the baseline.
 - Eyebrows and labels are uppercase with `0.18em` to `0.24em` tracking.
 - Vietnamese diacritics must be visually checked at every display size.
+- Product names use Playfair Display only at 16px and up (product detail title, grid cards). Compact lists (cart, checkout, search, try-on, stylist) use Be Vietnam Pro 500 at 14px. Use the `product-name-title`, `product-name-card` and `product-name-line` utilities from `theme.css` instead of ad-hoc classes.
 - Do not use more than one serif family.
 - Do not use em-dashes in UI copy. Use a period, comma, or colon.
 

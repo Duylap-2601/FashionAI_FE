@@ -128,7 +128,7 @@ export default function CartPage() {
 
                 <div className="flex-1 flex flex-col justify-between">
                   <div className="pr-8">
-                    <h3 className="text-body-md font-bold text-brand-navy line-clamp-1 mb-1">
+                    <h3 className="product-name-line text-landing-obsidian line-clamp-1 mb-1">
                       <Link
                         href={`/products/${item.productId || item.id}`}
                         className="hover:underline"
