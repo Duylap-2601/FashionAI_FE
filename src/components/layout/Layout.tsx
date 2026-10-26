@@ -280,7 +280,7 @@ export function Navigation({
               >
                 <ShoppingBag className="w-[18px] h-[18px] md:w-5 md:h-5" />
                 {totalItems > 0 && (
-                  <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-semantic-error rounded-full ring-2 text-[9px] flex items-center justify-center text-white font-bold animate-in zoom-in duration-200 ${variant === 'landing' ? 'ring-landing-paper' : 'ring-white'}`}>
+                  <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full ring-2 text-[9px] flex items-center justify-center animate-in zoom-in duration-200 ${variant === 'landing' ? 'bg-landing-oxblood text-landing-paper font-mono ring-landing-paper' : 'bg-semantic-error text-white font-bold ring-white'}`}>
                     {totalItems}
                   </span>
                 )}

@@ -3,7 +3,9 @@
 import { usePostMergerProvinces, usePostMergerWards, useShippingCapabilities } from '@/features/checkout/hooks/useGhnLocations';
 import type { UserAddress, UserAddressInput } from '@/features/profile/types/addresses';
 import { getErrorMessage } from '@/lib/errors';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { accountButtonClassName, accountInputClassName } from '@/features/profile/components/account-ui';
+import { cn } from '@/lib/utils';
+import { RefreshCw } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface AddressFormProps {
@@ -76,38 +78,49 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
     ? getErrorMessage(provincesError, 'Danh mục Tỉnh/Thành chưa sẵn sàng hoặc đã hết hạn đồng bộ.')
     : '';
 
+  const fieldClass = cn(accountInputClassName, 'bg-landing-paper');
+  const labelClass = 'mb-1.5 block text-sm text-landing-obsidian';
+
   return (
-    <Wrapper {...wrapperProps} className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm space-y-4">
+    <Wrapper {...wrapperProps} className="space-y-4 border border-landing-line bg-landing-ivory/60 p-5">
       {hasProvinceError && (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-800">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
-            <div>
-              <p className="font-semibold text-rose-900">Không thể tải danh mục Tỉnh/Thành</p>
-              <p className="text-rose-700 mt-0.5">{provinceErrorMessage}</p>
-            </div>
+        <div role="alert" className="flex items-start justify-between gap-3 border-l-2 border-destructive bg-landing-paper px-4 py-3 text-xs">
+          <div>
+            <p className="font-medium text-destructive">Không tải được danh mục Tỉnh/Thành</p>
+            <p className="mt-0.5 text-landing-muted">{provinceErrorMessage}</p>
           </div>
           <button
             type="button"
             onClick={handleRetryProvinces}
             disabled={loadingCapability || loadingProvinces}
-            className="inline-flex items-center gap-1 font-semibold text-rose-900 underline hover:no-underline shrink-0 disabled:opacity-50"
+            className="inline-flex shrink-0 items-center gap-1 font-medium text-landing-oxblood underline underline-offset-4 disabled:opacity-50"
           >
-            <RefreshCw className={`w-3 h-3 ${loadingCapability || loadingProvinces ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3 w-3 ${loadingCapability || loadingProvinces ? 'animate-spin' : ''}`} strokeWidth={1.75} aria-hidden="true" />
             Thử lại
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <input className="h-11 rounded-xl border border-neutral-200 px-3" placeholder="Người nhận" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} required />
-        <input className="h-11 rounded-xl border border-neutral-200 px-3" placeholder="Số điện thoại" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-      </div>
-      <input className="h-11 w-full rounded-xl border border-neutral-200 px-3" placeholder="Số nhà, tên đường" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} required />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
+          <label htmlFor="address-recipient" className={labelClass}>Người nhận</label>
+          <input id="address-recipient" autoComplete="name" className={fieldClass} value={recipientName} onChange={(e) => setRecipientName(e.target.value)} required />
+        </div>
+        <div>
+          <label htmlFor="address-phone" className={labelClass}>Số điện thoại</label>
+          <input id="address-phone" type="tel" inputMode="tel" autoComplete="tel" className={cn(fieldClass, 'font-mono')} value={phone} onChange={(e) => setPhone(e.target.value)} required />
+        </div>
+      </div>
+      <div>
+        <label htmlFor="address-line" className={labelClass}>Số nhà, tên đường</label>
+        <input id="address-line" autoComplete="address-line1" className={fieldClass} value={addressLine} onChange={(e) => setAddressLine(e.target.value)} required />
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <label htmlFor="address-province" className={labelClass}>Tỉnh / Thành phố</label>
           <select
-            className="h-11 w-full rounded-xl border border-neutral-200 px-3 transition-colors disabled:bg-neutral-50 disabled:text-neutral-400"
+            id="address-province"
+            className={fieldClass}
             value={provinceId}
             onChange={(e) => {
               setProvinceId(e.target.value);
@@ -118,12 +131,12 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
           >
             <option value="">
               {loadingCapability || loadingProvinces
-                ? 'Đang tải Tỉnh/Thành...'
+                ? 'Đang tải Tỉnh/Thành…'
                 : hasProvinceError
-                ? '⚠️ Không thể tải danh mục Tỉnh/Thành'
+                ? 'Không tải được Tỉnh/Thành'
                 : provinces.length === 0
                 ? 'Chưa có dữ liệu Tỉnh/Thành'
-                : 'Tỉnh/Thành sau sáp nhập'}
+                : 'Chọn Tỉnh/Thành (sau sáp nhập)'}
             </option>
             {provinces.map((item) => (
               <option key={item.id} value={item.id}>
@@ -134,8 +147,10 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
         </div>
 
         <div>
+          <label htmlFor="address-ward" className={labelClass}>Phường / Xã</label>
           <select
-            className="h-11 w-full rounded-xl border border-neutral-200 px-3 transition-colors disabled:bg-neutral-50 disabled:text-neutral-400"
+            id="address-ward"
+            className={fieldClass}
             value={wardId}
             onChange={(e) => setWardId(e.target.value)}
             required
@@ -143,14 +158,14 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
           >
             <option value="">
               {loadingWards
-                ? 'Đang tải Phường/Xã...'
+                ? 'Đang tải Phường/Xã…'
                 : isErrorWards
-                ? '⚠️ Lỗi tải Phường/Xã'
+                ? 'Không tải được Phường/Xã'
                 : !provinceId
                 ? 'Chọn Tỉnh/Thành trước'
                 : wards.length === 0
                 ? 'Chưa có dữ liệu Phường/Xã'
-                : 'Phường/Xã'}
+                : 'Chọn Phường/Xã'}
             </option>
             {wards.map((item) => (
               <option key={item.id} value={item.id}>
@@ -159,24 +174,36 @@ export function AddressForm({ initial, isSaving, onCancel, onSubmit, renderAsFor
             ))}
           </select>
           {isErrorWards && (
-            <div className="flex items-center justify-between gap-2 mt-1 text-xs text-rose-600">
+            <div className="mt-1.5 flex items-center justify-between gap-2 text-xs text-destructive">
               <span>{getErrorMessage(wardsError, 'Không tải được Phường/Xã.')}</span>
-              <button type="button" onClick={() => void refetchWards()} className="underline hover:no-underline font-medium">
+              <button type="button" onClick={() => void refetchWards()} className="font-medium underline underline-offset-4">
                 Thử lại
               </button>
             </div>
           )}
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
-        <input className="h-11 rounded-xl border border-neutral-200 px-3" placeholder="Nhãn: Nhà riêng, Văn phòng" value={label} onChange={(e) => setLabel(e.target.value)} />
-        <label className="flex items-center gap-2 text-sm text-neutral-700">
-          <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} /> Đặt làm mặc định
+      <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-2">
+        <div>
+          <label htmlFor="address-label" className={labelClass}>
+            Nhãn <span className="text-landing-muted">(không bắt buộc)</span>
+          </label>
+          <input id="address-label" className={fieldClass} placeholder="Nhà riêng, Văn phòng" value={label} onChange={(e) => setLabel(e.target.value)} />
+        </div>
+        <label className="flex h-11 items-center gap-2.5 text-sm text-landing-obsidian">
+          <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} className="h-4 w-4 accent-landing-oxblood" />
+          Đặt làm mặc định
         </label>
       </div>
-      <div className="flex gap-3 justify-end">
-        {onCancel && <button type="button" onClick={onCancel} className="h-10 px-4 rounded-xl border border-neutral-200">Hủy</button>}
-        <button type={renderAsForm ? 'submit' : 'button'} onClick={renderAsForm ? undefined : () => submit()} disabled={isSaving} className="h-10 px-5 rounded-xl bg-brand-navy text-white font-semibold disabled:opacity-50">{isSaving ? 'Đang lưu...' : 'Lưu địa chỉ'}</button>
+      <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+        {onCancel && (
+          <button type="button" onClick={onCancel} className={accountButtonClassName('outline')}>
+            Hủy
+          </button>
+        )}
+        <button type={renderAsForm ? 'submit' : 'button'} onClick={renderAsForm ? undefined : () => submit()} disabled={isSaving} className={accountButtonClassName('primary')}>
+          {isSaving ? 'Đang lưu' : 'Lưu địa chỉ'}
+        </button>
       </div>
     </Wrapper>
   );
