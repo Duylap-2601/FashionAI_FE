@@ -11,12 +11,12 @@ import Link from 'next/link';
 
 function ProductThumb({ product }: { product: SuggestedProduct }) {
   return (
-    <div className="relative w-14 h-[72px] shrink-0 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-100">
+    <div className="relative h-[72px] w-14 shrink-0 overflow-hidden rounded-[2px] border border-landing-line/70 bg-landing-paper">
       {product.image ? (
         <Image src={product.image} alt={product.name} fill sizes="56px" className="object-contain p-0.5" />
       ) : (
         <div className="w-full h-full flex items-center justify-center">
-          <Package className="w-4 h-4 text-neutral-400" />
+          <Package className="h-4 w-4 text-landing-muted" strokeWidth={1.75} />
         </div>
       )}
     </div>
@@ -32,24 +32,24 @@ function OutfitItemRow({ item, onSelectProduct }: {
     <>
       <ProductThumb product={product} />
       <div className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+        <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-brass-ink">
           {OUTFIT_ROLE_LABELS[item.role]}
         </span>
-        <p className={`product-name-line line-clamp-2 ${product.available ? 'text-neutral-900 group-hover/item:text-brand-navy' : 'text-neutral-500'}`}>
+        <p className={`product-name-line line-clamp-2 ${product.available ? 'text-landing-obsidian group-hover/item:text-landing-oxblood' : 'text-landing-muted'}`}>
           {product.name}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className={`text-label-sm font-bold ${product.available ? 'text-brand-navy' : 'text-neutral-400 line-through'}`}>
+          <span className={`font-mono text-[12px] ${product.available ? 'text-landing-oxblood' : 'text-landing-muted line-through'}`}>
             {formatVnd(product.price)}
           </span>
           {!product.available && (
-            <span className="px-1.5 py-0.5 rounded bg-neutral-100 text-[10px] font-semibold text-semantic-error">
+            <span className="rounded-[2px] border border-destructive/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-destructive">
               Ngừng bán
             </span>
           )}
         </div>
         {item.note && (
-          <p className="mt-0.5 text-[11.5px] text-neutral-500 italic leading-snug line-clamp-2">{item.note}</p>
+          <p className="mt-0.5 line-clamp-2 text-xs italic leading-snug text-landing-muted">{item.note}</p>
         )}
       </div>
     </>
@@ -57,13 +57,13 @@ function OutfitItemRow({ item, onSelectProduct }: {
 
   // Sản phẩm ngừng bán không còn trang chi tiết để mở.
   if (!product.available) {
-    return <div className="flex items-start gap-3 p-1.5 rounded-xl opacity-70">{details}</div>;
+    return <div className="flex items-start gap-3 p-1.5 opacity-70">{details}</div>;
   }
   return (
     <Link
       href={`/products/${product.id}`}
       onClick={() => onSelectProduct(product)}
-      className="group/item flex items-start gap-3 p-1.5 rounded-xl hover:bg-neutral-50 transition-colors"
+      className="group/item flex items-start gap-3 rounded-[2px] p-1.5 transition-colors hover:bg-landing-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
     >
       {details}
     </Link>
@@ -74,11 +74,11 @@ export function OutfitSuggestionCard({ outfit, onAddToCart, onSelectProduct }: O
   const availableCount = outfit.items.filter((item) => item.product.available).length;
 
   return (
-    <article className="bg-white rounded-2xl border border-neutral-200 shadow-xs flex flex-col min-w-0 overflow-hidden">
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-[2px] border border-landing-line bg-landing-ivory">
       <header className="px-4 pt-4 pb-2">
-        <h4 className="text-label-md font-bold text-brand-navy leading-snug">{outfit.name || 'Bộ phối gợi ý'}</h4>
+        <h4 className="font-display text-lg leading-snug text-landing-obsidian">{outfit.name || 'Bộ phối gợi ý'}</h4>
         {outfit.reason && (
-          <p className="mt-1 text-[12.5px] text-neutral-600 leading-relaxed">{outfit.reason}</p>
+          <p className="mt-1 text-sm leading-relaxed text-landing-muted">{outfit.reason}</p>
         )}
       </header>
 
@@ -92,11 +92,11 @@ export function OutfitSuggestionCard({ outfit, onAddToCart, onSelectProduct }: O
 
       {outfit.extras.length > 0 && (
         <div className="px-4 pt-2 flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-semibold text-neutral-500">Phụ kiện gợi ý:</span>
+          <span className="text-[11px] font-semibold text-landing-muted">Phụ kiện gợi ý:</span>
           {outfit.extras.map((extra, idx) => (
             <span
               key={idx}
-              className="px-2 py-0.5 rounded-full bg-neutral-100 border border-neutral-200 text-[11px] text-neutral-700"
+              className="rounded-[2px] border border-landing-line bg-landing-paper px-2 py-0.5 text-[11px] text-landing-obsidian/80"
             >
               {extra}
             </span>
@@ -105,9 +105,9 @@ export function OutfitSuggestionCard({ outfit, onAddToCart, onSelectProduct }: O
       )}
 
       <footer className="mt-auto px-4 pt-3 pb-4 flex flex-col gap-2.5">
-        <div className="flex items-baseline justify-between gap-2 pt-3 border-t border-neutral-100">
-          <span className="text-label-sm text-neutral-500">Tổng cả bộ</span>
-          <span className="text-body-md font-bold text-brand-navy">{formatVnd(outfit.totalPrice)}</span>
+        <div className="flex items-baseline justify-between gap-2 border-t border-landing-line/70 pt-3">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-muted">Tổng cả bộ</span>
+          <span className="font-mono text-base text-landing-oxblood">{formatVnd(outfit.totalPrice)}</span>
         </div>
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <OutfitTryOnButton outfit={outfit} />
@@ -115,9 +115,9 @@ export function OutfitSuggestionCard({ outfit, onAddToCart, onSelectProduct }: O
             type="button"
             onClick={() => onAddToCart(outfit)}
             disabled={availableCount === 0}
-            className="h-10 rounded-xl bg-brand-navy text-white text-label-md font-semibold flex items-center justify-center gap-2 hover:bg-brand-navy/90 transition-colors border-0 cursor-pointer disabled:bg-neutral-300 disabled:cursor-not-allowed"
+            className="flex h-10 items-center justify-center gap-2 rounded-[2px] bg-landing-oxblood text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-paper transition-colors hover:bg-landing-obsidian focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood disabled:cursor-not-allowed disabled:bg-landing-taupe disabled:text-landing-obsidian/50"
           >
-            <ShoppingBag className="w-4 h-4" />
+            <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
             {availableCount === 0 ? 'Đã ngừng bán' : 'Thêm cả bộ vào giỏ'}
           </button>
         </div>

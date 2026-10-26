@@ -25,24 +25,27 @@ export function QuotaExhaustedModal({
   const hasDeficit = requested !== undefined && remaining !== undefined && requested > remaining;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-[420px] w-full p-6 md:p-8 flex flex-col items-center gap-6 relative border border-neutral-100 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-landing-obsidian/55 p-4">
+      <div role="dialog" aria-modal="true" aria-labelledby="quota-exhausted-title" className="relative flex w-full max-w-[420px] flex-col items-center gap-6 border border-landing-line bg-landing-paper p-6 text-landing-obsidian animate-in fade-in-0 duration-200 md:p-8">
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors"
+          aria-label="Đóng"
+          className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center text-landing-muted transition-colors hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
         >
-          <X className="w-4 h-4" />
+          <X className="h-4 w-4" strokeWidth={1.75} />
         </button>
 
-        <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-xs">
-          <Clock className="w-8 h-8" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-[2px] border border-landing-line text-landing-brass-ink">
+          <Clock className="h-7 w-7" strokeWidth={1.5} />
         </div>
 
-        <div className="text-center flex flex-col gap-2">
-          <h2 className="text-[20px] font-bold text-brand-navy">
+        <div className="flex flex-col gap-2 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass-ink">Hết lượt trong ngày</p>
+          <h2 id="quota-exhausted-title" className="font-display text-2xl leading-tight text-landing-obsidian">
             {hasDeficit ? 'Không đủ lượt trong ngày' : `Hết lượt ${actionName} hôm nay`}
           </h2>
-          <p className="text-body-sm text-neutral-600 leading-relaxed">
+          <p className="text-sm leading-relaxed text-landing-muted">
             {hasDeficit
               ? `Yêu cầu này cần ${requested} lượt nhưng bạn chỉ còn ${remaining} lượt trong ngày. Quota sẽ được đặt lại lúc ${formattedResetTime}.`
               : `Bạn đã sử dụng hết lượt ${actionName} trong ngày. Quota sẽ được đặt lại lúc ${formattedResetTime}.`}
@@ -53,19 +56,20 @@ export function QuotaExhaustedModal({
           <Link
             href="/subscription"
             onClick={onClose}
-            className="w-full h-12 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white rounded-xl font-bold text-body-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[2px] bg-landing-oxblood text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper transition-colors hover:bg-landing-obsidian focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
           >
-            Nâng cấp gói tài khoản <ArrowRight className="w-4 h-4" />
+            Nâng cấp gói tài khoản <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
           </Link>
           <button
+            type="button"
             onClick={onClose}
-            className="w-full h-11 border border-neutral-200 text-neutral-600 rounded-xl font-semibold text-body-sm hover:bg-neutral-50 transition-colors cursor-pointer"
+            className="h-11 w-full rounded-[2px] border border-landing-obsidian/70 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
           >
             Đóng
           </button>
         </div>
 
-        <p className="text-label-sm text-neutral-400 text-center">
+        <p className="text-center text-xs text-landing-muted">
           Lượt dùng được tự động làm mới vào 00:00 (UTC+7) mỗi ngày.
         </p>
       </div>

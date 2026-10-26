@@ -3,6 +3,7 @@
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import { isUuid } from '@/features/chat/services/chat-utils';
+import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useState } from 'react';
 
@@ -27,10 +28,10 @@ function ChatContent() {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] bg-brand-cream">
+      <div className="flex min-h-[calc(100dvh-73px)] items-center justify-center bg-landing-paper" role="status">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-brand-navy border-t-transparent rounded-full animate-spin" />
-          <span className="text-body-sm font-semibold text-neutral-700">Đang khởi tạo trợ lý AI...</span>
+          <Loader2 className="h-7 w-7 animate-spin text-landing-oxblood" strokeWidth={1.75} />
+          <span className="text-sm text-landing-muted">Đang khởi tạo trợ lý AI…</span>
         </div>
       </div>
     );
@@ -52,8 +53,8 @@ export default function ChatPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-[calc(100vh-64px)] bg-brand-cream">
-          <div className="w-8 h-8 border-3 border-brand-navy border-t-transparent rounded-full animate-spin" />
+        <div className="flex min-h-[calc(100dvh-73px)] items-center justify-center bg-landing-paper">
+          <Loader2 className="h-7 w-7 animate-spin text-landing-oxblood" strokeWidth={1.75} aria-label="Đang tải" />
         </div>
       }
     >

@@ -151,7 +151,7 @@ export default function AIStylistPage() {
         setPageState('idle');
         setIsEditing(false);
       }
-    } catch (err) {
+    } catch {
       toast.error('Không thể xóa kết quả. Vui lòng thử lại.');
     }
   };
@@ -160,8 +160,8 @@ export default function AIStylistPage() {
   const showForm = pageState === 'idle' || isEditing;
 
   return (
-    <div className="min-h-screen bg-brand-cream text-neutral-900 font-sans pb-24">
-      <div className="max-w-[1080px] mx-auto px-4 sm:px-6 py-6 md:py-10">
+    <div className="min-h-screen pb-24 text-landing-obsidian">
+      <div className="mx-auto max-w-[1180px] px-4 py-8 md:px-8 md:py-12">
 
         {/* Hidden inputs */}
         <input
@@ -190,20 +190,22 @@ export default function AIStylistPage() {
 
         {showQuotaModal && <QuotaExhaustedModal onClose={() => setShowQuotaModal(false)} />}
 
-        {/* HEADER */}
-        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+        <header className="mb-8 flex flex-col gap-5 border-b border-landing-line pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="inline-flex items-center gap-1.5 text-label-sm font-semibold text-brand-navy">
-              <Sparkles className="w-3.5 h-3.5" /> AI Stylist
+            <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass-ink">
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} /> AI Stylist
             </p>
-            <h1 className="mt-1 text-heading-h1 font-semibold text-neutral-900">Phối đồ cùng AI</h1>
-            <p className="mt-1 text-body-md text-neutral-500">Chọn dịp mặc, nhận bộ phối từ sản phẩm của cửa hàng.</p>
+            <h1 className="mt-3 font-display text-landing-h2 text-landing-obsidian">Phối đồ cùng AI</h1>
+            <p className="mt-3 max-w-xl text-landing-body text-landing-muted">Chọn dịp mặc, nhận bộ phối từ sản phẩm của cửa hàng.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full border bg-white text-label-sm font-semibold ${hasQuota ? 'border-neutral-200 text-neutral-600' : 'border-red-200 text-semantic-error'}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${hasQuota ? 'bg-semantic-success' : 'bg-semantic-error'}`} />
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              role="status"
+              className={`inline-flex h-10 items-center gap-2 rounded-[2px] border px-3 font-mono text-[11px] uppercase tracking-[0.12em] ${hasQuota ? 'border-landing-line text-landing-obsidian/80' : 'border-destructive/40 text-destructive'}`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${hasQuota ? 'bg-landing-sage-ink' : 'bg-destructive'}`} />
               {remainingQuota === null
-                ? 'Đang tải lượt…'
+                ? 'Đang tải lượt'
                 : remainingQuota === Infinity
                   ? 'Không giới hạn lượt'
                   : `Còn ${remainingQuota}/${quota?.limit} lượt hôm nay`}
@@ -212,10 +214,10 @@ export default function AIStylistPage() {
               <button
                 type="button"
                 onClick={() => setHistoryOpen(true)}
-                className="h-9 px-3 rounded-full border border-neutral-200 bg-white text-label-sm font-semibold text-neutral-700 hover:border-brand-navy/40 hover:text-brand-navy flex items-center gap-1.5 cursor-pointer"
+                className="inline-flex h-10 items-center gap-2 rounded-[2px] border border-landing-obsidian/70 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
               >
-                <HistoryIcon className="w-3.5 h-3.5" /> Lịch sử
-                <span className="text-neutral-400">{meta?.total ?? history.length}</span>
+                <HistoryIcon className="h-4 w-4" strokeWidth={1.75} /> Lịch sử
+                <span className="font-mono tracking-normal text-landing-muted">{meta?.total ?? history.length}</span>
               </button>
             )}
           </div>
