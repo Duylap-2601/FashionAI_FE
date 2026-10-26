@@ -6,7 +6,7 @@ export async function fetchNotifications(page: number, limit: number, type: Noti
   const params: Record<string, string | number> = { page, limit };
   if (type) params.type = type;
 
-  const rawData = await http.get<AppNotification[] | { items?: AppNotification[]; meta?: Partial<NotificationMeta>; __meta?: Partial<NotificationMeta> }>('/notifications', { params });
+  const rawData = await http.get<(AppNotification[] & { __meta?: Partial<NotificationMeta> }) | { items?: AppNotification[]; meta?: Partial<NotificationMeta>; __meta?: Partial<NotificationMeta> }>('/notifications', { params });
 
   let items: AppNotification[] = [];
   let meta: NotificationMeta = {
@@ -19,7 +19,8 @@ export async function fetchNotifications(page: number, limit: number, type: Noti
 
   if (Array.isArray(rawData)) {
     items = rawData;
-    meta.total = rawData.length;
+    // Backend trả mảng kèm `meta` (total, unread, totalPages); http gắn nó vào `__meta` của mảng.
+    meta = rawData.__meta ? { ...meta, ...rawData.__meta } : { ...meta, total: rawData.length };
   } else if (rawData && typeof rawData === 'object') {
     items = Array.isArray(rawData.items) ? rawData.items : [];
     if (rawData.meta) {

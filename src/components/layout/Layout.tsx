@@ -11,6 +11,7 @@ import { FloatingChat } from '@/features/chat/components/FloatingChat';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { HeaderSearch } from '@/features/products/components/HeaderSearch';
 import { SEARCH_HISTORY_KEY } from '@/features/products/constants/header-search';
+import { ACCOUNT_TIER_LABELS } from '@/features/profile/constants/account-nav';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import {
   Banknote,
@@ -123,6 +124,12 @@ export function Navigation({
   }, [pathname]);
 
   const tryOnHref = currentUser.role === 'guest' ? '/login?callbackUrl=/try-on' : '/try-on';
+  const isLandingVariant = variant === 'landing';
+  const accountMenuItemClass = isLandingVariant
+    ? 'flex items-center gap-3 px-4 py-2.5 text-body-sm text-landing-obsidian/80 transition-colors hover:bg-landing-ivory hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-landing-oxblood'
+    : 'flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors';
+  const accountMenuDividerClass = isLandingVariant ? 'border-landing-line/70' : 'border-neutral-100';
+  const accountMenuIconProps = { className: 'w-4 h-4', strokeWidth: isLandingVariant ? 1.75 : 2 };
   const chatHref = currentUser.role === 'guest' ? '/login?callbackUrl=/chat' : '/chat';
   const stylistHref = currentUser.role === 'guest' ? '/login?callbackUrl=/ai-stylist' : '/ai-stylist';
   const rackHref = currentUser.role === 'guest' ? '/login?callbackUrl=/rack' : '/rack';
@@ -299,8 +306,9 @@ export function Navigation({
                     setIsNavMenuOpen(false);
                     setIsDropdownOpen((open) => !open);
                   }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-navy text-label-sm font-bold text-white ring-2 ring-transparent transition-all hover:ring-neutral-200 md:h-8 md:w-8"
+                  className={`flex h-9 w-9 items-center justify-center rounded-full text-label-sm font-bold ring-2 ring-transparent transition-all md:h-8 md:w-8 ${isLandingVariant ? 'bg-landing-oxblood text-landing-paper hover:ring-landing-taupe' : 'bg-brand-navy text-white hover:ring-neutral-200'}`}
                   aria-label="Tài khoản"
+                  aria-expanded={isDropdownOpen}
                 >
                   {currentUser.avatar ? (
                     <Image src={currentUser.avatar} alt={displayName} width={32} height={32} unoptimized className="w-full h-full rounded-full object-cover" />
@@ -314,15 +322,19 @@ export function Navigation({
 
                 {/* Desktop Dropdown */}
                 {isDropdownOpen && (
-                  <div className={`absolute right-0 top-full mt-2 w-[240px] rounded-xl border py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 hidden md:block ${variant === 'landing' ? 'border-landing-line bg-landing-paper shadow-md' : 'border-neutral-200 bg-white shadow-lg'}`}>
-                    <div className="px-4 py-3 border-b border-neutral-100 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-brand-navy flex items-center justify-center text-white font-bold text-body-md shrink-0">
+                  <div className={`absolute right-0 top-full mt-2 w-[240px] border py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 hidden md:block ${isLandingVariant ? 'rounded-[2px] border-landing-line bg-landing-paper shadow-md' : 'rounded-xl border-neutral-200 bg-white shadow-lg'}`}>
+                    <div className={`px-4 py-3 border-b flex items-center gap-3 ${accountMenuDividerClass}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-body-md shrink-0 ${isLandingVariant ? 'bg-landing-oxblood text-landing-paper' : 'bg-brand-navy text-white'}`}>
                         {currentUser.avatar ? <Image src={currentUser.avatar} alt="Avatar" width={40} height={40} unoptimized className="w-full h-full rounded-full object-cover" /> : displayInitial}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-label-md font-semibold text-neutral-900 truncate">{displayName}</span>
+                      <div className="flex min-w-0 flex-col">
+                        <span className={`truncate ${isLandingVariant ? 'font-display text-base leading-tight text-landing-obsidian' : 'text-label-md font-semibold text-neutral-900'}`}>{displayName}</span>
                         {currentUser.role === 'admin' ? (
                           <span className="text-xs text-semantic-error font-medium">Admin</span>
+                        ) : isLandingVariant ? (
+                          <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-brass-ink">
+                            Gói {ACCOUNT_TIER_LABELS[String(currentUser.tier).toUpperCase()] ?? ACCOUNT_TIER_LABELS.FREE}
+                          </span>
                         ) : (
                           <span className={`text-xs font-medium flex items-center gap-1 ${getTierColor(currentUser.tier as UserTier)}`}>
                             {getTierLabel(currentUser.tier as UserTier)} <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
@@ -332,34 +344,34 @@ export function Navigation({
                     </div>
 
                     {currentUser.role !== 'admin' ? (
-                      <div className="py-1 border-b border-neutral-100">
-                        <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                          <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
+                      <div className={`py-1 border-b ${accountMenuDividerClass}`}>
+                        <Link href="/profile" className={accountMenuItemClass}>
+                          <UserIcon {...accountMenuIconProps} /> Hồ sơ của tôi
                         </Link>
-                        <Link href="/profile/measurements" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                          <Ruler className="w-4 h-4" /> Số đo & chi tiết
+                        <Link href="/profile/measurements" className={accountMenuItemClass}>
+                          <Ruler {...accountMenuIconProps} /> Số đo & chi tiết
                         </Link>
-                        <Link href="/profile/orders" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                          <Package className="w-4 h-4" /> Đơn hàng
+                        <Link href="/profile/orders" className={accountMenuItemClass}>
+                          <Package {...accountMenuIconProps} /> Đơn hàng
                         </Link>
-                        <Link href="/profile/reviews" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                          <Star className="w-4 h-4" /> Đánh giá của tôi
+                        <Link href="/profile/reviews" className={accountMenuItemClass}>
+                          <Star {...accountMenuIconProps} /> Đánh giá của tôi
                         </Link>
-                        <Link href="/notifications" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                          <Bell className="w-4 h-4" /> Thông báo
+                        <Link href="/notifications" className={accountMenuItemClass}>
+                          <Bell {...accountMenuIconProps} /> Thông báo
                         </Link>
                       </div>
                     ) : (
-                      <div className="py-1 border-b border-neutral-100">
-                        <Link href="/admin/profile" className="flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                          <UserIcon className="w-4 h-4" /> Thông tin cá nhân
+                      <div className={`py-1 border-b ${accountMenuDividerClass}`}>
+                        <Link href="/admin/profile" className={accountMenuItemClass}>
+                          <UserIcon {...accountMenuIconProps} /> Thông tin cá nhân
                         </Link>
                       </div>
                     )}
 
                     <div className="py-1">
-                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-semantic-error hover:bg-red-50 transition-colors">
-                        <LogOut className="w-4 h-4" /> Đăng xuất
+                      <button onClick={handleLogout} className={`w-full flex items-center gap-3 px-4 py-2.5 text-body-sm transition-colors ${isLandingVariant ? 'text-destructive hover:bg-destructive/5' : 'text-semantic-error hover:bg-red-50'}`}>
+                        <LogOut {...accountMenuIconProps} /> Đăng xuất
                       </button>
                     </div>
                   </div>

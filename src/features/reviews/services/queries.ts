@@ -20,10 +20,10 @@ export async function fetchReviews(productId: string | undefined, page: number, 
   if (rating && rating >= 1 && rating <= 5) {
     params.rating = rating;
   }
-  const data = await http.get<Review[] | { data?: Review[]; meta?: ReviewsMeta }>(`/products/${productId}/reviews`, { params });
+  const data = await http.get<(Review[] & { __meta?: ReviewsMeta }) | { data?: Review[]; meta?: ReviewsMeta }>(`/products/${productId}/reviews`, { params });
   return {
     data: (Array.isArray(data) ? data : data.data) || [],
-    meta: (!Array.isArray(data) && data.meta) || {
+    meta: (Array.isArray(data) ? data.__meta : data.meta) || {
       total: 0,
       page,
       limit,
@@ -53,10 +53,11 @@ export async function fetchReviewStats(productId: string | undefined) {
 }
 
 export async function fetchMyReviews(page: number, limit: number) {
-  const data = await http.get<Review[] | { data?: Review[]; meta?: ReviewsMeta }>('/products/reviews/my', { params: { page, limit } });
+  const data = await http.get<(Review[] & { __meta?: ReviewsMeta }) | { data?: Review[]; meta?: ReviewsMeta }>('/products/reviews/my', { params: { page, limit } });
+  // Backend trả mảng trong `data` và phân trang trong `meta`; http gắn meta đó vào `__meta` của mảng.
   return {
     data: (Array.isArray(data) ? data : data.data) || [],
-    meta: (!Array.isArray(data) && data.meta) || { total: 0, page, limit, totalPages: 1 },
+    meta: (Array.isArray(data) ? data.__meta : data.meta) || { total: 0, page, limit, totalPages: 1 },
   };
 }
 

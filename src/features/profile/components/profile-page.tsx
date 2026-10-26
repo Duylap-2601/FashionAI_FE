@@ -1,246 +1,294 @@
 'use client';
 
-import { useChangePassword } from '@/features/auth/hooks/use-change-password';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
-import { useQuota } from '@/features/subscription/hooks/useQuota';
+import { MEASUREMENT_CATEGORY_LABELS } from '@/features/measurements/constants/profile-measurements-page';
+import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
+import { OrderStatusLabel } from '@/features/orders/components/order-status-label';
+import { useInfiniteOrders } from '@/features/orders/hooks/useOrders';
+import { formatOrderDate, formatVnd, getOrderCode, getOrderTotal } from '@/features/orders/services/order-display';
+import { AccountShell } from '@/features/profile/components/account-shell';
 import {
-  AlertCircle,
-  Camera,
-  CheckCircle2,
-  ChevronRight,
-  Clock,
-  Crown,
-  Edit3,
-  Eye, EyeOff,
-  History,
-  Loader2,
-  Lock,
-  LogOut,
-  MapPin,
-  Ruler,
-  ShoppingBag,
-  Star,
-  Zap
-} from 'lucide-react';
+  AccountSection,
+  accountButtonClassName,
+  accountFocusRing,
+  accountInputClassName,
+  accountLabelClassName,
+} from '@/features/profile/components/account-ui';
+import { ChangePasswordDialog } from '@/features/profile/components/change-password-dialog';
+import { ACCOUNT_TIER_LABELS } from '@/features/profile/constants/account-nav';
+import { useUserProfile } from '@/features/profile/hooks/use-profile';
+import { useQuota } from '@/features/subscription/hooks/useQuota';
+import type { UserQuota } from '@/features/subscription/types/quota';
+import { getErrorMessage } from '@/lib/errors';
+import { cn } from '@/lib/utils';
+import { ArrowRight, Check, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
-// ─── Change Password Modal ──────────────────────────────────────────────────
-function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
-  const [showPw, setShowPw] = useState({ current: false, new: false, confirm: false });
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const { changePassword, isChanging } = useChangePassword();
+const NAME_MAX_LENGTH = 100;
 
-  const handleChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
-    setError(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (form.newPassword.length < 8) {
-      setError('Mật khẩu mới phải có ít nhất 8 ký tự.');
-      return;
-    }
-    if (form.newPassword !== form.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp.');
-      return;
-    }
-
-    try {
-      await changePassword({ currentPassword: form.currentPassword, newPassword: form.newPassword });
-      setSuccess(true);
-      setTimeout(() => {
-        onClose();
-        setSuccess(false);
-        setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      }, 1800);
-    } catch (err: unknown) {
-      const msg = readErrorMessage(err);
-      setError(Array.isArray(msg) ? msg[0] : msg || 'Mật khẩu hiện tại không đúng.');
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 animate-fadeInUp">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-navy/10 flex items-center justify-center">
-              <Lock className="w-5 h-5 text-brand-navy" />
-            </div>
-            <div>
-              <h2 className="text-heading-h3 font-semibold text-neutral-900">Đổi mật khẩu</h2>
-              <p className="text-label-sm text-neutral-500">Bảo mật tài khoản của bạn</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-500 transition-colors">
-            ✕
-          </button>
-        </div>
-
-        {success ? (
-          <div className="flex flex-col items-center py-8 gap-3 text-center">
-            <div className="w-16 h-16 rounded-full bg-semantic-success/10 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-semantic-success" />
-            </div>
-            <p className="text-body-md font-semibold text-neutral-900">Đổi mật khẩu thành công!</p>
-            <p className="text-body-sm text-neutral-500">Đang đóng cửa sổ...</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-semantic-error text-body-sm">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {(['currentPassword', 'newPassword', 'confirmPassword'] as const).map((field) => {
-              const labels = {
-                currentPassword: 'Mật khẩu hiện tại',
-                newPassword: 'Mật khẩu mới',
-                confirmPassword: 'Xác nhận mật khẩu mới',
-              };
-              const showKey = (field === 'currentPassword' ? 'current' : field === 'newPassword' ? 'new' : 'confirm') as 'current' | 'new' | 'confirm';
-              return (
-                <div key={field}>
-                  <label className="block text-label-sm font-medium text-neutral-700 mb-1.5">{labels[field]}</label>
-                  <div className="relative">
-                    <input
-                      type={showPw[showKey] ? 'text' : 'password'}
-                      value={form[field]}
-                      onChange={handleChange(field)}
-                      required
-                      disabled={isChanging}
-                      placeholder={field === 'newPassword' ? 'Ít nhất 8 ký tự' : ''}
-                      className="w-full h-11 pl-3.5 pr-10 bg-white border border-neutral-300 rounded-xl text-body-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { const k = showKey; setShowPw(p => ({ ...p, [k]: !p[k] })); }}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
-                    >
-                      {showPw[showKey] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-
-            <div className="flex gap-3 mt-2">
-              <button type="button" onClick={onClose} disabled={isChanging} className="flex-1 h-11 border border-neutral-300 rounded-xl text-body-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors disabled:opacity-50">
-                Hủy
-              </button>
-              <button type="submit" disabled={isChanging} className="flex-1 h-11 bg-brand-navy text-white rounded-xl text-body-sm font-semibold hover:bg-brand-navy/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-                {isChanging ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang lưu...</> : 'Đổi mật khẩu'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
-  );
+function formatDate(iso?: string | null) {
+  return iso ? new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
 }
 
-function readErrorMessage(error: unknown): string | string[] | undefined {
-  if (!(error instanceof Error) || !('response' in error)) return undefined;
-  const response = error.response as { data?: { message?: unknown } };
-  const message = response.data?.message;
-  return typeof message === 'string' || Array.isArray(message) ? message as string | string[] : undefined;
-}
-
-// ─── Tier Badge ──────────────────────────────────────────────────────────────
-function TierBadge({ tier }: { tier: string }) {
-  const t = tier?.toUpperCase();
-  if (t === 'VIP') return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-bold bg-brand-navy/10 text-brand-navy border border-brand-navy/25">
-      <Crown className="w-3 h-3" /> VIP
-    </span>
-  );
-  if (t === 'MEMBER') return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-bold bg-brand-sage/20 text-brand-sage border border-brand-sage/40">
-      <Star className="w-3 h-3" /> Member
-    </span>
-  );
+function SectionLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-medium bg-neutral-100 text-neutral-500 border border-neutral-200">
-      Free
-    </span>
-  );
-}
-
-// ─── Quota Bar ───────────────────────────────────────────────────────────────
-function QuotaBar({ used, limit, unlimited, label }: { used: number; limit: number | null; unlimited?: boolean; label: string }) {
-  const pct = unlimited || !limit ? 100 : Math.min((used / limit) * 100, 100);
-  const remaining = unlimited ? '∞' : limit !== null ? Math.max(limit - used, 0) : 0;
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-label-sm text-neutral-500">{label}</span>
-        <span className="text-label-sm font-semibold text-neutral-900">
-          {unlimited ? '∞ không giới hạn' : `${remaining} còn lại`}
-        </span>
-      </div>
-      <div className="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-700 ${unlimited ? 'bg-brand-gold' : pct >= 90 ? 'bg-semantic-error' : pct >= 60 ? 'bg-semantic-warning' : 'bg-semantic-success'}`}
-          style={{ width: unlimited ? '100%' : `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ─── Nav Card ────────────────────────────────────────────────────────────────
-function NavCard({ href, icon: Icon, label, desc, badge }: { href: string; icon?: React.ComponentType<{ className?: string }>; label: string; desc: string; badge?: string }) {
-  return (
-    <Link
-      href={href}
-      className="group flex items-center gap-4 p-4 bg-white border border-neutral-200 rounded-xl hover:border-brand-navy/30 hover:shadow-md transition-all duration-200"
-    >
-      {Icon && (
-        <div className="w-10 h-10 rounded-xl bg-brand-cream flex items-center justify-center shrink-0 group-hover:bg-brand-navy/10 transition-colors">
-          <Icon className="w-5 h-5 text-brand-navy" />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-body-sm font-semibold text-neutral-900">{label}</span>
-          {badge && <span className="text-label-sm px-1.5 py-0.5 bg-brand-navy text-white rounded-full">{badge}</span>}
-        </div>
-        <p className="text-label-sm text-neutral-500 mt-0.5">{desc}</p>
-      </div>
-      <ChevronRight className="w-4 h-4 text-neutral-300 group-hover:text-brand-navy group-hover:translate-x-0.5 transition-all shrink-0" />
+    <Link href={href} className={cn('inline-flex min-h-9 items-center gap-1.5 text-sm text-landing-oxblood underline-offset-4 hover:underline', accountFocusRing)}>
+      {children}
+      <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
     </Link>
   );
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
+function InfoRow({ label, children, action }: { label: string; children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="grid gap-x-6 gap-y-1.5 py-4 sm:grid-cols-[150px_minmax(0,1fr)_auto] sm:items-center">
+      <dt className="text-sm text-landing-muted">{label}</dt>
+      <dd className="min-w-0 text-landing-obsidian">{children}</dd>
+      {action ? <dd className="sm:justify-self-end">{action}</dd> : null}
+    </div>
+  );
+}
+
+function NameRow({ name }: { name: string }) {
+  const { updateProfile, isUpdating } = useUserProfile();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const [error, setError] = useState<string | null>(null);
+
+  const startEditing = () => {
+    setDraft(name);
+    setError(null);
+    setEditing(true);
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      setError('Nhập họ và tên.');
+      return;
+    }
+    updateProfile(
+      { name: trimmed },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          toast.success('Đã lưu họ và tên');
+        },
+        onError: (err: unknown) => {
+          const message = getErrorMessage(err, 'Không lưu được họ và tên. Vui lòng thử lại.');
+          setError(Array.isArray(message) ? message[0] : message);
+        },
+      },
+    );
+  };
+
+  if (editing) {
+    return (
+      <div className="py-4">
+        <dt className="sr-only">Họ và tên</dt>
+        <dd>
+          <form onSubmit={handleSubmit} className="grid gap-x-6 gap-y-2 sm:grid-cols-[150px_minmax(0,1fr)] sm:items-start">
+            <label htmlFor="account-name" className="pt-3 text-sm text-landing-muted">
+              Họ và tên
+            </label>
+            <div className="min-w-0">
+              <input
+                id="account-name"
+                value={draft}
+                maxLength={NAME_MAX_LENGTH}
+                autoComplete="name"
+                autoFocus
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? 'account-name-error' : undefined}
+                onChange={(event) => {
+                  setDraft(event.target.value);
+                  setError(null);
+                }}
+                disabled={isUpdating}
+                className={cn(accountInputClassName, 'max-w-md', error && 'border-destructive')}
+              />
+              {error ? (
+                <p id="account-name-error" role="alert" className="mt-1.5 text-xs text-destructive">
+                  {error}
+                </p>
+              ) : null}
+              <div className="mt-3 flex gap-2">
+                <button type="submit" disabled={isUpdating} className={accountButtonClassName('primary', 'sm')}>
+                  {isUpdating ? 'Đang lưu' : 'Lưu'}
+                </button>
+                <button type="button" onClick={() => setEditing(false)} disabled={isUpdating} className={accountButtonClassName('outline', 'sm')}>
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </form>
+        </dd>
+      </div>
+    );
+  }
+
+  return (
+    <InfoRow
+      label="Họ và tên"
+      action={
+        <button type="button" onClick={startEditing} className={accountButtonClassName('outline', 'sm')}>
+          Sửa
+        </button>
+      }
+    >
+      {name || <span className="text-landing-muted">Chưa có</span>}
+    </InfoRow>
+  );
+}
+
+function QuotaMeter({ label, quota }: { label: string; quota?: UserQuota }) {
+  if (!quota) {
+    return (
+      <div className="py-3">
+        <div className="h-4 w-40 animate-pulse bg-landing-taupe/40" />
+      </div>
+    );
+  }
+  const unlimited = quota.unlimited || quota.limit === null;
+  const limit = quota.limit ?? 0;
+  const notIncluded = !unlimited && limit === 0;
+  const percent = unlimited || notIncluded ? 0 : Math.min(100, Math.round((quota.used / limit) * 100));
+  const valueText = unlimited ? 'Không giới hạn' : notIncluded ? 'Không có trong gói' : `${quota.used} / ${limit}`;
+
+  return (
+    <div className="py-3">
+      <div className="flex items-baseline justify-between gap-4">
+        <span className="text-sm text-landing-obsidian">{label}</span>
+        <span className={cn('font-mono text-xs', notIncluded ? 'text-landing-muted' : 'text-landing-obsidian')}>{valueText}</span>
+      </div>
+      {!unlimited && !notIncluded ? (
+        <div
+          role="meter"
+          aria-label={`${label}: đã dùng ${quota.used} trên ${limit} lượt`}
+          aria-valuemin={0}
+          aria-valuemax={limit}
+          aria-valuenow={quota.used}
+          className="mt-2 h-[3px] bg-landing-taupe/45"
+        >
+          <div className="h-full bg-landing-oxblood transition-[width] duration-500" style={{ width: `${percent}%` }} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function MeasurementReadiness() {
+  const { byCategory, hasMeasurement, isLoading, isError } = useMeasurementsCompleteness();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[0, 1, 2].map((key) => (
+          <div key={key} className="h-5 w-2/3 animate-pulse bg-landing-taupe/40" />
+        ))}
+      </div>
+    );
+  }
+  if (isError) {
+    return <p className="text-sm text-landing-muted">Chưa tải được tình trạng số đo.</p>;
+  }
+  if (!hasMeasurement) {
+    return (
+      <p className="border-l-2 border-landing-brass bg-landing-ivory px-4 py-3 text-sm text-landing-obsidian">
+        Bạn chưa nhập số đo. Đơn may đo cần số đo trước khi đặt.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="divide-y divide-landing-line/70">
+      {byCategory.map((category) => (
+        <li key={category.category} className="grid gap-x-6 gap-y-1 py-3 sm:grid-cols-[150px_minmax(0,1fr)] sm:items-baseline">
+          <span className="text-sm text-landing-obsidian">{MEASUREMENT_CATEGORY_LABELS[category.category] ?? category.category}</span>
+          {category.complete ? (
+            <span className="inline-flex items-center gap-1.5 text-sm text-landing-sage-ink">
+              <Check className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" /> Đủ số đo để đặt may
+            </span>
+          ) : (
+            <span className="text-sm text-landing-brass-ink">
+              Thiếu {category.missing.map((field) => field.label.toLowerCase()).join(', ')}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RecentOrders() {
+  const { orders, isLoading, isError } = useInfiniteOrders({ limit: 3 });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[0, 1].map((key) => (
+          <div key={key} className="h-12 animate-pulse bg-landing-taupe/30" />
+        ))}
+      </div>
+    );
+  }
+  if (isError) return <p className="text-sm text-landing-muted">Chưa tải được đơn hàng.</p>;
+  if (orders.length === 0) {
+    return (
+      <p className="text-sm text-landing-muted">
+        Bạn chưa có đơn hàng nào.{' '}
+        <Link href="/products" className={cn('text-landing-oxblood underline-offset-4 hover:underline', accountFocusRing)}>
+          Xem sản phẩm
+        </Link>
+      </p>
+    );
+  }
+
+  return (
+    <ul className="divide-y divide-landing-line/70 border-b border-landing-line/70">
+      {orders.slice(0, 3).map((order) => (
+        <li key={order.id}>
+          <Link href={`/orders/${order.id}`} className={cn('group block py-4', accountFocusRing)}>
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="font-mono text-sm text-landing-obsidian transition-colors group-hover:text-landing-oxblood">
+                {getOrderCode(order)}
+              </span>
+              <span className="font-mono text-sm text-landing-oxblood">{formatVnd(getOrderTotal(order))}</span>
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+              <OrderStatusLabel status={order.status} />
+              <span className="text-xs text-landing-muted">
+                {formatOrderDate(order.createdAt)} · {order.items.length} món
+              </span>
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function ProfilePage() {
   const { logout } = useAuth();
-  const user = useAuthStore((state) => state.user);
-  const { measurements } = useMeasurements();
+  const authUser = useAuthStore((state) => state.user);
+  const { profile, isLoading: isProfileLoading } = useUserProfile();
   const { quota: tryOnQuota } = useQuota('TRY_ON');
   const { quota: stylistQuota } = useQuota('STYLIST');
-  const [showChangePw, setShowChangePw] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const tier = (user?.tier || 'FREE') as string;
-  const isOAuth = false;
-
-  const avatarInitial = (user?.name || 'U').charAt(0).toUpperCase();
-  const hasMeasurements = measurements && Object.values(measurements).some(v => v != null && v !== 0);
+  const name = profile?.name || authUser?.name || '';
+  const email = profile?.email || authUser?.email || '';
+  const tier = String(profile?.tier || authUser?.tier || 'FREE').toUpperCase();
+  const tierLabel = ACCOUNT_TIER_LABELS[tier] ?? ACCOUNT_TIER_LABELS.FREE;
+  const expiresAt = formatDate(profile?.tierExpiresAt ?? authUser?.tierExpiresAt);
+  const joinedAt = formatDate(profile?.createdAt);
+  const resetAt = tryOnQuota?.resetAt ?? tryOnQuota?.resetsAt;
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -249,157 +297,98 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-cream pb-24">
-      <ChangePasswordModal isOpen={showChangePw} onClose={() => setShowChangePw(false)} />
+    <AccountShell title="Hồ sơ của tôi" description="Thông tin tài khoản, gói thành viên và mức sẵn sàng của số đo cho đơn may.">
+      <ChangePasswordDialog open={showChangePassword} onOpenChange={setShowChangePassword} />
 
-      <div className="max-w-2xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-6">
-
-        {/* ── Hero Card ── */}
-        <div className="relative bg-white border border-neutral-200 rounded-2xl p-6 overflow-hidden shadow-sm">
-          {/* Decorative gradient */}
-          <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-brand-navy/5 to-transparent rounded-2xl pointer-events-none" />
-
-          <div className="flex items-start gap-4">
-            {/* Avatar */}
-            <div className="relative shrink-0">
-              <div className="w-18 h-18 rounded-2xl bg-gradient-to-br from-brand-navy to-brand-navy/70 flex items-center justify-center text-white text-[28px] font-bold shadow-md select-none" style={{ width: 72, height: 72 }}>
-                {user?.image
-                  ? <img src={user.image} alt="avatar" className="w-full h-full object-cover rounded-2xl" />
-                  : avatarInitial
-                }
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-brand-cream border-2 border-white flex items-center justify-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-semantic-success" title="Đang hoạt động" />
-              </div>
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h1 className="text-heading-h2 font-semibold text-neutral-900 truncate">{user?.name || 'Người dùng'}</h1>
-                <TierBadge tier={tier} />
-              </div>
-              <p className="text-body-sm text-neutral-500 truncate mb-1">{user?.email}</p>
-
-              {user?.tierExpiresAt && tier !== 'FREE' && (
-                <p className="text-[12px] text-neutral-500 mb-3 flex items-center gap-1.5 font-medium">
-                  <Clock className="w-3.5 h-3.5 text-[#5D1C34]" /> Hạn dùng đến: <strong className="text-brand-navy">{new Date(user.tierExpiresAt).toLocaleDateString('vi-VN')}</strong>
-                </p>
-              )}
-
-              <div className="flex flex-wrap gap-2 mt-2">
-                <Link
-                  href="/profile/measurements"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-navy text-white rounded-lg text-label-sm font-medium hover:bg-brand-navy/90 transition-colors"
-                >
-                  <Edit3 className="w-3.5 h-3.5" /> Chỉnh sửa hồ sơ
-                </Link>
-                <Link
-                  href="/subscription"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#5D1C34]/10 text-[#5D1C34] rounded-lg text-label-sm font-bold hover:bg-[#5D1C34]/20 transition-colors"
-                >
-                  <Crown className="w-3.5 h-3.5" /> Quản lý gói cước
-                </Link>
-                {!isOAuth && (
-                  <button onClick={() => setShowChangePw(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-300 text-neutral-700 rounded-lg text-label-sm font-medium hover:border-brand-navy/30 hover:bg-neutral-50 transition-colors">
-                    <Lock className="w-3.5 h-3.5" /> Đổi mật khẩu
+      <div className="flex flex-col gap-12">
+        <AccountSection title="Thông tin tài khoản">
+          {isProfileLoading && !name ? (
+            <div className="h-24 animate-pulse bg-landing-taupe/30" />
+          ) : (
+            <dl className="divide-y divide-landing-line/70 border-b border-landing-line/70">
+              <NameRow key={name} name={name} />
+              <InfoRow label="Email">
+                <span className="break-all">{email}</span>
+                {profile?.isVerified !== undefined ? (
+                  <span className={cn('ml-3 text-xs', profile.isVerified ? 'text-landing-sage-ink' : 'text-landing-brass-ink')}>
+                    {profile.isVerified ? 'Đã xác minh' : 'Chưa xác minh'}
+                  </span>
+                ) : null}
+              </InfoRow>
+              <InfoRow
+                label="Mật khẩu"
+                action={
+                  <button type="button" onClick={() => setShowChangePassword(true)} className={accountButtonClassName('outline', 'sm')}>
+                    Đổi mật khẩu
                   </button>
-                )}
-              </div>
-            </div>
-          </div>
+                }
+              >
+                <span className="sr-only">Đã ẩn</span>
+                <span aria-hidden="true" className="font-mono tracking-[0.2em] text-landing-muted">
+                  ••••••••
+                </span>
+              </InfoRow>
+              {joinedAt ? (
+                <InfoRow label="Ngày tham gia">
+                  <span className="font-mono text-sm">{joinedAt}</span>
+                </InfoRow>
+              ) : null}
+            </dl>
+          )}
+          <p className="mt-3 text-xs text-landing-muted">
+            Số điện thoại và địa chỉ giao hàng nằm trong{' '}
+            <Link href="/profile/addresses" className={cn('text-landing-oxblood underline-offset-4 hover:underline', accountFocusRing)}>
+              Sổ địa chỉ
+            </Link>
+            .
+          </p>
+        </AccountSection>
 
-          {/* Measurements quick status */}
-          <div className={`mt-5 flex items-center gap-2 p-3 rounded-xl text-body-sm ${hasMeasurements ? 'bg-semantic-success/8 text-semantic-success' : 'bg-semantic-warning/8 text-semantic-warning'}`} style={{ backgroundColor: hasMeasurements ? 'rgba(45,122,79,0.07)' : 'rgba(180,83,9,0.07)' }}>
-            {hasMeasurements
-              ? <><CheckCircle2 className="w-4 h-4 shrink-0" /> <span>Số đo đã được cập nhật — kết quả thử đồ chính xác hơn</span></>
-              : <><AlertCircle className="w-4 h-4 shrink-0" /> <span>Chưa có số đo — <Link href="/profile/measurements" className="font-semibold underline underline-offset-2">Thêm ngay</Link> để sẵn sàng may đo</span></>
-            }
-          </div>
-        </div>
-
-        {/* ── Quota Overview ── */}
-        {tryOnQuota && (
-          <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-brand-gold" />
-                <h2 className="text-body-md font-semibold text-neutral-900">Lượt dùng hôm nay</h2>
-              </div>
-              <Link href="/subscription" className="text-[12px] font-bold text-[#5D1C34] hover:underline flex items-center gap-1">
-                Nâng cấp thêm lượt <ChevronRight className="w-3 h-3" />
-              </Link>
+        <AccountSection title="Gói thành viên" action={<SectionLink href="/subscription">Xem các gói</SectionLink>}>
+          <div className="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:gap-12">
+            <div>
+              <p className={accountLabelClassName}>Gói hiện tại</p>
+              <p className="mt-3 font-display text-5xl leading-none text-landing-oxblood">{tierLabel}</p>
+              <p className="mt-3 text-sm text-landing-muted">
+                {tier === 'FREE' ? 'Gói miễn phí, không có hạn dùng.' : expiresAt ? `Hiệu lực đến ${expiresAt}.` : 'Đang hoạt động.'}
+              </p>
             </div>
-            <QuotaBar
-              used={tryOnQuota.used}
-              limit={tryOnQuota.limit}
-              unlimited={tryOnQuota.unlimited}
-              label="Virtual Try-On"
-            />
-            {stylistQuota && (
-              <QuotaBar
-                used={stylistQuota.used}
-                limit={stylistQuota.limit}
-                unlimited={stylistQuota.unlimited}
-                label="AI Stylist"
-              />
-            )}
-            {tier === 'FREE' && (
-              <div className="pt-2 border-t border-neutral-100">
-                <p className="text-label-sm text-neutral-500 flex items-center justify-between">
-                  <span>Gói Free không có lượt Thử đồ AI.</span>
-                  <Link href="/subscription" className="text-[#5D1C34] font-bold hover:underline">
-                    Nâng cấp Member (49k) &rarr;
-                  </Link>
+            <div>
+              <p className={accountLabelClassName}>Lượt dùng hôm nay</p>
+              <div className="mt-1 divide-y divide-landing-line/60">
+                <QuotaMeter label="Thử đồ AI" quota={tryOnQuota} />
+                <QuotaMeter label="AI Stylist" quota={stylistQuota} />
+              </div>
+              {resetAt ? (
+                <p className="mt-2 text-xs text-landing-muted">
+                  Làm mới lúc{' '}
+                  <span className="font-mono">
+                    {new Date(resetAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+                  </span>
+                  .
                 </p>
-              </div>
-            )}
+              ) : null}
+            </div>
           </div>
-        )}
+        </AccountSection>
 
-        {/* ── Quick Links ── */}
-        <div className="space-y-2">
-          <h2 className="text-label-sm font-semibold text-neutral-400 uppercase tracking-wider px-1 mb-3">Tài khoản</h2>
-          <NavCard
-            href="/subscription"
-            icon={Crown}
-            label="Gói cước & Nâng cấp"
-            desc="Xem bảng giá và gia hạn gói Member / VIP"
-            badge={tier !== 'FREE' ? tier : undefined}
-          />
-          <NavCard
-            href="/profile/measurements"
-            icon={Ruler}
-            label="Số đo & Hồ sơ"
-            desc="Cập nhật số đo, thông tin cá nhân"
-            badge={!hasMeasurements ? 'Mới' : undefined}
-          />
-          <NavCard href="/profile/addresses" icon={MapPin} label="Sổ địa chỉ" desc="Thêm, sửa và chọn địa chỉ giao hàng mặc định" />
-          <NavCard href="/profile/history" icon={History} label="Lịch sử Try-On" desc="Xem lại và tải ảnh thử đồ AI của bạn" />
-          <NavCard href="/profile/stylist-history" label="Lịch sử AI Stylist" desc="Các lần tư vấn phong cách đã thực hiện" />
-          <NavCard href="/profile/orders" icon={ShoppingBag} label="Đơn hàng của tôi" desc="Theo dõi và quản lý đơn hàng" />
-        </div>
+        <AccountSection
+          title="Số đo may đo"
+          description="Mỗi nhóm trang phục cần một bộ số đo riêng trước khi đặt may."
+          action={<SectionLink href="/profile/measurements">Cập nhật số đo</SectionLink>}
+        >
+          <MeasurementReadiness />
+        </AccountSection>
 
-        {/* ── Quick Actions ── */}
-        <div className="space-y-2">
-          <h2 className="text-label-sm font-semibold text-neutral-400 uppercase tracking-wider px-1 mb-3">Khám phá</h2>
-          <NavCard href="/products" icon={Camera} label="Thử đồ mới" desc="Khám phá và thử trang phục công sở" />
-          <NavCard href="/ai-stylist" label="Tư vấn phong cách" desc="AI phân tích và gợi ý outfit phù hợp" />
-        </div>
+        <AccountSection title="Đơn gần đây" action={<SectionLink href="/profile/orders">Tất cả đơn hàng</SectionLink>}>
+          <RecentOrders />
+        </AccountSection>
 
-        {/* ── Danger Zone ── */}
-        <div className="pt-2">
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-neutral-200 rounded-xl text-body-sm font-medium text-neutral-500 hover:text-semantic-error hover:border-semantic-error/30 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            <LogOut className="w-4 h-4" />
-            {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
-          </button>
-        </div>
-
+        <button type="button" onClick={handleLogout} disabled={isLoggingOut} className={cn(accountButtonClassName('outline'), 'w-full lg:hidden')}>
+          <LogOut className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+          {isLoggingOut ? 'Đang đăng xuất' : 'Đăng xuất'}
+        </button>
       </div>
-    </div>
+    </AccountShell>
   );
 }

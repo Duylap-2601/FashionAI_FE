@@ -1,127 +1,85 @@
 'use client';
 
-import { SectionHeader } from '@/features/measurements/components/section-header';
-import { SizeChip } from '@/features/measurements/components/size-chip';
-import { SHIRT_SIZE_GUIDE, SHIRT_SIZES, SHOE_SIZES_VN, TROUSER_SIZES } from '@/features/measurements/constants/profile-measurements-page';
-import {
-  CheckCircle2,
-  Save
-} from 'lucide-react';
-import { useState } from 'react';
+import { SHIRT_SIZE_GUIDE, SHIRT_SIZES } from '@/features/measurements/constants/profile-measurements-page';
+import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
+import { findClosestShirtSize } from '@/features/measurements/services/size-reference';
+import { accountFocusRing, accountLabelClassName } from '@/features/profile/components/account-ui';
+import { cn } from '@/lib/utils';
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
+const MEASURE_LABELS = { chest: 'vòng ngực', waist: 'vòng eo', hip: 'vòng hông' } as const;
+
+/** Bảng cỡ áo tham khảo; đơn may đo vẫn dùng số đo thật, không dùng cỡ này. */
 export function SizesTab() {
-  const [shirt, setShirt] = useState('M');
-  const [trouser, setTrouser] = useState('30');
-  const [shoe, setShoe] = useState('38');
-  const [fitPreference, setFitPreference] = useState<'slim' | 'regular' | 'relaxed'>('regular');
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
+  const { measurements, isLoading } = useMeasurements();
+  const closest = measurements ? findClosestShirtSize(measurements) : null;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="px-6 md:px-8 py-5 border-b border-neutral-100">
-          <h2 className="text-heading-h3 font-semibold text-neutral-900">Cỡ tham khảo</h2>
-          <p className="text-body-sm text-neutral-500 mt-0.5">Kết hợp với số đo để gợi ý size chính xác hơn</p>
+    <div className="flex flex-col gap-8">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <div>
+          <p className={accountLabelClassName}>Cỡ gần nhất với số đo đã lưu</p>
+          {isLoading ? (
+            <div className="mt-3 h-12 w-24 animate-pulse bg-landing-taupe/40" />
+          ) : closest ? (
+            <>
+              <p className="mt-3 font-display text-5xl leading-none text-landing-oxblood">{closest.size}</p>
+              <p className="mt-3 max-w-md text-sm text-landing-muted">
+                Theo {closest.basedOn.map((key) => MEASURE_LABELS[key]).join(', ')}
+                {closest.exact ? '.' : ', số đo của bạn nằm giữa hai cỡ.'} Đơn may đo vẫn may theo số đo thật của bạn.
+              </p>
+            </>
+          ) : (
+            <p className="mt-3 max-w-md text-sm text-landing-muted">
+              Nhập vòng ngực, vòng eo hoặc vòng hông ở tab Số đo cơ thể để xem cỡ gần nhất.
+            </p>
+          )}
         </div>
-
-        <div className="p-6 md:p-8 flex flex-col gap-8">
-          <div>
-            <SectionHeader title="Size áo" subtitle="Áo sơ mi, blazer, vest" />
-            <div className="flex flex-wrap gap-2 mb-4">
-              {SHIRT_SIZES.map(s => (
-                <SizeChip key={s} label={s} selected={shirt === s} onClick={() => setShirt(s)} />
-              ))}
-            </div>
-            {SHIRT_SIZE_GUIDE[shirt] && (
-              <div className="flex flex-wrap gap-4 p-4 bg-brand-navy/5 rounded-xl border border-brand-navy/10">
-                <div className="text-center">
-                  <p className="text-label-sm text-neutral-500">Vòng ngực</p>
-                  <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{SHIRT_SIZE_GUIDE[shirt].chest} cm</p>
-                </div>
-                <div className="w-px bg-neutral-200 self-stretch" />
-                <div className="text-center">
-                  <p className="text-label-sm text-neutral-500">Vòng eo</p>
-                  <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{SHIRT_SIZE_GUIDE[shirt].waist} cm</p>
-                </div>
-                <div className="w-px bg-neutral-200 self-stretch" />
-                <div className="text-center">
-                  <p className="text-label-sm text-neutral-500">Vòng hông</p>
-                  <p className="text-body-sm font-semibold text-brand-navy mt-0.5">{SHIRT_SIZE_GUIDE[shirt].hip} cm</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <SectionHeader title="Kiểu dáng ưa thích" subtitle="Ảnh hưởng đến gợi ý size" />
-            <div className="grid grid-cols-3 gap-3">
-              {([
-                { id: 'slim', label: 'Slim Fit', desc: 'Ôm sát người' },
-                { id: 'regular', label: 'Regular Fit', desc: 'Vừa vặn chuẩn' },
-                { id: 'relaxed', label: 'Relaxed Fit', desc: 'Rộng thoải mái' },
-              ] as { id: 'slim' | 'regular' | 'relaxed'; label: string; desc: string }[]).map(opt => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setFitPreference(opt.id)}
-                  className={`flex flex-col items-center gap-1 p-4 rounded-xl border-2 transition-all ${fitPreference === opt.id
-                      ? 'border-brand-navy bg-brand-navy/5'
-                      : 'border-neutral-200 hover:border-brand-navy/30'
-                    }`}
-                >
-                  <span className={`text-label-md font-semibold ${fitPreference === opt.id ? 'text-brand-navy' : 'text-neutral-700'}`}>
-                    {opt.label}
-                  </span>
-                  <span className="text-label-sm text-neutral-500">{opt.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionHeader title="Size quần" subtitle="Quần tây, quần âu (số inch eo)" />
-            <div className="flex flex-wrap gap-2">
-              {TROUSER_SIZES.map(s => (
-                <SizeChip key={s} label={s} selected={trouser === s} onClick={() => setTrouser(s)} />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionHeader title="Cỡ giày" subtitle="Cỡ Việt Nam" />
-            <div className="flex flex-wrap gap-2">
-              {SHOE_SIZES_VN.map(s => (
-                <SizeChip key={s} label={s} selected={shoe === s} onClick={() => setShoe(s)} />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionHeader title="Ghi chú phong cách" subtitle="Yêu cầu đặc biệt khi mua hoặc gợi ý" />
-            <textarea
-              rows={3}
-              placeholder="Ví dụ: Thích màu trung tính, không dùng vải len, ưu tiên chất liệu thoáng mát..."
-              className="w-full px-4 py-3 rounded-xl border border-neutral-300 focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/20 focus:outline-none text-body-md bg-white resize-none"
-            />
-          </div>
-
-          <div className="flex items-center gap-3 pt-5 border-t border-neutral-100">
-            <button
-              onClick={handleSave}
-              type="button"
-              className="flex items-center gap-2 px-6 py-2.5 bg-brand-navy text-white rounded-xl text-label-md font-semibold hover:bg-brand-navy/90 transition-all shadow-md"
-            >
-              {saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-              {saved ? 'Đã lưu!' : 'Lưu cỡ'}
-            </button>
-          </div>
-        </div>
+        <Link
+          href="/size-guide"
+          className={cn('inline-flex min-h-9 items-center gap-1.5 text-sm text-landing-oxblood underline-offset-4 hover:underline', accountFocusRing)}
+        >
+          Hướng dẫn chọn size
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+        </Link>
       </div>
+
+      <div className="overflow-x-auto border border-landing-line">
+        <table className="w-full min-w-[420px] border-collapse text-sm">
+          <caption className="sr-only">Bảng cỡ áo tham khảo theo số đo cơ thể (cm)</caption>
+          <thead>
+            <tr className="border-b border-landing-line bg-landing-ivory/60 text-left">
+              {['Cỡ', 'Vòng ngực', 'Vòng eo', 'Vòng hông'].map((heading) => (
+                <th key={heading} scope="col" className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-brass-ink">
+                  {heading}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {SHIRT_SIZES.map((size) => {
+              const guide = SHIRT_SIZE_GUIDE[size];
+              const isClosest = closest?.size === size;
+              return (
+                <tr
+                  key={size}
+                  aria-current={isClosest ? 'true' : undefined}
+                  className={cn('border-b border-landing-line/60 last:border-b-0', isClosest && 'bg-landing-oxblood/[0.06]')}
+                >
+                  <th scope="row" className={cn('px-4 py-3 text-left font-mono', isClosest ? 'text-landing-oxblood' : 'text-landing-obsidian')}>
+                    <span className={cn(isClosest && 'border-l-2 border-landing-oxblood pl-2')}>{size}</span>
+                  </th>
+                  <td className="px-4 py-3 font-mono text-landing-obsidian/85">{guide.chest}</td>
+                  <td className="px-4 py-3 font-mono text-landing-obsidian/85">{guide.waist}</td>
+                  <td className="px-4 py-3 font-mono text-landing-obsidian/85">{guide.hip}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-landing-muted">Đơn vị: cm. Số đo cơ thể, không phải số đo thành phẩm.</p>
     </div>
   );
 }

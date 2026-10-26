@@ -1,10 +1,10 @@
 'use client';
 
 import type { NotificationItemProps } from '@/features/notifications/types/notification-item';
-import { useMarkNotificationAsRead } from '@/features/notifications/hooks/useNotifications';
+import { useOpenNotification } from '@/features/notifications/hooks/use-open-notification';
+import { formatRelativeTime } from '@/features/notifications/services/format-relative-time';
 import { NotificationType } from '@/features/notifications/types/notification';
 import { CreditCard, Info, MessageSquare, Package, Tag } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 function getNotificationMeta(type: NotificationType) {
   switch (type) {
@@ -47,88 +47,14 @@ function getNotificationMeta(type: NotificationType) {
   }
 }
 
-function formatRelativeTime(dateStr: string): string {
-  try {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHours = Math.floor(diffMin / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffSec < 60) return 'Vừa xong';
-    if (diffMin < 60) return `${diffMin} phút trước`;
-    if (diffHours < 24) return `${diffHours} giờ trước`;
-    if (diffDays < 7) return `${diffDays} ngày trước`;
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  } catch {
-    return '';
-  }
-}
-
 export function NotificationItem({ notification, onItemClick }: NotificationItemProps) {
-  const router = useRouter();
-  const { mutate: markRead } = useMarkNotificationAsRead();
+  const openNotification = useOpenNotification();
   const meta = getNotificationMeta(notification.type);
   const Icon = meta.icon;
 
   const handleClick = () => {
-    if (!notification.isRead) {
-      markRead(notification.id);
-    }
-    if (onItemClick) {
-      onItemClick();
-    }
-
-    // Smart routing for Admin Dashboard
-    const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
-    if (isAdmin) {
-      if (notification.type === 'REVIEW') {
-        window.dispatchEvent(
-          new CustomEvent('admin:navigate', {
-            detail: {
-              tab: 'reviews',
-              reviewId: notification.data?.reviewId,
-              productId: notification.data?.productId,
-            },
-          })
-        );
-        return;
-      }
-      if (
-        notification.type === 'ORDER_STATUS' ||
-        notification.type === 'PAYMENT' ||
-        notification.data?.orderCode ||
-        notification.data?.orderId
-      ) {
-        window.dispatchEvent(
-          new CustomEvent('admin:navigate', {
-            detail: { tab: 'orders', orderCode: notification.data?.orderCode, orderId: notification.data?.orderId },
-          })
-        );
-        return;
-      }
-    }
-
-    // Smart routing for Customer
-    if (notification.type === 'ORDER_STATUS' || notification.type === 'PAYMENT') {
-      const orderId = notification.data?.orderId as string | undefined;
-      router.push(orderId ? `/orders/${orderId}` : '/profile/orders');
-    } else if (notification.type === 'PROMOTION') {
-      router.push('/products');
-    } else if (notification.type === 'REVIEW') {
-      const prodId = notification.data?.productId as string | undefined;
-      if (prodId) {
-        router.push(`/products/${prodId}#product-reviews`);
-      } else {
-        router.push('/profile/reviews');
-      }
-    }
+    openNotification(notification);
+    onItemClick?.();
   };
 
   return (

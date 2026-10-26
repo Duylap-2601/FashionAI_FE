@@ -1,26 +1,123 @@
 'use client';
 
+import { AccountShell } from '@/features/profile/components/account-shell';
+import {
+  AccountConfirmDialog,
+  AccountPagination,
+  AccountStatePanel,
+  accountButtonClassName,
+  accountFocusRing,
+} from '@/features/profile/components/account-ui';
 import { StarRating } from '@/features/reviews/components/StarRating';
 import { WriteReviewModal } from '@/features/reviews/components/WriteReviewModal';
 import { useDeleteReview, useMyReviews } from '@/features/reviews/hooks/useReviews';
 import type { Review } from '@/features/reviews/types/reviews';
-import {
-  ChevronLeft, ChevronRight,
-  Edit3,
-  Loader2,
-  MessageSquare,
-  Trash2
-} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
+
+const PAGE_SIZE = 10;
+
+function formatDate(iso?: string) {
+  return iso ? new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+}
+
+function getReviewProductImage(review: Review) {
+  return review.product?.garmentUrl || review.product?.image || null;
+}
+
+function ReviewRow({ review, onEdit, onDelete }: { review: Review; onEdit: () => void; onDelete: () => void }) {
+  const productImage = getReviewProductImage(review);
+  const productName = review.product?.name || 'Sản phẩm đã mua';
+  const edited = review.updatedAt && review.createdAt && review.updatedAt !== review.createdAt;
+
+  return (
+    <article className="grid grid-cols-[56px_minmax(0,1fr)] gap-x-4 gap-y-3 py-6 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:gap-x-6">
+      <Link
+        href={`/products/${review.productId}`}
+        aria-hidden="true"
+        tabIndex={-1}
+        className="relative row-span-2 block h-[72px] w-14 overflow-hidden rounded-[2px] bg-landing-ivory sm:h-24 sm:w-[72px]"
+      >
+        {productImage ? (
+          <Image src={productImage} alt="" fill sizes="72px" className="object-cover" />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center text-landing-muted">
+            <MessageSquare className="h-5 w-5" strokeWidth={1.75} />
+          </span>
+        )}
+      </Link>
+
+      <div className="min-w-0">
+        <Link
+          href={`/products/${review.productId}`}
+          className={cn('product-name-line line-clamp-2 text-landing-obsidian transition-colors hover:text-landing-oxblood', accountFocusRing)}
+        >
+          {productName}
+        </Link>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <StarRating value={review.rating} size="xs" readOnly tone="landing" />
+          <span className="sr-only">{review.rating} trên 5 sao</span>
+          <span className="font-mono text-[11px] text-landing-muted">
+            {formatDate(review.createdAt)}
+            {edited ? ' · đã sửa' : ''}
+          </span>
+        </div>
+      </div>
+
+      <div className="col-start-2 flex gap-2 sm:col-start-3 sm:row-start-1 sm:justify-self-end">
+        <button type="button" onClick={onEdit} className={accountButtonClassName('outline', 'sm')}>
+          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+          Sửa
+        </button>
+        <button type="button" onClick={onDelete} className={accountButtonClassName('danger', 'sm')}>
+          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+          Xóa
+        </button>
+      </div>
+
+      <div className="col-span-2 min-w-0 sm:col-span-2 sm:col-start-2">
+        {review.comment ? (
+          <p className="max-w-2xl whitespace-pre-line text-landing-body text-landing-obsidian/85">{review.comment}</p>
+        ) : (
+          <p className="text-sm italic text-landing-muted">Bạn chỉ chấm sao, không viết nhận xét.</p>
+        )}
+
+        {Array.isArray(review.images) && review.images.length > 0 ? (
+          <ul className="mt-4 flex flex-wrap gap-2" aria-label="Ảnh đính kèm">
+            {review.images.map((imageUrl, idx) => {
+              const thumb = (
+                <Image src={imageUrl} alt={`Ảnh ${idx + 1} của đánh giá`} fill sizes="64px" className="object-cover" unoptimized={imageUrl.startsWith('data:')} />
+              );
+              return (
+                <li key={`${idx}-${imageUrl.slice(-16)}`} className="relative h-16 w-16 overflow-hidden rounded-[2px] border border-landing-line bg-landing-ivory">
+                  {/* Trình duyệt chặn mở ảnh data: ở tab mới, nên chỉ ảnh http(s) mới là link. */}
+                  {imageUrl.startsWith('http') ? (
+                    <a href={imageUrl} target="_blank" rel="noreferrer" className={cn('block h-full w-full', accountFocusRing)}>
+                      {thumb}
+                    </a>
+                  ) : (
+                    thumb
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+      </div>
+    </article>
+  );
+}
 
 export default function MyReviewsPage() {
   const [page, setPage] = useState<number>(1);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [deletingReview, setDeletingReview] = useState<Review | null>(null);
 
-  const { reviews, meta, isLoading, refetch } = useMyReviews({ page, limit: 10 });
+  const { reviews, meta, isLoading, isError, refetch } = useMyReviews({ page, limit: PAGE_SIZE });
   const deleteMutation = useDeleteReview();
 
   const confirmDelete = async () => {
@@ -30,7 +127,7 @@ export default function MyReviewsPage() {
         id: deletingReview.id,
         productId: deletingReview.productId,
       });
-      toast.success('Đã xóa đánh giá của bạn');
+      toast.success('Đã xóa đánh giá');
       setDeletingReview(null);
       refetch();
     } catch {
@@ -39,223 +136,78 @@ export default function MyReviewsPage() {
   };
 
   const totalPages = meta?.totalPages ?? 1;
+  const total = meta?.total ?? reviews.length;
 
   return (
-    <div className="min-h-screen bg-brand-cream pb-16 md:pb-12">
-      {/* Page header */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-[900px] mx-auto px-4 md:px-8 py-6 md:py-8">
-          <div className="flex items-center gap-2 text-label-sm text-neutral-500 mb-3">
-            <Link href="/profile" className="hover:text-brand-navy transition-colors flex items-center gap-1">
-              <ChevronLeft className="w-3.5 h-3.5" /> Hồ sơ cá nhân
-            </Link>
-            <span>/</span>
-            <span className="text-brand-navy font-medium">Đánh giá của tôi</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-heading-h1 font-bold text-brand-navy">Đánh giá của tôi</h1>
-              <p className="text-body-sm text-neutral-500 mt-1">
-                Xem lại lịch sử đánh giá và cảm nhận thực tế về các sản phẩm bạn đã mua.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-[900px] mx-auto px-4 md:px-8 py-6">
-        {isLoading ? (
-          <div className="flex justify-center items-center py-24">
-            <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : reviews.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-neutral-200/80 p-12 text-center flex flex-col items-center justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-brand-navy/5 text-brand-navy flex items-center justify-center mb-4">
-              <MessageSquare className="w-8 h-8" />
-            </div>
-            <h3 className="text-[20px] font-bold text-brand-navy mb-2">Bạn chưa có đánh giá nào</h3>
-            <p className="text-body-sm text-neutral-500 max-w-sm mb-6">
-              Sau khi nhận hàng từ các đơn đặt may, bạn có thể vào mục Đơn hàng để đánh giá chất lượng sản phẩm nhé.
-            </p>
-            <Link
-              href="/profile/orders"
-              className="px-6 py-2.5 bg-brand-navy text-white rounded-xl text-body-sm font-semibold hover:bg-brand-navy/90 transition-colors"
-            >
-              Xem danh sách đơn hàng
-            </Link>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {reviews.map((r) => {
-              const formattedDate = r.createdAt
-                ? new Date(r.createdAt).toLocaleDateString('vi-VN', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                })
-                : '';
-
-              return (
-                <div
-                  key={r.id}
-                  className="bg-white rounded-2xl border border-neutral-200 p-6 flex flex-col gap-4 shadow-2xs hover:shadow-xs transition-shadow"
-                >
-                  {/* Top row: Product info + Action buttons */}
-                  <div className="flex items-start justify-between gap-4 pb-4 border-b border-neutral-100">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {(r.product?.garmentUrl || r.product?.image) ? (
-                        <img
-                          src={r.product.garmentUrl || r.product.image || ''}
-                          alt={r.product?.name || ''}
-                          className="w-12 h-14 rounded-lg object-cover border border-neutral-200 shrink-0"
-                        />
-                      ) : (
-                        <div className="w-12 h-14 rounded-lg bg-neutral-100 border border-neutral-200 shrink-0 flex items-center justify-center text-neutral-400">
-                          <MessageSquare className="w-5 h-5" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <Link
-                          href={`/products/${r.productId}`}
-                          className="font-bold text-brand-navy hover:underline text-body-md truncate block"
-                        >
-                          {r.product?.name || 'Sản phẩm đã mua'}
-                        </Link>
-                        <div className="text-[12px] text-neutral-400 mt-0.5">
-                          Đã đánh giá vào ngày {formattedDate}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setEditingReview(r)}
-                        className="p-2 text-neutral-500 hover:text-brand-navy hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
-                        title="Chỉnh sửa nhận xét"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeletingReview(r)}
-                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        title="Xóa đánh giá này"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Rating Stars */}
-                  <div>
-                    <StarRating value={r.rating} size="sm" readOnly showValue />
-                  </div>
-
-                  {/* Comment */}
-                  {r.comment ? (
-                    <p className="text-body-sm text-neutral-700 leading-relaxed whitespace-pre-line">
-                      {r.comment}
-                    </p>
-                  ) : (
-                    <p className="text-body-sm text-neutral-400 italic">
-                      Bạn không để lại nhận xét bằng chữ.
-                    </p>
-                  )}
-
-                  {/* Images */}
-                  {Array.isArray(r.images) && r.images.length > 0 && (
-                    <div className="flex items-center gap-2 pt-1 flex-wrap">
-                      {r.images.map((imgUrl, idx) => (
-                        <a
-                          key={idx}
-                          href={imgUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 hover:opacity-90 transition-opacity"
-                        >
-                          <img
-                            src={imgUrl}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 pt-6">
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="p-2 rounded-xl border border-neutral-200 bg-white text-neutral-600 disabled:opacity-40 hover:bg-neutral-50 cursor-pointer"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-body-sm text-neutral-600 px-3 font-medium">
-                  Trang {page} / {totalPages}
-                </span>
-                <button
-                  type="button"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="p-2 rounded-xl border border-neutral-200 bg-white text-neutral-600 disabled:opacity-40 hover:bg-neutral-50 cursor-pointer"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+    <AccountShell title="Đánh giá của tôi" description="Nhận xét bạn đã gửi cho những sản phẩm đã nhận. Bạn có thể sửa hoặc xóa bất cứ lúc nào.">
+      {isLoading ? (
+        <div className="divide-y divide-landing-line border-t border-landing-line" aria-hidden="true">
+          {[0, 1, 2].map((key) => (
+            <div key={key} className="flex gap-6 py-6">
+              <div className="h-24 w-[72px] animate-pulse bg-landing-taupe/40" />
+              <div className="flex-1 space-y-3">
+                <div className="h-4 w-1/2 animate-pulse bg-landing-taupe/40" />
+                <div className="h-3 w-1/4 animate-pulse bg-landing-taupe/30" />
+                <div className="h-3 w-3/4 animate-pulse bg-landing-taupe/30" />
               </div>
-            )}
+            </div>
+          ))}
+        </div>
+      ) : isError ? (
+        <AccountStatePanel
+          tone="error"
+          title="Không tải được đánh giá"
+          description="Kiểm tra kết nối rồi thử lại."
+          action={
+            <button type="button" onClick={() => refetch()} className={accountButtonClassName('outline')}>
+              Thử lại
+            </button>
+          }
+        />
+      ) : reviews.length === 0 ? (
+        <AccountStatePanel
+          title="Bạn chưa có đánh giá nào"
+          description="Khi đơn may đo hoàn tất, bạn có thể đánh giá từng sản phẩm trong mục Đơn hàng."
+          action={
+            <Link href="/profile/orders" className={accountButtonClassName('primary')}>
+              Xem đơn hàng
+            </Link>
+          }
+        />
+      ) : (
+        <>
+          <p className="mb-2 text-xs text-landing-muted">
+            <span className="font-mono text-landing-obsidian">{total}</span> đánh giá
+          </p>
+          <div className="divide-y divide-landing-line border-y border-landing-line">
+            {reviews.map((review) => (
+              <ReviewRow key={review.id} review={review} onEdit={() => setEditingReview(review)} onDelete={() => setDeletingReview(review)} />
+            ))}
           </div>
-        )}
-      </div>
+          <AccountPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
+      )}
 
-      {/* Modal Sửa nhận xét */}
-      {editingReview && (
+      {editingReview ? (
         <WriteReviewModal
-          isOpen={!!editingReview}
+          isOpen
           onClose={() => setEditingReview(null)}
           productId={editingReview.productId}
           productName={editingReview.product?.name || 'Sản phẩm'}
-          productImage={editingReview.product?.garmentUrl || editingReview.product?.image || undefined}
+          productImage={getReviewProductImage(editingReview) || undefined}
           editingReview={editingReview}
         />
-      )}
+      ) : null}
 
-      {/* Modal xác nhận xóa */}
-      {deletingReview && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl border border-neutral-200">
-            <h4 className="font-bold text-brand-navy text-[18px] mb-2">Xác nhận xóa đánh giá</h4>
-            <p className="text-body-sm text-neutral-600 mb-6">
-              Bạn có chắc chắn muốn xóa đánh giá cho sản phẩm này? Sau khi xóa, bạn có thể gửi lại đánh giá mới.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setDeletingReview(null)}
-                className="px-4 py-2 rounded-xl text-body-sm font-semibold text-neutral-600 hover:bg-neutral-100 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={deleteMutation.isPending}
-                className="px-4 py-2 rounded-xl text-body-sm font-semibold bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 cursor-pointer"
-              >
-                {deleteMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Xóa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <AccountConfirmDialog
+        open={deletingReview !== null}
+        onOpenChange={(open) => { if (!open) setDeletingReview(null); }}
+        title="Xóa đánh giá?"
+        description="Đánh giá sẽ biến mất khỏi trang sản phẩm. Sau khi xóa, bạn có thể gửi đánh giá mới."
+        confirmLabel="Xóa đánh giá"
+        isPending={deleteMutation.isPending}
+        onConfirm={confirmDelete}
+      />
+    </AccountShell>
   );
 }

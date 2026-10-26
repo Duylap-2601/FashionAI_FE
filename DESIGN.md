@@ -225,6 +225,18 @@ Removed from the previous page:
 - Phone, address, and email remain the existing business values.
 - Footer spacing includes the mobile bottom-tab clearance.
 
+### Account Pages
+
+Routes: `/profile`, `/profile/measurements`, `/profile/orders`, `/profile/reviews`, `/notifications` (the five links in the header account menu).
+
+- One shared `AccountShell`: a sticky left menu from `lg` (name, plan, the five pages, then addresses, try-on history, AI Stylist history, plan) and a scrolling underline tab row below `lg`. Each page opens with a brass `Tài khoản` label, a Playfair title and one sentence.
+- Sections are hairline-topped, with a Playfair heading and at most one text link on the right. No cards with shadows, no pills, no coloured badge fills.
+- Status is a coloured dot plus an uppercase label: brass for waiting on payment or returns, oxblood dot for in progress, sage for delivered or complete, taupe for closed, destructive for failed.
+- Prices, order codes, dates in tables, counts and measurements use the mono face.
+- Only controls the backend stores are shown. Profile edits only the name (`PUT /users/me` accepts `name` and `avatarUrl`); phone and address live in the address book. Measurements save the 16 backend fields; there is no body-type, preferred-size, fit or style-note control. Notifications have no type filter because `GET /notifications` does not filter by type.
+- Order filters send exactly one backend status each, following the real flow `CREATED → MEASUREMENT_REVIEW → TAILORING → READY_TO_SHIP → SHIPPING → DELIVERED → COMPLETED`.
+- Dialogs (change password, cancel order, delete review, write review) use one paper Radix dialog that sits above the mobile bottom tab bar and becomes a bottom sheet below `sm`.
+
 ## Responsive Behavior
 
 | Breakpoint | Hero | Collections | Products | Lookbook |
@@ -320,6 +332,8 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | Compact AI try-on preview | The image supports the three steps instead of competing with them |
 | No hero tagline or collection label | The two-line headline and CTAs carry the first screen without clutter |
 | Single-plate lookbook viewer | A row of three cards read as a second collection grid; one capped portrait plate with side details keeps the lookbook distinct and fully visible on screen |
+| One account shell | The five account pages share one menu and heading so moving between them does not change the frame |
+| Honest account controls | Fields and filters the backend ignores were removed instead of restyled: profile phone, birthday, gender, job and address; body type; preferred sizes; notification type tabs |
 
 ## Acceptance Criteria
 
@@ -342,4 +356,5 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | 2026-10-25 | Synced docs with the full-bleed hero without tagline, local-first media, display line-height `1.1`, and compact AI try-on preview |
 | 2026-10-25 | Lookbook is a single capped portrait plate with side details and thumbnails, not a horizontal card row |
 | 2026-10-25 | Landing now reads real products and collections from the API, including cover, lookbook, and product images; local media is fallback-only |
+| 2026-10-26 | Account pages (profile, measurements, orders, reviews, notifications) on one `AccountShell`, with controls limited to what the backend stores |
 
