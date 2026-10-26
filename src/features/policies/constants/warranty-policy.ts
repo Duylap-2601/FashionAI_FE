@@ -5,7 +5,7 @@ export const WARRANTY_POLICY: PolicyDocument = {
   slug: 'warranty',
   title: 'Chính sách bảo hành',
   summary:
-    'StAle. bảo hành trọn đời, miễn phí đường may và phụ kiện cho mọi sản phẩm may đo, kèm một lần chỉnh form miễn phí để trang phục vừa vặn nhất với bạn.',
+    'StAie. bảo hành trọn đời, miễn phí đường may và phụ kiện cho mọi sản phẩm may đo, kèm một lần chỉnh form miễn phí để trang phục vừa vặn nhất với bạn.',
   updatedAt: '19/10/2026',
   highlights: [
     { label: 'Bảo hành đường may và phụ kiện', value: 'Trọn đời' },
@@ -58,8 +58,8 @@ export const WARRANTY_POLICY: PolicyDocument = {
           ordered: true,
           items: [
             `Liên hệ hotline ${POLICY_CONTACT.hotline} hoặc email ${POLICY_CONTACT.email}, cung cấp mã đơn hàng và ảnh chụp vị trí cần bảo hành.`,
-            'StAle. xác nhận hạng mục bảo hành và chi phí (nếu có) trong vòng 2 ngày làm việc.',
-            'Gửi sản phẩm đến showroom hoặc qua đơn vị vận chuyển theo hướng dẫn. Với hạng mục miễn phí, StAle. chịu phí vận chuyển hai chiều.',
+            'StAie. xác nhận hạng mục bảo hành và chi phí (nếu có) trong vòng 2 ngày làm việc.',
+            'Gửi sản phẩm đến showroom hoặc qua đơn vị vận chuyển theo hướng dẫn. Với hạng mục miễn phí, StAie. chịu phí vận chuyển hai chiều.',
             'Thời gian xử lý từ 5 - 10 ngày làm việc tùy hạng mục. Bạn sẽ được thông báo khi sản phẩm được gửi trả.',
           ],
         },

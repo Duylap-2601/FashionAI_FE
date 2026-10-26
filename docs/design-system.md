@@ -1,8 +1,8 @@
-# StAle. Landing Design System
+# StAie. Landing Design System
 
 ## Purpose
 
-This document is the implementation contract for the landing experience at `/` and the products listing at `/products`. It extends the existing StAle. design tokens. It does not replace the app-wide tokens, table system, or admin styles.
+This document is the implementation contract for the landing experience at `/` and the products listing at `/products`. It extends the existing StAie. design tokens. It does not replace the app-wide tokens, table system, or admin styles.
 
 Read `DESIGN.md` for the narrative and section intent. Read this file for tokens, component APIs, states, and code placement.
 

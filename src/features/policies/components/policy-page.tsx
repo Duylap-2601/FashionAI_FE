@@ -50,7 +50,7 @@ function PolicyContactCard() {
   return (
     <div className="rounded-xl border border-neutral-200 bg-brand-cream p-5 md:p-6">
       <h2 className="text-heading-h3 font-semibold text-neutral-900">Cần hỗ trợ thêm?</h2>
-      <p className="mt-1 text-body-sm text-neutral-600">Đội ngũ chăm sóc khách hàng StAle. luôn sẵn sàng giải đáp cho bạn.</p>
+      <p className="mt-1 text-body-sm text-neutral-600">Đội ngũ chăm sóc khách hàng StAie. luôn sẵn sàng giải đáp cho bạn.</p>
       <div className="mt-4 grid gap-3 text-body-sm text-neutral-700 sm:grid-cols-2">
         <a href={`tel:${POLICY_CONTACT.hotline.replaceAll(' ', '')}`} className="flex items-start gap-2.5 hover:text-brand-navy">
           <Phone className="mt-0.5 h-4 w-4 shrink-0 text-brand-navy" aria-hidden />

@@ -94,7 +94,7 @@ export function mapProduct(product: BackendProduct): Product {
   return {
     id: product.id,
     name: product.name,
-    brand: product.brand || 'StAle. SIGNATURE',
+    brand: product.brand || 'StAie. SIGNATURE',
     price: Number.isFinite(priceNumber) ? `${priceNumber.toLocaleString('vi-VN')} ₫` : `${product.price}`,
     numericPrice: Number.isFinite(priceNumber) ? priceNumber : 0,
     originalPrice: origPriceNumber,

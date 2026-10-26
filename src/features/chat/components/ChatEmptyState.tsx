@@ -16,14 +16,14 @@ export function ChatEmptyState({ onSelectPrompt, userMeasurements, userName }: C
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center duration-500 animate-in fade-in-0 motion-reduce:animate-none">
 
       <div className="mb-6 border-b border-landing-line pb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass-ink">StAle. AI Assistant</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass-ink">StAie. AI Assistant</p>
 
         <h2 className="mt-3 font-display text-[2rem] leading-[1.1] tracking-[-0.025em] text-landing-obsidian md:text-[2.5rem]">
           {userName ? `Xin chào, ${userName}` : 'Xin chào bạn'}
         </h2>
 
         <p className="mt-3 max-w-xl text-landing-body text-landing-muted">
-          Tôi là trợ lý AI thời trang của bạn. Tôi có thể tư vấn size, gợi ý phối đồ từ sản phẩm của cửa hàng, và giải đáp thắc mắc về bộ sưu tập StAle.
+          Tôi là trợ lý AI thời trang của bạn. Tôi có thể tư vấn size, gợi ý phối đồ từ sản phẩm của cửa hàng, và giải đáp thắc mắc về bộ sưu tập StAie.
         </p>
 
         {/* Measurements Status */}

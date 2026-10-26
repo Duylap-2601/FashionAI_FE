@@ -20,7 +20,7 @@ export const HERO_FALLBACK = {
 export const HERO_LOCAL_SLIDES = [
   {
     id: 'local-hero-1',
-    name: 'StAle. Signature',
+    name: 'StAie. Signature',
     season: 'SPRING / SUMMER 2026',
     image: LANDING_MEDIA.hero,
     fallbackImage: LANDING_MEDIA.hero,

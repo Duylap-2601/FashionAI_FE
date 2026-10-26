@@ -7,7 +7,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'p1',
     name: 'Blazer Nữ Công Sở Dáng Ôm',
-    brand: 'StAle. SIGNATURE',
+    brand: 'StAie. SIGNATURE',
     price: '750.000 ₫',
     numericPrice: 750000,
     category: 'Blazer',
@@ -24,7 +24,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'p2',
     name: 'Combo Suit Nguyên Bộ',
-    brand: 'StAle. SIGNATURE',
+    brand: 'StAie. SIGNATURE',
     price: '1.290.000 ₫',
     numericPrice: 1290000,
     category: 'Suit',
@@ -40,7 +40,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'p3',
     name: 'Áo Sơ Mi Oxford Trắng Premium',
-    brand: 'StAle. ESSENTIALS',
+    brand: 'StAie. ESSENTIALS',
     price: '550.000 ₫',
     numericPrice: 550000,
     category: 'Áo sơ mi',
@@ -56,7 +56,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'p4',
     name: 'Combo Suit Kẻ Sọc Năng Động',
-    brand: 'StAle. SIGNATURE',
+    brand: 'StAie. SIGNATURE',
     price: '1.290.000 ₫',
     numericPrice: 1290000,
     category: 'Suit',
@@ -72,7 +72,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'p5',
     name: 'Quần Tây Ống Suông Classic',
-    brand: 'StAle. ESSENTIALS',
+    brand: 'StAie. ESSENTIALS',
     price: '550.000 ₫',
     numericPrice: 550000,
     category: 'Quần tây',
@@ -88,7 +88,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'p6',
     name: 'Chân Váy Xếp Ly Basic',
-    brand: 'StAle. ESSENTIALS',
+    brand: 'StAie. ESSENTIALS',
     price: '550.000 ₫',
     numericPrice: 550000,
     category: 'Chân váy',

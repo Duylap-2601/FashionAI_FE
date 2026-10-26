@@ -111,7 +111,7 @@ export function ChatWindow({
 
   // Find active session title
   const activeSession = sessions.find((s) => s.id === currentSessionId);
-  const sessionTitle = activeSession?.title || 'Trợ lý thời trang StAle.';
+  const sessionTitle = activeSession?.title || 'Trợ lý thời trang StAie.';
 
   return (
     // Chiếm trọn chiều cao dưới header landing (72px + 1px viền).
@@ -180,7 +180,7 @@ export function ChatWindow({
               </h1>
               <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-muted">
                 <span className="h-1.5 w-1.5 rounded-full bg-landing-sage-ink" aria-hidden="true" />
-                <span>StAle. AI Assistant</span>
+                <span>StAie. AI Assistant</span>
                 {activeProduct && (
                   <span className="hidden max-w-[180px] truncate normal-case tracking-normal text-landing-oxblood sm:inline-block">
                     · {activeProduct.name}

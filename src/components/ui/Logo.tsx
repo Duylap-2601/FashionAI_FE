@@ -23,7 +23,7 @@ export function Logo({
     <span
       className={`font-display tracking-[-0.02em] leading-none select-none ${SIZE[size]} ${baseColor} ${className}`}
     >
-      St<span style={{ fontWeight: 800 }}>A</span>le.
+      St<span style={{ fontWeight: 800 }}>A</span>ie.
     </span>
   );
 }

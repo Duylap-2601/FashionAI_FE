@@ -84,7 +84,7 @@ export function NewsletterBar() {
               </div>
 
               <p className="mt-2 text-[10px] leading-relaxed text-landing-muted">
-                Bằng cách đăng ký, bạn đồng ý nhận email từ StAle. Có thể hủy bất cứ lúc nào.
+                Bằng cách đăng ký, bạn đồng ý nhận email từ StAie. Có thể hủy bất cứ lúc nào.
               </p>
             </form>
           </div>

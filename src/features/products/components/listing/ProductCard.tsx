@@ -170,7 +170,7 @@ export function ProductCard({
       <div className="pt-4 flex flex-1 flex-col">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-muted">
-            {product.brand || 'StAle. Signature'}
+            {product.brand || 'StAie. Signature'}
           </span>
           {showRating && hasRating ? (
             <div className="flex shrink-0 items-center gap-1 text-[10px] font-medium text-landing-brass-ink">

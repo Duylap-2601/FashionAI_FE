@@ -107,7 +107,7 @@ export function FloatingChat() {
             exit={{ opacity: 0, y: 16, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             role="dialog"
-            aria-label="Trợ lý thời trang StAle."
+            aria-label="Trợ lý thời trang StAie."
             className="flex w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[2px] border border-landing-line bg-landing-paper text-landing-obsidian shadow-[0_24px_48px_-24px_rgba(17,16,15,0.4)] sm:w-[410px]"
             style={{ height: 'min(550px, calc(100dvh - 140px))' }}
           >
@@ -115,7 +115,7 @@ export function FloatingChat() {
             <div className="flex shrink-0 items-center gap-3 bg-landing-oxblood px-4 py-3.5">
               <AssistantMark inverse className="h-9 w-9 text-base" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-landing-paper">StAle. Assistant</p>
+                <p className="text-sm font-semibold text-landing-paper">StAie. Assistant</p>
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-landing-sage" aria-hidden="true" />
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-paper/70">Trợ lý AI thời trang</span>
@@ -154,7 +154,7 @@ export function FloatingChat() {
                   <AssistantMark className="h-12 w-12 text-xl" />
                   <div className="max-w-xs space-y-1.5 px-4 text-center">
                     <p className="font-display text-xl text-landing-obsidian">
-                      Xin chào, tôi là StAle. Assistant
+                      Xin chào, tôi là StAie. Assistant
                     </p>
                     <p className="text-xs leading-relaxed text-landing-muted">
                       Tôi có thể giúp bạn thử đồ ảo, tư vấn chọn size vừa vặn, gợi ý phối đồ và giải đáp đơn hàng.

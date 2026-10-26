@@ -144,7 +144,7 @@ export function ChatInput({
       {/* Footer hint */}
       <div className="flex items-center justify-between border-t border-landing-line/60 px-2 pt-2 text-[11px] text-landing-muted">
         <span className="hidden items-center gap-1 sm:inline-flex">
-          <span>StAle. AI có thể giải đáp về size, số đo và cách phối đồ</span>
+          <span>StAie. AI có thể giải đáp về size, số đo và cách phối đồ</span>
         </span>
         <span className="ml-auto hidden items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] sm:inline-flex">
           <span>Enter</span>

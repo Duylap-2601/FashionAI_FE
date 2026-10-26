@@ -446,7 +446,7 @@ export function SiteFooter({ variant = 'simple' }: { variant?: Exclude<FooterVar
     <footer className="bg-white border-t border-neutral-200 mt-auto pb-[64px] md:pb-0">
       <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="text-body-sm text-neutral-500 text-center md:text-left">
-          &copy; 2026 StAle. All rights reserved.
+          &copy; 2026 StAie. All rights reserved.
         </div>
         <div className="flex items-center gap-6 text-body-sm font-medium text-neutral-600">
           <Link href="/terms" className="hover:text-brand-navy transition-colors">Điều khoản</Link>
@@ -569,7 +569,7 @@ function MarketingFooter() {
 
         <div className="flex flex-col items-center justify-between gap-4 pt-8 text-[11px] text-landing-paper/35 sm:flex-row">
           <div>
-            &copy; 2026 StAle. FashionAI. Bản quyền thuộc về FashionAI Team.
+            &copy; 2026 StAie. FashionAI. Bản quyền thuộc về FashionAI Team.
           </div>
           <div className="flex flex-wrap items-center gap-5">
             <Link href="/privacy" className="transition-colors hover:text-landing-paper">Bảo mật</Link>
@@ -581,7 +581,7 @@ function MarketingFooter() {
 
         <div aria-hidden="true" className="mt-8 select-none overflow-hidden border-t border-landing-paper/10 pt-6">
           <span className="block font-display text-[clamp(4rem,14vw,13rem)] leading-[0.8] tracking-[-0.05em] text-landing-paper/10">
-            StAle.
+            StAie.
           </span>
         </div>
       </div>

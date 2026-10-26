@@ -19,7 +19,7 @@ export const SIZE_GUIDE: PolicyDocument = {
   slug: 'size-guide',
   title: 'Hướng dẫn chọn size',
   summary:
-    'StAle. may từng sản phẩm theo số đo cơ thể của bạn thay vì size may sẵn. Hướng dẫn này giúp bạn tự đo chính xác và hiểu cách số đo được dùng để trang phục vừa ngay từ lần đầu.',
+    'StAie. may từng sản phẩm theo số đo cơ thể của bạn thay vì size may sẵn. Hướng dẫn này giúp bạn tự đo chính xác và hiểu cách số đo được dùng để trang phục vừa ngay từ lần đầu.',
   updatedAt: '19/10/2026',
   highlights: [
     { label: 'Hình thức', value: 'May đo theo số đo' },
@@ -33,7 +33,7 @@ export const SIZE_GUIDE: PolicyDocument = {
       blocks: [
         {
           type: 'paragraph',
-          text: 'Khi đặt hàng, mỗi sản phẩm lưu lại bản số đo trong hồ sơ của bạn tại thời điểm đó và thợ may cắt may theo bản số đo này. Nếu phát hiện số đo bất thường, StAle. gửi yêu cầu kiểm tra lại trước khi may; bạn cập nhật số đo ngay trong trang chi tiết đơn hàng.',
+          text: 'Khi đặt hàng, mỗi sản phẩm lưu lại bản số đo trong hồ sơ của bạn tại thời điểm đó và thợ may cắt may theo bản số đo này. Nếu phát hiện số đo bất thường, StAie. gửi yêu cầu kiểm tra lại trước khi may; bạn cập nhật số đo ngay trong trang chi tiết đơn hàng.',
         },
         {
           type: 'paragraph',

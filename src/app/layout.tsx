@@ -15,7 +15,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "StAle. — Chuẩn dáng từ đầu, đẹp từng đường may",
+  title: "StAie. — Chuẩn dáng từ đầu, đẹp từng đường may",
   description: "Thời trang công sở may đo cao cấp kết hợp công nghệ thử đồ ảo AI thông minh — Chuẩn dáng từ đầu, đẹp từng đường may",
   manifest: "/manifest.json",
   appleWebApp: {

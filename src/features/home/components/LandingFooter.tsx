@@ -143,7 +143,7 @@ export function LandingFooter() {
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500">
           <div>
-            &copy; 2026 StAle. FashionAI. Bản quyền thuộc về FashionAI Team. All rights reserved.
+            &copy; 2026 StAie. FashionAI. Bản quyền thuộc về FashionAI Team. All rights reserved.
           </div>
           <div className="flex items-center gap-6">
             <a href="#" className="hover:text-neutral-300 transition-colors">Bảo mật</a>

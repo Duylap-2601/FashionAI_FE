@@ -79,7 +79,7 @@ function RackCard({
           </span>
         </span>
         <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-brass-ink">
-          {category in CATEGORY_LABELS ? CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] : item.product.brand || 'StAle.'}
+          {category in CATEGORY_LABELS ? CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] : item.product.brand || 'StAie.'}
         </span>
         <span className="product-name-line mt-1 line-clamp-1 text-landing-obsidian group-hover:text-landing-oxblood">{item.product.name}</span>
         <span className="mt-1 font-mono text-xs text-landing-oxblood">{formatRackPrice(item.product.price)}</span>

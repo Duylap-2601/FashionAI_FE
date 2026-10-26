@@ -1,4 +1,4 @@
-﻿# StAle. FashionAI - Landing Page Design Brief
+﻿# StAie. FashionAI - Landing Page Design Brief
 
 ## Metadata
 
@@ -7,7 +7,7 @@
 | Version | 1.0 |
 | Status | Approved direction, implementation in progress |
 | Scope | Public landing page at `/`, products listing at `/products`, landing header, landing footer, announcement bar |
-| Owner | StAle. frontend team |
+| Owner | StAie. frontend team |
 | Related docs | `docs/design-system.md`, `docs/table-design.md`, `AGENTS.md` |
 | Last updated | 2026-10-26 |
 
@@ -17,7 +17,7 @@ A premium Vietnamese office-fashion e-commerce landing page for style-conscious 
 
 ## Brand Context
 
-StAle. sells tailored office wear and uses AI try-on as a practical purchase aid, not as a gimmick. The landing page must do three jobs in order:
+StAie. sells tailored office wear and uses AI try-on as a practical purchase aid, not as a gimmick. The landing page must do three jobs in order:
 
 1. Establish taste and trust within the first viewport.
 2. Make the current collection and representative products easy to browse.

@@ -70,12 +70,12 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-landing-obsidian via-landing-obsidian/45 to-landing-obsidian/15" />
 
         <div className="relative z-10 flex h-full flex-col justify-between p-10 xl:p-14">
-          <Link href="/" aria-label="Về trang chủ StAle." className={cn('self-start', focusRing, 'focus-visible:outline-landing-brass')}>
+          <Link href="/" aria-label="Về trang chủ StAie." className={cn('self-start', focusRing, 'focus-visible:outline-landing-brass')}>
             <Logo size="lg" variant="light" />
           </Link>
 
           <div className="max-w-[440px]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass">Tài khoản StAle.</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass">Tài khoản StAie.</p>
             <p className="mt-4 font-display text-[clamp(2.25rem,3.4vw,3.25rem)] leading-[1.1] tracking-[-0.025em] text-landing-paper">
               <span className="block">Chuẩn <em className="italic">dáng</em> từ đầu,</span>
               <span className="block">đẹp từng đường may.</span>
@@ -100,7 +100,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
         className="flex min-h-svh min-w-0 flex-1 flex-col"
       >
         <div className={cn('flex items-center justify-between px-4 py-5 sm:px-8 lg:px-12', isFormFirst ? 'lg:justify-start' : 'lg:justify-end')}>
-          <Link href="/" aria-label="Về trang chủ StAle." className={`lg:hidden ${focusRing}`}>
+          <Link href="/" aria-label="Về trang chủ StAie." className={`lg:hidden ${focusRing}`}>
             <Logo size="md" />
           </Link>
           <Link

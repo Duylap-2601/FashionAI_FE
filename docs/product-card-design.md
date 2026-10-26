@@ -2,11 +2,11 @@
 
 ## 1. Objective
 
-Implement a single, reusable `ProductCard` component for the StAle fashion e-commerce website.
+Implement a single, reusable `ProductCard` component for the StAie fashion e-commerce website.
 
 The same component must be used on both the Landing Page and the Products Page, maintaining a consistent visual identity while supporting optional interactions and responsive layouts.
 
-The design must match the existing StAle landing page: premium fashion editorial, understated luxury, warm ivory surfaces, oxblood accents, refined typography, and image-focused product presentation.
+The design must match the existing StAie landing page: premium fashion editorial, understated luxury, warm ivory surfaces, oxblood accents, refined typography, and image-focused product presentation.
 
 **Core principle:** One component, one visual design, reusable across all product listing contexts.
 
@@ -191,7 +191,7 @@ Avoid duplicating business logic or introducing incompatible product models.
 1. Refactor the existing product card markup and interaction logic into one reusable `ProductCard`.
 2. Replace duplicated card markup wherever it exists.
 3. Use the same component on the Landing Page and Products Page.
-4. Preserve the existing StAle landing page design tokens and visual hierarchy.
+4. Preserve the existing StAie landing page design tokens and visual hierarchy.
 5. Keep page-level headings, category navigation, filters, sorting, and pagination outside the card.
 6. Preserve existing cart, try-on, routing, and product variant behavior.
 7. Do not redesign unrelated pages or introduce unnecessary abstractions.
@@ -205,4 +205,4 @@ Avoid duplicating business logic or introducing incompatible product models.
 - Product filtering, sorting, and pagination remain unaffected.
 - No duplicated card implementation or unnecessary abstraction is introduced.
 
-**Final direction:** Build one polished, production-ready `ProductCard` that reflects StAle's premium editorial identity and can be reused throughout the storefront without visual inconsistency.
+**Final direction:** Build one polished, production-ready `ProductCard` that reflects StAie's premium editorial identity and can be reused throughout the storefront without visual inconsistency.

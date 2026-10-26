@@ -89,7 +89,7 @@ export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTa
       ) : null}
 
       <p className="text-xs leading-relaxed text-landing-muted">
-        Mỗi lần mua hoặc gia hạn là một lần thanh toán riêng. StAle. không tự động trừ tiền.
+        Mỗi lần mua hoặc gia hạn là một lần thanh toán riêng. StAie. không tự động trừ tiền.
       </p>
     </div>
   );
