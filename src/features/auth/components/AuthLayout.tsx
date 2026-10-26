@@ -1,53 +1,129 @@
 'use client';
 
 import { Logo } from '@/components/ui/Logo';
-import React from 'react';
+import { cn } from '@/components/ui/utils';
+import { LANDING_MEDIA } from '@/features/home/constants/landing-media';
+import { ArrowLeft } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import React, { useState } from 'react';
+
+// Chỉ nêu những gì tài khoản thật sự mở ra: hồ sơ số đo, giỏ hàng đồng bộ, tính năng AI cần đăng nhập.
+const ACCOUNT_BENEFITS = [
+  'Lưu số đo cơ thể trong hồ sơ của bạn.',
+  'Giỏ hàng đồng bộ trên mọi thiết bị.',
+  'Thử đồ AI và nhờ AI Stylist phối đồ.',
+] as const;
+
+// Thứ tự các trang: đi tới trang đứng sau thì form trượt vào từ phải, quay lại thì từ trái.
+const SPLIT_ROUTE_ORDER: Record<string, number> = {
+  '/login': 0,
+  '/forgot-password': 1,
+  '/register': 2,
+};
+
+const PANEL_EASE = [0.22, 1, 0.36, 1] as const;
+const FORM_ENTER_OFFSET = 32;
+
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-oxblood';
 
 export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const shouldReduceMotion = useReducedMotion();
+  // Đăng ký đặt form bên trái, ảnh bên phải; đăng nhập và quên mật khẩu thì ngược lại.
+  const isFormFirst = pathname === '/register';
+
+  // Ghi nhận hướng chuyển trang ngay trong lúc render (mẫu "điều chỉnh state theo props" của React).
+  const [routeChange, setRouteChange] = useState({ path: pathname, direction: 0 });
+  if (routeChange.path !== pathname) {
+    const direction = Math.sign((SPLIT_ROUTE_ORDER[pathname] ?? 0) - (SPLIT_ROUTE_ORDER[routeChange.path] ?? 0));
+    setRouteChange({ path: pathname, direction });
+  }
+
+  const animateLayout = shouldReduceMotion ? false : 'position';
+  const panelTransition = { layout: { duration: 0.8, ease: PANEL_EASE } };
+  const formInitial = shouldReduceMotion || routeChange.direction === 0
+    ? false
+    : { opacity: 0, x: routeChange.direction * FORM_ENTER_OFFSET };
+
   return (
-    <div className="flex min-h-screen bg-brand-cream font-sans text-neutral-900">
-      <div className="hidden lg:flex w-[45%] bg-[#111111] relative overflow-hidden flex-col justify-center px-16">
-        <div
-          className="absolute inset-0 opacity-20 bg-cover bg-center"
-          style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1761428961720-38db3883826b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXJrJTIwZmFzaGlvbiUyMHNpbGhvdWV0dGUlMjBhYnN0cmFjdCUyMGdlb21ldHJpY3xlbnwxfHx8fDE3ODExNTI2ODh8MA&ixlib=rb-4.1.0&q=80&w=1080)' }}
+    <div
+      className={cn(
+        'flex min-h-svh bg-landing-paper font-sans text-landing-obsidian selection:bg-landing-oxblood selection:text-landing-paper',
+        isFormFirst && 'lg:flex-row-reverse',
+      )}
+    >
+      <motion.aside
+        layout={animateLayout}
+        transition={panelTransition}
+        className="sticky top-0 z-10 hidden h-svh w-[46%] max-w-[760px] shrink-0 overflow-hidden bg-landing-obsidian lg:block"
+      >
+        <Image
+          src={LANDING_MEDIA.look02}
+          alt=""
+          fill
+          sizes="46vw"
+          className="object-cover object-[50%_15%]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111111] to-transparent opacity-80" />
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-landing-obsidian via-landing-obsidian/45 to-landing-obsidian/15" />
 
-        <div className="relative z-10 w-full max-w-[480px]">
-          <div className="mb-16">
-            <Logo size="md" variant="light" />
-          </div>
+        <div className="relative z-10 flex h-full flex-col justify-between p-10 xl:p-14">
+          <Link href="/" aria-label="Về trang chủ StAle." className={cn('self-start', focusRing, 'focus-visible:outline-landing-brass')}>
+            <Logo size="lg" variant="light" />
+          </Link>
 
-          <h1 className="text-[40px] leading-[1.2] font-semibold text-white tracking-tight mb-16">
-            Trang phục công sở hoàn hảo<br />chỉ cách bạn một cú click
-          </h1>
-
-          <div className="flex gap-4 items-start bg-white/5 p-6 rounded-2xl backdrop-blur-sm border border-white/10">
-            <img
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=facearea&facepad=2&w=256&h=256&q=80"
-              alt="Người dùng"
-              className="w-12 h-12 rounded-full object-cover shrink-0"
-            />
-            <div>
-              <p className="text-white/90 text-[14px] leading-relaxed mb-2 italic">
-                &ldquo;Hệ thống AI Stylist gợi ý outfit quá chuẩn, tôi không còn mất thời gian suy nghĩ nên mặc gì mỗi sáng đi làm nữa.&rdquo;
-              </p>
-              <p className="text-white/60 text-[12px] font-medium">
-                - Minh Tú, Marketing Manager
-              </p>
-            </div>
+          <div className="max-w-[440px]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass">Tài khoản StAle.</p>
+            <p className="mt-4 font-display text-[clamp(2.25rem,3.4vw,3.25rem)] leading-[1.1] tracking-[-0.025em] text-landing-paper">
+              <span className="block">Chuẩn <em className="italic">dáng</em> từ đầu,</span>
+              <span className="block">đẹp từng đường may.</span>
+            </p>
+            <ol className="mt-10 border-t border-landing-paper/15">
+              {ACCOUNT_BENEFITS.map((benefit, index) => (
+                <li key={benefit} className="flex gap-4 border-b border-landing-paper/15 py-4 text-sm text-landing-paper/75">
+                  <span className="pt-0.5 font-mono text-[11px] tracking-[0.2em] text-landing-brass">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  {benefit}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
-      </div>
+      </motion.aside>
 
-      <div className="w-full lg:w-[55%] flex items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-[400px] bg-white rounded-2xl p-8 sm:p-10 shadow-sm border border-neutral-100">
-          <div className="lg:hidden flex justify-center mb-8">
-            <Logo size="md" variant="dark" />
-          </div>
-          {children}
+      <motion.main
+        layout={animateLayout}
+        transition={panelTransition}
+        className="flex min-h-svh min-w-0 flex-1 flex-col"
+      >
+        <div className={cn('flex items-center justify-between px-4 py-5 sm:px-8 lg:px-12', isFormFirst ? 'lg:justify-start' : 'lg:justify-end')}>
+          <Link href="/" aria-label="Về trang chủ StAle." className={`lg:hidden ${focusRing}`}>
+            <Logo size="md" />
+          </Link>
+          <Link
+            href="/"
+            className={`inline-flex h-11 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-muted transition-colors hover:text-landing-oxblood ${focusRing}`}
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
+            Trang chủ
+          </Link>
         </div>
-      </div>
+
+        <div className="flex flex-1 items-center justify-center overflow-x-clip px-4 pb-16 pt-2 sm:px-8 lg:px-12">
+          <motion.div
+            key={pathname}
+            initial={formInitial}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: PANEL_EASE, delay: shouldReduceMotion ? 0 : 0.2 }}
+            className="w-full max-w-[420px]"
+          >
+            {children}
+          </motion.div>
+        </div>
+      </motion.main>
     </div>
   );
 }
@@ -88,8 +164,13 @@ export function GoogleButton() {
     <button
       type="button"
       onClick={handleGoogleLogin}
-      className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-neutral-200 rounded-xl hover:bg-neutral-50 hover:border-neutral-300 transition-all font-medium text-body-sm text-neutral-700"
+      className={cn(
+        'flex h-12 w-full items-center justify-center gap-3 rounded-[2px] border border-landing-line bg-landing-ivory/80 text-sm font-medium text-landing-obsidian transition-colors hover:border-landing-obsidian/60 hover:bg-landing-ivory',
+        focusRing,
+        'focus-visible:outline-offset-2',
+      )}
     >
+      {/* Logo Google giữ nguyên màu theo quy định thương hiệu của Google, Lucide không có biểu tượng này. */}
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.16v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
