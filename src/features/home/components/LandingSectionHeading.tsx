@@ -41,7 +41,7 @@ export function LandingSectionHeading({
           <div className="min-w-0">
             <p
               className={cn(
-                'text-2xl font-semibold uppercase tracking-[0.22em]',
+                'text-2xl font-bold uppercase',
                 inverted ? 'text-landing-brass' : 'text-landing-brass-ink',
               )}
             >
@@ -49,7 +49,7 @@ export function LandingSectionHeading({
             </p>
             {title && <h2
               className={cn(
-                'mt-3 font-display text-landing-h2',
+                'mt-3 font-display text-xl font-semibold uppercase',
                 inverted ? 'text-landing-paper' : 'text-landing-obsidian',
               )}
             >

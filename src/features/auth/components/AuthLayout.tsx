@@ -67,7 +67,8 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
           sizes="46vw"
           className="object-cover object-[50%_15%]"
         />
-        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-landing-obsidian via-landing-obsidian/45 to-landing-obsidian/15" />
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-landing-obsidian via-landing-obsidian/55 to-landing-obsidian/10" />
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-tr from-landing-obsidian via-landing-obsidian/60 via-45% to-transparent to-80%" />
 
         <div className="relative z-10 flex h-full flex-col justify-between p-10 xl:p-14">
           <Link href="/" aria-label="Về trang chủ StAie." className={cn('self-start', focusRing, 'focus-visible:outline-landing-brass')}>
@@ -78,12 +79,12 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass">Tài khoản StAie.</p>
             <p className="mt-4 font-display text-[clamp(2.25rem,3.4vw,3.25rem)] leading-[1.1] tracking-[-0.025em] text-landing-paper">
               <span className="block">Chuẩn <em className="italic">dáng</em> từ đầu,</span>
-              <span className="block">đẹp từng đường may.</span>
+              <span className="block"><em className="italic">đẹp</em> từng đường may.</span>
             </p>
             <ol className="mt-10 border-t border-landing-paper/15">
               {ACCOUNT_BENEFITS.map((benefit, index) => (
-                <li key={benefit} className="flex gap-4 border-b border-landing-paper/15 py-4 text-sm text-landing-paper/75">
-                  <span className="pt-0.5 font-mono text-[11px] tracking-[0.2em] text-landing-brass">
+                <li key={benefit} className="flex gap-4 border-b border-landing-paper/15 py-4 text-md text-landing-paper/75">
+                  <span className="pt-0.5 font-mono text-sm tracking-[0.2em] text-landing-brass">
                     {String(index + 1).padStart(2, '0')}
                   </span>
                   {benefit}

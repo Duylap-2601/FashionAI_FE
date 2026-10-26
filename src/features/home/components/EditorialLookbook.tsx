@@ -76,8 +76,8 @@ export function EditorialLookbook({ images, collection }: EditorialLookbookProps
         />
 
         <div className="mt-8 grid gap-8 lg:grid-cols-12 lg:items-end lg:gap-12">
-          <div className="flex justify-center lg:col-span-6">
-            <div className="relative aspect-[3/4] w-full max-w-[420px] overflow-hidden bg-landing-paper/5 lg:h-[min(62svh,600px)] lg:w-auto lg:max-w-none">
+          <div className="flex justify-center lg:col-span-7">
+            <div className="relative aspect-[3/4] w-full max-w-[560px] bg-landing-paper/5 sm:max-w-[640px] lg:h-[min(78svh,780px)] lg:w-auto lg:max-w-none">
               <AnimatePresence initial={false} mode="wait">
                 <motion.div
                   key={activeLook.id}
@@ -91,7 +91,7 @@ export function EditorialLookbook({ images, collection }: EditorialLookbookProps
                     src={activeImage}
                     alt={`${activeLook.title} - ${activeLook.subtitle}`}
                     fill
-                    sizes="(max-width: 1024px) 420px, 30vw"
+                    sizes="(max-width: 1024px) 640px, 40vw"
                     className="object-cover object-top"
                     onError={() => {
                       setFailedImages((prev) => ({ ...prev, [activeLook.id]: true }));
@@ -100,13 +100,21 @@ export function EditorialLookbook({ images, collection }: EditorialLookbookProps
                 </motion.div>
               </AnimatePresence>
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-landing-obsidian/35 via-transparent to-transparent" />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -bottom-3 -left-3 h-16 w-16 border-b-2 border-l-2 border-landing-brass"
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-3 -top-3 h-16 w-16 border-r-2 border-t-2 border-landing-brass"
+              />
               <span className="absolute left-4 top-4 font-mono text-[11px] tracking-[0.18em] text-landing-paper/70">
                 {String(safeIndex + 1).padStart(2, '0')}
               </span>
             </div>
           </div>
 
-          <div className="lg:col-span-6">
+          <div className="lg:col-span-5">
             <div className="flex items-center justify-between border-t border-landing-paper/15 pt-4">
               <span className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55">
                 Look {String(safeIndex + 1).padStart(2, '0')} / {String(looks.length).padStart(2, '0')}

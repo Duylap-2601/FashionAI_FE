@@ -1,6 +1,7 @@
 export const LANDING_MEDIA = {
   hero: '/images/hero1.png',
   hero2: '/images/hero2.png',
+  hero3: '/images/hero3.png',
   look01: '/images/731163514_999523332788054_1114320478812927640_n.png',
   look02: '/images/726470431_1311184104081177_6052756217829444481_n.png',
   look03: '/images/731199294_3955961871204172_1445370375731306017_n.png',
@@ -21,7 +22,7 @@ export const HERO_LOCAL_SLIDES = [
   {
     id: 'local-hero-1',
     name: 'StAie. Signature',
-    season: 'SPRING / SUMMER 2026',
+    season: 'AUTUMN / WINTER 2026',
     image: LANDING_MEDIA.hero,
     fallbackImage: LANDING_MEDIA.hero,
   },
@@ -31,6 +32,13 @@ export const HERO_LOCAL_SLIDES = [
     season: 'AUTUMN / WINTER 2026',
     image: LANDING_MEDIA.hero2,
     fallbackImage: LANDING_MEDIA.hero2,
+  },
+  {
+    id: 'local-hero-3',
+    name: 'Urban Power Suit',
+    season: 'AUTUMN / WINTER 2026',
+    image: LANDING_MEDIA.hero3,
+    fallbackImage: LANDING_MEDIA.hero3,
   },
 ] as const;
 
