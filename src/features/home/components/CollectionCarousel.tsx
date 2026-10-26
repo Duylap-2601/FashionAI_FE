@@ -56,7 +56,7 @@ export function CollectionCarousel({
                 type="button"
                 onClick={() => onSelectCollection?.(collection)}
                 aria-pressed={isSelected}
-                className="group relative aspect-[3/4] w-[78vw] shrink-0 snap-start overflow-hidden bg-landing-obsidian text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-oxblood md:w-auto"
+                className="group relative aspect-[3/4] w-[78vw] shrink-0 snap-start overflow-hidden bg-landing-obsidian text-left transition-shadow duration-500 ease-out hover:shadow-[0_28px_44px_-20px_rgba(17,16,15,0.6)] focus-visible:shadow-[0_28px_44px_-20px_rgba(17,16,15,0.6)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-oxblood md:w-auto"
               >
                 <Image
                   src={imageSrc}

@@ -29,7 +29,7 @@ export function LandingSectionHeading({
       )}
     >
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-        <div className="flex items-start gap-4 sm:gap-6">
+        <div className="flex items-start gap-3 sm:gap-4">
           <span
             className={cn(
               'shrink-0 pt-1 font-mono text-lg tracking-[0.2em]',
