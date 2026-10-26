@@ -1,67 +1,122 @@
+import { cn } from '@/components/ui/utils';
 import { CategoryTabs } from '@/features/products/components/listing/CategoryTabs';
+import { SORT_OPTIONS } from '@/features/products/constants/product-filters';
 import type { SortBy } from '@/features/products/types/product-filters';
 import type { ProductToolbarProps } from '@/features/products/types/product-toolbar';
-import { LayoutGrid, List, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
+import { useId } from 'react';
+
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
 
 export function ProductToolbar({
   categories,
   activeTab,
   searchQuery,
-  isSidebarOpen,
+  isFilterOpen,
+  activeFilterCount,
   sortBy,
   onSelectTab,
   onSearchChange,
-  onToggleSidebar,
+  onToggleFilters,
+  onOpenSort,
   onSortChange,
 }: ProductToolbarProps) {
+  const searchId = useId();
+  const sortId = useId();
+
   return (
-    <div className="sticky top-[56px] md:top-[64px] z-40 flex flex-col gap-3 border-b border-neutral-200 bg-white px-4 py-3 md:px-8">
-      <div className="flex w-full items-center gap-3">
-        <div className="relative min-w-0 flex-1 md:max-w-[520px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Tìm kiếm..."
-            className="w-full h-10 pl-9 pr-9 bg-neutral-50 border border-neutral-200 rounded-full text-body-sm focus:bg-white focus:border-brand-navy/40 focus:outline-none transition-all"
-          />
-          {searchQuery && (
-            <button onClick={() => onSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+    // Header landing cao 72px + 1px viền, toolbar dính ngay dưới và dùng chung viền đó.
+    // Dưới xl: hai hàng (tìm kiếm và nút, rồi tab), cao 105px. Từ xl: một hàng, cao 57px.
+    <div className="sticky top-[72px] z-40 border-b border-landing-line/70 bg-landing-paper/95 backdrop-blur-md">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-1 px-4 pt-3 md:px-8 xl:flex-row xl:items-center xl:gap-6 xl:pt-0">
+        <div className="min-w-0 xl:flex-1">
+          <CategoryTabs categories={categories} activeTab={activeTab} onSelect={onSelectTab} />
         </div>
 
-        <div className="hidden items-center gap-3 md:ml-auto md:flex">
+        <div className="order-first flex items-center gap-2 xl:order-none xl:shrink-0">
+          <div className="relative min-w-0 flex-1 md:max-w-[420px] xl:w-[188px] xl:flex-none 2xl:w-[240px]">
+            <label htmlFor={searchId} className="sr-only">Tìm sản phẩm</label>
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-landing-muted"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
+            <input
+              id={searchId}
+              type="search"
+              value={searchQuery}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Tìm sản phẩm"
+              autoComplete="off"
+              className={cn(
+                'h-11 w-full rounded-[2px] border border-landing-line bg-landing-ivory/70 pl-9 pr-10 text-sm text-landing-obsidian placeholder:text-landing-muted transition-colors hover:border-landing-brass',
+                '[&::-webkit-search-cancel-button]:appearance-none',
+                focusRing,
+              )}
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => onSearchChange('')}
+                aria-label="Xoá từ khoá tìm kiếm"
+                className={cn('absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-landing-muted transition-colors hover:text-landing-oxblood', focusRing)}
+              >
+                <X className="h-3.5 w-3.5" strokeWidth={1.75} />
+              </button>
+            ) : null}
+          </div>
+
           <button
-            onClick={onToggleSidebar}
-            className={`h-10 px-4 rounded-full border text-label-sm font-medium inline-flex items-center gap-2 transition-colors ${isSidebarOpen ? 'border-brand-navy bg-brand-navy text-white' : 'border-neutral-200 text-neutral-700 hover:bg-neutral-50'
-              }`}
+            type="button"
+            onClick={onToggleFilters}
+            aria-expanded={isFilterOpen}
+            className={cn(
+              'inline-flex h-11 shrink-0 items-center gap-2 rounded-[2px] border px-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors',
+              isFilterOpen
+                ? 'border-landing-oxblood bg-landing-oxblood text-landing-paper'
+                : 'border-landing-obsidian/70 text-landing-obsidian hover:border-landing-oxblood hover:text-landing-oxblood',
+              focusRing,
+            )}
           >
-            <SlidersHorizontal className="w-4 h-4" /> Lọc
+            <SlidersHorizontal className="h-4 w-4" strokeWidth={1.75} />
+            <span className="md:hidden">Lọc</span>
+            <span className="hidden md:inline">Bộ lọc</span>
+            {activeFilterCount > 0 ? (
+              <span className="font-mono text-[11px] tracking-normal">({activeFilterCount})</span>
+            ) : null}
           </button>
 
-          <select
-            value={sortBy}
-            onChange={(e) => onSortChange(e.target.value as SortBy)}
-            className="h-10 px-4 pr-8 rounded-full border border-neutral-200 text-label-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 transition-colors appearance-none cursor-pointer focus:outline-none focus:border-brand-navy bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat"
+          <button
+            type="button"
+            onClick={onOpenSort}
+            aria-label={`Sắp xếp, đang chọn ${sortBy}`}
+            className={cn('inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[2px] border border-landing-obsidian/70 text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood md:hidden', focusRing)}
           >
-            <option value="Mới nhất">Mới nhất</option>
-            <option value="Giá thấp đến cao">Giá thấp đến cao</option>
-            <option value="Giá cao đến thấp">Giá cao đến thấp</option>
-          </select>
+            <ArrowUpDown className="h-4 w-4" strokeWidth={1.75} />
+          </button>
 
-          <div className="hidden lg:flex items-center gap-1 bg-neutral-100 p-1 rounded-full border border-neutral-200">
-            <button className="p-1.5 bg-white shadow-sm rounded-full text-brand-navy"><LayoutGrid className="w-4 h-4" /></button>
-            <button className="p-1.5 text-neutral-500 hover:text-brand-navy"><List className="w-4 h-4" /></button>
+          <div className="relative hidden md:block">
+            <label htmlFor={sortId} className="sr-only">Sắp xếp</label>
+            <select
+              id={sortId}
+              value={sortBy}
+              onChange={(event) => onSortChange(event.target.value as SortBy)}
+              className={cn(
+                'h-11 cursor-pointer appearance-none rounded-[2px] border border-landing-line bg-transparent pl-3.5 pr-9 text-[13px] font-medium text-landing-obsidian transition-colors hover:border-landing-brass',
+                focusRing,
+              )}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-landing-muted"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
           </div>
         </div>
-      </div>
-
-      <div className="w-full min-w-0">
-        <CategoryTabs categories={categories} activeTab={activeTab} onSelect={onSelectTab} mobile />
-        <CategoryTabs categories={categories} activeTab={activeTab} onSelect={onSelectTab} />
       </div>
     </div>
   );

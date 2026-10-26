@@ -126,6 +126,8 @@ export function Navigation({
   const chatHref = currentUser.role === 'guest' ? '/login?callbackUrl=/chat' : '/chat';
   const stylistHref = currentUser.role === 'guest' ? '/login?callbackUrl=/ai-stylist' : '/ai-stylist';
   const rackHref = currentUser.role === 'guest' ? '/login?callbackUrl=/rack' : '/rack';
+  // /products có ô tìm kiếm riêng trong toolbar (lọc ngay khi gõ), nên header không lặp lại ô tìm.
+  const shouldShowHeaderSearch = pathname !== '/products';
   const searchInputWidth = variant === 'landing'
     ? 'w-[220px] focus:w-[260px] lg:w-[280px] lg:focus:w-[320px]'
     : 'w-[220px] focus:w-[260px] lg:w-[320px] lg:focus:w-[360px]';
@@ -221,31 +223,33 @@ export function Navigation({
 
           {/* Right Actions */}
           <div className="ml-auto flex min-w-0 items-center justify-end gap-1.5 md:gap-3 lg:gap-4">
-            <HeaderSearch className="order-2 shrink-0 sm:hidden" />
+            {shouldShowHeaderSearch && <HeaderSearch className="order-2 shrink-0 sm:hidden" />}
 
-            <form
-              onSubmit={handleSearchSubmit}
-              className="relative order-2 hidden min-w-0 shrink-0 items-center sm:flex md:order-none"
-            >
-              <Search className={`absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 ${variant === 'landing' ? 'text-landing-muted' : 'text-neutral-400'}`} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Bạn đang tìm sản phẩm gì?"
-                className={`h-10 border pl-11 pr-10 text-body-sm transition-all focus:outline-none ${variant === 'landing' ? 'rounded-none border-landing-line/70 bg-landing-ivory/70 text-landing-obsidian placeholder:text-landing-muted/70 focus:border-landing-oxblood focus:bg-landing-ivory' : 'rounded-full border-neutral-200 bg-neutral-100 text-neutral-900 placeholder:text-neutral-400 focus:border-brand-navy focus:bg-white'} ${searchInputWidth}`}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-700"
-                  aria-label="Xóa tìm kiếm"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </form>
+            {shouldShowHeaderSearch && (
+              <form
+                onSubmit={handleSearchSubmit}
+                className="relative order-2 hidden min-w-0 shrink-0 items-center sm:flex md:order-none"
+              >
+                <Search className={`absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 ${variant === 'landing' ? 'text-landing-muted' : 'text-neutral-400'}`} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Bạn đang tìm sản phẩm gì?"
+                  className={`h-10 border pl-11 pr-10 text-body-sm transition-all focus:outline-none ${variant === 'landing' ? 'rounded-none border-landing-line/70 bg-landing-ivory/70 text-landing-obsidian placeholder:text-landing-muted/70 focus:border-landing-oxblood focus:bg-landing-ivory' : 'rounded-full border-neutral-200 bg-neutral-100 text-neutral-900 placeholder:text-neutral-400 focus:border-brand-navy focus:bg-white'} ${searchInputWidth}`}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-700"
+                    aria-label="Xóa tìm kiếm"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </form>
+            )}
 
             {currentUser.role !== 'admin' && (
               <Link

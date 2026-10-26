@@ -9,5 +9,4 @@ export interface FilterSectionProps {
   onPriceChange: (value: number) => void;
   onToggleColor: (color: string) => void;
   onToggleSubCategory: (category: string) => void;
-  mobile?: boolean;
 }
