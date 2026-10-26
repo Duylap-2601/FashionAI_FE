@@ -70,7 +70,7 @@ export function LandingPageClient() {
         collection={selectedCollection}
       />
 
-      <AiTryOnFeatureBanner previewProduct={capsuleProducts[0]} />
+      <AiTryOnFeatureBanner products={capsuleSource} />
 
       <AiStylistCapsule products={capsuleProducts} />
 
