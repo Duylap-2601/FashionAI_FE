@@ -43,7 +43,7 @@ export const AdminTopbar = React.memo(function AdminTopbar({
 
         {/* Chuông thông báo Realtime Notification Bell */}
         <div className="relative flex items-center justify-center">
-          <NotificationBell />
+          <NotificationBell tone="admin" />
         </div>
 
         <div className="h-5 w-px bg-neutral-200" />

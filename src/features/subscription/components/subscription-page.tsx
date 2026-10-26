@@ -17,14 +17,15 @@ import {
   useSubscriptionHistory,
 } from '@/features/subscription/hooks/useSubscription';
 import type { SubscriptionStatus } from '@/features/subscription/types/subscription';
+import { AccountShell } from '@/features/profile/components/account-shell';
 import {
-  AlertTriangle,
-  ArrowRight,
-  Crown,
-  History as HistoryIcon,
-  X,
-  Zap,
-} from 'lucide-react';
+  AccountConfirmDialog,
+  AccountDialog,
+  accountButtonClassName,
+  accountFocusRing,
+  accountLabelClassName,
+} from '@/features/profile/components/account-ui';
+import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -271,22 +272,23 @@ export default function SubscriptionPage() {
   }
 
   const getStatusBadge = (subStatus: SubscriptionStatus) => {
-    switch (subStatus) {
-      case 'ACTIVE':
-        return <span className="px-2.5 py-1 rounded-full text-[12px] font-bold bg-green-100 text-green-800">Đang hoạt động</span>;
-      case 'SCHEDULED':
-        return <span className="px-2.5 py-1 rounded-full text-[12px] font-bold bg-blue-100 text-blue-800">Chờ kích hoạt</span>;
-      case 'EXPIRED':
-        return <span className="px-2.5 py-1 rounded-full text-[12px] font-bold bg-neutral-100 text-neutral-600">Đã hết hạn</span>;
-      case 'CANCELLED':
-        return <span className="px-2.5 py-1 rounded-full text-[12px] font-bold bg-amber-100 text-amber-800">Đã hủy</span>;
-      default:
-        return <span className="px-2.5 py-1 rounded-full text-[12px] font-bold bg-neutral-100 text-neutral-600">{subStatus}</span>;
-    }
+    const meta: Record<string, { label: string; dot: string; text: string }> = {
+      ACTIVE: { label: 'Đang hoạt động', dot: 'bg-landing-sage', text: 'text-landing-sage-ink' },
+      SCHEDULED: { label: 'Chờ kích hoạt', dot: 'bg-landing-brass', text: 'text-landing-brass-ink' },
+      EXPIRED: { label: 'Đã hết hạn', dot: 'bg-landing-taupe', text: 'text-landing-muted' },
+      CANCELLED: { label: 'Đã huỷ', dot: 'bg-landing-taupe', text: 'text-landing-muted' },
+    };
+    const item = meta[subStatus] ?? { label: subStatus, dot: 'bg-landing-taupe', text: 'text-landing-muted' };
+    return (
+      <span className={`inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] ${item.text}`}>
+        <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${item.dot}`} />
+        {item.label}
+      </span>
+    );
   };
 
   const formatDate = (isoString?: string | null) => {
-    if (!isoString) return '—';
+    if (!isoString) return 'Chưa có';
     try {
       return new Date(isoString).toLocaleDateString('vi-VN', {
         day: '2-digit',
@@ -298,311 +300,171 @@ export default function SubscriptionPage() {
     }
   };
 
+  const netAmount = prorationBreakdown ? Math.max(0, Math.round(prorationBreakdown.net / 1000) * 1000) : 0;
+  const tabs: { id: typeof activeTab; label: string }[] = status === 'authenticated'
+    ? [{ id: 'plans', label: 'Bảng giá' }, { id: 'my-sub', label: 'Gói của tôi' }, { id: 'history', label: 'Lịch sử thanh toán' }]
+    : [{ id: 'plans', label: 'Bảng giá' }];
+
+  const content = (
+    <>
+      {tabs.length > 1 ? (
+        <div role="tablist" aria-label="Gói thành viên" className="no-scrollbar mb-8 flex gap-6 overflow-x-auto border-b border-landing-line">
+          {tabs.map((tab) => {
+            const selected = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative h-11 shrink-0 whitespace-nowrap text-sm transition-colors ${accountFocusRing} ${selected ? 'font-medium text-landing-oxblood after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-landing-oxblood' : 'text-landing-obsidian/70 hover:text-landing-oxblood'}`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {activeTab === 'plans' && (
+        <SubscriptionPlans
+          status={status}
+          tier={tier}
+          expirationInfo={expirationInfo}
+          scheduled={scheduled}
+          handleInitiateUpgrade={handleInitiateUpgrade}
+          isCheckoutLoading={isCheckoutLoading}
+          apiPlans={apiPlans}
+        />
+      )}
+
+      {activeTab === 'my-sub' && (
+        <CurrentSubscription
+          tier={tier}
+          current={current}
+          getStatusBadge={getStatusBadge}
+          setActiveTab={setActiveTab}
+          handleInitiateUpgrade={handleInitiateUpgrade}
+          formatDate={formatDate}
+          rawExpiresAt={rawExpiresAt}
+          expirationInfo={expirationInfo}
+          scheduled={scheduled}
+          handleToggleAutoRenew={handleToggleAutoRenew}
+          isCancelling={isCancelling}
+          isResuming={isResuming}
+          handleCancelScheduled={() => setCancelScheduledConfirmOpen(true)}
+          isCancellingScheduled={isCancellingScheduled}
+        />
+      )}
+
+      {activeTab === 'history' && (
+        <SubscriptionHistory
+          isHistoryLoading={isHistoryLoading}
+          history={history}
+          formatDate={formatDate}
+          getStatusBadge={getStatusBadge}
+          historyMeta={historyMeta}
+          setHistoryPage={setHistoryPage}
+          historyPage={historyPage}
+        />
+      )}
+
+      <AccountDialog
+        open={upgradeConfirmTier !== null}
+        onOpenChange={(open) => { if (!open) setUpgradeConfirmTier(null); }}
+        eyebrow="Nâng cấp gói"
+        title={`Chuyển lên ${upgradeConfirmTier ?? ''}`}
+        description={`Gói ${tier} của bạn còn ${expirationInfo?.daysRemaining ?? 0} ngày. Giá trị còn lại được trừ vào tiền gói mới; bạn sẽ thấy bảng tính chi tiết trước khi thanh toán.`}
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button type="button" onClick={() => setUpgradeConfirmTier(null)} className={accountButtonClassName('outline')}>Để sau</button>
+          <button type="button" onClick={() => upgradeConfirmTier && proceedCheckout(upgradeConfirmTier)} className={accountButtonClassName('primary')}>
+            Tiếp tục <ArrowRight className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        </div>
+      </AccountDialog>
+
+      <AccountDialog
+        open={prorationBreakdown !== null}
+        onOpenChange={(open) => { if (!open) setProrationBreakdown(null); }}
+        eyebrow="Nâng cấp gói"
+        title={`Thanh toán gói ${pendingTargetTier || prorationBreakdown?.newTier || ''}`}
+        description={prorationBreakdown ? `Giá trị còn lại của gói ${prorationBreakdown.oldTier} (${prorationBreakdown.remainingDays} ngày) được trừ vào tiền gói mới.` : undefined}
+      >
+        {prorationBreakdown ? (
+          <>
+            <dl className="space-y-2.5 border-y border-landing-line/70 py-4 text-sm">
+              <div className="flex justify-between gap-4"><dt className="text-landing-muted">Gói hiện tại</dt><dd>{prorationBreakdown.oldTier}, còn <span className="font-mono">{prorationBreakdown.remainingDays}</span> ngày</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-landing-muted">Giá gói {pendingTargetTier || prorationBreakdown.newTier}</dt><dd className="font-mono">{prorationBreakdown.debit.toLocaleString('vi-VN')}đ</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-landing-muted">Trừ gói cũ</dt><dd className="font-mono text-landing-sage-ink">−{prorationBreakdown.credit.toLocaleString('vi-VN')}đ</dd></div>
+              <div className="flex items-baseline justify-between gap-4 border-t border-landing-line/70 pt-3"><dt className="font-medium">Cần thanh toán</dt><dd className="font-mono text-xl text-landing-oxblood">{netAmount.toLocaleString('vi-VN')}đ</dd></div>
+            </dl>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setProrationBreakdown(null)} className={accountButtonClassName('outline')}>Để sau</button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (pendingCheckoutResultRef.current) {
+                    redirectToCheckout(pendingCheckoutResultRef.current);
+                  }
+                  setProrationBreakdown(null);
+                }}
+                className={accountButtonClassName('primary')}
+              >
+                Thanh toán {netAmount.toLocaleString('vi-VN')}đ
+              </button>
+            </div>
+          </>
+        ) : null}
+      </AccountDialog>
+
+      <AccountDialog
+        open={scheduledConflictTier !== null}
+        onOpenChange={(open) => { if (!open) setScheduledConflictTier(null); }}
+        eyebrow="Gói thành viên"
+        title="Đang có lịch chuyển gói"
+        description={`Bạn đã lên lịch chuyển sang gói ${scheduledConflictTier ?? ''}. Để mua gói mới ngay, hãy huỷ lịch đó trước.`}
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button type="button" onClick={() => setScheduledConflictTier(null)} className={accountButtonClassName('outline')}>Để sau</button>
+          <button type="button" onClick={handleCancelConflictScheduled} disabled={isCancellingScheduled} className={accountButtonClassName('danger')}>
+            {isCancellingScheduled ? 'Đang huỷ' : 'Huỷ lịch chuyển gói'}
+          </button>
+        </div>
+      </AccountDialog>
+
+      <AccountConfirmDialog
+        open={cancelScheduledConfirmOpen}
+        onOpenChange={setCancelScheduledConfirmOpen}
+        title={`Huỷ lịch chuyển gói ${scheduled?.tier ?? ''}?`}
+        description="Chỉ huỷ lịch, số tiền đã thanh toán không được hoàn lại. Gói hiện tại vẫn dùng đến ngày hết hạn."
+        confirmLabel="Huỷ lịch"
+        isPending={isCancellingScheduled}
+        onConfirm={handleConfirmCancelScheduled}
+      />
+    </>
+  );
+
+  const description = 'So sánh lượt Thử đồ AI, AI Stylist và chat AI của từng gói, rồi chọn gói hợp với bạn.';
+
+  if (status === 'authenticated') {
+    return (
+      <AccountShell title="Gói thành viên" description={description}>
+        {content}
+      </AccountShell>
+    );
+  }
+
   return (
-    <div className="bg-[#FAF8F5] min-h-screen py-10 md:py-14 text-neutral-800">
-      <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8">
-
-        {/* Header */}
-        <div className="text-center max-w-[720px] mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#5D1C34]/10 text-[#5D1C34] text-[13px] font-bold mb-4">
-            <Crown className="w-4 h-4" /> Dịch vụ Hội viên FashionAI
-          </div>
-          <h1 className="text-[32px] md:text-[42px] font-bold text-brand-navy tracking-tight leading-tight mb-4">
-            Trải nghiệm thời trang may đo chuẩn xác cùng AI
-          </h1>
-          <p className="text-body-md text-neutral-600 leading-relaxed">
-            Mở khóa tính năng Thử đồ AI ảo độc quyền, tư vấn phối trang phục theo số đo cơ thể và nhận may đo chính xác từng centimet.
-          </p>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex p-1.5 bg-white rounded-2xl border border-neutral-200 shadow-sm gap-1">
-            <button
-              onClick={() => setActiveTab('plans')}
-              className={`px-5 py-2.5 rounded-xl font-bold text-[14px] transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'plans'
-                  ? 'bg-brand-navy text-white shadow-sm'
-                  : 'text-neutral-600 hover:text-brand-navy hover:bg-neutral-50'
-                }`}
-            >
-              <Zap className="w-4 h-4" /> Bảng giá gói cước
-            </button>
-            {status === 'authenticated' && (
-              <>
-                <button
-                  onClick={() => setActiveTab('my-sub')}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-[14px] transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'my-sub'
-                      ? 'bg-brand-navy text-white shadow-sm'
-                      : 'text-neutral-600 hover:text-brand-navy hover:bg-neutral-50'
-                    }`}
-                >
-                  <Crown className="w-4 h-4" /> Gói của tôi
-                </button>
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-[14px] transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'history'
-                      ? 'bg-brand-navy text-white shadow-sm'
-                      : 'text-neutral-600 hover:text-brand-navy hover:bg-neutral-50'
-                    }`}
-                >
-                  <HistoryIcon className="w-4 h-4" /> Lịch sử đăng ký
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* ─────────────────── TAB 1: BẢNG GIÁ ─────────────────── */}
-        {activeTab === 'plans' && (
-          <SubscriptionPlans
-            status={status}
-            tier={tier}
-            expirationInfo={expirationInfo}
-            scheduled={scheduled}
-            handleInitiateUpgrade={handleInitiateUpgrade}
-            isCheckoutLoading={isCheckoutLoading}
-            apiPlans={apiPlans}
-          />
-        )}
-
-        {/* ─────────────────── TAB 2: GÓI CỦA TÔI ─────────────────── */}
-        {activeTab === 'my-sub' && (
-          <CurrentSubscription
-            tier={tier}
-            current={current}
-            getStatusBadge={getStatusBadge}
-            setActiveTab={setActiveTab}
-            handleInitiateUpgrade={handleInitiateUpgrade}
-            formatDate={formatDate}
-            rawExpiresAt={rawExpiresAt}
-            expirationInfo={expirationInfo}
-            scheduled={scheduled}
-            handleToggleAutoRenew={handleToggleAutoRenew}
-            isCancelling={isCancelling}
-            isResuming={isResuming}
-            handleCancelScheduled={() => setCancelScheduledConfirmOpen(true)}
-            isCancellingScheduled={isCancellingScheduled}
-          />
-        )}
-
-        {/* ─────────────────── TAB 3: LỊCH SỬ ĐĂNG KÝ ─────────────────── */}
-        {activeTab === 'history' && (
-          <SubscriptionHistory
-            isHistoryLoading={isHistoryLoading}
-            history={history}
-            formatDate={formatDate}
-            getStatusBadge={getStatusBadge}
-            historyMeta={historyMeta}
-            setHistoryPage={setHistoryPage}
-            historyPage={historyPage}
-          />
-        )}
-
-        {/* ─────────────────── UPGRADE CONFIRMATION MODAL ─────────────────── */}
-        {upgradeConfirmTier && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
-              onClick={() => setUpgradeConfirmTier(null)}
-            />
-            <div className="relative w-full max-w-[460px] bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-neutral-100 z-10 animate-in zoom-in-95 duration-200">
-              <button
-                onClick={() => setUpgradeConfirmTier(null)}
-                className="absolute top-5 right-5 p-2 text-neutral-400 hover:text-neutral-700 rounded-full hover:bg-neutral-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mb-4">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-
-              <h3 className="text-[20px] font-bold text-brand-navy mb-2">
-                Xác nhận nâng cấp gói {upgradeConfirmTier}
-              </h3>
-              <p className="text-body-sm text-neutral-600 mb-6 leading-relaxed">
-                Bạn hiện còn <strong>{expirationInfo?.daysRemaining} ngày</strong> của gói {tier}. Số ngày còn lại sẽ được tự động khấu trừ credit theo chính sách nâng cấp giữa kỳ (hệ thống sẽ hiển thị bảng đối trừ chi tiết trước khi thanh toán).
-              </p>
-
-              <div className="flex flex-col gap-2.5">
-                <button
-                  onClick={() => proceedCheckout(upgradeConfirmTier)}
-                  className="w-full h-12 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-95 shadow-md shadow-[#5D1C34]/20 cursor-pointer"
-                >
-                  Tiến hành nâng cấp ngay <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setUpgradeConfirmTier(null)}
-                  className="w-full py-2.5 text-center text-body-sm text-neutral-500 hover:text-neutral-800 font-medium cursor-pointer"
-                >
-                  Để sau
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────────── PRORATION BREAKDOWN MODAL ─────────────────── */}
-        {prorationBreakdown && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
-              onClick={() => setProrationBreakdown(null)}
-            />
-            <div className="relative w-full max-w-[500px] bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-neutral-100 z-10 animate-in zoom-in-95 duration-200">
-              <button
-                onClick={() => setProrationBreakdown(null)}
-                className="absolute top-5 right-5 p-2 text-neutral-400 hover:text-neutral-700 rounded-full hover:bg-neutral-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mb-4">
-                <Zap className="w-6 h-6 text-[#5D1C34]" />
-              </div>
-
-              <h3 className="text-[20px] font-bold text-brand-navy mb-2">
-                Xác nhận nâng cấp gói {pendingTargetTier || prorationBreakdown.newTier}
-              </h3>
-              <p className="text-body-sm text-neutral-600 mb-5 leading-relaxed">
-                Hệ thống tự động khấu trừ giá trị còn lại của gói <strong>{prorationBreakdown.oldTier}</strong> ({prorationBreakdown.remainingDays} ngày) vào tiền gói mới <strong>{pendingTargetTier || prorationBreakdown.newTier}</strong>.
-              </p>
-
-              {/* Breakdown card */}
-              <div className="bg-[#FAF8F5] border border-neutral-200 rounded-2xl p-4 mb-6 space-y-3 text-body-sm">
-                <div className="flex items-center justify-between text-neutral-600">
-                  <span>Gói hiện tại</span>
-                  <span className="font-semibold text-brand-navy">{prorationBreakdown.oldTier} (còn {prorationBreakdown.remainingDays} ngày)</span>
-                </div>
-                <div className="flex items-center justify-between text-neutral-600">
-                  <span>Giá gói {pendingTargetTier || prorationBreakdown.newTier} (30 ngày)</span>
-                  <span className="font-semibold text-brand-navy">{prorationBreakdown.debit.toLocaleString('vi-VN')}đ</span>
-                </div>
-                <div className="flex items-center justify-between text-emerald-700">
-                  <span>Khấu trừ gói cũ (Credit)</span>
-                  <span className="font-semibold">−{prorationBreakdown.credit.toLocaleString('vi-VN')}đ</span>
-                </div>
-                <div className="pt-3 border-t border-neutral-200 flex items-center justify-between text-brand-navy font-bold text-[16px]">
-                  <span>Số tiền thực trả</span>
-                  <span className="text-[#5D1C34] text-[18px]">
-                    {Math.max(0, Math.round(prorationBreakdown.net / 1000) * 1000).toLocaleString('vi-VN')}đ
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2.5">
-                <button
-                  onClick={() => {
-                    if (pendingCheckoutResultRef.current) {
-                      redirectToCheckout(pendingCheckoutResultRef.current);
-                    }
-                    setProrationBreakdown(null);
-                  }}
-                  className="w-full h-12 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-95 shadow-md shadow-[#5D1C34]/20 cursor-pointer"
-                >
-                  Thanh toán {Math.max(0, Math.round(prorationBreakdown.net / 1000) * 1000).toLocaleString('vi-VN')}đ <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setProrationBreakdown(null)}
-                  className="w-full py-2.5 text-center text-body-sm text-neutral-500 hover:text-neutral-800 font-medium cursor-pointer"
-                >
-                  Để sau
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────────── 409 CONFLICT MODAL ─────────────────── */}
-        {scheduledConflictTier && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
-              onClick={() => setScheduledConflictTier(null)}
-            />
-            <div className="relative w-full max-w-[460px] bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-neutral-100 z-10 animate-in zoom-in-95 duration-200">
-              <button
-                onClick={() => setScheduledConflictTier(null)}
-                className="absolute top-5 right-5 p-2 text-neutral-400 hover:text-neutral-700 rounded-full hover:bg-neutral-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mb-4">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-
-              <h3 className="text-[20px] font-bold text-brand-navy mb-2">
-                Đang có lịch hẹn chuyển gói
-              </h3>
-              <p className="text-body-sm text-neutral-600 mb-6 leading-relaxed">
-                Bạn đang có lịch hẹn chuyển sang gói <strong>{scheduledConflictTier}</strong> trong hệ thống. Để đăng ký gói mới ngay bây giờ, bạn cần hủy lịch hẹn trước đó.
-              </p>
-
-              <div className="flex flex-col gap-2.5">
-                <button
-                  onClick={handleCancelConflictScheduled}
-                  disabled={isCancellingScheduled}
-                  className="w-full h-12 bg-red-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-                >
-                  {isCancellingScheduled ? 'Đang hủy...' : 'Hủy lịch hẹn'}
-                </button>
-                <button
-                  onClick={() => setScheduledConflictTier(null)}
-                  className="w-full py-2.5 text-center text-body-sm text-neutral-500 hover:text-neutral-800 font-medium cursor-pointer"
-                >
-                  Để sau
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────────── CANCEL SCHEDULED CONFIRMATION MODAL ─────────────────── */}
-        {cancelScheduledConfirmOpen && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
-              onClick={() => setCancelScheduledConfirmOpen(false)}
-            />
-            <div className="relative w-full max-w-[460px] bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-neutral-100 z-10 animate-in zoom-in-95 duration-200">
-              <button
-                onClick={() => setCancelScheduledConfirmOpen(false)}
-                className="absolute top-5 right-5 p-2 text-neutral-400 hover:text-neutral-700 rounded-full hover:bg-neutral-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center mb-4">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-
-              <h3 className="text-[20px] font-bold text-brand-navy mb-2">
-                Hủy lịch chuyển gói {scheduled?.tier || ''}
-              </h3>
-              <p className="text-body-sm text-neutral-600 mb-6 leading-relaxed">
-                Chỉ hủy chỗ giữ, số tiền đã thanh toán không được hoàn lại. Bạn có chắc chắn muốn hủy lịch chuyển gói không?
-              </p>
-
-              <div className="flex flex-col gap-2.5">
-                <button
-                  onClick={handleConfirmCancelScheduled}
-                  disabled={isCancellingScheduled}
-                  className="w-full h-12 bg-red-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-                >
-                  {isCancellingScheduled ? 'Đang xử lý...' : 'Xác nhận hủy lịch'}
-                </button>
-                <button
-                  onClick={() => setCancelScheduledConfirmOpen(false)}
-                  className="w-full py-2.5 text-center text-body-sm text-neutral-500 hover:text-neutral-800 font-medium cursor-pointer"
-                >
-                  Để sau
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
+    <div className="landing-paper-texture">
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-20 pt-6 md:px-8 md:pt-12">
+        <header className="mb-8 border-b border-landing-line pb-6">
+          <p className={accountLabelClassName}>Gói thành viên</p>
+          <h1 className="mt-3 font-display text-landing-h2 text-landing-obsidian">Gói thành viên</h1>
+          <p className="mt-3 max-w-xl text-landing-body text-landing-muted">{description}</p>
+        </header>
+        {content}
       </div>
     </div>
   );

@@ -54,7 +54,8 @@ export function useDeleteTryOnHistory() {
     mutationKey: mutationKeys.deleteTryOnHistory(),
     mutationFn: deleteTryOnHistory,
     onSuccess: (id) => {
-      queryClient.setQueryData<TryOnResult[]>(tryOnQueryKeys.tryOnHistory(), (old) => {
+      // Danh sách dùng key có (page, limit), nên cập nhật theo tiền tố.
+      queryClient.setQueriesData<TryOnResult[]>({ queryKey: tryOnQueryKeys.tryOnHistory() }, (old) => {
         if (!old) return [];
         return old.filter(item => item.id !== id);
       });
@@ -66,7 +67,7 @@ export function useDeleteTryOnHistory() {
     mutationKey: mutationKeys.deleteManyTryOnHistory(),
     mutationFn: deleteManyTryOnHistory,
     onSuccess: (ids) => {
-      queryClient.setQueryData<TryOnResult[]>(tryOnQueryKeys.tryOnHistory(), (old) => {
+      queryClient.setQueriesData<TryOnResult[]>({ queryKey: tryOnQueryKeys.tryOnHistory() }, (old) => {
         if (!old) return [];
         const toDelete = new Set(ids);
         return old.filter(item => !toDelete.has(item.id));

@@ -1,85 +1,111 @@
 'use client';
 
-import type { TryOnResult } from '@/features/try-on/types/try-on';
-
-import { fetchTryOnImage } from '@/features/try-on/services/queries';
-import { useAuthStore } from '@/features/auth/store/authStore';
-import { useDeleteTryOnHistory, useTryOnHistory } from '@/features/try-on/hooks/useTryOn';
+import { AccountShell } from '@/features/profile/components/account-shell';
 import {
-  Camera,
-  Check,
-  ChevronLeft,
-  Download,
-  Eye,
-  Search,
-  Trash2,
-  Zap
-} from 'lucide-react';
-import Link from 'next/link';
+  AccountConfirmDialog,
+  AccountStatePanel,
+  accountButtonClassName,
+  accountFocusRing,
+  accountInputClassName,
+} from '@/features/profile/components/account-ui';
+import { useDeleteTryOnHistory, useTryOnHistory } from '@/features/try-on/hooks/useTryOn';
+import { fetchTryOnImage } from '@/features/try-on/services/queries';
+import type { TryOnResult } from '@/features/try-on/types/try-on';
+import { cn } from '@/lib/utils';
+import { Check, Download, ExternalLink, Search, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import React, { useState } from 'react';
+import Link from 'next/link';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+type CategoryFilter = 'ALL' | 'UPPER' | 'LOWER' | 'FULL_BODY';
+
+// Giá trị `category` do backend lưu (GarmentCategory).
+const CATEGORY_TABS: { id: CategoryFilter; label: string }[] = [
+  { id: 'ALL', label: 'Tất cả' },
+  { id: 'UPPER', label: 'Áo' },
+  { id: 'LOWER', label: 'Quần & váy' },
+  { id: 'FULL_BODY', label: 'Đồ liền' },
+];
+
+const LAYER_LABELS: Record<string, string> = {
+  OUTER: 'Lớp ngoài',
+  INNER: 'Lớp trong',
+  BASE: 'Áo trong',
+  BOTTOM: 'Phần dưới',
+};
+
+function categoryLabel(category?: string | null) {
+  const value = (category || '').toUpperCase();
+  if (value.includes('UPPER')) return 'Áo';
+  if (value.includes('LOWER')) return 'Quần & váy';
+  if (value.includes('FULL_BODY')) return 'Đồ liền';
+  return 'Trang phục';
+}
+
+function getGarmentsLabel(item: TryOnResult) {
+  if (Array.isArray(item.garments) && item.garments.length > 0) {
+    return item.garments
+      .map((garment) => (garment.layerRole && LAYER_LABELS[garment.layerRole.toUpperCase()]) || categoryLabel(garment.category))
+      .join(' + ');
+  }
+  return categoryLabel(item.category);
+}
+
+function formatDate(isoString: string) {
+  return new Date(isoString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
 export default function TryOnHistoryPage() {
-  const { history, isLoading } = useTryOnHistory();
+  const { history, isLoading, isError, refetch } = useTryOnHistory();
   const { deleteHistoryItem, deleteBulkItems, isDeleting, isBulkDeleting } = useDeleteTryOnHistory();
-  const userTier = useAuthStore((state) => state.user?.tier || 'FREE');
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('ALL');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
 
-  // Filtering
-  const filteredHistory = history.filter(item => {
-    const productName = item.product?.name || item.productId || 'Sản phẩm tự do';
-    const matchesSearch = productName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'Tất cả' ||
-      item.category.toLowerCase() === selectedCategory.toLowerCase();
+  const query = searchTerm.trim().toLowerCase();
+  const filteredHistory = history.filter((item) => {
+    const productName = item.product?.name || '';
+    const matchesSearch = !query || productName.toLowerCase().includes(query);
+    const matchesCategory = selectedCategory === 'ALL' || (item.category || '').toUpperCase() === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+  const isFiltered = query.length > 0 || selectedCategory !== 'ALL';
+  const allVisibleSelected = filteredHistory.length > 0 && filteredHistory.every((item) => selectedItems.has(item.id));
 
-  // Limit display history for free tier to 10 if BE doesn't enforce it (as per UI specification)
-  const displayHistory = userTier === 'FREE' ? filteredHistory.slice(0, 10) : filteredHistory;
+  const toggleSelect = (id: string) => {
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
-  // Bulk actions
   const toggleSelectAll = () => {
-    if (selectedItems.size === displayHistory.length && displayHistory.length > 0) {
-      setSelectedItems(new Set());
-    } else {
-      setSelectedItems(new Set(displayHistory.map(i => i.id)));
-    }
+    setSelectedItems(allVisibleSelected ? new Set() : new Set(filteredHistory.map((item) => item.id)));
   };
 
-  const toggleSelect = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newSet = new Set(selectedItems);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
-    setSelectedItems(newSet);
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedItems.size === 0) return;
-    if (confirm(`Bạn có chắc chắn muốn xóa ${selectedItems.size} kết quả thử đồ này?`)) {
-      deleteBulkItems(Array.from(selectedItems), {
-        onSuccess: () => {
-          setSelectedItems(new Set());
-        }
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    const ids = pendingDelete;
+    const onSuccess = () => {
+      toast.success(ids.length > 1 ? `Đã xoá ${ids.length} kết quả` : 'Đã xoá kết quả');
+      setSelectedItems((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.delete(id));
+        return next;
       });
-    }
+      setPendingDelete(null);
+    };
+    const onError = () => toast.error('Không xoá được. Vui lòng thử lại.');
+    if (ids.length === 1) deleteHistoryItem(ids[0], { onSuccess, onError });
+    else deleteBulkItems(ids, { onSuccess, onError });
   };
 
-  const handleDeleteItem = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm('Bạn có chắc chắn muốn xóa kết quả thử đồ này?')) {
-      deleteHistoryItem(id);
-    }
-  };
-
-  const handleDownload = async (url: string, filename: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDownload = async (url: string, filename: string) => {
     try {
       const response = await fetchTryOnImage(url);
       const blob = await response.blob();
@@ -92,265 +118,163 @@ export default function TryOnHistoryPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch {
-      // Fallback open in new tab if cors issues
+      // Lỗi CORS thì mở ảnh ở tab mới để người dùng tự lưu.
       window.open(url, '_blank');
     }
   };
 
-  const formatDate = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
-
-  const getGarmentsLabel = (item: TryOnResult) => {
-    if (item.garments && Array.isArray(item.garments) && item.garments.length > 0) {
-      const labels = item.garments.map((g) => {
-        if (g.layerRole) {
-          const role = g.layerRole.toUpperCase();
-          if (role === 'OUTER') return 'Áo khoác';
-          if (role === 'INNER') return 'Áo trong';
-          if (role === 'BASE') return 'Áo lót/thun';
-          if (role === 'BOTTOM') return 'Quần/Váy';
-        }
-        const c = (g.category || '').toUpperCase();
-        if (c.includes('UPPER') || c.includes('AO') || c.includes('TOP')) return 'Áo';
-        if (c.includes('LOWER') || c.includes('QUAN') || c.includes('VAY') || c.includes('BOTTOM')) return 'Quần/Váy';
-        if (c.includes('FULL_BODY') || c.includes('SUIT')) return 'Bộ liền thân';
-        return g.category || 'Trang phục';
-      });
-      return labels.join(' + ');
-    }
-    const c = (item.category || '').toUpperCase();
-    if (c.includes('UPPER') || c.includes('AO') || c.includes('TOP')) return 'Áo';
-    if (c.includes('LOWER') || c.includes('QUAN') || c.includes('VAY') || c.includes('BOTTOM')) return 'Quần/Váy';
-    if (c.includes('FULL_BODY') || c.includes('SUIT')) return 'Bộ liền thân';
-    return item.category || 'Trang phục';
-  };
+  const iconButton = cn(
+    'flex h-9 w-9 items-center justify-center border border-landing-line text-landing-obsidian/80 transition-colors hover:border-landing-oxblood hover:text-landing-oxblood disabled:opacity-50',
+    accountFocusRing,
+  );
 
   return (
-    <div className="min-h-screen bg-brand-cream text-neutral-900 font-sans pb-24 relative">
-
-      {/* BULK ACTION STICKY BAR */}
-      <div className={`fixed top-[64px] left-0 right-0 z-40 bg-brand-navy text-white px-4 md:px-8 transition-all duration-300 flex items-center justify-between shadow-md ${selectedItems.size > 0 ? 'h-16 opacity-100 translate-y-0' : 'h-0 opacity-0 -translate-y-full overflow-hidden'
-        }`}>
-        <div className="max-w-[1200px] mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleSelectAll}
-              className="w-5 h-5 rounded flex items-center justify-center border-2 border-white transition-colors bg-white text-brand-navy"
-            >
-              <Check className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-label-md font-medium text-white">Đã chọn {selectedItems.size} mục</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSelectedItems(new Set())}
-              className="px-4 py-2 text-label-sm font-medium text-white/80 hover:text-white transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={handleBulkDelete}
-              disabled={isBulkDeleting}
-              className="flex items-center gap-2 px-4 py-2 bg-semantic-error hover:bg-red-600 text-white rounded-lg text-label-sm font-medium transition-colors shadow-sm disabled:opacity-50"
-            >
-              <Trash2 className="w-4 h-4" /> {isBulkDeleting ? 'Đang xóa...' : 'Xóa đã chọn'}
-            </button>
-          </div>
+    <AccountShell
+      title="Lịch sử thử đồ"
+      description="Ảnh kết quả từ Thử đồ AI bằng ảnh. Ảnh chụp trong phiên thử trực tiếp không được lưu ở đây."
+      actions={
+        <div className="relative w-full md:w-[260px]">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-landing-muted" strokeWidth={1.75} aria-hidden="true" />
+          <input
+            type="search"
+            aria-label="Tìm theo tên sản phẩm"
+            placeholder="Tìm theo tên sản phẩm…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={cn(accountInputClassName, 'pl-9 [&::-webkit-search-cancel-button]:appearance-none')}
+          />
         </div>
+      }
+    >
+      <div role="group" aria-label="Lọc theo loại" className="no-scrollbar mb-6 flex gap-6 overflow-x-auto border-b border-landing-line">
+        {CATEGORY_TABS.map((tab) => {
+          const selected = selectedCategory === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => setSelectedCategory(tab.id)}
+              className={cn(
+                'relative h-11 shrink-0 whitespace-nowrap text-sm transition-colors',
+                selected ? 'font-medium text-landing-oxblood after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-landing-oxblood' : 'text-landing-obsidian/70 hover:text-landing-oxblood',
+                accountFocusRing,
+              )}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-8 md:py-12">
-
-        {/* Breadcrumb & Navigation */}
-        <div className="mb-4">
-          <Link href="/profile/measurements" className="inline-flex items-center gap-1.5 text-body-sm text-neutral-500 hover:text-brand-navy transition-colors">
-            <ChevronLeft className="w-4 h-4" /> Quay lại Hồ sơ
-          </Link>
-        </div>
-
-        {/* HEADER & FILTER BAR */}
-        <div className="mb-8 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h1 className="text-heading-h2 font-semibold text-neutral-900 flex items-center gap-3">
-              Lịch sử thử đồ
-              {!isLoading && (
-                <span className="text-label-md bg-neutral-200 text-neutral-600 px-2.5 py-0.5 rounded-full font-medium">
-                  {displayHistory.length}
-                </span>
-              )}
-            </h1>
-
-            {/* Search Bar */}
-            <div className="relative w-full md:w-[320px]">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="w-4 h-4 text-neutral-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Tìm theo tên sản phẩm..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-full text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center bg-white border border-neutral-200 rounded-full p-1">
-              {['Tất cả', 'Tops', 'Bottoms', 'One-pieces'].map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-1.5 rounded-full text-label-sm font-medium transition-colors ${selectedCategory.toLowerCase() === cat.toLowerCase()
-                      ? 'bg-neutral-100 text-neutral-900'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                    }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+      {selectedItems.size > 0 ? (
+        <div className="sticky top-[73px] z-20 -mx-4 mb-6 flex flex-wrap items-center justify-between gap-3 border-y border-landing-line bg-landing-paper px-4 py-3 md:mx-0 md:border-x" role="status">
+          <p className="text-sm text-landing-obsidian">
+            Đã chọn <span className="font-mono">{selectedItems.size}</span> kết quả
+          </p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setSelectedItems(new Set())} className={accountButtonClassName('outline', 'sm')}>
+              Bỏ chọn
+            </button>
+            <button type="button" onClick={() => setPendingDelete(Array.from(selectedItems))} disabled={isBulkDeleting} className={accountButtonClassName('danger', 'sm')}>
+              Xoá đã chọn
+            </button>
           </div>
         </div>
+      ) : null}
 
-        {/* UPGRADE BANNER (Free Tier) */}
-        {userTier === 'FREE' && history.length > 10 && (
-          <div className="mb-8 bg-gradient-to-r from-brand-navy/5 to-brand-gold/5 border border-brand-navy/10 rounded-xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
-              </div>
-              <div>
-                <h3 className="text-label-md font-bold text-neutral-900 mb-0.5">Bạn đang xem 10 kết quả gần nhất</h3>
-                <p className="text-body-sm text-neutral-600">Nâng lên Member bằng cách hoàn thành 1 đơn hàng để lưu trữ không giới hạn.</p>
-              </div>
-            </div>
-            <Link
-              href="/products"
-              className="w-full md:w-auto px-6 py-2.5 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-lg text-label-md font-semibold transition-colors shrink-0 shadow-md text-center"
-            >
-              Mua hàng ngay
-            </Link>
-          </div>
-        )}
-
-        {/* LOADING STATE */}
-        {isLoading ? (
-          <div className="flex justify-center items-center py-40">
-            <div className="w-10 h-10 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : displayHistory.length === 0 ? (
-          /* EMPTY STATE */
-          <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white rounded-2xl border border-neutral-200 border-dashed">
-            <div className="relative w-24 h-24 mb-6">
-              <div className="absolute inset-0 bg-brand-navy/5 rounded-full animate-pulse"></div>
-              <Camera className="w-12 h-12 text-neutral-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            </div>
-            <h3 className="text-heading-h3 font-semibold text-neutral-900 mb-2">
-              {searchTerm || selectedCategory !== 'Tất cả' ? 'Không tìm thấy kết quả' : 'Chưa có lịch sử thử đồ'}
-            </h3>
-            <p className="text-body-md text-neutral-500 mb-8 max-w-md">
-              {searchTerm || selectedCategory !== 'Tất cả'
-                ? 'Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.'
-                : 'Những bộ trang phục bạn đã thử bằng AI sẽ xuất hiện ở đây. Hãy khám phá và thử đồ ngay!'}
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3" aria-hidden="true">
+          {[0, 1, 2].map((key) => <div key={key} className="aspect-[3/4] animate-pulse bg-landing-taupe/30" />)}
+        </div>
+      ) : isError ? (
+        <AccountStatePanel
+          tone="error"
+          title="Không tải được lịch sử"
+          description="Kiểm tra kết nối rồi thử lại."
+          action={<button type="button" onClick={() => refetch()} className={accountButtonClassName('outline')}>Thử lại</button>}
+        />
+      ) : filteredHistory.length === 0 ? (
+        <AccountStatePanel
+          title={isFiltered ? 'Không có kết quả khớp' : 'Chưa có lịch sử thử đồ'}
+          description={isFiltered ? 'Đổi từ khóa hoặc loại trang phục.' : 'Kết quả Thử đồ AI bằng ảnh sẽ được lưu ở đây.'}
+          action={
+            isFiltered ? (
+              <button type="button" onClick={() => { setSearchTerm(''); setSelectedCategory('ALL'); }} className={accountButtonClassName('outline')}>
+                Xem tất cả
+              </button>
+            ) : (
+              <Link href="/try-on" className={accountButtonClassName('primary')}>
+                Mở phòng thử
+              </Link>
+            )
+          }
+        />
+      ) : (
+        <>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <p className="text-xs text-landing-muted">
+              <span className="font-mono text-landing-obsidian">{filteredHistory.length}</span> kết quả
             </p>
-            <Link
-              href="/products"
-              className="px-6 py-3 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-md font-semibold transition-colors shadow-md flex items-center gap-2"
-            >
-              Khám phá sản phẩm
-            </Link>
+            <button type="button" onClick={toggleSelectAll} className={cn('text-xs text-landing-obsidian underline-offset-4 hover:text-landing-oxblood hover:underline', accountFocusRing)}>
+              {allVisibleSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+            </button>
           </div>
-        ) : (
-          /* COLUMNS (MASONRY) GRID */
-          <div className="columns-1 sm:columns-2 md:columns-3 gap-6 space-y-6">
-            {displayHistory.map((item) => {
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3">
+            {filteredHistory.map((item) => {
               const isSelected = selectedItems.has(item.id);
-              const productName = item.product?.name || item.productId || 'Sản phẩm tự do';
+              const productName = item.product?.name || 'Trang phục đã thử';
               return (
-                <div
-                  key={item.id}
-                  className={`break-inside-avoid mb-6 group relative rounded-xl overflow-hidden bg-white shadow-sm border transition-all duration-300 ${isSelected ? 'border-brand-navy ring-2 ring-brand-navy/20 scale-[0.98]' : 'border-neutral-200 hover:shadow-md'
-                    }`}
-                >
-                  {/* Checkbox */}
-                  <button
-                    onClick={(e) => toggleSelect(item.id, e)}
-                    type="button"
-                    className={`absolute top-3 left-3 w-6 h-6 rounded-md flex items-center justify-center z-20 transition-all ${isSelected
-                        ? 'bg-brand-navy border-2 border-brand-navy'
-                        : 'bg-white/80 border-2 border-neutral-300 text-transparent opacity-0 group-hover:opacity-100 hover:bg-white scale-90 group-hover:scale-100 backdrop-blur-sm'
-                      } text-white`}
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                  </button>
-
-                  {/* Cache Badge */}
-                  {item.isCacheHit && (
-                    <div
-                      className="absolute top-3 right-3 z-20 bg-brand-gold/90 backdrop-blur text-brand-navy w-7 h-7 rounded-full flex items-center justify-center shadow-sm"
-                      title="Kết quả được tối ưu tốc độ (Cache)"
+                <li key={item.id} className="min-w-0">
+                  <div className={cn('relative aspect-[3/4] overflow-hidden border bg-landing-ivory', isSelected ? 'border-landing-oxblood' : 'border-landing-line')}>
+                    <Image src={item.resultUrl} alt={`Kết quả thử ${productName}`} fill sizes="(max-width: 768px) 50vw, 300px" unoptimized className="object-cover" />
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={isSelected}
+                      aria-label={`Chọn kết quả ${productName}`}
+                      onClick={() => toggleSelect(item.id)}
+                      className={cn(
+                        'absolute left-2 top-2 flex h-7 w-7 items-center justify-center border transition-colors',
+                        isSelected ? 'border-landing-oxblood bg-landing-oxblood text-landing-paper' : 'border-landing-line bg-landing-paper/90 text-transparent hover:text-landing-muted',
+                        accountFocusRing,
+                      )}
                     >
-                      <Zap className="w-4 h-4" />
-                    </div>
-                  )}
-
-                  {/* Image Container */}
-                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 cursor-pointer">
-                    <Image
-                      src={item.resultUrl}
-                      alt={productName}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      unoptimized
-                      className={`w-full h-full object-cover transition-transform duration-500 ${isSelected ? 'scale-105' : 'group-hover:scale-105'}`}
-                    />
-
-                    {/* Hover Overlay Gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                    {/* Hover Actions */}
-                    <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 z-10">
-                      <a href={item.resultUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/90 hover:bg-white backdrop-blur rounded-full flex items-center justify-center text-brand-navy shadow-lg transition-colors" title="Xem ảnh đầy đủ">
-                        <Eye className="w-5 h-5" />
-                      </a>
-                      <button
-                        onClick={(e) => handleDownload(item.resultUrl, `${productName.replace(/\s+/g, '-')}-tryon.png`, e)}
-                        className="w-10 h-10 bg-white/90 hover:bg-white backdrop-blur rounded-full flex items-center justify-center text-brand-navy shadow-lg transition-colors"
-                        title="Tải về"
-                      >
-                        <Download className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteItem(item.id, e)}
-                        disabled={isDeleting}
-                        className="w-10 h-10 bg-white/90 hover:bg-semantic-error hover:text-white backdrop-blur rounded-full flex items-center justify-center text-semantic-error shadow-lg transition-colors disabled:opacity-50"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                      <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    </button>
                   </div>
-
-                  {/* Bottom Info */}
-                  <div className="p-4 border-t border-neutral-100">
-                    <div className="text-[11px] font-bold tracking-wider uppercase text-neutral-400 mb-1 flex items-center justify-between">
-                      <span className="text-[#5D1C34]">{getGarmentsLabel(item)}</span>
-                      <span>{formatDate(item.createdAt)}</span>
-                    </div>
-                    <h4 className="text-body-sm font-semibold text-neutral-800 line-clamp-1">
-                      {productName}
-                    </h4>
+                  <p className="mt-3 flex items-baseline justify-between gap-3">
+                    <span className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-brass-ink">{getGarmentsLabel(item)}</span>
+                    <span className="shrink-0 font-mono text-[11px] text-landing-muted">{formatDate(item.createdAt)}</span>
+                  </p>
+                  <p className="product-name-line mt-1 line-clamp-1 text-landing-obsidian">{productName}</p>
+                  <div className="mt-3 flex gap-2">
+                    <a href={item.resultUrl} target="_blank" rel="noopener noreferrer" aria-label={`Mở ảnh kết quả ${productName}`} className={iconButton}>
+                      <ExternalLink className="h-4 w-4" strokeWidth={1.75} />
+                    </a>
+                    <button type="button" onClick={() => handleDownload(item.resultUrl, `${productName.replace(/\s+/g, '-')}-tryon.png`)} aria-label={`Tải ảnh ${productName}`} className={iconButton}>
+                      <Download className="h-4 w-4" strokeWidth={1.75} />
+                    </button>
+                    <button type="button" onClick={() => setPendingDelete([item.id])} disabled={isDeleting} aria-label={`Xoá kết quả ${productName}`} className={cn(iconButton, 'hover:border-destructive hover:text-destructive')}>
+                      <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+                    </button>
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
-        )}
+          </ul>
+        </>
+      )}
 
-      </div>
-    </div>
+      <AccountConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => { if (!open) setPendingDelete(null); }}
+        title={pendingDelete && pendingDelete.length > 1 ? `Xoá ${pendingDelete.length} kết quả?` : 'Xoá kết quả này?'}
+        description="Ảnh kết quả sẽ bị xoá khỏi lịch sử và không khôi phục được."
+        confirmLabel="Xoá"
+        isPending={isDeleting || isBulkDeleting}
+        onConfirm={confirmDelete}
+      />
+    </AccountShell>
   );
 }

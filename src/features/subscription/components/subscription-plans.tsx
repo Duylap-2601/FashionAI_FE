@@ -1,292 +1,195 @@
 'use client';
 
 import type { TargetTier } from '@/features/payments/types/payments';
+import { accountButtonClassName, accountLabelClassName } from '@/features/profile/components/account-ui';
 import { DEFAULT_PLANS } from '@/features/subscription/constants/subscription-page';
+import type { PlanItem, PlanQuota } from '@/features/subscription/types/subscription';
 import type { SubscriptionPlansProps } from '@/features/subscription/types/subscription-plans';
-import {
-  AlertTriangle,
-  ArrowRight,
-  Check,
-  Crown,
-  RefreshCw,
-  Shield,
-} from 'lucide-react';
-
+import { cn } from '@/lib/utils';
+import { Check, ChevronDown } from 'lucide-react';
 import { useMemo } from 'react';
 
+const QUOTA_ROWS: { action: string; label: string; unit: string }[] = [
+  { action: 'TRY_ON', label: 'Thử đồ AI bằng ảnh', unit: 'lượt' },
+  { action: 'STYLIST', label: 'AI Stylist', unit: 'lượt' },
+  { action: 'CHATBOT', label: 'Chat AI', unit: 'tin nhắn' },
+];
+
+// Trả lời theo hành vi backend: trừ lượt theo số món, gia hạn nối tiếp, nhắc trước RENEWAL_REMINDER_DAYS_BEFORE (3) ngày.
+const FAQS: { question: string; answer: string }[] = [
+  {
+    question: 'Lượt thử đồ được tính thế nào?',
+    answer: 'Mỗi món trong một lần thử bằng ảnh tính 1 lượt, nên phối 3 món tính 3 lượt. Lượt làm mới mỗi ngày. Thử trực tiếp qua camera tính theo thời gian, không trừ lượt thử bằng ảnh.',
+  },
+  {
+    question: 'Gia hạn khi gói còn hạn thì sao?',
+    answer: 'Mua thêm cùng gói khi còn hạn thì 30 ngày mới nối tiếp sau ngày hết hạn hiện tại, không mất ngày nào.',
+  },
+  {
+    question: 'Có tự động trừ tiền không?',
+    answer: 'Không. Mỗi lần mua hoặc gia hạn là một lần thanh toán riêng. Nếu bật nhắc gia hạn, bạn nhận email nhắc trước 3 ngày khi gói sắp hết hạn.',
+  },
+];
+
+function formatQuota(quota: PlanQuota | undefined, unit: string) {
+  if (!quota) return 'Không có';
+  if (quota.unlimited || quota.limit === null) return 'Không giới hạn';
+  if (quota.limit === 0) return 'Không có';
+  return `${quota.limit} ${unit} / ngày`;
+}
+
+function formatVnd(value: number) {
+  return value === 0 ? '0đ' : `${value.toLocaleString('vi-VN')}đ`;
+}
+
 export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, handleInitiateUpgrade, isCheckoutLoading, apiPlans }: SubscriptionPlansProps) {
-  const plans = useMemo(() => {
-    return DEFAULT_PLANS.map((plan) => {
-      const apiPlan = apiPlans?.find((p) => p.tier === plan.id);
-      if (apiPlan && typeof apiPlan.price === 'number') {
-        const priceVnd = apiPlan.price;
-        return {
-          ...plan,
-          numericPrice: priceVnd,
-          priceText: priceVnd === 0 ? '0đ' : `${priceVnd.toLocaleString('vi-VN')}đ`,
-        };
-      }
-      return plan;
-    });
-  }, [apiPlans]);
+  // Giá, thời hạn và lượt lấy từ GET /payments/plans; DEFAULT_PLANS chỉ dự phòng khi API lỗi.
+  const plans = useMemo(() => DEFAULT_PLANS.map((plan) => {
+    const apiPlan: PlanItem | undefined = apiPlans?.find((p) => p.tier === plan.id);
+    const features = apiPlan
+      ? [
+        ...QUOTA_ROWS.map((row) => {
+          const quota = apiPlan.quotas.find((q) => q.action === row.action);
+          const value = formatQuota(quota, row.unit);
+          return { text: `${row.label}: ${value.toLowerCase()}`, highlight: plan.id !== 'FREE' && value !== 'Không có' };
+        }),
+        ...(plan.id === 'FREE' ? [] : [{ text: 'Phối bộ khi thử đồ, mỗi món 1 lượt', highlight: false }]),
+        { text: 'Lưu số đo và đặt may theo số đo', highlight: false },
+      ]
+      : plan.features;
+    return {
+      ...plan,
+      name: apiPlan?.label ?? plan.name,
+      price: apiPlan?.price ?? plan.numericPrice,
+      periodText: apiPlan ? (apiPlan.durationDays > 0 ? `/ ${apiPlan.durationDays} ngày` : 'không thời hạn') : plan.periodText,
+      features,
+      apiPlan,
+    };
+  }), [apiPlans]);
 
-  const memberPrice = plans.find((p) => p.id === 'MEMBER')?.numericPrice ?? 34000;
-  const memberHeaderLabel = `Gói MEMBER (${Math.round(memberPrice / 1000)}k)`;
-  const vipPrice = plans.find((p) => p.id === 'VIP')?.numericPrice ?? 99000;
-  const vipHeaderLabel = `Gói VIP (${Math.round(vipPrice / 1000)}k)`;
+  const hasApiPlans = plans.every((plan) => plan.apiPlan);
+
   return (
-    <div className="space-y-12 animate-in fade-in duration-300">
-      {/* Current Tier Quick Summary Banner */}
-      {status === 'authenticated' && (
-        <div className="p-6 md:p-8 bg-white rounded-3xl border border-neutral-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0 shadow-sm ${tier === 'VIP'
-                ? 'bg-gradient-to-br from-[#5D1C34] to-[#A67D44] text-white'
-                : tier === 'MEMBER'
-                  ? 'bg-[#5D1C34] text-white'
-                  : 'bg-neutral-100 text-neutral-600'
-              }`}>
-              {tier === 'VIP' ? <Crown className="w-7 h-7" /> : tier === 'MEMBER' ? null : <Shield className="w-7 h-7" />}
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h3 className="text-heading-h3 font-bold text-brand-navy">
-                  Tài khoản của bạn: Gói {tier}
-                </h3>
-                {expirationInfo && !expirationInfo.isExpired && (
-                  <span className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold ${expirationInfo.isExpiringSoon
-                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                      : 'bg-green-100 text-green-800'
-                    }`}>
-                    {expirationInfo.isExpiringSoon ? 'Sắp hết hạn' : 'Đang hoạt động'}
-                  </span>
-                )}
-              </div>
-
-              {expirationInfo ? (
-                expirationInfo.isExpired ? (
-                  <p className="text-body-sm text-semantic-error mt-1 flex items-center gap-1.5 font-medium">
-                    <AlertTriangle className="w-4 h-4" /> Gói cước đã hết hạn vào ngày {expirationInfo.formattedDate}. Vui lòng gia hạn để tiếp tục dùng Thử đồ AI.
-                  </p>
-                ) : (
-                  <p className="text-body-sm text-neutral-600 mt-1 flex items-center gap-2 flex-wrap">
-                    <span>Thời hạn đến: <strong className="text-brand-navy">{expirationInfo.formattedDate}</strong></span>
-                    <span>•</span>
-                    <span className="text-[#5D1C34] font-semibold">Còn {expirationInfo.daysRemaining} ngày sử dụng</span>
-                  </p>
-                )
-              ) : (
-                <p className="text-body-sm text-neutral-500 mt-1">
-                  {tier === 'FREE' ? 'Nâng cấp ngay để mở khóa tính năng Thử đồ AI (5-10 lượt/ngày) và ưu tiên may đo.' : 'Đang sử dụng gói cước hội viên.'}
-                </p>
-              )}
-            </div>
+    <div className="flex flex-col gap-14">
+      {status === 'authenticated' ? (
+        <div className="flex flex-col gap-4 border-l-2 border-landing-brass bg-landing-ivory px-5 py-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className={accountLabelClassName}>Gói của bạn</p>
+            <p className="mt-1.5 font-display text-2xl leading-tight text-landing-obsidian">
+              {plans.find((plan) => plan.id === tier)?.name ?? tier}
+            </p>
+            <p className={cn('mt-1 text-sm', expirationInfo?.isExpired ? 'text-destructive' : 'text-landing-muted')}>
+              {expirationInfo
+                ? expirationInfo.isExpired
+                  ? `Đã hết hạn ngày ${expirationInfo.formattedDate}. Gia hạn để dùng lại Thử đồ AI.`
+                  : `Hiệu lực đến ${expirationInfo.formattedDate}, còn ${expirationInfo.daysRemaining} ngày.`
+                : tier === 'FREE'
+                  ? 'Gói miễn phí, chưa có lượt Thử đồ AI bằng ảnh.'
+                  : 'Đang hoạt động.'}
+            </p>
           </div>
-
-          {tier !== 'FREE' && (
-            <div className="text-[13px] text-neutral-500 bg-[#FDFBF7] p-3.5 rounded-xl border border-[#F0EEE9] max-w-[320px]">
-              <div className="flex items-center gap-1.5 font-bold text-brand-navy mb-0.5">
-                <RefreshCw className="w-3.5 h-3.5 text-[#5D1C34]" /> Gia hạn cộng dồn
-              </div>
-              Khi gia hạn trước hạn cùng gói, 30 ngày mới sẽ nối tiếp vào ngày hết hạn hiện tại của bạn.
-            </div>
-          )}
+          {tier !== 'FREE' ? (
+            <p className="max-w-[320px] text-xs leading-relaxed text-landing-muted">
+              Gia hạn cùng gói khi còn hạn: 30 ngày mới nối tiếp sau ngày hết hạn hiện tại.
+            </p>
+          ) : null}
         </div>
-      )}
+      ) : null}
 
-      {/* Pricing Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch">
+      <div className="grid gap-5 md:grid-cols-3">
         {plans.map((plan) => {
-          const isCurrent = tier === plan.id;
-          const isVip = plan.id === 'VIP';
-          const isMember = plan.id === 'MEMBER';
-          const isDowngradeDisabled = isMember && tier === 'VIP' && scheduled !== null;
-
+          const isCurrent = status === 'authenticated' && tier === plan.id;
+          const isDowngradeDisabled = plan.id === 'MEMBER' && tier === 'VIP' && scheduled !== null;
           return (
-            <div
+            <article
               key={plan.id}
-              className={`relative flex flex-col justify-between rounded-3xl p-7 transition-all duration-300 ${plan.isPopular
-                  ? 'bg-white border-2 border-[#5D1C34] shadow-xl shadow-[#5D1C34]/10 md:-translate-y-2'
-                  : isVip
-                    ? 'bg-gradient-to-b from-white to-[#FDFBF7] border border-[#A67D44]/40 shadow-lg'
-                    : 'bg-white border border-neutral-200 shadow-sm'
-                }`}
+              className={cn('flex flex-col border bg-landing-ivory/50 p-6', isCurrent ? 'border-landing-oxblood' : 'border-landing-line')}
             >
-              {/* Badge */}
-              {plan.badge && (
-                <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[12px] font-bold text-white shadow-sm ${plan.isPopular ? 'bg-[#5D1C34]' : 'bg-[#A67D44]'
-                  }`}>
-                  {plan.badge}
-                </div>
-              )}
-
-              <div>
-                {/* Title & Desc */}
-                <div className="mb-6">
-                  <h3 className="text-[22px] font-bold text-brand-navy mb-1 flex items-center gap-2">
-                    {plan.name}
-                    {isVip && <Crown className="w-5 h-5 text-[#A67D44]" />}
-                  </h3>
-                  <p className="text-[13px] text-neutral-500 min-h-[38px] leading-relaxed">
-                    {plan.description}
-                  </p>
-                </div>
-
-                {/* Price */}
-                <div className="mb-6 pb-6 border-b border-neutral-100">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[36px] font-bold text-brand-navy tracking-tight leading-none">
-                      {plan.priceText}
-                    </span>
-                    <span className="text-body-sm text-neutral-500 font-medium">
-                      {plan.periodText}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Feature Checklist */}
-                <div className="space-y-3.5 mb-8">
-                  <div className="text-[12px] font-bold text-neutral-400 uppercase tracking-wider">
-                    Quyền lợi gói cước:
-                  </div>
-                  {plan.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-3 text-body-sm">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${feat.highlight
-                          ? 'bg-[#5D1C34] text-white'
-                          : 'bg-neutral-100 text-neutral-600'
-                        }`}>
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
-                      <span className={`${feat.highlight ? 'font-bold text-brand-navy' : 'text-neutral-600'}`}>
-                        {feat.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <h3 className="font-display text-2xl leading-tight text-landing-obsidian">{plan.name}</h3>
+                {isCurrent ? <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-oxblood">Gói của bạn</span> : null}
               </div>
-
-              {/* CTA Button */}
-              <div>
+              <p className="mt-2 min-h-[40px] text-sm leading-relaxed text-landing-muted">{plan.description}</p>
+              <p className="mt-5 flex items-baseline gap-2 border-b border-landing-line/70 pb-5">
+                <span className="font-mono text-3xl text-landing-oxblood">{formatVnd(plan.price)}</span>
+                <span className="text-sm text-landing-muted">{plan.periodText}</span>
+              </p>
+              <ul className="mt-5 flex-1 space-y-3">
+                {plan.features.map((feature) => (
+                  <li key={feature.text} className="flex items-start gap-2.5 text-sm">
+                    <Check className={cn('mt-0.5 h-4 w-4 shrink-0', feature.highlight ? 'text-landing-oxblood' : 'text-landing-muted')} strokeWidth={2} aria-hidden="true" />
+                    <span className={feature.highlight ? 'text-landing-obsidian' : 'text-landing-muted'}>{feature.text}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-8">
                 {plan.id === 'FREE' ? (
-                  <button
-                    disabled
-                    className="w-full h-12 rounded-xl bg-neutral-100 text-neutral-400 font-bold text-body-sm cursor-not-allowed"
-                  >
-                    {isCurrent ? 'Gói hiện tại của bạn' : 'Mặc định khi đăng ký'}
+                  <button type="button" disabled className={cn(accountButtonClassName('outline'), 'w-full')}>
+                    {isCurrent ? 'Gói hiện tại' : 'Có sẵn khi đăng ký'}
                   </button>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => handleInitiateUpgrade(plan.id as TargetTier)}
                     disabled={isCheckoutLoading || isDowngradeDisabled}
-                    className={`w-full h-12 rounded-xl font-bold text-body-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm ${plan.isPopular
-                        ? 'bg-[#5D1C34] hover:bg-[#5D1C34]/90 text-white shadow-[#5D1C34]/20'
-                        : 'bg-gradient-to-r from-[#5D1C34] to-[#A67D44] hover:opacity-95 text-white shadow-[#A67D44]/20'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={cn(accountButtonClassName(isCurrent ? 'outline' : 'primary'), 'w-full')}
                   >
-                    {isCheckoutLoading ? (
-                      'Đang xử lý...'
-                    ) : isDowngradeDisabled ? (
-                      'Đã lên lịch chuyển gói'
-                    ) : isCurrent ? (
-                      <>
-                        <RefreshCw className="w-4 h-4" /> Gia hạn thêm 30 ngày
-                      </>
-                    ) : (
-                      <>
-                        {plan.ctaText} <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
+                    {isCheckoutLoading ? 'Đang xử lý' : isDowngradeDisabled ? 'Đã lên lịch chuyển gói' : isCurrent ? 'Gia hạn thêm 30 ngày' : `Chọn ${plan.name}`}
                   </button>
                 )}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
 
-      {/* Quota Comparison Table */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-neutral-200 shadow-sm">
-        <h3 className="text-[20px] font-bold text-brand-navy mb-6">
-          So sánh chi tiết hạn mức tính năng AI
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-body-sm border-collapse">
-            <thead>
-              <tr className="border-b border-neutral-200 text-neutral-500 font-semibold">
-                <th className="py-3 px-4">Tính năng AI</th>
-                <th className="py-3 px-4">Gói FREE</th>
-                <th className="py-3 px-4 text-[#5D1C34] font-bold">{memberHeaderLabel}</th>
-                <th className="py-3 px-4 text-[#A67D44] font-bold">{vipHeaderLabel}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              <tr>
-                <td className="py-4 px-4 font-semibold text-brand-navy">Thử đồ AI (Try-on)</td>
-                <td className="py-4 px-4 text-neutral-400 font-medium">0 (Không hỗ trợ)</td>
-                <td className="py-4 px-4 text-brand-navy font-bold">5 lượt / ngày</td>
-                <td className="py-4 px-4 text-[#5D1C34] font-bold">10 lượt / ngày</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-4 font-semibold text-brand-navy">Thử combo 2 món (Áo + Quần)</td>
-                <td className="py-4 px-4 text-neutral-400">✕</td>
-                <td className="py-4 px-4 text-neutral-700">✓ (Trừ 2 lượt)</td>
-                <td className="py-4 px-4 text-neutral-700">✓ (Trừ 2 lượt)</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-4 font-semibold text-brand-navy">AI Stylist tư vấn may đo</td>
-                <td className="py-4 px-4 text-neutral-600">3 lượt / ngày</td>
-                <td className="py-4 px-4 text-neutral-700 font-medium">20 lượt / ngày</td>
-                <td className="py-4 px-4 text-[#A67D44] font-bold">Không giới hạn (∞)</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-4 font-semibold text-brand-navy">Chatbot tư vấn phối đồ</td>
-                <td className="py-4 px-4 text-neutral-600">50 tin / ngày</td>
-                <td className="py-4 px-4 text-neutral-700">200 tin / ngày</td>
-                <td className="py-4 px-4 text-[#A67D44] font-bold">Không giới hạn (∞)</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-4 font-semibold text-brand-navy">Tốc độ render Try-on</td>
-                <td className="py-4 px-4 text-neutral-400">—</td>
-                <td className="py-4 px-4 text-neutral-700">Tiêu chuẩn</td>
-                <td className="py-4 px-4 text-[#A67D44] font-semibold">Ưu tiên cao (High Priority)</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {hasApiPlans ? (
+        <section aria-labelledby="plan-compare">
+          <h2 id="plan-compare" className="font-display text-[1.375rem] leading-tight text-landing-obsidian">So sánh lượt dùng mỗi ngày</h2>
+          <div className="mt-4 overflow-x-auto border border-landing-line">
+            <table className="w-full min-w-[520px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-landing-line bg-landing-ivory/60 text-left">
+                  <th scope="col" className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-brass-ink">Tính năng</th>
+                  {plans.map((plan) => (
+                    <th key={plan.id} scope="col" className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-brass-ink">{plan.name}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {QUOTA_ROWS.map((row) => (
+                  <tr key={row.action} className="border-b border-landing-line/60 last:border-b-0">
+                    <th scope="row" className="px-4 py-3 text-left font-normal text-landing-obsidian">{row.label}</th>
+                    {plans.map((plan) => {
+                      const value = formatQuota(plan.apiPlan?.quotas.find((q) => q.action === row.action), row.unit);
+                      return (
+                        <td key={plan.id} className={cn('px-4 py-3', value === 'Không có' ? 'text-landing-muted' : 'font-mono text-xs text-landing-obsidian')}>
+                          {value}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
-      {/* FAQs */}
-      <div className="max-w-[800px] mx-auto bg-white rounded-3xl p-8 border border-neutral-200 shadow-sm">
-        <h3 className="text-[20px] font-bold text-brand-navy mb-6 text-center">
-          Câu hỏi thường gặp về gói cước
-        </h3>
-        <div className="space-y-6 text-body-sm text-neutral-600">
-          <div>
-            <h4 className="font-bold text-brand-navy text-[15px] mb-1">
-              Lượt Thử đồ AI (Try-on) được tính như thế nào?
-            </h4>
-            <p className="leading-relaxed">
-              Mỗi lần bạn gửi yêu cầu thử 1 món đơn sẽ trừ 1 lượt. Khi thử combo 2 món (Áo + Quần), hệ thống xử lý 2 giai đoạn và trừ 2 lượt quota. Hạn mức được tự động làm mới vào 00:00 (nửa đêm) mỗi ngày theo giờ Việt Nam.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-bold text-brand-navy text-[15px] mb-1">
-              Chính sách gia hạn cộng dồn thời gian ra sao?
-            </h4>
-            <p className="leading-relaxed">
-              Nếu gói Member của bạn còn 10 ngày và bạn mua gia hạn cùng gói Member, 30 ngày mới sẽ được nối tiếp vào sau ngày hết hạn cũ (tổng cộng 40 ngày).
-            </p>
-          </div>
-          <div>
-            <h4 className="font-bold text-brand-navy text-[15px] mb-1">
-              Thanh toán qua SePay VietQR hoạt động thế nào?
-            </h4>
-            <p className="leading-relaxed">
-              Bạn quét mã VietQR tự động qua ứng dụng ngân hàng hoặc ví điện tử bất kỳ. Sau khi chuyển khoản đúng nội dung, gói cước sẽ được kích hoạt tức thì trong vòng 5 giây.
-            </p>
-          </div>
+      <section aria-labelledby="plan-faq" className="max-w-3xl">
+        <h2 id="plan-faq" className="font-display text-[1.375rem] leading-tight text-landing-obsidian">Câu hỏi thường gặp</h2>
+        <div className="mt-4 divide-y divide-landing-line/70 border-y border-landing-line/70">
+          {FAQS.map((faq) => (
+            <details key={faq.question} className="group py-1">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-landing-obsidian focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood [&::-webkit-details-marker]:hidden">
+                {faq.question}
+                <ChevronDown className="h-4 w-4 shrink-0 text-landing-muted transition-transform group-open:rotate-180" strokeWidth={1.75} aria-hidden="true" />
+              </summary>
+              <p className="pb-4 text-sm leading-relaxed text-landing-muted">{faq.answer}</p>
+            </details>
+          ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

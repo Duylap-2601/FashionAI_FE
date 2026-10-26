@@ -463,6 +463,13 @@ Files: `src/features/try-on/components/try-on-page.tsx`, `TryOnHeader.tsx`, `Try
 - `CatalogModal`: Radix dialog at `z-[100]`/`z-[101]`, bottom sheet below `sm`, underline category tabs, `3/4` product tiles with an oxblood border and check when selected.
 - `SubscriptionRequiredModal` (subscription feature) uses the same paper dialog and lists Member and VIP from `usePlans()`.
 
+## Rack, Cart And Notifications
+
+- `CartLine` (`src/features/cart/components/cart-line.tsx`) is shared by `CartSlideOver` (Radix dialog sheet from the right, `md:w-[420px]`) and `/cart`. Quantity uses a square stepper with labelled buttons; unavailable lines show a destructive note and a disabled stepper.
+- `MannequinDressForm` keeps its pointer logic; chrome is a hairline frame, square tool buttons, an oxblood outline on the selected piece and mono layer and scale tags. Rack image and price helpers live in `src/features/rack/services/rack-images.ts`.
+- `NotificationBell`, `NotificationPanel` and `NotificationItem` take `tone` (`landing` default, `admin` for the dashboard topbar). The landing panel is `380px`, square, paper, with button rows.
+- Account history pages and `/subscription` use `AccountShell` and the `account-ui` primitives. `SubscriptionPlans` builds features and the comparison table from `PlanItem.quotas`; `DEFAULT_PLANS` is only a fallback when the plans request fails.
+
 ## State Matrix
 
 | Element | Default | Hover | Focus-visible | Active / selected | Disabled |
@@ -571,6 +578,9 @@ Rules:
 | Account shell and primitives | `src/features/profile/components/account-shell.tsx`, `account-ui.tsx` |
 | Account pages | `profile-page.tsx`, `profile-measurements-page.tsx`, `profile-orders-page.tsx`, `profile-reviews-page.tsx`, `notifications-page.tsx` |
 | Try-on page | `try-on-page.tsx`, `TryOnHeader.tsx`, `TryOnWorkspace.tsx`, `live-try-on-workspace.tsx`, `garment-slot.tsx` |
+| Cart line, slide-over and page | `cart-line.tsx`, `CartSlideOver.tsx`, `cart-page.tsx` |
+| Rack | `rack-page.tsx`, `MannequinDressForm.tsx`, `services/rack-images.ts` |
+| Plans | `subscription-page.tsx`, `subscription-plans.tsx`, `current-subscription.tsx`, `subscription-history.tsx` |
 
 ## Do Not
 
@@ -622,3 +632,4 @@ Manual checks:
 | 2026-10-26 | Products listing contract: toolbar, filter panels, results header, grid states, sticky offsets; fixed the `ProductCard` file path |
 | 2026-10-26 | `AccountShell` contract for the five account pages, account primitives, order status tones and the landing tone of `StarRating` |
 | 2026-10-26 | Try-on contract: header mode switch, shared garment slot and colour picker, live stage and session dock, photo frame, catalog dialog |
+| 2026-10-26 | Cart line and slide-over, rack and mannequin chrome, notification `tone`, plans from `/payments/plans` |

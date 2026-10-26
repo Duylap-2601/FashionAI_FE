@@ -8,7 +8,7 @@ import { ArrowRight, Bell, CheckCheck, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 
-export function NotificationPanel({ onClose }: NotificationPanelProps) {
+export function NotificationPanel({ onClose, tone = 'landing' }: NotificationPanelProps) {
   const { notifications, isLoading } = useNotifications({ page: 1, limit: 10 });
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllNotificationsAsRead();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
@@ -21,6 +21,59 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
       markAllAsRead();
     }
   };
+
+  if (tone === 'landing') {
+    return (
+      <div className="flex max-h-[min(80vh,520px)] w-[380px] flex-col overflow-hidden rounded-[2px] border border-landing-line bg-landing-paper text-landing-obsidian shadow-md animate-in fade-in duration-150">
+        <div className="flex items-center justify-between gap-3 border-b border-landing-line/70 px-4 py-3">
+          <div className="flex items-baseline gap-3">
+            <h3 className="font-display text-xl leading-tight">Thông báo</h3>
+            {unreadCount > 0 ? (
+              <span className="font-mono text-[11px] text-landing-oxblood">{unreadCount > 99 ? '99+' : unreadCount} mới</span>
+            ) : null}
+          </div>
+          {hasUnreadNotifications ? (
+            <button
+              type="button"
+              onClick={handleMarkAll}
+              disabled={isMarkingAll}
+              className="inline-flex min-h-8 items-center gap-1.5 text-xs text-landing-muted transition-colors hover:text-landing-oxblood disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
+            >
+              <CheckCheck className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+              Đọc tất cả
+            </button>
+          ) : null}
+        </div>
+
+        <div className="no-scrollbar min-h-0 flex-1 divide-y divide-landing-line/60 overflow-y-auto">
+          {isLoading && notifications.length === 0 ? (
+            <div className="flex items-center justify-center gap-2 p-8 text-xs text-landing-muted" role="status">
+              <Loader2 className="h-4 w-4 animate-spin text-landing-oxblood" strokeWidth={1.75} aria-hidden="true" />
+              Đang tải thông báo…
+            </div>
+          ) : unreadNotifications.length === 0 ? (
+            <div className="px-6 py-10 text-center">
+              <p className="font-display text-lg leading-tight">Không có thông báo mới</p>
+              <p className="mt-1 text-xs text-landing-muted">Thông báo đã đọc vẫn xem được ở trang Thông báo.</p>
+            </div>
+          ) : (
+            unreadNotifications.map((item) => (
+              <NotificationItem key={item.id} notification={item} onItemClick={onClose} tone="landing" />
+            ))
+          )}
+        </div>
+
+        <Link
+          href="/notifications"
+          onClick={onClose}
+          className="flex items-center justify-center gap-1.5 border-t border-landing-line/70 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian transition-colors hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-landing-oxblood"
+        >
+          Xem tất cả thông báo
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full bg-white flex flex-col overflow-hidden md:h-auto md:max-h-[min(80vh,520px)] md:w-[380px] md:rounded-2xl md:border md:border-neutral-200 md:shadow-xl animate-in fade-in zoom-in-95 duration-200">
@@ -76,7 +129,7 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
           </div>
         ) : (
           unreadNotifications.map((item) => (
-            <NotificationItem key={item.id} notification={item} onItemClick={onClose} />
+            <NotificationItem key={item.id} notification={item} onItemClick={onClose} tone="admin" />
           ))
         )}
       </div>

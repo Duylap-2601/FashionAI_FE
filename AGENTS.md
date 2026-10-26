@@ -107,6 +107,8 @@ src/
 │   │                        #             form primitives), OnboardingModal,
 │   │                        #             *-page.tsx
 │   ├── cart/                # components/ hooks/ services/ store/ types/
+│   │                        # components: cart-line (shared by CartSlideOver and
+│   │                        #   cart-page), CartSync
 │   │                        # hooks: use-cart.ts (server cart when logged in,
 │   │                        #        guest store otherwise)
 │   │                        # services: queries.ts, mutations.ts, query-keys.ts,
@@ -124,6 +126,8 @@ src/
 │   ├── notifications/       # components/ hooks/ services/ store/ types/
 │   │                        # hooks: use-open-notification (mark read + route,
 │   │                        #        shared by the bell panel and /notifications)
+│   │                        # components: NotificationBell/Panel/Item take `tone`
+│   │                        #   (`landing` default, `admin` in the admin topbar)
 │   │                        # store: notificationStore.ts (Zustand)
 │   ├── orders/              # components/ constants/ hooks/ services/ types/
 │   ├── payments/            # components/ hooks/ services/ types/

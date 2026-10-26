@@ -286,6 +286,13 @@ Route: `/try-on`. Two modes share one page: `Trực tiếp` (camera, the default
 - Both modes use the same garment slot (ivory thumbnail, brass layer label, product name, mono price, `Đổi món` / `Bỏ chọn`) and the same colour picker (shown only when a product has two or more valid colours).
 - Only real controls: there is no sample-photo button, because a stock photo cannot be submitted. The upgrade dialog reads plan prices and try-on limits from `GET /payments/plans` instead of hard-coding them.
 
+## Rack, Cart, Notifications And Plans
+
+- `/rack`: saved pieces on the left (underline category tabs with mono counts, `3/4` ivory tiles that are real buttons with `aria-pressed`), the mannequin on the right in a hairline frame. The mannequin is an obsidian form on a brass pole, not a gradient. The canvas keeps drag, wheel-to-scale and layer order; the footer shows the mono outfit total and one oxblood action into Thử đồ AI.
+- Cart: the slide-over and `/cart` share one line component (ivory thumbnail, product name, square quantity stepper with mono count, mono line total). The summary says `Tạm tính` because shipping is quoted at checkout. Assurances only state what is true: made to the saved measurements, 7 days to report a defect after completion, payment by ZaloPay.
+- Header notifications: a paper dropdown with a Playfair title, mono unread count, rows as real buttons and an uppercase link to `/notifications`. The admin topbar keeps its own look through `tone="admin"`.
+- `/subscription` and the account history pages (`/profile/addresses`, `/profile/history`, `/profile/stylist-history`) sit in the account shell. Plan prices, durations and daily limits come from `GET /payments/plans`; there are no "most popular" badges and no render-priority claim.
+
 ## Responsive Behavior
 
 | Breakpoint | Hero | Collections | Products | Lookbook |
@@ -420,6 +427,7 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | One account shell | The five account pages share one menu and heading so moving between them does not change the frame |
 | Honest account controls | Fields and filters the backend ignores were removed instead of restyled: profile phone, birthday, gender, job and address; body type; preferred sizes; notification type tabs |
 | Mode switch in the try-on header | Live and photo are two ways to do the same job; the switch belongs to the page, not to either workspace |
+| Plans from the API | Hard-coded prices drifted (the upgrade dialog said 49.000đ for a 34.000đ plan), so plan cards, the comparison table and dialogs read `/payments/plans` |
 
 ## Acceptance Criteria
 
@@ -446,4 +454,5 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | 2026-10-26 | Added the products page spec: toolbar, filters, grid states, and one search field |
 | 2026-10-26 | Account pages (profile, measurements, orders, reviews, notifications) on one `AccountShell`, with controls limited to what the backend stores |
 | 2026-10-26 | Try-on page (live and photo modes) on Atelier Paper, with shared garment slots, a real-price upgrade dialog and no sample-photo control |
+| 2026-10-26 | Rack, cart, header notifications, address book, try-on and AI Stylist history, and plans on Atelier Paper |
 
