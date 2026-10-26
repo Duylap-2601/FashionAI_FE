@@ -1,15 +1,24 @@
 'use client';
 
-import { AuthSplitLayout, GoogleButton } from '@/features/auth/components/AuthLayout';
+import { GoogleButton } from '@/features/auth/components/AuthLayout';
+import {
+  AuthAlert,
+  AuthDivider,
+  AuthField,
+  AuthHeading,
+  AuthSubmitButton,
+  PasswordInput,
+  authInputClassName,
+  authTextLinkClassName,
+} from '@/features/auth/components/auth-form';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
-import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useState } from 'react';
 
 function LoginFormContent() {
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,10 +59,12 @@ function LoginFormContent() {
             'Tài khoản chưa xác thực email. Vui lòng xác thực OTP trước khi đăng nhập.',
           );
         } else {
+          // Đăng nhập không nêu chi tiết: lỗi validation (400) hay sai thông tin (401) đều chỉ báo sai email/mật khẩu.
+          // Quy tắc mật khẩu chỉ hiển thị ở trang đăng ký.
           setError(
-            res.status === 401
+            res.status === 400 || res.status === 401
               ? 'Email hoặc mật khẩu không chính xác'
-              : (res.error || 'Đăng nhập thất bại.'),
+              : 'Đăng nhập thất bại. Vui lòng thử lại.',
           );
         }
       } else {
@@ -75,118 +86,81 @@ function LoginFormContent() {
   };
 
   return (
-    <AuthSplitLayout>
-      <div className="mb-8">
-        <h2 className="text-[24px] font-semibold text-brand-navy mb-2 tracking-tight">Đăng nhập</h2>
-        <p className="text-body-sm text-neutral-500">
-          Chưa có tài khoản?{' '}
-          <Link href="/register" className="text-brand-navy font-semibold hover:text-brand-navy/80 transition-colors">
-            Đăng ký ngay -&gt;
-          </Link>
-        </p>
-      </div>
-
-      <GoogleButton />
-
-      <div className="flex items-center gap-4 my-6">
-        <div className="flex-1 h-px bg-neutral-200"></div>
-        <span className="text-label-sm text-neutral-400 font-medium uppercase tracking-wider">hoặc</span>
-        <div className="flex-1 h-px bg-neutral-200"></div>
-      </div>
+    <>
+      <AuthHeading eyebrow="Tài khoản" title="Đăng nhập">
+        Chưa có tài khoản?{' '}
+        <Link href="/register" className={authTextLinkClassName}>
+          Tạo tài khoản
+        </Link>
+      </AuthHeading>
 
       {unverifiedEmail ? (
-        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in">
-          <div className="flex items-start gap-2.5 mb-3">
-            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <span className="text-body-sm text-amber-800 leading-snug">
-              Tài khoản chưa xác thực email. Vui lòng xác thực OTP trước khi đăng nhập.
-            </span>
-          </div>
+        <AuthAlert tone="notice">
+          <p>Tài khoản chưa xác thực email. Vui lòng xác thực OTP trước khi đăng nhập.</p>
           <Link
             href={`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`}
-            className="inline-flex items-center gap-1.5 h-8 px-3 bg-amber-600 text-white text-body-xs font-semibold rounded-lg hover:bg-amber-700 transition-colors"
+            className={`mt-2 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] ${authTextLinkClassName}`}
           >
-            Xác thực ngay →
+            Xác thực ngay
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} />
           </Link>
-        </div>
+        </AuthAlert>
       ) : error ? (
-        <div className="mb-4 flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-semantic-error text-body-sm">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
+        <AuthAlert tone="error">{error}</AuthAlert>
       ) : null}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div>
-          <label className="block text-label-sm font-medium text-neutral-700 mb-1.5" htmlFor="email">Email</label>
+        <AuthField id="email" label="Email">
           <input
             type="email"
             id="email"
             name="email"
-            className="w-full h-11 px-3.5 bg-white border border-neutral-300 rounded-xl text-body-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all"
+            autoComplete="email"
+            className={authInputClassName}
             placeholder="nhap@email.com"
             required
             disabled={isLoading}
           />
-        </div>
+        </AuthField>
 
-        <div>
-          <label className="block text-label-sm font-medium text-neutral-700 mb-1.5" htmlFor="password">Mật khẩu</label>
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              name="password"
-              className="w-full h-11 pl-3.5 pr-10 bg-white border border-neutral-300 rounded-xl text-body-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all"
-              placeholder="Nhập mật khẩu"
-              required
-              disabled={isLoading}
-            />
-            <button
-              type="button"
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              disabled={isLoading}
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <div className="relative flex items-center justify-center">
-              <input type="checkbox" className="peer sr-only" disabled={isLoading} />
-              <div className="w-4 h-4 border border-neutral-300 rounded bg-white peer-checked:bg-brand-navy peer-checked:border-brand-navy transition-colors"></div>
-              <svg className="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <span className="text-body-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">Ghi nhớ đăng nhập</span>
-          </label>
-          <Link href="/forgot-password" className="text-body-sm text-neutral-600 hover:text-brand-navy font-medium transition-colors">
-            Quên mật khẩu?
-          </Link>
-        </div>
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-11 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors mt-2 flex items-center justify-center disabled:opacity-50"
+        <AuthField
+          id="password"
+          label="Mật khẩu"
+          action={(
+            <Link href="/forgot-password" className={`text-xs ${authTextLinkClassName}`}>
+              Quên mật khẩu?
+            </Link>
+          )}
         >
-          {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-        </button>
+          <PasswordInput
+            id="password"
+            name="password"
+            autoComplete="current-password"
+            placeholder="Nhập mật khẩu"
+            required
+            disabled={isLoading}
+          />
+        </AuthField>
+
+        <div className="mt-2">
+          <AuthSubmitButton isLoading={isLoading} loadingLabel="Đang đăng nhập">
+            Đăng nhập
+          </AuthSubmitButton>
+        </div>
       </form>
-    </AuthSplitLayout>
+
+      <AuthDivider />
+
+      <GoogleButton />
+    </>
   );
 }
 
 export default function Login() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-brand-cream">
-        <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-[320px] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-landing-oxblood" strokeWidth={1.75} aria-label="Đang tải" />
       </div>
     }>
       <LoginFormContent />

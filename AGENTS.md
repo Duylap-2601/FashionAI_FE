@@ -29,8 +29,11 @@ src/
 │   ├── (admin)/admin/
 │   │   ├── collections/     # Admin collection management page
 │   │   └── dashboard/       # Admin dashboard page
-│   ├── (auth)/              # login, register, forgot-password, reset-password,
-│   │                        # verify-email, google callback, mobile-auth callback
+│   ├── (auth)/              # reset-password, verify-email, google callback,
+│   │   │                    # mobile-auth callback
+│   │   └── (split)/         # login, register, forgot-password: shared
+│   │                        # layout.tsx renders AuthSplitLayout once so the
+│   │                        # image panel persists and slides between pages
 │   ├── (main)/              # Authenticated user routes
 │   │   ├── ai-stylist/      # AI stylist page
 │   │   ├── cart/
@@ -98,8 +101,11 @@ src/
 │   │                        # services: session.ts, mutations.ts, queries.ts,
 │   │                        #           auth-events.ts, auth-utils.ts,
 │   │                        #           password-mutations.ts, mutation-keys.ts
-│   │                        # components: AuthBootstrap, AdminGuard, AuthLayout,
-│   │                        #             OnboardingModal, *-page.tsx
+│   │                        # components: AuthBootstrap, AdminGuard, AuthLayout
+│   │                        #             (AuthSplitLayout for login/register/
+│   │                        #             forgot-password), auth-form (shared
+│   │                        #             form primitives), OnboardingModal,
+│   │                        #             *-page.tsx
 │   ├── cart/                # components/ hooks/ services/ store/ types/
 │   │                        # hooks: use-cart.ts (server cart when logged in,
 │   │                        #        guest store otherwise)

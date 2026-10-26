@@ -1,19 +1,35 @@
 'use client';
 
-import { AuthSplitLayout, GoogleButton } from '@/features/auth/components/AuthLayout';
+import { GoogleButton } from '@/features/auth/components/AuthLayout';
+import {
+  AuthAlert,
+  AuthCheckbox,
+  AuthDivider,
+  AuthField,
+  AuthHeading,
+  AuthSubmitButton,
+  PasswordInput,
+  authInputClassName,
+  authTextLinkClassName,
+} from '@/features/auth/components/auth-form';
 import { registerWithPassword } from '@/features/auth/services/mutations';
 import { AuthClientError } from '@/features/auth/services/session';
 import { trackEvent } from '@/lib/analytics';
-import { AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { Check, Circle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
+// Độ mạnh chỉ dựa trên độ dài, khớp với quy tắc tối thiểu 8 ký tự của backend.
+const STRENGTH_COLORS: Record<number, string> = {
+  1: 'bg-destructive',
+  2: 'bg-landing-brass',
+  3: 'bg-landing-sage-ink',
+};
+
 export default function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,159 +99,121 @@ export default function Register() {
   };
 
   return (
-    <AuthSplitLayout>
-      <div className="mb-8">
-        <h2 className="text-[24px] font-semibold text-brand-navy mb-2 tracking-tight">Tạo tài khoản</h2>
-        <p className="text-body-sm text-neutral-500">
-          Đã có tài khoản?{' '}
-          <Link href="/login" className="text-[#5D1C34] font-medium hover:text-[#4A1628] transition-colors">
-            Đăng nhập -&gt;
-          </Link>
-        </p>
-      </div>
+    <>
+      <AuthHeading eyebrow="Tài khoản mới" title="Tạo tài khoản">
+        Đã có tài khoản?{' '}
+        <Link href="/login" className={authTextLinkClassName}>
+          Đăng nhập
+        </Link>
+      </AuthHeading>
 
-      <GoogleButton />
+      {error ? <AuthAlert tone="error">{error}</AuthAlert> : null}
+      {isSuccess ? (
+        <AuthAlert tone="success">Đăng ký thành công. Đang chuyển đến bước xác thực OTP.</AuthAlert>
+      ) : null}
 
-      <div className="flex items-center gap-4 my-6">
-        <div className="flex-1 h-px bg-neutral-200"></div>
-        <span className="text-label-sm text-neutral-400 font-medium uppercase tracking-wider">hoặc</span>
-        <div className="flex-1 h-px bg-neutral-200"></div>
-      </div>
-
-      {error && (
-        <div className="mb-4 flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-semantic-error text-body-sm animate-in fade-in">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <label className="block text-label-sm font-medium text-neutral-700 mb-1.5" htmlFor="name">Họ và tên</label>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <AuthField id="name" label="Họ và tên">
           <input
             type="text"
             id="name"
             name="name"
-            className="w-full h-11 px-3.5 bg-white border border-neutral-300 rounded-xl text-body-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/20 focus:border-[#5D1C34] transition-all"
+            autoComplete="name"
+            className={authInputClassName}
             placeholder="Nguyễn Văn A"
             required
             disabled={isLoading}
           />
-        </div>
+        </AuthField>
 
-        <div>
-          <label className="block text-label-sm font-medium text-neutral-700 mb-1.5" htmlFor="email">Email</label>
+        <AuthField id="email" label="Email">
           <input
             type="email"
             id="email"
             name="email"
-            className="w-full h-11 px-3.5 bg-white border border-neutral-300 rounded-xl text-body-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/20 focus:border-[#5D1C34] transition-all"
+            autoComplete="email"
+            className={authInputClassName}
             placeholder="nhap@email.com"
             required
             disabled={isLoading}
           />
-        </div>
+        </AuthField>
 
-        <div>
-          <label className="block text-label-sm font-medium text-neutral-700 mb-1.5" htmlFor="password">Mật khẩu</label>
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-11 pl-3.5 pr-10 bg-white border border-neutral-300 rounded-xl text-body-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/20 focus:border-[#5D1C34] transition-all"
-              placeholder="Nhập ít nhất 8 ký tự"
-              minLength={8}
-              required
-              disabled={isLoading}
-            />
-            <button
-              type="button"
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              disabled={isLoading}
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-          <div className="flex gap-1.5 mt-2.5">
-            <div className={`h-1 flex-1 rounded-full ${strength >= 1 ? (strength === 1 ? 'bg-semantic-error' : strength === 2 ? 'bg-orange-500' : 'bg-semantic-success') : 'bg-neutral-200'}`}></div>
-            <div className={`h-1 flex-1 rounded-full ${strength >= 2 ? (strength === 2 ? 'bg-orange-500' : 'bg-semantic-success') : 'bg-neutral-200'}`}></div>
-            <div className={`h-1 flex-1 rounded-full ${strength >= 3 ? 'bg-semantic-success' : 'bg-neutral-200'}`}></div>
-          </div>
-          <div className="mt-2 space-y-1">
-            {passwordRules.map((rule) => (
-              <div key={rule.label} className={`flex items-center gap-1.5 text-[12px] ${rule.isValid ? 'text-semantic-success' : 'text-neutral-500'}`}>
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                <span>{rule.label}</span>
-              </div>
+        <AuthField id="password" label="Mật khẩu">
+          <PasswordInput
+            id="password"
+            name="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Ít nhất 8 ký tự"
+            minLength={8}
+            required
+            disabled={isLoading}
+            aria-describedby="password-rules"
+          />
+          <div className="mt-3 grid grid-cols-3 gap-1.5" aria-hidden="true">
+            {[1, 2, 3].map((level) => (
+              <span
+                key={level}
+                className={`h-0.5 transition-colors ${strength >= level ? STRENGTH_COLORS[strength] : 'bg-landing-line'}`}
+              />
             ))}
           </div>
+          <ul id="password-rules" className="mt-3 space-y-1.5">
+            {passwordRules.map((rule) => (
+              <li
+                key={rule.label}
+                className={`flex items-center gap-2 text-xs transition-colors ${rule.isValid ? 'text-landing-sage-ink' : 'text-landing-muted'}`}
+              >
+                {rule.isValid ? (
+                  <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                ) : (
+                  <Circle className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                )}
+                <span>{rule.label}</span>
+              </li>
+            ))}
+          </ul>
+        </AuthField>
+
+        <AuthField id="confirm" label="Xác nhận mật khẩu">
+          <PasswordInput
+            id="confirm"
+            name="confirm"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Nhập lại mật khẩu"
+            minLength={8}
+            required
+            disabled={isLoading}
+            showLabel="Hiện mật khẩu xác nhận"
+            hideLabel="Ẩn mật khẩu xác nhận"
+          />
+        </AuthField>
+
+        <AuthCheckbox required disabled={isLoading}>
+          Tôi đồng ý với{' '}
+          <Link href="/terms" target="_blank" rel="noopener noreferrer" className={authTextLinkClassName}>
+            Điều khoản dịch vụ
+          </Link>{' '}
+          và{' '}
+          <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={authTextLinkClassName}>
+            Chính sách bảo mật
+          </Link>
+        </AuthCheckbox>
+
+        <div className="mt-2">
+          <AuthSubmitButton isLoading={isLoading} loadingLabel="Đang tạo tài khoản">
+            Tạo tài khoản
+          </AuthSubmitButton>
         </div>
-
-        <div>
-          <label className="block text-label-sm font-medium text-neutral-700 mb-1.5" htmlFor="confirm">Xác nhận mật khẩu</label>
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              id="confirm"
-              name="confirm"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full h-11 pl-3.5 pr-10 bg-white border border-neutral-300 rounded-xl text-body-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/20 focus:border-[#5D1C34] transition-all"
-              placeholder="Nhập lại mật khẩu"
-              minLength={8}
-              required
-              disabled={isLoading}
-            />
-            <button
-              type="button"
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              aria-label={showConfirmPassword ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'}
-              disabled={isLoading}
-            >
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-
-        <label className="flex items-start gap-2.5 cursor-pointer mt-1 mb-2">
-          <div className="relative flex items-center justify-center mt-0.5 shrink-0">
-            <input type="checkbox" className="peer sr-only" required disabled={isLoading} />
-            <div className="w-4 h-4 border border-neutral-300 rounded bg-white peer-checked:bg-[#5D1C34] peer-checked:border-[#5D1C34] transition-colors"></div>
-            <svg className="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <span className="text-body-sm text-neutral-600 leading-snug">
-            Tôi đồng ý với <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-brand-navy font-medium hover:underline">Điều khoản dịch vụ</Link> và <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-brand-navy font-medium hover:underline">Chính sách bảo mật</Link>
-          </span>
-        </label>
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-11 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-sm font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-sm mt-2 flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {isLoading ? 'Đang đăng ký...' : 'Tạo tài khoản'}
-        </button>
-
-        {isSuccess && (
-          <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-100 rounded-xl mt-2 animate-in fade-in zoom-in duration-200">
-            <svg className="w-4 h-4 text-semantic-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="text-body-sm text-semantic-success font-medium">Đăng ký thành công! Đang chuyển đến xác thực OTP...</span>
-          </div>
-        )}
       </form>
-    </AuthSplitLayout>
+
+      <AuthDivider />
+
+      <GoogleButton />
+    </>
   );
 }

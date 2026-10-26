@@ -447,6 +447,41 @@ Grid: `grid-cols-2`, then `md:grid-cols-3 lg:grid-cols-4`. With the sidebar open
 | Filter tab | Muted text | Ink | Oxblood outline | Oxblood text and underline | Not used |
 | Input | Paper/ivory, hairline | Brass border | Oxblood outline | Filled | 50% opacity |
 
+## Auth Pages
+
+### `AuthSplitLayout`
+
+File: `src/features/auth/components/AuthLayout.tsx`, rendered once by the route layout `src/app/(auth)/(split)/layout.tsx`. Pages inside that group render only their form content and must not wrap themselves in the layout again.
+
+- Used by login, register, and forgot password. `AuthCenteredLayout` in the same file still serves verify email, reset password, and the OAuth callbacks, and keeps its old styling.
+- Left plate: `aside`, `lg` and up, `sticky top-0 h-svh`. It uses a `next/image` fill with `LANDING_MEDIA.look02`, lazy-loaded so mobile never downloads it.
+- Right column: `main` with a `Trang chủ` link and a centred `max-w-[420px]` form slot.
+- Side swap: `/register` adds `lg:flex-row-reverse`. `aside` and `main` are `motion` elements with `layout="position"` (`800ms`, `cubic-bezier(0.22, 1, 0.36, 1)`), and the plate sits above the form column (`z-10`) while it slides.
+- Form slot: keyed by pathname. It enters with opacity and `x: ±32px` after `200ms`. The direction comes from `SPLIT_ROUTE_ORDER` (login 0, forgot password 1, register 2) and is derived during render, not stored in a ref. The slot container clips horizontal overflow so the offset never creates a scrollbar.
+- Reduced motion turns off `layout` and the enter offset.
+- When adding a route to the group, add it to `SPLIT_ROUTE_ORDER`.
+
+### Form Primitives
+
+File: `src/features/auth/components/auth-form.tsx`
+
+| Export | Use |
+| --- | --- |
+| `AuthHeading` | Eyebrow, Playfair `h1` with `text-balance`, optional muted line |
+| `AuthField` | Uppercase label bound to `id`, optional right-aligned action (for example `Quên mật khẩu?`) |
+| `authInputClassName` | `48px` square input on ivory, hairline border, brass hover, oxblood focus outline |
+| `PasswordInput` | Input with a `48px` show or hide toggle and Vietnamese labels |
+| `AuthAlert` | `error`, `notice`, or `success` left-ruled block; `role="alert"` for errors, `role="status"` otherwise |
+| `AuthSubmitButton` | Oxblood primary with spinner and loading label |
+| `AuthDivider` | Hairlines with `hoặc` |
+| `AuthCheckbox` | Native checkbox over a styled square so the browser `required` bubble anchors correctly |
+| `authTextLinkClassName` | Oxblood semibold text link with underline on hover |
+
+Rules:
+
+- Auth pages compose these primitives. Do not restyle inputs or buttons inline.
+- Do not reintroduce `rounded-xl` inputs, gradient buttons, or hand-rolled SVG icons on these pages. The Google mark is the only inline SVG.
+
 ## Icons
 
 - Use Lucide only.

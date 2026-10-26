@@ -276,6 +276,40 @@ Scope: the catalog at `/products`. It uses the landing tokens, the landing heade
 
 No horizontal overflow at any breakpoint. Anchors must not hide behind the sticky header; use `scroll-mt`.
 
+## Auth Pages
+
+Scope: `/login`, `/register`, and `/forgot-password`. These pages share `AuthSplitLayout`. The other auth routes (verify email, reset password, OAuth callbacks) keep `AuthCenteredLayout` until they are redesigned.
+
+### Layout
+
+- From `lg`: a sticky obsidian plate on the left (`46%` of the width) and the form on paper on the right. Below `lg`: the form only, with the logo at the top.
+- The plate uses local portrait media (`LANDING_MEDIA.look02`) with an obsidian gradient. It carries the light logo, a brass label, the two-line Playfair line `Chuẩn dáng từ đầu, / đẹp từng đường may.` with one italic word, and three numbered account benefits.
+- Benefits only state what an account actually unlocks: measurements saved in the profile, a cart synced across devices, and AI try-on and AI Stylist.
+- Every page has a `Trang chủ` link on the outer edge of the form column, so there is always a way back to the store.
+
+### Transition
+
+- The three pages share one persistent route layout, so the plate survives navigation.
+- `/login` and `/forgot-password` put the plate on the left. `/register` swaps it to the right. Moving between login and register slides the plate across in `800ms` with the landing ease while the form column moves the other way.
+- The new form fades in with a `32px` horizontal offset after a `200ms` delay. It enters from the right when moving forward (login, forgot password, register) and from the left when moving back. Below `lg`, where there is no plate, only the form slides.
+- First load does not animate. Under reduced motion, nothing slides: the layout swaps instantly and the form appears without movement.
+- The motion uses transforms only (Motion `layout="position"`), so heights never distort.
+
+### Form
+
+- Heading: brass-ink eyebrow, Playfair title, one muted line with the cross-link (`Tạo tài khoản` or `Đăng nhập`).
+- Labels are uppercase with tracking. Inputs are `48px` tall, square `2px`, on ivory with a hairline border, and use the oxblood focus outline.
+- The primary submit is an oxblood fill with paper text and an arrow, and turns obsidian on hover. Google sign-in is a secondary outline button below an `hoặc` divider. The Google mark keeps its brand colours.
+- Messages use one left-ruled ivory block: error with the destructive rule, notice with brass, success with sage-ink.
+- Register shows a three-segment length meter (destructive, brass, sage-ink) and the two rules the backend enforces: at least 8 characters, and a matching confirmation.
+
+### Honest States
+
+- No testimonials, ratings, or user photos on auth pages.
+- No `Ghi nhớ đăng nhập` checkbox: the session length does not depend on it.
+- Forgot password does not claim that an email was sent, because the backend never reveals whether an account exists. The copy says the link was sent if the email is registered, and that it is valid for 1 hour (the backend token lifetime).
+- `Gửi lại email` sends the request again. `Dùng email khác` returns to the form.
+
 ## Motion
 
 | Element | Behavior |
