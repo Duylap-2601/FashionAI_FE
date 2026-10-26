@@ -42,7 +42,7 @@ export function LandingPageClient() {
 
   return (
     <main className="flex-1 overflow-x-hidden bg-landing-paper text-landing-obsidian selection:bg-landing-oxblood selection:text-landing-paper">
-      <HeroBanner collections={collections} />
+      <HeroBanner />
 
       <CollectionCarousel
         collections={collections}

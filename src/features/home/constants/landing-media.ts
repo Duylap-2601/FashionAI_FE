@@ -16,7 +16,7 @@ export const HERO_FALLBACK = {
   image: LANDING_MEDIA.hero,
 } as const;
 
-/** 2 local hero slides khi không có collection từ backend */
+/** 2 slide hero cố định (hero1, hero2) */
 export const HERO_LOCAL_SLIDES = [
   {
     id: 'local-hero-1',

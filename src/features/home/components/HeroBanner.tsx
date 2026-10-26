@@ -1,7 +1,6 @@
 'use client';
 
 import { cn } from '@/components/ui/utils';
-import type { HeroBannerProps } from '@/features/home/types/hero-banner';
 import { HERO_LOCAL_SLIDES } from '@/features/home/constants/landing-media';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
@@ -17,27 +16,13 @@ interface HeroSlide {
   fallbackImage: string;
 }
 
-export function HeroBanner({ collections }: HeroBannerProps) {
+export function HeroBanner() {
   const shouldReduceMotion = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
-  const slides: HeroSlide[] =
-    collections.length > 0
-      ? collections.map((collection, index) => {
-        const localFallback = HERO_LOCAL_SLIDES[index % HERO_LOCAL_SLIDES.length] ?? HERO_LOCAL_SLIDES[0];
-        const coverImage = collection.thumbnail || collection.coverImages?.find(Boolean);
-
-        return {
-          id: collection.id,
-          name: collection.name,
-          season: collection.season || 'BỘ SƯU TẬP 2026',
-          image: coverImage || localFallback.image,
-          fallbackImage: localFallback.image,
-        };
-      })
-      : HERO_LOCAL_SLIDES.map((s) => ({ ...s }));
+  const slides: HeroSlide[] = HERO_LOCAL_SLIDES.map((s) => ({ ...s }));
 
   const safeIndex = activeIndex % slides.length;
   const activeSlide = slides[safeIndex] ?? slides[0];
