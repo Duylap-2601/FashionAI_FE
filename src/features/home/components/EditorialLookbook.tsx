@@ -145,7 +145,7 @@ export function EditorialLookbook({ images, collection }: EditorialLookbookProps
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-brass">
                     Look {String(safeIndex + 1).padStart(2, '0')}
                   </p>
-                  <h3 className="mt-4 font-display text-landing-h2 text-landing-paper">
+                  <h3 className="mt-4 font-display text-landing-h2 uppercase leading-[1.15] text-landing-paper">
                     {activeLook.title}
                   </h3>
                   <p className="mt-3 max-w-md text-sm leading-relaxed text-landing-paper/55">
