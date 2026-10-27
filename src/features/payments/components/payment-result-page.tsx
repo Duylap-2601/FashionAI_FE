@@ -1,8 +1,9 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { usePaymentStatus } from '@/features/payments/hooks/usePayments';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { AlertCircle, CheckCircle2, Clock, CreditCard, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -44,7 +45,7 @@ function LoadingState() {
   return (
     <div className="bg-white min-h-screen flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-8 h-8 text-brand-navy animate-spin" />
+        <AtelierLoader size="md" />
         <p className="text-body-sm text-neutral-600">Đang kiểm tra trạng thái thanh toán...</p>
       </div>
     </div>

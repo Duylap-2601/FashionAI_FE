@@ -1,4 +1,5 @@
 'use client';
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { getErrorMessage } from '@/lib/errors';
 
 
@@ -324,10 +325,7 @@ export function AdminCollectionManager() {
             <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
               {isLoading ? (
                 <div className="py-16 text-center text-neutral-400">
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin text-[#5D1C34]" />
-                    <span>Đang tải danh sách bộ sưu tập...</span>
-                  </div>
+                  <AtelierLoader size="sm" label="Đang may bộ sưu tập" />
                 </div>
               ) : paginatedCollections.length === 0 ? (
                 <div className="py-16 text-center text-neutral-400">

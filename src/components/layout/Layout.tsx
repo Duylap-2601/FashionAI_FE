@@ -1,6 +1,7 @@
 'use client';
 
 import { BottomTabBar } from '@/components/layout/BottomTabBar';
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { HangerIcon } from '@/components/ui/HangerIcon';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -623,7 +624,7 @@ export function AppLayout({
   if (status !== 'loading' && currentUser.role === 'admin') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-100">
-        <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+        <AtelierLoader size="md" label="Đang mở xưởng" />
       </div>
     );
   }

@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
@@ -329,8 +330,7 @@ export function AdminReconciliationPanel({ onStatsRefresh }: AdminReconciliation
 
               {isLoading && filteredTransactions.length === 0 && (
                 <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
-                  <div className="w-8 h-8 border-3 border-brand-navy border-t-transparent rounded-full animate-spin" />
-                  <p className="text-body-sm text-neutral-500">Đang nạp danh sách đối soát...</p>
+                  <AtelierLoader size="md" label="Đang may bảng đối soát" />
                 </div>
               )}
             </div>

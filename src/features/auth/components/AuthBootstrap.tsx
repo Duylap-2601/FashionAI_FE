@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { PROTECTED_ROUTES } from '@/features/auth/constants/auth-bootstrap';
 import { subscribeAuthInvalidated } from '@/features/auth/services/auth-events';
 import { refreshWebSession } from '@/features/auth/services/mutations';
@@ -87,11 +88,8 @@ export function AuthBootstrap() {
   if (!isRefreshing) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-brand-cream">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-4 border-[#5D1C34] border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-[#5D1C34]/70 font-medium">Đang tải...</p>
-      </div>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-landing-paper landing-paper-texture">
+      <AtelierLoader size="lg" label="Đang luồn chỉ" showBrand />
     </div>
   );
 }

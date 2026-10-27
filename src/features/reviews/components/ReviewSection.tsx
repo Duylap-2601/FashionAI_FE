@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { AccountConfirmDialog } from '@/features/profile/components/account-ui';
 import { RatingOverview } from '@/features/reviews/components/RatingOverview';
@@ -154,8 +155,7 @@ export function ReviewSection({
         <div className="mt-2 flex flex-col gap-4">
           {isReviewsLoading && accumulatedReviews.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-landing-muted">
-              <Loader2 className="h-7 w-7 animate-spin text-landing-oxblood" strokeWidth={1.75} />
-              <span className="text-sm">Đang tải các đánh giá...</span>
+              <AtelierLoader size="md" label="Đang may đánh giá" />
             </div>
           ) : accumulatedReviews.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 border border-landing-line bg-landing-ivory px-6 py-14 text-center">

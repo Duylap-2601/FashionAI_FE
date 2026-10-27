@@ -1,12 +1,13 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { AuthCenteredLayout } from '@/features/auth/components/AuthLayout';
 import { exchangeAuthCode } from '@/features/auth/services/mutations';
 import { toAuthSession } from '@/features/auth/services/session';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { invalidateSessionCache } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
@@ -78,7 +79,7 @@ function GoogleCallbackContent() {
         </div>
       ) : (
         <div className="flex flex-col items-center text-center gap-4">
-          <Loader2 className="w-8 h-8 text-brand-navy animate-spin" />
+          <AtelierLoader size="md" />
           <div>
             <h1 className="text-[20px] font-semibold text-brand-navy mb-2">Đang đăng nhập</h1>
             <p className="text-body-sm text-neutral-500">Vui lòng chờ trong giây lát.</p>
@@ -93,7 +94,7 @@ function GoogleCallbackLoading() {
   return (
     <AuthCenteredLayout>
       <div className="flex flex-col items-center text-center gap-4">
-        <Loader2 className="w-8 h-8 text-brand-navy animate-spin" />
+        <AtelierLoader size="md" />
         <div>
           <h1 className="text-[20px] font-semibold text-brand-navy mb-2">Đang đăng nhập</h1>
           <p className="text-body-sm text-neutral-500">Vui lòng chờ trong giây lát.</p>

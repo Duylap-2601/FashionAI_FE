@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { queryKeys as reviewsQueryKeys } from '@/features/reviews/services/query-keys';
 import { fetchAdminReviewsResponse, fetchProductReviewsResponse, toReviewList } from '@/features/reviews/services/queries';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
@@ -264,8 +265,7 @@ export function AdminReviewTable() {
             {isReviewsLoading ? (
               <div className="py-16 text-center text-neutral-400">
                 <div className="flex flex-col items-center justify-center gap-2">
-                  <Loader2 className="w-6 h-6 animate-spin text-brand-navy" />
-                  <span>Đang tải danh sách đánh giá...</span>
+                  <AtelierLoader size="sm" label="Đang may đánh giá" />
                 </div>
               </div>
             ) : paginatedReviews.length === 0 ? (

@@ -4,6 +4,7 @@ import type { NotificationPanelProps } from '@/features/notifications/types/noti
 import { NotificationItem } from '@/features/notifications/components/NotificationItem';
 import { useMarkAllNotificationsAsRead, useNotifications } from '@/features/notifications/hooks/useNotifications';
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { ArrowRight, Bell, CheckCheck, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
@@ -114,8 +115,7 @@ export function NotificationPanel({ onClose, tone = 'landing' }: NotificationPan
       <div className="flex-1 overflow-y-auto divide-y divide-neutral-100 md:max-h-[380px] md:flex-none">
         {isLoading && notifications.length === 0 ? (
           <div className="p-8 flex flex-col items-center justify-center text-neutral-400 gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-[#5D1C34]" />
-            <span className="text-body-xs">Đang tải thông báo...</span>
+            <AtelierLoader size="sm" label="Đang may thông báo" />
           </div>
         ) : unreadNotifications.length === 0 ? (
           <div className="p-8 flex flex-col items-center justify-center text-center">

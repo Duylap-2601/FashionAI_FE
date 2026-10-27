@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useCommerceViewTracking } from '@/features/analytics/hooks/use-commerce-view-tracking';
 import { cartItemToGaItem } from '@/features/analytics/services/ga-items';
 import { CheckoutSummary } from '@/features/checkout/components/checkout-summary';
@@ -341,7 +342,7 @@ export default function CheckoutPage() {
   if (isCartLoading && !lockedItems) {
     return (
       <div className="bg-brand-cream min-h-screen py-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-navy" aria-label="Đang tải giỏ hàng" />
+        <AtelierLoader size="md" label="Đang may đơn hàng" />
       </div>
     );
   }

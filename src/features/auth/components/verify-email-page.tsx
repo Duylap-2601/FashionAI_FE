@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { AuthCenteredLayout } from '@/features/auth/components/AuthLayout';
 import {
   InputOTP,
@@ -318,7 +319,7 @@ export default function VerifyEmailPage() {
     <Suspense
       fallback={
         <div className="flex h-screen items-center justify-center bg-brand-cream">
-          <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+          <AtelierLoader size="md" label="Đang kiểm tra thư" />
         </div>
       }
     >
