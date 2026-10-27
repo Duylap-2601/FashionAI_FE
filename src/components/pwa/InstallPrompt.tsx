@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -29,7 +30,13 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-4 left-4 right-auto md:bottom-6 md:left-6 max-w-[calc(100vw-2rem)] sm:w-80 md:w-96 bg-brand-black text-brand-cream border border-brand-taupe/20 rounded-2xl p-4 shadow-xl z-50 flex items-center gap-3 animate-fadeInUp">
-      <img src="/icons/icon-96x96.png" alt="FashionAI Logo" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+      <Image
+        src="/icons/icon-96x96.png"
+        alt="FashionAI Logo"
+        width={48}
+        height={48}
+        className="h-12 w-12 shrink-0 rounded-xl object-cover"
+      />
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate">Cài FashionAI về điện thoại</p>
         <p className="text-xs text-brand-cream/60 line-clamp-2">Trải nghiệm ứng dụng mượt mà, tiện lợi hơn</p>

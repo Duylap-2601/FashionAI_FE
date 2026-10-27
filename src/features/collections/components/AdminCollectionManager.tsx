@@ -30,6 +30,7 @@ import {
   Upload,
   X
 } from 'lucide-react';
+import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
@@ -353,16 +354,22 @@ export function AdminCollectionManager() {
                     <div className="py-3 px-4">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 relative shrink-0">
                         {col.coverImages?.[0] ? (
-                          <img
+                          <Image
                             src={col.coverImages[0]}
                             alt={col.name}
-                            className="w-full h-full object-cover"
+                            fill
+                            unoptimized
+                            sizes="64px"
+                            className="object-cover"
                           />
                         ) : col.thumbnail ? (
-                          <img
+                          <Image
                             src={col.thumbnail}
                             alt={col.name}
-                            className="w-full h-full object-cover"
+                            fill
+                            unoptimized
+                            sizes="64px"
+                            className="object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-neutral-300">
@@ -635,7 +642,14 @@ export function AdminCollectionManager() {
                   <div className="flex items-center gap-2 mt-2.5">
                     {filePreviews.map((preview, idx) => (
                       <div key={idx} className="w-14 h-18 rounded-lg overflow-hidden border border-neutral-300 bg-white relative">
-                        <img src={preview} alt="Upload preview" className="w-full h-full object-cover" />
+                        <Image
+                          src={preview}
+                          alt="Upload preview"
+                          fill
+                          unoptimized
+                          sizes="56px"
+                          className="object-cover"
+                        />
                         <span className="absolute bottom-0.5 right-0.5 text-[9px] bg-black/60 text-white px-1 rounded">
                           #{idx + 1}
                         </span>
@@ -669,8 +683,15 @@ export function AdminCollectionManager() {
                           className="flex-1 h-9 px-3 text-xs bg-neutral-50 border border-neutral-300 rounded-lg focus:outline-none focus:border-[#5D1C34]"
                         />
                         {currentImg && (
-                          <div className="w-9 h-9 rounded overflow-hidden bg-neutral-100 shrink-0 border border-neutral-200">
-                            <img src={currentImg} alt="" className="w-full h-full object-cover" />
+                          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded border border-neutral-200 bg-neutral-100">
+                            <Image
+                              src={currentImg}
+                              alt=""
+                              fill
+                              unoptimized
+                              sizes="36px"
+                              className="object-cover"
+                            />
                           </div>
                         )}
                       </div>
@@ -704,7 +725,14 @@ export function AdminCollectionManager() {
                         className="shrink-0 w-12 h-16 rounded-lg overflow-hidden border border-neutral-300 hover:border-[#5D1C34] hover:scale-105 transition-all relative group"
                         title={`Chọn ảnh từ ${p.name}`}
                       >
-                        <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                        <Image
+                          src={p.image}
+                          alt={p.name}
+                          fill
+                          unoptimized
+                          sizes="48px"
+                          className="object-cover"
+                        />
                       </button>
                     ))}
                   </div>
@@ -901,11 +929,14 @@ function CollectionProductsModal({
                 {collectionProducts.map((p) => (
                   <div key={p.id} className="p-3 flex items-center justify-between gap-3 hover:bg-neutral-50/70 transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-14 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
-                        <img
+                      <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100">
+                        <Image
                           src={p.image || '/images/placeholder.png'}
                           alt={p.name}
-                          className="w-full h-full object-cover"
+                          fill
+                          unoptimized
+                          sizes="48px"
+                          className="object-cover"
                         />
                       </div>
                       <div className="min-w-0">

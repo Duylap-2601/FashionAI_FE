@@ -2,6 +2,7 @@
 
 import type { ChatInputProps } from '@/features/chat/types/chat-input';
 import { CornerDownLeft, Package, Send, Square, X } from 'lucide-react';
+import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 
 export function ChatInput({
@@ -75,9 +76,12 @@ export function ChatInput({
         <div className="mb-2 flex items-center justify-between gap-2 rounded-[2px] border border-landing-line bg-landing-paper px-3 py-1.5 text-landing-obsidian animate-in fade-in-0 duration-200">
           <div className="flex items-center gap-2 min-w-0">
             {attachedProduct.image ? (
-              <img
+              <Image
                 src={attachedProduct.image}
                 alt={attachedProduct.name}
+                width={24}
+                height={28}
+                unoptimized
                 className="h-7 w-6 shrink-0 rounded-[2px] bg-landing-ivory object-contain"
               />
             ) : (

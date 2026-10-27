@@ -9,7 +9,7 @@
 | Scope | Public landing page at `/`, products listing at `/products`, landing header, landing footer, announcement bar |
 | Owner | StAie. frontend team |
 | Related docs | `docs/design-system.md`, `docs/table-design.md`, `AGENTS.md` |
-| Last updated | 2026-10-26 |
+| Last updated | 2026-10-28 |
 
 ## Design Read
 
@@ -264,6 +264,82 @@ Scope: the catalog at `/products`. It uses the landing tokens, the landing heade
 - When the API fails and fallback products show, an ivory notice offers `Thử lại`.
 - Changing a filter or page scrolls back to the top of the grid only when the user has scrolled past it.
 
+## Product Detail
+
+Route: `/products/[id]`. The page is the product chapter of the catalog: one gallery plate, one purchase panel, then detail tabs and reviews. It uses the landing tokens, the shared `ProductCard` for related products, and keeps the existing API, cart, rack, measurement and analytics flows.
+
+### Structure
+
+| Order | Element | Surface | Notes |
+| --- | --- | --- | --- |
+| 1 | Breadcrumb | Paper | `Trang chủ / Sản phẩm / Danh mục / Tên sản phẩm`, label type, no dead category link |
+| 2 | Gallery | Paper | `3/4` plate on ivory, thumbnails below, hover magnifier and lightbox |
+| 3 | Purchase panel | Ivory | Brand, serif title, real rating, mono price, combo, colour, quantity, CTAs |
+| 4 | Detail tabs | Paper | Underline tabs for `Mô tả sản phẩm` and `Quy trình may đo` |
+| 5 | Reviews | Ivory | Rating overview, review list, write review and delete dialogs |
+| 6 | Related products | Paper | Shared `ProductCard` grid |
+
+### Gallery
+
+- Main image is a `3/4` frame on ivory with a hairline border and `2px` corners. No shadow, no glassmorphism.
+- Thumbnails are square buttons with `aria-pressed`; the active one gets a `2px` oxblood border, not a rounded ring.
+- The hover magnifier, fullscreen lightbox, zoom, pan and keyboard shortcuts stay functional. Chrome is obsidian and paper with mono counters, not gold or amber.
+- The main image opens the lightbox through a real button. Decorative overlays are `aria-hidden`.
+- Failed images use `LANDING_MEDIA.productFallback`.
+
+### Purchase Panel
+
+- Brand is a brass-ink label. Category is a square hairline label, not a pill.
+- Title uses `product-name-title`. Price uses the mono face and oxblood. Original price is mono and muted with a line-through. Sale badge is an oxblood fill with paper text and square corners.
+- Rating shows only real review data. There is no `5.0` fallback when a product has no reviews.
+- Combo options are square buttons with `aria-pressed`. Colour swatches are real buttons with `aria-label` and `aria-pressed`; light swatches carry a taupe border. No dead swatch placeholders.
+- Quantity is a square stepper with mono count. The subtotal is labelled `Tạm tính`.
+- Primary action is oxblood with paper text. Try-on uses a visible `Sparkles` icon and links to `/try-on?productId=...`. AI Stylist is an outline action. Rack pin is an outline action with `aria-pressed`.
+- Measurement status uses sage for complete and destructive or brass for missing. The panel links to `/profile/measurements`.
+- Assurances only state what is real: made to the saved measurements, measurement advice, and the 7-day defect window from the return policy. No delivery-time guarantee.
+
+### Detail Tabs
+
+- Tabs are underline text tabs with `role="tablist"` and `aria-selected`.
+- Headings use Playfair, body uses the landing body size and muted colour.
+- Description, material and styling notes sit on hairline rules and ivory blocks, not rounded cards with shadows.
+- Missing material reads `Đang cập nhật` instead of inventing a fabric.
+- The measurement process uses mono step numbers. The closing note links to `/return-policy` and states the real 7-day window, not an unpublished free-alteration promise.
+- The AI Stylist CTA is an outline button, not a brass gradient block.
+
+### Reviews
+
+- The review section sits on ivory with a top hairline. The heading is Playfair and the write-review action is a square oxblood button.
+- Stars use `StarRating tone="landing"`. Distribution bars use oxblood and taupe, never amber.
+- Rating filters are underline text tabs, not filled pills.
+- Review cards are square paper blocks with hairlines. The verified purchase label uses sage-ink, not a green pill.
+- Delete review and delete reply use the shared paper Radix dialog (`AccountConfirmDialog`), not `window.confirm` or hand-rolled overlays.
+- User photos use `next/image` with `unoptimized` for data URLs.
+
+### States
+
+| State | Visual |
+| --- | --- |
+| Loading | Paper and taupe skeleton in the same two-column layout |
+| Not found | Ivory block, Playfair title, one sentence, oxblood square CTA |
+| No reviews | Ivory block with one sentence and a write-review action |
+| Missing measurements | Brass or destructive note with a link to measurements |
+| Image error | Local product fallback |
+
+### Accessibility
+
+- Thumbnails, combo options, colour swatches, rack pin and rating filters expose `aria-pressed`.
+- Tabs expose `role="tablist"` and `aria-selected`.
+- Focus rings are oxblood on paper. Touch targets are at least `44px` for primary controls.
+- The lightbox traps focus, closes on Esc and restores focus to the opener.
+
+### Honest Copy
+
+- No fake ratings, fake discounts or invented fabric claims.
+- No delivery-time guarantee unless the backend exposes it.
+- The 7-day defect window and warranty wording match the policy constants.
+- Copy is Vietnamese. No emoji, no em-dashes.
+
 ## Account Pages
 
 Routes: `/profile`, `/profile/measurements`, `/profile/orders`, `/profile/reviews`, `/notifications` (the five links in the header account menu).
@@ -455,4 +531,5 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | 2026-10-26 | Account pages (profile, measurements, orders, reviews, notifications) on one `AccountShell`, with controls limited to what the backend stores |
 | 2026-10-26 | Try-on page (live and photo modes) on Atelier Paper, with shared garment slots, a real-price upgrade dialog and no sample-photo control |
 | 2026-10-26 | Rack, cart, header notifications, address book, try-on and AI Stylist history, and plans on Atelier Paper |
+| 2026-10-28 | Added the product detail spec: paper and ivory surfaces, gallery lightbox, purchase panel, detail tabs, honest review states, and related products |
 

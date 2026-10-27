@@ -8,6 +8,7 @@ import {
   X
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import Image from 'next/image';
 
 const GARMENT_TYPES_BY_CATEGORY: Record<GarmentCategory, { value: GarmentType; label: string }[]> = {
   UPPER: [
@@ -249,10 +250,13 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
                       className={`relative group rounded-xl border bg-neutral-50 overflow-hidden aspect-square flex items-center justify-center shadow-2xs transition-all ${isPrimary ? 'border-brand-navy ring-2 ring-brand-navy/30' : 'border-neutral-200'
                         }`}
                     >
-                      <img
+                      <Image
                         src={img.url}
                         alt={`Ảnh ${idx + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        unoptimized
+                        sizes="(min-width: 768px) 25vw, 50vw"
+                        className="object-cover"
                       />
 
                       {/* Primary Badge or Set Primary Button */}

@@ -1,80 +1,135 @@
 import type { ProductDetailTabsProps } from '@/features/products/types/product-detail-tabs';
-import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { AlertCircle, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+const labelText = 'text-[11px] font-semibold uppercase tracking-[0.14em]';
+const TABS = ['Mô tả sản phẩm', 'Quy trình may đo'] as const;
+
+function tabPanelId(label: string) {
+  return label === 'Mô tả sản phẩm' ? 'product-detail-description' : 'product-detail-process';
+}
+
+function tabButtonId(label: string) {
+  return `${tabPanelId(label)}-tab`;
+}
+
 export function ProductDetailTabs({ product, activeTab, isComboSuit, onTabChange }: ProductDetailTabsProps) {
-  const catUpper = (product.category || '').toUpperCase();
-  const isLower = catUpper.includes('LOWER') || catUpper.includes('QUAN') || catUpper.includes('VAY') || product.category === 'Quần & Váy';
-  const isFull = isComboSuit || catUpper.includes('FULL') || catUpper.includes('SUIT') || product.category === 'Suit đầy đủ';
+  const category = (product.category || '').toUpperCase();
+  const isLower = category.includes('LOWER') || category.includes('QUAN') || category.includes('VAY') || product.category === 'Quần & Váy';
+  const isFull = isComboSuit || category.includes('FULL') || category.includes('SUIT') || product.category === 'Suit đầy đủ';
   const colorList = Array.isArray(product.colors) && product.colors.length > 0
-    ? product.colors.map(c => c.name).filter(Boolean).join(', ')
-    : 'Đa dạng màu sắc';
+    ? product.colors.map((color) => color.name).filter(Boolean).join(', ') || 'Đang cập nhật'
+    : 'Đang cập nhật';
+  const material = product.material || 'Đang cập nhật';
+  const description = product.description
+    || `Sản phẩm ${product.name} được may đo theo số đo cá nhân đã lưu trong hồ sơ, hoàn thiện bởi StAie. và giao đến bạn sau khi kiểm tra form dáng.`;
 
   return (
-    <div className="border-t border-neutral-200">
-      <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8">
-        <div className="flex items-center gap-8 border-b border-neutral-200 overflow-x-auto no-scrollbar">
-          {['Mô tả sản phẩm', 'Quy trình may đo'].map(tab => (
-            <button key={tab} onClick={() => onTabChange(tab)} className={`py-4 text-label-sm font-semibold whitespace-nowrap transition-colors border-b-2 relative cursor-pointer ${activeTab === tab ? 'text-brand-navy border-brand-navy' : 'text-neutral-500 border-transparent hover:text-neutral-800'}`}>
-              {tab}
-            </button>
-          ))}
+    <div className="border-t border-landing-line">
+      <div className="mx-auto w-full max-w-[1440px] px-4 md:px-8">
+        <div className="flex items-center gap-8 overflow-x-auto border-b border-landing-line no-scrollbar" role="tablist" aria-label="Thông tin sản phẩm">
+          {TABS.map((tab) => {
+            const active = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                id={tabButtonId(tab)}
+                aria-selected={active}
+                aria-controls={tabPanelId(tab)}
+                onClick={() => onTabChange(tab)}
+                className={cn(
+                  'relative cursor-pointer whitespace-nowrap border-b py-4 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors',
+                  active
+                    ? 'border-landing-oxblood text-landing-oxblood'
+                    : 'border-transparent text-landing-muted hover:text-landing-obsidian',
+                  focusRing,
+                )}
+              >
+                {tab}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="py-12 min-h-[300px]">
+        <div className="min-h-[300px] py-12 md:py-16">
           {activeTab === 'Mô tả sản phẩm' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-in fade-in duration-300">
+            <div
+              role="tabpanel"
+              id={tabPanelId('Mô tả sản phẩm')}
+              aria-labelledby={tabButtonId('Mô tả sản phẩm')}
+              className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:gap-16"
+            >
               <div>
-                <h3 className="text-[20px] font-bold text-brand-navy mb-4">Chi tiết sản phẩm</h3>
-                {product.description ? (
-                  <div className="mb-6 p-4 rounded-xl bg-neutral-50 border border-neutral-100 text-body-md text-neutral-700 leading-relaxed whitespace-pre-line">
-                    {product.description}
-                  </div>
-                ) : (
-                  <p className="text-body-md text-neutral-600 mb-6 leading-relaxed">
-                    Sản phẩm <strong className="text-brand-navy font-semibold">{product.name}</strong> được tuyển chọn chất liệu cao cấp và ứng dụng công nghệ may đo cá nhân hóa (Made-to-Measure), mang đến sự vừa vặn hoàn hảo theo đúng số đo cơ thể của bạn.
-                  </p>
-                )}
+                <h3 className="mb-4 font-display text-landing-h3 text-landing-obsidian">Chi tiết sản phẩm</h3>
+                <p className="border border-landing-line bg-landing-ivory p-4 text-landing-body text-landing-muted whitespace-pre-line">
+                  {description}
+                </p>
 
-                <ul className="space-y-3 text-body-md text-neutral-600">
-                  <li className="flex gap-2.5"><span className="w-1.5 h-1.5 rounded-full bg-brand-navy shrink-0 mt-2"></span><span><strong className="text-neutral-800 font-semibold">Chất liệu:</strong> {product.material || (isFull ? 'Premium Wool pha cao cấp, đứng form, chống nhăn tự nhiên' : isLower ? 'Kaki / Tuyết mưa cao cấp co giãn nhẹ, giữ phom dáng chuẩn' : '100% Cotton Oxford / Poplin cao cấp, thoáng khí và êm ái')}</span></li>
-                  <li className="flex gap-2.5"><span className="w-1.5 h-1.5 rounded-full bg-brand-navy shrink-0 mt-2"></span><span><strong className="text-neutral-800 font-semibold">Quy cách may:</strong> May đo theo số đo cá nhân (Made-to-Measure)</span></li>
-                  <li className="flex gap-2.5"><span className="w-1.5 h-1.5 rounded-full bg-brand-navy shrink-0 mt-2"></span><span><strong className="text-neutral-800 font-semibold">Màu sắc:</strong> {colorList}</span></li>
-                  <li className="flex gap-2.5"><span className="w-1.5 h-1.5 rounded-full bg-brand-navy shrink-0 mt-2"></span><span><strong className="text-neutral-800 font-semibold">Xuất xứ:</strong> Thiết kế và may đo tại Việt Nam</span></li>
-                  <li className="flex gap-2.5"><span className="w-1.5 h-1.5 rounded-full bg-brand-navy shrink-0 mt-2"></span><span><strong className="text-neutral-800 font-semibold">Bảo quản:</strong> Giặt máy chế độ nhẹ hoặc giặt khô, không dùng chất tẩy mạnh</span></li>
-                </ul>
+                <dl className="mt-6 border-y border-landing-line">
+                  {[
+                    ['Chất liệu', material],
+                    ['Quy cách may', 'May đo theo số đo cá nhân'],
+                    ['Màu sắc', colorList],
+                    ['Xuất xứ', 'Thiết kế và may đo tại Việt Nam'],
+                    ['Bảo quản', 'Giặt nhẹ hoặc giặt khô, không dùng chất tẩy mạnh'],
+                  ].map(([label, value]) => (
+                    <div key={label} className="grid grid-cols-[110px_1fr] gap-3 border-b border-landing-line/70 py-3 last:border-b-0 sm:grid-cols-[130px_1fr]">
+                      <dt className={cn('text-landing-brass-ink', labelText)}>{label}</dt>
+                      <dd className="text-sm leading-relaxed text-landing-muted">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
 
-              <div className="flex flex-col justify-between">
-                <div>
-                  <h3 className="text-[20px] font-bold text-brand-navy mb-4">Gợi ý phối đồ (Styling Tips)</h3>
-                  <p className="text-body-md text-neutral-600 mb-5 leading-relaxed">
-                    {isFull ? <>Set trang phục <strong className="text-brand-navy">{product.name}</strong> mang phong cách sang trọng, lịch lãm, dễ dàng điều chỉnh theo nhiều mức độ trang trọng:</> : isLower ? <>Thiết kế <strong className="text-brand-navy">{product.name}</strong> tôn dáng, linh hoạt và là điểm nhấn quan trọng cho tổng thể trang phục:</> : <>Mẫu <strong className="text-brand-navy">{product.name}</strong> là item cốt lõi trong tủ đồ, cho phép bạn biến hóa đa dạng nhiều phong cách:</>}
-                  </p>
+              <div className="flex flex-col">
+                <h3 className="mb-4 font-display text-landing-h3 text-landing-obsidian">Gợi ý phối đồ</h3>
+                <p className="mb-5 text-landing-body text-landing-muted">
+                  {isFull ? (
+                    <>Set trang phục <strong className="font-semibold text-landing-obsidian">{product.name}</strong> đủ lịch lãm cho ngày làm việc và linh hoạt khi cần dự sự kiện.</>
+                  ) : isLower ? (
+                    <>Thiết kế <strong className="font-semibold text-landing-obsidian">{product.name}</strong> tôn dáng và là điểm nhấn cho tổng thể trang phục công sở.</>
+                  ) : (
+                    <>Mẫu <strong className="font-semibold text-landing-obsidian">{product.name}</strong> là món cốt lõi trong tủ đồ, dễ biến hóa nhiều phong cách.</>
+                  )}
+                </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-100">
-                      <h4 className="font-semibold text-brand-navy mb-1.5 text-label-sm">{isFull ? 'Sự kiện / Hội nghị' : isLower ? 'Phong cách Công sở' : 'Professional (Công sở)'}</h4>
-                      <p className="text-[13px] text-neutral-600 leading-relaxed">{isFull ? 'Kết hợp cùng áo sơ mi trắng tinh tế, cà vạt lụa và giày Oxford/Derby.' : isLower ? 'Phối cùng áo sơ mi trắng, sơ vin gọn gàng và khoác thêm Blazer.' : 'Kết hợp cùng quần tây Navy hoặc Xám đậm, khoác thêm Blazer nếu cần.'}</p>
-                    </div>
-                    <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-100">
-                      <h4 className="font-semibold text-brand-navy mb-1.5 text-label-sm">{isFull ? 'Doanh nhân hiện đại' : isLower ? 'Năng động dạo phố' : 'Smart Casual (Hàng ngày)'}</h4>
-                      <p className="text-[13px] text-neutral-600 leading-relaxed">{isFull ? 'Mặc bên trong áo thun/áo len mỏng cao cấp kèm giày Loafer thanh lịch.' : isLower ? 'Mặc cùng áo thun Polo basic, áo dệt kim và giày Loafer hoặc Sneaker.' : 'Mặc cùng quần Chino Khaki hoặc Jeans tối màu, xắn tay áo nhẹ nhàng.'}</p>
-                    </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="border border-landing-line bg-landing-ivory p-4">
+                    <h4 className={cn('text-landing-brass-ink', labelText)}>
+                      {isFull ? 'Sự kiện và hội nghị' : isLower ? 'Phong cách công sở' : 'Công sở'}
+                    </h4>
+                    <p className="mt-2 text-sm leading-relaxed text-landing-muted">
+                      {isFull ? 'Kết hợp sơ mi trắng, cà vạt lụa và giày Oxford hoặc Derby.' : isLower ? 'Phối cùng sơ mi trắng, sơ vin gọn gàng và khoác thêm blazer.' : 'Kết hợp quần tây navy hoặc xám đậm, khoác thêm blazer khi cần.'}
+                    </p>
+                  </div>
+                  <div className="border border-landing-line bg-landing-ivory p-4">
+                    <h4 className={cn('text-landing-brass-ink', labelText)}>
+                      {isFull ? 'Doanh nhân hiện đại' : isLower ? 'Năng động dạo phố' : 'Smart casual'}
+                    </h4>
+                    <p className="mt-2 text-sm leading-relaxed text-landing-muted">
+                      {isFull ? 'Mặc cùng áo thun hoặc áo len mỏng và giày loafer thanh lịch.' : isLower ? 'Mặc cùng áo polo basic, áo dệt kim và giày loafer hoặc sneaker.' : 'Mặc cùng quần chino kaki hoặc jeans tối màu, xắn tay áo nhẹ nhàng.'}
+                    </p>
                   </div>
                 </div>
 
-                <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-brand-navy/5 to-brand-gold/10 border border-brand-gold/20 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <div className="text-body-sm font-bold text-brand-navy">Tư vấn phối đồ theo dáng người</div>
-                      <div className="text-label-xs text-neutral-500">Hỏi AI Stylist cách mix & match sản phẩm này</div>
-                    </div>
+                <div className="mt-6 flex flex-col gap-4 border border-landing-line bg-landing-ivory p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-landing-obsidian">Tư vấn phối đồ theo dáng người</p>
+                    <p className="mt-1 text-xs leading-relaxed text-landing-muted">Hỏi AI Stylist cách mix và match sản phẩm này.</p>
                   </div>
                   <Link
-                    href={`/chat?productId=${product.id}&message=${encodeURIComponent('Gợi ý cho tôi cách phối đồ đẹp và chuẩn dáng nhất với ' + product.name)}`}
-                    className="px-3.5 py-2 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-lg text-[12px] font-bold shrink-0 transition-colors"
+                    href={`/chat?productId=${product.id}&message=${encodeURIComponent(`Gợi ý cho tôi cách phối đồ đẹp và chuẩn dáng nhất với ${product.name}`)}`}
+                    className={cn(
+                      'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-[2px] border border-landing-line px-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian',
+                      'transition-colors hover:border-landing-oxblood hover:text-landing-oxblood',
+                      focusRing,
+                    )}
                   >
+                    <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
                     Hỏi AI Stylist
                   </Link>
                 </div>
@@ -83,26 +138,39 @@ export function ProductDetailTabs({ product, activeTab, isComboSuit, onTabChange
           )}
 
           {activeTab === 'Quy trình may đo' && (
-            <div className="max-w-[800px] animate-in fade-in duration-300">
-              <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-200 mb-6 space-y-4">
-                <h4 className="text-[16px] font-bold text-brand-navy">Quy trình đặt may đo theo số đo riêng (Made-to-Measure)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-body-sm text-neutral-600">
+            <div
+              role="tabpanel"
+              id={tabPanelId('Quy trình may đo')}
+              aria-labelledby={tabButtonId('Quy trình may đo')}
+              className="max-w-[800px]"
+            >
+              <div className="border border-landing-line bg-landing-ivory p-5 md:p-6">
+                <h4 className="font-display text-lg text-landing-obsidian">Quy trình may đo theo số đo riêng</h4>
+                <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
                   {[
-                    ['01', 'Cung cấp số đo', 'Nhập số đo cơ thể trong trang Profile hoặc khi thực hiện đặt hàng.'],
-                    ['02', 'Thợ may cắt rập', 'Đội ngũ nghệ nhân may đo sẽ tinh chỉnh rập cá nhân hóa cho từng khách hàng.'],
-                    ['03', 'Giao hàng hoàn hảo', 'Trang phục vừa vặn chuẩn chỉnh được hoàn thiện và giao trong 3-5 ngày.'],
+                    ['01', 'Cung cấp số đo', 'Nhập số đo cơ thể trong trang hồ sơ hoặc khi đặt hàng.'],
+                    ['02', 'Thợ may cắt rập', 'Đội ngũ may đo tinh chỉnh rập cá nhân hóa cho từng khách hàng.'],
+                    ['03', 'Hoàn thiện và giao', 'Sản phẩm được kiểm tra form dáng trước khi giao đến bạn.'],
                   ].map(([step, title, desc]) => (
-                    <div key={step} className="p-4 bg-white rounded-xl border border-neutral-100 shadow-2xs">
-                      <div className="text-brand-navy font-bold text-[18px] mb-1">{step}</div>
-                      <div className="font-semibold text-brand-navy mb-1">{title}</div>
-                      <p className="text-[12px] text-neutral-500">{desc}</p>
+                    <div key={step} className="border-t border-landing-line pt-4">
+                      <p className="font-mono text-lg text-landing-oxblood">{step}</p>
+                      <p className="mt-1 text-sm font-semibold text-landing-obsidian">{title}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-landing-muted">{desc}</p>
                     </div>
                   ))}
                 </div>
               </div>
-              <p className="text-body-sm text-neutral-500 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-brand-navy" /> FashionAI cam kết hỗ trợ chỉnh sửa miễn phí nếu số đo thành phẩm có sai lệch vượt quá dung sai chuẩn.
-              </p>
+
+              <div className="mt-6 flex items-start gap-2 text-sm text-landing-muted">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-landing-brass-ink" strokeWidth={1.75} aria-hidden="true" />
+                <p className="leading-relaxed">
+                  Sản phẩm được may theo số đo đã lưu. Nếu sản phẩm có lỗi may hoặc sai lệch từ phía StAie., bạn có 7 ngày kể từ khi đơn hoàn tất để gửi yêu cầu đổi trả.{' '}
+                  <Link href="/return-policy" className={cn('font-semibold text-landing-oxblood underline underline-offset-4', focusRing)}>
+                    Xem chính sách đổi trả
+                  </Link>
+                  .
+                </p>
+              </div>
             </div>
           )}
         </div>

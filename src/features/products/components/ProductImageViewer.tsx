@@ -1,6 +1,8 @@
 'use client';
 
+import { LANDING_MEDIA } from '@/features/home/constants/landing-media';
 import type { ProductImageViewerProps } from '@/features/products/types/product-image-viewer';
+import * as Dialog from '@radix-ui/react-dialog';
 import {
   Check,
   ChevronLeft,
@@ -10,41 +12,61 @@ import {
   RotateCcw,
   X,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
 } from 'lucide-react';
 import Image from 'next/image';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+const focusRingPaper = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+const focusRingDark = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-brass';
+const labelText = 'text-[10px] font-semibold uppercase tracking-[0.18em]';
 
 export default function ProductImageViewer({
   images,
   productName,
-  brand = 'FASHIONAI COLLECTION',
+  brand = 'StAie. Signature',
   activeThumb,
   onSelectThumb,
-  fallbackImage = '/images/731163514_999523332788054_1114320478812927640_n.png',
+  fallbackImage = LANDING_MEDIA.productFallback,
 }: ProductImageViewerProps) {
-  const safeImages = images && images.length > 0 ? images : [fallbackImage];
-  const currentImage = safeImages[activeThumb] || fallbackImage;
+  const safeImages = useMemo(
+    () => (images && images.length > 0 ? images : [fallbackImage]),
+    [images, fallbackImage],
+  );
+  const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
-  // Hover lens state for main display
+  const imageAt = useCallback(
+    (index: number) => (failedImages[index] ? fallbackImage : safeImages[index] || fallbackImage),
+    [failedImages, fallbackImage, safeImages],
+  );
+
+  const handleImageError = useCallback((index: number) => {
+    setFailedImages((prev) => (prev[index] ? prev : { ...prev, [index]: true }));
+  }, []);
+
+  const currentImage = imageAt(activeThumb);
+
   const [isHovered, setIsHovered] = useState(false);
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const mainImageRef = useRef<HTMLDivElement>(null);
 
-  // Lightbox Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalIndex, setModalIndex] = useState(activeThumb);
-  const [zoomLevel, setZoomLevel] = useState(1); // 1 = 100%, 2 = 200%, etc.
+  const [zoomLevel, setZoomLevel] = useState(1);
   const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef<{ startX: number; startY: number; initialOffsetX: number; initialOffsetY: number }>({
+  const dragStartRef = useRef<{
+    startX: number;
+    startY: number;
+    initialOffsetX: number;
+    initialOffsetY: number;
+  }>({
     startX: 0,
     startY: 0,
     initialOffsetX: 0,
     initialOffsetY: 0,
   });
 
-  // Sync modalIndex with activeThumb when modal opens
   const openModal = () => {
     setModalIndex(activeThumb);
     setZoomLevel(1);
@@ -58,37 +80,21 @@ export default function ProductImageViewer({
     setPanOffset({ x: 0, y: 0 });
   }, []);
 
-  // Lock body scroll when modal is active
-  useEffect(() => {
-    if (isModalOpen) {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = originalOverflow;
-      };
-    }
-  }, [isModalOpen]);
-
-  // Modal navigation
   const goToPrevImage = useCallback(() => {
-    setModalIndex(prev => {
-      const nextIdx = (prev - 1 + safeImages.length) % safeImages.length;
-      onSelectThumb(nextIdx);
-      return nextIdx;
-    });
+    const nextIdx = (modalIndex - 1 + safeImages.length) % safeImages.length;
+    setModalIndex(nextIdx);
+    onSelectThumb(nextIdx);
     setZoomLevel(1);
     setPanOffset({ x: 0, y: 0 });
-  }, [safeImages.length, onSelectThumb]);
+  }, [modalIndex, onSelectThumb, safeImages.length]);
 
   const goToNextImage = useCallback(() => {
-    setModalIndex(prev => {
-      const nextIdx = (prev + 1) % safeImages.length;
-      onSelectThumb(nextIdx);
-      return nextIdx;
-    });
+    const nextIdx = (modalIndex + 1) % safeImages.length;
+    setModalIndex(nextIdx);
+    onSelectThumb(nextIdx);
     setZoomLevel(1);
     setPanOffset({ x: 0, y: 0 });
-  }, [safeImages.length, onSelectThumb]);
+  }, [modalIndex, onSelectThumb, safeImages.length]);
 
   const handleSelectModalThumb = useCallback((idx: number) => {
     setModalIndex(idx);
@@ -97,13 +103,12 @@ export default function ProductImageViewer({
     setPanOffset({ x: 0, y: 0 });
   }, [onSelectThumb]);
 
-  // Modal zoom handlers
   const handleZoomIn = useCallback(() => {
-    setZoomLevel(prev => Math.min(3.5, Number((prev + 0.5).toFixed(1))));
+    setZoomLevel((prev) => Math.min(3.5, Number((prev + 0.5).toFixed(1))));
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    setZoomLevel(prev => {
+    setZoomLevel((prev) => {
       const next = Math.max(1, Number((prev - 0.5).toFixed(1)));
       if (next === 1) setPanOffset({ x: 0, y: 0 });
       return next;
@@ -115,14 +120,11 @@ export default function ProductImageViewer({
     setPanOffset({ x: 0, y: 0 });
   }, []);
 
-  // Handle keyboard shortcuts in modal
   useEffect(() => {
     if (!isModalOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        closeModal();
-      } else if (e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowLeft') {
         goToPrevImage();
       } else if (e.key === 'ArrowRight') {
         goToNextImage();
@@ -137,19 +139,14 @@ export default function ProductImageViewer({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, closeModal, goToPrevImage, goToNextImage, handleZoomIn, handleZoomOut, handleResetZoom]);
+  }, [isModalOpen, goToPrevImage, goToNextImage, handleZoomIn, handleZoomOut, handleResetZoom]);
 
-  // Main hover magnifier handlers
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!mainImageRef.current) return;
     const rect = mainImageRef.current.getBoundingClientRect();
     const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
     const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
     setMousePos({ x, y });
-  };
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
   };
 
   const handleMouseLeave = () => {
@@ -160,9 +157,9 @@ export default function ProductImageViewer({
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     if (e.deltaY < 0) {
-      setZoomLevel(prev => Math.min(3.5, Number((prev + 0.25).toFixed(2))));
+      setZoomLevel((prev) => Math.min(3.5, Number((prev + 0.25).toFixed(2))));
     } else {
-      setZoomLevel(prev => {
+      setZoomLevel((prev) => {
         const next = Math.max(1, Number((prev - 0.25).toFixed(2)));
         if (next === 1) setPanOffset({ x: 0, y: 0 });
         return next;
@@ -178,7 +175,6 @@ export default function ProductImageViewer({
     }
   };
 
-  // Drag to pan handlers in modal
   const handleMouseDown = (e: React.MouseEvent) => {
     if (zoomLevel <= 1) return;
     setIsDragging(true);
@@ -194,8 +190,6 @@ export default function ProductImageViewer({
     if (!isDragging || zoomLevel <= 1) return;
     const dx = e.clientX - dragStartRef.current.startX;
     const dy = e.clientY - dragStartRef.current.startY;
-
-    // Bounds clamping based on zoom level
     const maxOffset = 250 * (zoomLevel - 1);
     const clampedX = Math.max(-maxOffset, Math.min(maxOffset, dragStartRef.current.initialOffsetX + dx));
     const clampedY = Math.max(-maxOffset, Math.min(maxOffset, dragStartRef.current.initialOffsetY + dy));
@@ -208,290 +202,271 @@ export default function ProductImageViewer({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* MAIN IMAGE CONTAINER WITH HOVER MAGNIFIER */}
+    <div className="flex flex-col gap-3">
       <div
         ref={mainImageRef}
-        onMouseEnter={handleMouseEnter}
+        onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={handleMouseLeave}
         onMouseMove={handleMouseMove}
-        onClick={openModal}
-        className="relative w-full aspect-[3/4] md:max-w-[560px] bg-neutral-100 rounded-2xl overflow-hidden cursor-zoom-in select-none group shadow-sm border border-neutral-200/60"
+        className="group relative aspect-[3/4] w-full max-w-[560px] overflow-hidden rounded-[2px] border border-landing-line bg-landing-ivory select-none"
       >
         <Image
           src={currentImage}
-          alt={productName}
+          alt={`${productName} - ảnh ${activeThumb + 1}`}
           fill
           sizes="(max-width: 768px) 100vw, 55vw"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = fallbackImage;
-          }}
+          onError={() => handleImageError(activeThumb)}
           style={{
             transformOrigin: `${mousePos.x}% ${mousePos.y}%`,
             transform: isHovered ? 'scale(2.2)' : 'scale(1)',
-            transition: isHovered ? 'transform 0.08s ease-out' : 'transform 0.35s cubic-bezier(0.2, 0, 0.2, 1)',
+            transition: isHovered ? 'transform 0.08s ease-out' : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
           }}
           className="object-cover pointer-events-none"
         />
 
-        {/* Top-Right: Quick Fullscreen Button */}
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            openModal();
-          }}
-          aria-label="Phóng to toàn màn hình"
-          className="absolute top-3.5 right-3.5 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 hover:bg-white text-brand-navy backdrop-blur-md rounded-full text-label-sm font-semibold shadow-md transition-all opacity-90 group-hover:opacity-100 group-hover:scale-105 cursor-pointer z-10"
+          onClick={openModal}
+          aria-label={`Mở thư viện ảnh ${productName}`}
+          className={`absolute inset-0 z-10 cursor-zoom-in ${focusRingPaper}`}
+        />
+
+        <button
+          type="button"
+          onClick={openModal}
+          aria-label="Phóng to ảnh"
+          className={`absolute right-3 top-3 z-20 inline-flex h-10 items-center gap-2 border border-landing-line bg-landing-paper/95 px-3 text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood ${labelText} ${focusRingPaper}`}
         >
-          <Maximize2 className="w-3.5 h-3.5 text-[#5D1C34]" />
+          <Maximize2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
           <span>Phóng to</span>
         </button>
 
-        {/* Bottom Hint Banner */}
-        <div className={`absolute bottom-3.5 left-3.5 right-3.5 flex items-center justify-between pointer-events-none transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/60 backdrop-blur-md text-white rounded-full text-[11px] font-medium tracking-wide">
-            <ZoomIn className="w-3 h-3 text-amber-300" />
-            <span>Rê chuột để soi vải · Click để mở to</span>
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-x-3 bottom-3 z-20 flex items-center justify-between gap-2 transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}
+        >
+          <div className={`inline-flex items-center gap-2 border border-landing-paper/15 bg-landing-obsidian/80 px-3 py-1.5 text-landing-paper ${labelText}`}>
+            <ZoomIn className="h-3 w-3 text-landing-brass" strokeWidth={1.75} />
+            <span>Rê chuột để soi vải</span>
           </div>
 
-          <div className="px-2.5 py-1 bg-white/90 backdrop-blur-sm text-brand-navy rounded-full text-[11px] font-bold shadow-sm">
+          <div className="border border-landing-line bg-landing-paper/95 px-2.5 py-1 font-mono text-[10px] font-medium text-landing-obsidian">
             {activeThumb + 1} / {safeImages.length}
           </div>
         </div>
 
-        {/* Active Hover Badge */}
         {isHovered && (
-          <div className="absolute bottom-3.5 right-3.5 px-2.5 py-1 bg-black/70 backdrop-blur-sm text-white rounded-full text-[11px] font-medium pointer-events-none transition-all">
-            2.2x Lens
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute bottom-3 right-3 z-20 border border-landing-paper/15 bg-landing-obsidian/80 px-2.5 py-1 font-mono text-[10px] text-landing-paper ${labelText}`}
+          >
+            2.2x
           </div>
         )}
       </div>
 
-      {/* THUMBNAILS STRIP */}
-      <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1 md:max-w-[560px]">
+      <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar md:max-w-[560px]">
         {safeImages.map((img, idx) => {
           const isActive = activeThumb === idx;
           return (
             <button
-              key={idx}
+              key={`${img}-${idx}`}
               type="button"
               onClick={() => onSelectThumb(idx)}
-              className={`shrink-0 w-[82px] h-[110px] rounded-xl overflow-hidden transition-all duration-200 cursor-pointer relative bg-neutral-100 ${isActive
-                  ? 'ring-2 ring-[#5D1C34] ring-offset-2 scale-[1.02] shadow-sm'
-                  : 'opacity-70 hover:opacity-100 border border-neutral-200'
-                }`}
+              aria-label={`Xem ảnh ${idx + 1} của ${productName}`}
+              aria-pressed={isActive}
+              className={`relative h-[110px] w-[82px] shrink-0 overflow-hidden rounded-[2px] bg-landing-ivory transition-all duration-200 ${focusRingPaper} ${
+                isActive
+                  ? 'border-2 border-landing-oxblood'
+                  : 'border border-landing-line opacity-70 hover:opacity-100'
+              }`}
             >
               <Image
-                src={img}
-                alt={`Ảnh chi tiết ${idx + 1}`}
+                src={imageAt(idx)}
+                alt={`${productName} - ảnh ${idx + 1}`}
                 fill
                 sizes="82px"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = fallbackImage;
-                }}
+                onError={() => handleImageError(idx)}
                 className="object-cover"
               />
-              {isActive && (
-                <div className="absolute inset-0 border-2 border-[#5D1C34] rounded-xl pointer-events-none" />
-              )}
             </button>
           );
         })}
       </div>
 
-      {/* FULL-FEATURED LIGHTBOX MODAL */}
-      {isModalOpen && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex flex-col justify-between animate-in fade-in duration-200"
-          onClick={closeModal}
-        >
-          {/* MODAL HEADER */}
-          <div
-            className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/40 backdrop-blur-lg shrink-0 z-20 sm:px-6 sm:py-4"
-            onClick={(e) => e.stopPropagation()}
+      <Dialog.Root open={isModalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-[100] bg-landing-obsidian/95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
+          <Dialog.Content
+            className="fixed inset-0 z-[101] flex flex-col bg-landing-obsidian text-landing-paper focus:outline-none"
+            aria-label={`Thư viện ảnh ${productName}`}
           >
-            <div className="flex min-w-0 flex-col text-left">
-              <span className="text-[11px] font-bold text-[#D4AF37] uppercase tracking-wider">{brand}</span>
-              <h3 className="max-w-[170px] truncate text-[14px] font-semibold text-white min-[380px]:max-w-[220px] sm:max-w-[500px] sm:text-[16px]">
-                {productName}
-              </h3>
-            </div>
+            <Dialog.Title className="sr-only">Thư viện ảnh {productName}</Dialog.Title>
+            <Dialog.Description className="sr-only">
+              Dùng phím mũi tên để chuyển ảnh, phím cộng và trừ để phóng to, phím 0 để đặt lại, Esc để đóng.
+            </Dialog.Description>
 
-            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-              <div className="px-2.5 py-1 bg-white/10 rounded-full text-white/80 text-[11px] font-medium sm:px-3 sm:text-label-sm">
-                Ảnh {modalIndex + 1} / {safeImages.length}
+            <div className="z-20 flex shrink-0 items-center justify-between gap-3 border-b border-landing-paper/15 px-4 py-3 sm:px-6 sm:py-4">
+              <div className="min-w-0">
+                <p className={`text-landing-brass ${labelText}`}>{brand || 'StAie. Signature'}</p>
+                <p className="mt-1 max-w-[170px] truncate font-display text-base text-landing-paper min-[380px]:max-w-[220px] sm:max-w-[500px] sm:text-lg">
+                  {productName}
+                </p>
               </div>
 
-              <button
-                type="button"
-                onClick={closeModal}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                title="Đóng (Esc)"
-                aria-label="Đóng thư viện ảnh"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+              <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                <span className="border border-landing-paper/15 px-2.5 py-1 font-mono text-[10px] text-landing-paper/70 sm:px-3">
+                  Ảnh {modalIndex + 1} / {safeImages.length}
+                </span>
 
-          {/* MAIN MODAL VIEWPORT */}
-          <div
-            className="relative flex-1 flex items-center justify-center overflow-hidden p-4 select-none"
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleModalMouseMove}
-            onMouseUp={handleMouseUp}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Prev Image Button */}
-            {safeImages.length > 1 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  goToPrevImage();
-                }}
-                className="absolute left-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white border border-white/20 transition-all hover:scale-110 cursor-pointer backdrop-blur-md"
-                title="Ảnh trước (Mũi tên trái)"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-            )}
-
-            {/* Next Image Button */}
-            {safeImages.length > 1 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  goToNextImage();
-                }}
-                className="absolute right-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white border border-white/20 transition-all hover:scale-110 cursor-pointer backdrop-blur-md"
-                title="Ảnh tiếp theo (Mũi tên phải)"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            )}
-
-            {/* Scalable & Draggable Image */}
-            <div
-              onDoubleClick={handleDoubleClick}
-              className={`max-w-full max-h-full flex items-center justify-center transition-transform ${zoomLevel > 1
-                  ? isDragging ? 'cursor-grabbing' : 'cursor-grab'
-                  : 'cursor-zoom-in'
-                }`}
-              style={{
-                transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
-                transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0.2, 1)',
-              }}
-            >
-              <div className="relative h-[75vh] w-[min(90vw,900px)]">
-                <Image
-                src={safeImages[modalIndex]}
-                alt={productName}
-                fill
-                sizes="90vw"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = fallbackImage;
-                }}
-                className="object-contain rounded-lg pointer-events-none shadow-2xl"
-                />
-              </div>
-            </div>
-
-            {/* FLOATING ZOOM CONTROLS TOOLBAR */}
-            <div
-              className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-2 bg-neutral-900/85 backdrop-blur-md border border-white/15 rounded-full shadow-2xl text-white"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={handleZoomOut}
-                disabled={zoomLevel <= 1}
-                className="p-1.5 rounded-full hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                title="Thu nhỏ (-)"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleResetZoom}
-                className="px-2.5 py-0.5 text-xs font-semibold rounded-md hover:bg-white/20 transition-colors cursor-pointer text-neutral-200"
-                title="Nhấn để đưa về 100%"
-              >
-                {Math.round(zoomLevel * 100)}%
-              </button>
-
-              <button
-                type="button"
-                onClick={handleZoomIn}
-                disabled={zoomLevel >= 3.5}
-                className="p-1.5 rounded-full hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                title="Phóng to (+)"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-
-              <div className="w-px h-4 bg-white/20 mx-1" />
-
-              <button
-                type="button"
-                onClick={handleResetZoom}
-                className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer text-neutral-300 hover:text-white"
-                title="Đặt lại (0)"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-
-              {zoomLevel > 1 && (
-                <div className="hidden sm:flex items-center gap-1 text-[11px] text-amber-300/90 pl-1">
-                  <Move className="w-3 h-3" />
-                  <span>Kéo để soi chi tiết</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* MODAL BOTTOM THUMBNAILS */}
-          <div
-            className="px-6 py-4 bg-black/50 border-t border-white/10 backdrop-blur-lg flex items-center justify-center gap-3 overflow-x-auto no-scrollbar shrink-0 z-20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {safeImages.map((img, idx) => {
-              const isSelected = modalIndex === idx;
-              return (
                 <button
-                  key={idx}
                   type="button"
-                  onClick={() => handleSelectModalThumb(idx)}
-                  className={`relative shrink-0 w-14 h-18 rounded-lg overflow-hidden transition-all duration-150 cursor-pointer ${isSelected
-                      ? 'ring-2 ring-amber-400 scale-105 opacity-100'
-                      : 'opacity-50 hover:opacity-90 border border-white/20'
-                    }`}
+                  onClick={closeModal}
+                  aria-label="Đóng thư viện ảnh"
+                  className={`flex h-11 w-11 items-center justify-center border border-landing-paper/15 text-landing-paper transition-colors hover:border-landing-brass hover:text-landing-brass ${focusRingDark}`}
                 >
-                  <Image
-                    src={img}
-                    alt={`Thumb ${idx + 1}`}
-                    fill
-                    sizes="56px"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = fallbackImage;
-                    }}
-                    className="object-cover"
-                  />
-                  {isSelected && (
-                    <div className="absolute bottom-1 right-1 p-0.5 bg-amber-400 text-black rounded-full">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                  )}
+                  <X className="h-5 w-5" strokeWidth={1.75} />
                 </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+              </div>
+            </div>
+
+            <div
+              className="relative flex flex-1 select-none items-center justify-center overflow-hidden p-4"
+              onWheel={handleWheel}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleModalMouseMove}
+              onMouseUp={handleMouseUp}
+            >
+              {safeImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={goToPrevImage}
+                  aria-label="Ảnh trước"
+                  className={`absolute left-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center border border-landing-paper/20 bg-landing-obsidian/80 text-landing-paper transition-colors hover:border-landing-brass hover:text-landing-brass sm:left-6 ${focusRingDark}`}
+                >
+                  <ChevronLeft className="h-5 w-5" strokeWidth={1.75} />
+                </button>
+              )}
+
+              {safeImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={goToNextImage}
+                  aria-label="Ảnh tiếp theo"
+                  className={`absolute right-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center border border-landing-paper/20 bg-landing-obsidian/80 text-landing-paper transition-colors hover:border-landing-brass hover:text-landing-brass sm:right-6 ${focusRingDark}`}
+                >
+                  <ChevronRight className="h-5 w-5" strokeWidth={1.75} />
+                </button>
+              )}
+
+              <div
+                onDoubleClick={handleDoubleClick}
+                className={`flex max-h-full max-w-full items-center justify-center transition-transform ${
+                  zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                }`}
+                style={{
+                  transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+                  transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+                }}
+              >
+                <div className="relative h-[75vh] w-[min(90vw,900px)]">
+                  <Image
+                    src={imageAt(modalIndex)}
+                    alt={`${productName} - ảnh ${modalIndex + 1}`}
+                    fill
+                    sizes="90vw"
+                    onError={() => handleImageError(modalIndex)}
+                    className="pointer-events-none object-contain"
+                  />
+                </div>
+              </div>
+
+              <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 border border-landing-paper/15 bg-landing-obsidian/90 px-2 py-1.5 text-landing-paper">
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 1}
+                  aria-label="Thu nhỏ"
+                  className={`flex h-9 w-9 items-center justify-center transition-colors hover:text-landing-brass disabled:cursor-not-allowed disabled:opacity-30 ${focusRingDark}`}
+                >
+                  <ZoomOut className="h-4 w-4" strokeWidth={1.75} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetZoom}
+                  aria-label="Đặt lại mức phóng to"
+                  className={`min-w-[56px] px-2 py-1 font-mono text-[11px] text-landing-paper/80 transition-colors hover:text-landing-brass ${focusRingDark}`}
+                >
+                  {Math.round(zoomLevel * 100)}%
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 3.5}
+                  aria-label="Phóng to"
+                  className={`flex h-9 w-9 items-center justify-center transition-colors hover:text-landing-brass disabled:cursor-not-allowed disabled:opacity-30 ${focusRingDark}`}
+                >
+                  <ZoomIn className="h-4 w-4" strokeWidth={1.75} />
+                </button>
+
+                <span className="mx-1 h-4 w-px bg-landing-paper/20" aria-hidden="true" />
+
+                <button
+                  type="button"
+                  onClick={handleResetZoom}
+                  aria-label="Đặt lại ảnh"
+                  className={`flex h-9 w-9 items-center justify-center text-landing-paper/70 transition-colors hover:text-landing-brass ${focusRingDark}`}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.75} />
+                </button>
+
+                {zoomLevel > 1 && (
+                  <div className="hidden items-center gap-1 pl-1 font-mono text-[10px] text-landing-brass sm:flex" aria-hidden="true">
+                    <Move className="h-3 w-3" strokeWidth={1.75} />
+                    <span>Kéo để soi</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="z-20 flex shrink-0 items-center justify-center gap-2 overflow-x-auto border-t border-landing-paper/15 bg-landing-obsidian/80 px-4 py-3 no-scrollbar sm:px-6">
+              {safeImages.map((img, idx) => {
+                const isSelected = modalIndex === idx;
+                return (
+                  <button
+                    key={`${img}-modal-${idx}`}
+                    type="button"
+                    onClick={() => handleSelectModalThumb(idx)}
+                    aria-label={`Xem ảnh ${idx + 1}`}
+                    aria-pressed={isSelected}
+                    className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-[2px] transition-all duration-150 ${focusRingDark} ${
+                      isSelected
+                        ? 'border-2 border-landing-oxblood opacity-100'
+                        : 'border border-landing-paper/20 opacity-60 hover:opacity-90'
+                    }`}
+                  >
+                    <Image
+                      src={imageAt(idx)}
+                      alt={`${productName} - ảnh thu nhỏ ${idx + 1}`}
+                      fill
+                      sizes="56px"
+                      onError={() => handleImageError(idx)}
+                      className="object-cover"
+                    />
+                    {isSelected && (
+                      <span className="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center bg-landing-oxblood text-landing-paper">
+                        <Check className="h-2.5 w-2.5" strokeWidth={2.5} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

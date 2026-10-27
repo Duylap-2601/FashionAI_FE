@@ -11,6 +11,7 @@ import {
   X
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -359,10 +360,13 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
                   return (
                     <div key={item.id || idx} className="bg-white rounded-xl border border-neutral-200 p-3 shadow-2xs flex items-center gap-3">
                       {displayImage ? (
-                        <img
+                        <Image
                           src={displayImage}
                           alt={item.productNameSnapshot || item.product?.name || 'Sản phẩm'}
-                          className="w-11 h-13 object-cover rounded-lg bg-neutral-100 shrink-0 border border-neutral-200"
+                          width={44}
+                          height={52}
+                          unoptimized
+                          className="h-13 w-11 shrink-0 rounded-lg border border-neutral-200 bg-neutral-100 object-cover"
                         />
                       ) : (
                         <div className="w-11 h-13 bg-neutral-100 rounded-lg flex items-center justify-center shrink-0 border border-neutral-200">
