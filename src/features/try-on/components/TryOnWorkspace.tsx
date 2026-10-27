@@ -1,106 +1,18 @@
-import type { Product } from '@/features/products/types/products';
-import { SelectedProductCard } from '@/features/try-on/components/CatalogModal';
 import { ComparisonSlider } from '@/features/try-on/components/ComparisonSlider';
+import { GarmentColorPicker, GarmentSlot, TryOnSegmented, tryOnButtonClassName, tryOnFocusRing } from '@/features/try-on/components/garment-slot';
 import { GenerateButton } from '@/features/try-on/components/GenerateButton';
 import { UploadZone } from '@/features/try-on/components/UploadZone';
+import type { GarmentMode } from '@/features/try-on/types/try-on-types';
 import type { TryOnWorkspaceProps } from '@/features/try-on/types/try-on-workspace';
-import { Bookmark, Download, Info, Layers, Loader2, Share2 } from 'lucide-react';
-import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import { Download, History, Layers, Loader2, Share2 } from 'lucide-react';
 import Link from 'next/link';
+import type React from 'react';
 
-function GarmentSlot({
-  title,
-  product,
-  selectedColor,
-  actionLabel,
-  emptyLabel,
-  onSelect,
-  onSelectColor,
-  onClear,
-}: {
-  title: string;
-  product: Product | null;
-  selectedColor?: string | null;
-  actionLabel: string;
-  emptyLabel: string;
-  onSelect: () => void;
-  onSelectColor?: (color: string) => void;
-  onClear?: () => void;
-}) {
-  const currentColor = selectedColor || product?.colors?.[0]?.name;
-  const matchingImage = product?.imageItems?.find(
-    img => img.colorName && img.colorName.trim().toLowerCase() === currentColor?.trim().toLowerCase()
-  );
-  const slotImage = matchingImage?.url || product?.image;
-
-  return (
-    <div className="p-4 bg-white rounded-2xl border border-[#E5DFD5]">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[13px] font-semibold text-[#5D1C34]">{title}</span>
-        <div className="flex items-center gap-2">
-          {product && onClear && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="text-[12px] font-medium text-neutral-400 hover:text-red-600 transition-colors cursor-pointer bg-transparent border-0"
-            >
-              Bỏ chọn
-            </button>
-          )}
-          <button type="button" onClick={onSelect} className="text-[13px] font-semibold text-[#5D1C34] hover:underline cursor-pointer">
-            {actionLabel}
-          </button>
-        </div>
-      </div>
-      {product ? (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <div className="relative w-14 h-18 shrink-0 overflow-hidden rounded-lg border border-neutral-100 bg-neutral-100">
-              {slotImage && (
-                <Image src={slotImage} alt={product.name} fill sizes="56px" unoptimized className="object-cover" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-body-sm font-bold text-brand-navy truncate">{product.name}</h4>
-              <p className="text-[12px] text-neutral-500">{product.price}</p>
-            </div>
-          </div>
-
-          {product.colors && product.colors.length > 0 && onSelectColor && (
-            <div className="pt-2.5 border-t border-neutral-100 flex flex-col gap-1.5">
-              <div className="flex items-center justify-between text-xs font-medium text-neutral-600">
-                <span>Màu sắc:</span>
-                <span className="font-semibold text-[#5D1C34]">{currentColor}</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {product.colors.map(col => {
-                  const isSelected = currentColor?.trim().toLowerCase() === col.name.trim().toLowerCase();
-                  return (
-                    <button
-                      key={col.name}
-                      type="button"
-                      onClick={() => onSelectColor(col.name)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'border-[#5D1C34] bg-white text-[#5D1C34] shadow-xs ring-1 ring-[#5D1C34]'
-                          : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
-                      }`}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: col.hex }} />
-                      <span>{col.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <p className="text-body-sm text-neutral-400 italic py-2">{emptyLabel}</p>
-      )}
-    </div>
-  );
-}
+const MODE_OPTIONS: { value: GarmentMode; label: string; icon?: React.ReactNode }[] = [
+  { value: 'single', label: 'Một món' },
+  { value: 'combo', label: 'Phối bộ', icon: <Layers className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" /> },
+];
 
 export function TryOnWorkspace({
   userPhotoUrl,
@@ -123,7 +35,6 @@ export function TryOnWorkspace({
   quotaCost,
   onFileSelect,
   onCameraSelect,
-  onUseMockPhoto,
   onModeChange,
   onOpenCatalog,
   onSelectColor,
@@ -137,158 +48,96 @@ export function TryOnWorkspace({
   onTryAnother,
   onChangePhoto,
 }: TryOnWorkspaceProps) {
-  const matchingImage = selectedProduct.imageItems?.find(
-    img => img.colorName && img.colorName.trim().toLowerCase() === selectedColor?.trim().toLowerCase()
-  );
-  const productPreviewImage = matchingImage?.url || selectedProduct.image;
+  const selectedCount = garmentMode === 'combo' ? [outerProduct, upperProduct, lowerProduct].filter(Boolean).length : 1;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-6 lg:gap-8">
-      <div className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-[20px] font-semibold text-[#1A1917]">Ảnh của bạn / Kết quả</h2>
-          <p className="text-body-sm text-neutral-500 mt-0.5">Khung ảnh toàn thân, giữ nguyên tỷ lệ để dễ so sánh.</p>
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
+      <section aria-label="Ảnh của bạn" className="min-w-0">
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h2 className="font-display text-[1.375rem] leading-tight text-landing-obsidian">{resultPhotoUrl ? 'Kết quả' : 'Ảnh của bạn'}</h2>
+          <p className="text-xs text-landing-muted">{resultPhotoUrl ? 'Kéo để so sánh trước và sau' : 'Một người, thấy rõ toàn thân'}</p>
         </div>
 
-        <div className="relative">
+        <div className="relative mx-auto w-full max-w-[540px]">
           {resultPhotoUrl ? (
             <ComparisonSlider before={resultSourcePhotoUrl || userPhotoUrl || ''} after={resultPhotoUrl} />
           ) : (
             <UploadZone onFileSelect={onFileSelect} uploadedImage={userPhotoUrl} onCameraSelect={onCameraSelect} disabled={isLoading} error={inputError} />
           )}
 
-          {isLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/90 text-center backdrop-blur-sm border border-[#E5DFD5]" role="status" aria-live="polite">
-              <Loader2 className="h-9 w-9 animate-spin text-[#5D1C34] motion-reduce:animate-none" />
-              <div>
-                <p className="text-body-md font-semibold text-[#1A1917]">Đang thử trang phục</p>
-                <p className="text-body-sm text-neutral-600">Vui lòng giữ nguyên ảnh và trang phục trong lúc xử lý.</p>
-              </div>
+          {isLoading ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 border border-landing-line bg-landing-paper/90 px-6 text-center" role="status" aria-live="polite">
+              <Loader2 className="h-8 w-8 animate-spin text-landing-oxblood motion-reduce:animate-none" strokeWidth={1.5} aria-hidden="true" />
+              <p className="font-display text-2xl leading-tight text-landing-obsidian">Đang thử trang phục</p>
+              <p className="max-w-[260px] text-sm text-landing-muted">Giữ nguyên ảnh và trang phục cho tới khi có kết quả.</p>
             </div>
-          )}
+          ) : null}
         </div>
 
-        {!userPhotoUrl && !resultPhotoUrl && (
-          <button onClick={onUseMockPhoto} type="button" className="text-label-sm text-[#5D1C34] hover:text-[#5D1C34]/80 font-semibold underline underline-offset-2 text-left bg-transparent border-0 cursor-pointer">
-            Dùng ảnh minh họa để xem bố cục
-          </button>
-        )}
-
-        {resultPhotoUrl && (
-          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
-            <button onClick={onDownload} type="button" className="flex items-center justify-center gap-2 px-4 py-2.5 border border-[#E5DFD5] rounded-xl text-label-sm font-medium text-neutral-700 hover:bg-white transition-colors cursor-pointer bg-[#F9F7F5]">
-              <Download className="w-4 h-4 text-[#5D1C34]" /> Tải về
+        {resultPhotoUrl ? (
+          <div className="mx-auto mt-4 flex w-full max-w-[540px] flex-wrap items-center gap-2">
+            <button onClick={onDownload} type="button" className={tryOnButtonClassName('outline', 'sm')}>
+              <Download className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" /> Tải về
             </button>
-            <button onClick={onShare} type="button" className="flex items-center justify-center gap-2 px-4 py-2.5 border border-[#E5DFD5] rounded-xl text-label-sm font-medium text-neutral-700 hover:bg-white transition-colors cursor-pointer bg-[#F9F7F5]">
-              <Share2 className="w-4 h-4 text-[#5D1C34]" /> Chia sẻ
+            <button onClick={onShare} type="button" className={tryOnButtonClassName('outline', 'sm')}>
+              <Share2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" /> Chia sẻ
             </button>
-            <Link href="/profile/history" className="flex items-center justify-center gap-2 px-4 py-2.5 border border-[#E5DFD5] rounded-xl text-label-sm font-medium text-neutral-700 hover:bg-white transition-colors bg-[#F9F7F5]">
-              <Bookmark className="w-4 h-4 text-[#5D1C34]" /> Lịch sử
+            <Link href="/profile/history" className={tryOnButtonClassName('outline', 'sm')}>
+              <History className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" /> Lịch sử
             </Link>
-            <button onClick={onTryAnother} type="button" className="px-4 py-2.5 text-label-sm font-semibold text-[#5D1C34] hover:underline border border-transparent bg-transparent cursor-pointer">
-              Thử bộ khác
-            </button>
-            <button onClick={onChangePhoto} type="button" className="col-span-2 px-4 py-2.5 text-label-sm font-semibold text-[#5D1C34] hover:underline border border-transparent bg-transparent cursor-pointer sm:ml-auto sm:col-span-1">
-              Đổi ảnh
-            </button>
+            <div className="flex gap-5 sm:ml-auto">
+              <button onClick={onTryAnother} type="button" className={tryOnButtonClassName('quiet', 'sm')}>
+                Thử bộ khác
+              </button>
+              <button onClick={onChangePhoto} type="button" className={tryOnButtonClassName('quiet', 'sm')}>
+                Đổi ảnh
+              </button>
+            </div>
           </div>
-        )}
+        ) : null}
+      </section>
 
-        <div className="flex items-start gap-3 px-4 py-3 bg-[#F9F7F5] rounded-xl border border-[#E5DFD5]">
-          <Info className="w-4 h-4 text-[#5D1C34] shrink-0 mt-0.5" />
-          <p className="text-body-sm text-neutral-700">Ảnh minh họa chỉ để xem bố cục. Hãy tải ảnh cá nhân PNG/JPG dưới 10MB, toàn thân rõ nét để tạo kết quả thử đồ.</p>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#E5DFD5] bg-white p-4 md:p-5 self-start lg:sticky lg:top-24">
-        <div>
-          <h2 className="text-[20px] font-semibold text-[#1A1917]">Trang phục</h2>
-          <p className="text-body-sm text-neutral-500 mt-0.5">Chọn một món hoặc phối áo với quần/váy.</p>
+      <aside aria-label="Trang phục" className="flex flex-col gap-6 self-start lg:sticky lg:top-[97px]">
+        <div className="flex items-baseline justify-between gap-4 border-t border-landing-line pt-5 lg:border-t-0 lg:pt-0">
+          <h2 className="font-display text-[1.375rem] leading-tight text-landing-obsidian">Trang phục</h2>
+          <span className="font-mono text-xs text-landing-muted">{String(selectedCount).padStart(2, '0')} món</span>
         </div>
 
-        <div className="flex p-1 bg-[#F9F7F5] rounded-xl w-full">
-          <button type="button" disabled={isLoading} onClick={() => onModeChange('single')} className={`flex-1 px-4 py-2 rounded-lg text-label-sm font-medium transition-all border-0 disabled:cursor-not-allowed disabled:opacity-60 ${garmentMode === 'single' ? 'bg-white text-[#5D1C34] shadow-sm' : 'text-neutral-600 hover:text-neutral-800 bg-transparent'}`}>
-            Một món
-          </button>
-          <button type="button" disabled={isLoading} onClick={() => onModeChange('combo')} className={`flex-1 px-4 py-2 rounded-lg text-label-sm font-medium transition-all border-0 flex items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-60 ${garmentMode === 'combo' ? 'bg-white text-[#5D1C34] shadow-sm' : 'text-neutral-600 hover:text-neutral-800 bg-transparent'}`}>
-            <Layers className="w-3.5 h-3.5" /> Phối bộ
-          </button>
-        </div>
+        <TryOnSegmented ariaLabel="Số món thử" value={garmentMode} onChange={onModeChange} disabled={isLoading} options={MODE_OPTIONS} />
 
         {garmentMode === 'single' ? (
-          <div className="flex flex-col gap-4">
-            <SelectedProductCard product={selectedProduct} onReplace={() => onOpenCatalog('single')} />
-            {selectedProduct.colors && selectedProduct.colors.length > 0 && onSelectColor && (
-              <div className="flex flex-col gap-2 p-3 bg-[#F9F7F5] rounded-xl border border-[#E5DFD5]">
-                <div className="flex items-center justify-between text-body-sm font-medium text-brand-navy">
-                  <span>Màu sắc:</span>
-                  <span className="font-semibold text-[#5D1C34]">{selectedColor || selectedProduct.colors[0]?.name}</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedProduct.colors.map(col => {
-                    const isSelected = (selectedColor || selectedProduct.colors[0]?.name)?.toLowerCase() === col.name.toLowerCase();
-                    return (
-                      <button
-                        key={col.name}
-                        type="button"
-                        onClick={() => onSelectColor(col.name)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium border transition-all cursor-pointer ${
-                          isSelected
-                            ? 'border-[#5D1C34] bg-white text-[#5D1C34] shadow-xs ring-1 ring-[#5D1C34]'
-                            : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
-                        }`}
-                      >
-                        <span className="w-3 h-3 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: col.hex }} />
-                        <span>{col.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            <div className="rounded-xl overflow-hidden border border-[#E5DFD5] bg-white flex items-center justify-center relative aspect-[4/3]">
-              <Image src={productPreviewImage} alt={selectedProduct.name} fill sizes="(max-width: 1024px) 100vw, 50vw" unoptimized className="object-contain p-4" />
-            </div>
+          <div>
+            <GarmentSlot label="Trang phục" product={selectedProduct} color={selectedColor} emptyLabel="Chưa chọn trang phục" onSelect={() => onOpenCatalog('single')} disabled={isLoading} />
+            <GarmentColorPicker product={selectedProduct} selectedColor={selectedColor} onSelectColor={onSelectColor} disabled={isLoading} label="Màu" />
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
-            <GarmentSlot
-              title="Món 1: Áo khoác / Blazer (Lớp ngoài - Tùy chọn)"
-              product={outerProduct || null}
-              selectedColor={outerColor}
-              actionLabel={outerProduct ? 'Đổi áo khoác' : '+ Thêm áo khoác'}
-              emptyLabel="Chưa chọn áo khoác (tùy chọn)"
-              onSelect={() => onOpenCatalog('outer')}
-              onSelectColor={onSelectOuterColor}
-              onClear={outerProduct ? onClearOuter : undefined}
-            />
-            <GarmentSlot
-              title="Món 2: Áo trong / Sơ mi / Áo thun (Lớp trong)"
-              product={upperProduct}
-              selectedColor={upperColor}
-              actionLabel={upperProduct ? 'Đổi áo khác' : '+ Chọn áo'}
-              emptyLabel="Chưa chọn áo trong"
-              onSelect={() => onOpenCatalog('upper')}
-              onSelectColor={onSelectUpperColor}
-            />
-            <GarmentSlot
-              title="Món 3: Quần / Chân váy (Lớp dưới)"
-              product={lowerProduct}
-              selectedColor={lowerColor}
-              actionLabel={lowerProduct ? 'Đổi quần/váy' : '+ Chọn quần/váy'}
-              emptyLabel="Chưa chọn quần hoặc váy"
-              onSelect={() => onOpenCatalog('lower')}
-              onSelectColor={onSelectLowerColor}
-            />
-            <div className="p-3.5 bg-white rounded-xl border border-[#E5DFD5] text-[13px] text-neutral-600 flex items-center justify-between">
-              <span>Phối bộ sẽ dùng:</span>
-              <span className="font-bold text-[#5D1C34]">{quotaCost} lượt thử</span>
+          <div className="flex flex-col divide-y divide-landing-line/70 border-y border-landing-line/70">
+            <div className="py-4">
+              <GarmentSlot label="Lớp ngoài" hint="Tùy chọn" product={outerProduct || null} color={outerColor} emptyLabel="Áo khoác hoặc blazer" onSelect={() => onOpenCatalog('outer')} onClear={outerProduct ? onClearOuter : undefined} disabled={isLoading} />
+              <GarmentColorPicker product={outerProduct || null} selectedColor={outerColor} onSelectColor={onSelectOuterColor} disabled={isLoading} label="Màu lớp ngoài" />
+            </div>
+            <div className="py-4">
+              <GarmentSlot label="Lớp trong" product={upperProduct} color={upperColor} emptyLabel="Sơ mi hoặc áo trong" onSelect={() => onOpenCatalog('upper')} disabled={isLoading} />
+              <GarmentColorPicker product={upperProduct} selectedColor={upperColor} onSelectColor={onSelectUpperColor} disabled={isLoading} label="Màu lớp trong" />
+            </div>
+            <div className="py-4">
+              <GarmentSlot label="Phần dưới" product={lowerProduct} color={lowerColor} emptyLabel="Quần hoặc chân váy" onSelect={() => onOpenCatalog('lower')} disabled={isLoading} />
+              <GarmentColorPicker product={lowerProduct} selectedColor={lowerColor} onSelectColor={onSelectLowerColor} disabled={isLoading} label="Màu phần dưới" />
             </div>
           </div>
         )}
 
         <GenerateButton canGenerate={canGenerate} isSubmitting={isSubmitting} isBlocked={isBlocked} quotaCost={quotaCost} onGenerate={onGenerate} />
-      </div>
+
+        {!userPhotoUrl && !resultPhotoUrl ? (
+          <p className={cn('text-xs leading-relaxed text-landing-muted')}>
+            Cần một ảnh toàn thân trước khi thử.{' '}
+            <button type="button" onClick={onCameraSelect} className={cn('text-landing-oxblood underline-offset-4 hover:underline', tryOnFocusRing)}>
+              Chụp ngay
+            </button>
+          </p>
+        ) : null}
+      </aside>
     </div>
   );
 }

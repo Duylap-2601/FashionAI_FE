@@ -9,8 +9,8 @@ import Link from 'next/link';
 /** Món lẻ AI Chat gợi ý, cùng kiểu với thẻ bộ phối để đứng chung một băng vuốt. */
 export function SuggestedProductCard({ product, onAddToCart, onSelectProduct }: SuggestedProductCardProps) {
   return (
-    <article className="snap-start shrink-0 w-[200px] sm:w-[212px] bg-white rounded-2xl border border-neutral-200/80 shadow-xs overflow-hidden flex flex-col">
-      <div className="flex h-48 px-3 bg-brand-cream overflow-hidden">
+    <article className="flex w-[200px] shrink-0 snap-start flex-col overflow-hidden rounded-[2px] border border-landing-line bg-landing-ivory sm:w-[212px]">
+      <div className="flex h-48 overflow-hidden border-b border-landing-line/70 bg-landing-paper px-3">
         <ProductCutoutImage product={product} alt={product.name} onSelect={onSelectProduct} />
       </div>
       <div className="flex-1 flex flex-col gap-2.5 p-3.5">
@@ -19,33 +19,33 @@ export function SuggestedProductCard({ product, onAddToCart, onSelectProduct }: 
             <Link
               href={`/products/${product.id}`}
               onClick={() => onSelectProduct(product)}
-              className="text-body-sm font-semibold text-neutral-900 leading-snug line-clamp-2 hover:text-brand-navy"
+              className="product-name-line line-clamp-2 text-landing-obsidian hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
             >
               {product.name}
             </Link>
           ) : (
-            <p className="text-body-sm font-semibold text-neutral-400 leading-snug line-clamp-2 line-through">{product.name}</p>
+            <p className="product-name-line line-clamp-2 text-landing-muted line-through">{product.name}</p>
           )}
-          <p className={`mt-1 text-body-md font-bold ${product.available ? 'text-brand-navy' : 'text-semantic-error'}`}>
+          <p className={`mt-1 font-mono text-sm ${product.available ? 'text-landing-oxblood' : 'text-destructive'}`}>
             {product.available ? formatVnd(product.price) : 'Ngừng bán'}
           </p>
         </div>
         {product.available && (
           <div className="mt-auto grid grid-cols-2 gap-2">
-            <Link
-              href={`/try-on?productId=${product.id}`}
-              className="h-9 rounded-xl border border-brand-navy/30 bg-white text-brand-navy text-label-sm font-semibold flex items-center justify-center gap-1 hover:bg-brand-navy/5 transition-colors"
-            >
-              <Sparkles className="w-3.5 h-3.5" /> Thử đồ
-            </Link>
             <button
               type="button"
               onClick={() => onAddToCart(product)}
               aria-label={`Thêm ${product.name} vào giỏ`}
-              className="h-9 rounded-xl bg-brand-navy text-white text-label-sm font-semibold flex items-center justify-center gap-1 hover:bg-brand-navy/90 transition-colors border-0 cursor-pointer"
+              className="flex h-9 items-center justify-center gap-1 rounded-[2px] bg-landing-oxblood text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-paper transition-colors hover:bg-landing-obsidian focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
             >
-              <ShoppingBag className="w-3.5 h-3.5" /> Thêm
+              <ShoppingBag className="h-3.5 w-3.5" strokeWidth={1.75} /> Thêm
             </button>
+            <Link
+              href={`/try-on?productId=${product.id}`}
+              className="flex h-9 items-center justify-center gap-1 rounded-[2px] border border-landing-obsidian/70 text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
+            >
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} /> Thử đồ
+            </Link>
           </div>
         )}
       </div>

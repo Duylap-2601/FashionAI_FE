@@ -1,8 +1,17 @@
 'use client';
 
+import { usePlans } from '@/features/subscription/hooks/useSubscription';
 import type { SubscriptionRequiredModalProps } from '@/features/subscription/types/subscription-required-modal';
-import { ArrowRight, Crown, X } from 'lucide-react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+const PAID_TIERS = ['MEMBER', 'VIP'];
+
+function formatVnd(value: number) {
+  return `${value.toLocaleString('vi-VN')}đ`;
+}
 
 export function SubscriptionRequiredModal({
   isOpen,
@@ -11,9 +20,9 @@ export function SubscriptionRequiredModal({
   actionName = 'Thử đồ AI',
 }: SubscriptionRequiredModalProps) {
   const router = useRouter();
-
-  if (!isOpen) return null;
-
+  // Giá và lượt lấy từ GET /payments/plans để không lệch với trang gói.
+  const { plans, isLoading } = usePlans();
+  const paidPlans = plans.filter((plan) => PAID_TIERS.includes(plan.tier));
   const isExpired = reason === 'subscription_expired';
 
   const handleGoToSubscription = () => {
@@ -22,88 +31,62 @@ export function SubscriptionRequiredModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
-        onClick={onClose}
-      />
-
-      {/* Modal Card */}
-      <div className="relative w-full max-w-[480px] bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-neutral-100 z-10 animate-in zoom-in-95 duration-200 overflow-hidden">
-        {/* Decorative background glow */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#5D1C34]/15 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[#A67D44]/15 rounded-full blur-2xl pointer-events-none" />
-
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-neutral-400 hover:text-neutral-700 rounded-full hover:bg-neutral-100 transition-colors"
-          aria-label="Đóng"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Icon */}
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#5D1C34] to-[#A67D44] text-white flex items-center justify-center mb-5 shadow-md shadow-[#5D1C34]/20">
-          <Crown className="w-7 h-7" />
-        </div>
-
-        {/* Title & Desc */}
-        <h3 className="text-[22px] font-bold text-brand-navy leading-tight mb-2">
-          {isExpired ? 'Gói của bạn đã hết hạn' : `Nâng cấp để sử dụng ${actionName}`}
-        </h3>
-        <p className="text-body-sm text-neutral-600 mb-6 leading-relaxed">
-          {isExpired
-            ? 'Thời hạn gói cước hội viên của bạn đã kết thúc. Hãy gia hạn gói để tiếp tục trải nghiệm tính năng thử đồ và tư vấn may đo chuẩn xác.'
-            : `Tính năng "${actionName}" yêu cầu gói hội viên trả phí (MEMBER hoặc VIP). Nâng cấp ngay để mở khóa lượt thử đồ mỗi ngày cùng công nghệ AI độc quyền.`}
-        </p>
-
-        {/* Tier Highlights */}
-        <div className="space-y-3 mb-6">
-          <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-[#5D1C34]/10 text-[#5D1C34] flex items-center justify-center font-bold text-xs">
-                M
-              </div>
-              <div>
-                <p className="text-body-sm font-bold text-brand-navy">Gói MEMBER</p>
-                <p className="text-[12px] text-neutral-500">5 lượt Try-on / ngày · 30 ngày</p>
-              </div>
+    <Dialog.Root open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[110] bg-landing-obsidian/45 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Content className="fixed inset-x-0 bottom-0 z-[111] max-h-[90svh] overflow-y-auto border-t border-landing-line bg-landing-paper px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 text-landing-obsidian data-[state=open]:animate-in data-[state=open]:fade-in-0 sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[calc(100%-2rem)] sm:max-w-[460px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:border sm:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink">Gói thành viên</p>
+              <Dialog.Title className="mt-1.5 font-display text-2xl leading-tight">
+                {isExpired ? 'Gói thành viên đã hết hạn' : `Nâng cấp để dùng ${actionName}`}
+              </Dialog.Title>
             </div>
-            <span className="text-body-sm font-bold text-[#5D1C34]">49.000đ</span>
+            <Dialog.Close aria-label="Đóng" className={`-mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center text-landing-muted transition-colors hover:text-landing-oxblood ${focusRing}`}>
+              <X className="h-5 w-5" strokeWidth={1.75} />
+            </Dialog.Close>
           </div>
+          <Dialog.Description className="mt-2 text-sm leading-relaxed text-landing-muted">
+            {isExpired
+              ? `Gia hạn gói để tiếp tục dùng ${actionName}.`
+              : `${actionName} cần gói Member hoặc VIP. Mỗi gói có lượt mới mỗi ngày.`}
+          </Dialog.Description>
 
-          <div className="p-3.5 bg-gradient-to-r from-[#5D1C34]/5 to-[#A67D44]/10 rounded-2xl border border-[#A67D44]/30 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#5D1C34] to-[#A67D44] text-white flex items-center justify-center font-bold text-xs">
-                <Crown className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-body-sm font-bold text-brand-navy">Gói VIP</p>
-                <p className="text-[12px] text-neutral-500">10 lượt Try-on / ngày · Stylist & Chatbot ∞</p>
-              </div>
+          {isLoading ? (
+            <div className="mt-5 space-y-2" aria-hidden="true">
+              <div className="h-14 animate-pulse bg-landing-taupe/30" />
+              <div className="h-14 animate-pulse bg-landing-taupe/30" />
             </div>
-            <span className="text-body-sm font-bold text-[#5D1C34]">99.000đ</span>
-          </div>
-        </div>
+          ) : paidPlans.length > 0 ? (
+            <ul className="mt-5 divide-y divide-landing-line/70 border-y border-landing-line/70">
+              {paidPlans.map((plan) => {
+                const tryOn = plan.quotas.find((quota) => quota.action === 'TRY_ON');
+                return (
+                  <li key={plan.tier} className="flex items-center justify-between gap-4 py-3">
+                    <div>
+                      <p className="font-display text-lg leading-tight">{plan.label}</p>
+                      <p className="mt-0.5 text-xs text-landing-muted">
+                        {tryOn ? (tryOn.unlimited ? 'Thử đồ không giới hạn' : `${tryOn.limit} lượt thử đồ mỗi ngày`) : null}
+                        {plan.durationDays ? ` · ${plan.durationDays} ngày` : null}
+                      </p>
+                    </div>
+                    <span className="font-mono text-sm text-landing-oxblood">{formatVnd(plan.price)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
 
-        {/* Action buttons */}
-        <div className="flex flex-col gap-2.5">
-          <button
-            onClick={handleGoToSubscription}
-            className="w-full h-[50px] bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-95 transition-opacity shadow-md shadow-[#5D1C34]/20 cursor-pointer"
-          >
-            {isExpired ? 'Gia hạn gói ngay' : 'Xem các gói nâng cấp'} <ArrowRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onClose}
-            className="w-full py-2.5 text-center text-body-sm text-neutral-500 hover:text-neutral-800 font-medium transition-colors"
-          >
-            Để sau
-          </button>
-        </div>
-      </div>
-    </div>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onClose} className={`inline-flex h-11 items-center justify-center rounded-[2px] border border-landing-line px-5 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors hover:border-landing-oxblood hover:text-landing-oxblood ${focusRing}`}>
+              Để sau
+            </button>
+            <button type="button" onClick={handleGoToSubscription} className={`inline-flex h-11 items-center justify-center rounded-[2px] bg-landing-oxblood px-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper transition-colors hover:bg-landing-obsidian ${focusRing}`}>
+              {isExpired ? 'Gia hạn gói' : 'Xem các gói'}
+            </button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

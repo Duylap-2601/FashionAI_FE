@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 
 const BUTTON_CLASS =
-  'h-10 px-3 rounded-xl border border-brand-navy/30 bg-white text-brand-navy text-label-md font-semibold flex items-center justify-center gap-1.5 hover:bg-brand-navy/5 transition-colors cursor-pointer';
+  'flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-[2px] border border-landing-obsidian/70 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
 
 /**
  * "Thử đồ" cho một bộ phối. Phòng thử chỉ mặc được 1 áo + 1 quần/váy (hoặc 1 đầm), nên bộ có
@@ -27,8 +27,8 @@ export function OutfitTryOnButton({ outfit }: OutfitTryOnButtonProps) {
 
   if (options.length === 0) {
     return (
-      <span className="h-10 px-3 rounded-xl border border-neutral-200 text-neutral-400 text-label-md font-semibold flex items-center justify-center gap-1.5">
-        <Sparkles className="w-4 h-4" /> Thử đồ
+      <span className="flex h-10 items-center justify-center gap-1.5 rounded-[2px] border border-landing-line px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-muted/70">
+        <Sparkles className="h-4 w-4" strokeWidth={1.75} /> Thử đồ
       </span>
     );
   }
@@ -36,7 +36,7 @@ export function OutfitTryOnButton({ outfit }: OutfitTryOnButtonProps) {
   if (options.length === 1) {
     return (
       <Link href={options[0].href} className={BUTTON_CLASS}>
-        <Sparkles className="w-4 h-4" /> Thử đồ
+        <Sparkles className="h-4 w-4" strokeWidth={1.75} /> Thử đồ
       </Link>
     );
   }
@@ -45,24 +45,24 @@ export function OutfitTryOnButton({ outfit }: OutfitTryOnButtonProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button type="button" className={BUTTON_CLASS}>
-          <Sparkles className="w-4 h-4" /> Thử đồ <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+          <Sparkles className="h-4 w-4" strokeWidth={1.75} /> Thử đồ <ChevronDown className="h-3.5 w-3.5 opacity-70" strokeWidth={1.75} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72 p-1.5">
-        <DropdownMenuLabel className="px-2 pt-1 pb-2 text-label-sm font-normal text-neutral-500">
+      <DropdownMenuContent align="start" className="w-72 rounded-[2px] border-landing-line bg-landing-ivory p-1.5">
+        <DropdownMenuLabel className="px-2 pt-1 pb-2 text-xs font-normal leading-relaxed text-landing-muted">
           Phòng thử mặc được 1 áo + 1 quần/váy. Chọn áo muốn thử:
         </DropdownMenuLabel>
         {options.map((option) => {
           const [upper, ...rest] = option.products;
           const role = roleOf(upper.id);
           return (
-            <DropdownMenuItem key={option.href} asChild className="cursor-pointer rounded-lg px-2 py-2">
+            <DropdownMenuItem key={option.href} asChild className="cursor-pointer rounded-[2px] px-2 py-2 focus:bg-landing-paper">
               <Link href={option.href} className="flex flex-col items-start gap-0.5">
-                <span className="text-body-sm font-semibold text-neutral-900 line-clamp-1">
+                <span className="line-clamp-1 text-sm font-semibold text-landing-obsidian">
                   {role ? `${OUTFIT_ROLE_LABELS[role]}: ` : ''}{upper.name}
                 </span>
                 {rest.length > 0 && (
-                  <span className="text-label-sm text-neutral-500 line-clamp-1">+ {rest.map((product) => product.name).join(' + ')}</span>
+                  <span className="line-clamp-1 text-xs text-landing-muted">+ {rest.map((product) => product.name).join(' + ')}</span>
                 )}
               </Link>
             </DropdownMenuItem>

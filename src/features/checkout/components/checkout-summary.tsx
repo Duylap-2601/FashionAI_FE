@@ -44,7 +44,7 @@ export function CheckoutSummary({
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-body-sm font-medium text-brand-navy line-clamp-1">{item.name}</h3>
+                <h3 className="product-name-line text-landing-obsidian line-clamp-1">{item.name}</h3>
                 <p className="text-[12px] text-neutral-500">Màu: {item.color || 'Mặc định'} · May đo</p>
               </div>
               <div className="text-body-sm font-medium text-brand-navy">

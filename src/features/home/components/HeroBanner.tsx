@@ -1,192 +1,256 @@
 'use client';
 
-import type { HeroBannerProps } from '@/features/home/types/hero-banner';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { cn } from '@/components/ui/utils';
+import { HERO_LOCAL_SLIDES } from '@/features/home/constants/landing-media';
+import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-export function HeroBanner({ collections }: HeroBannerProps) {
+interface HeroSlide {
+  id: string;
+  name: string;
+  season: string;
+  image: string;
+  fallbackImage: string;
+}
+
+export function HeroBanner() {
+  const shouldReduceMotion = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
-  const activeCollection = collections[activeIndex] || collections[0];
+  const slides: HeroSlide[] = HERO_LOCAL_SLIDES.map((s) => ({ ...s }));
+
+  const safeIndex = activeIndex % slides.length;
+  const activeSlide = slides[safeIndex] ?? slides[0];
+  const activeImage = failedImages[activeSlide.id] ? activeSlide.fallbackImage : activeSlide.image;
+
+  useEffect(() => {
+    if (activeIndex >= slides.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, slides.length]);
 
   const handleNext = useCallback(() => {
-    if (collections.length <= 1) return;
-    setActiveIndex((prev) => (prev + 1) % collections.length);
-  }, [collections.length]);
+    if (slides.length <= 1) return;
+    setActiveIndex((prev) => (prev + 1) % slides.length);
+  }, [slides.length]);
 
   const handlePrev = useCallback(() => {
-    if (collections.length <= 1) return;
-    setActiveIndex((prev) => (prev - 1 + collections.length) % collections.length);
-  }, [collections.length]);
+    if (slides.length <= 1) return;
+    setActiveIndex((prev) => (prev - 1 + slides.length) % slides.length);
+  }, [slides.length]);
 
-  // Auto-play timer
   useEffect(() => {
-    if (isPaused || collections.length <= 1) return;
-    const timer = setInterval(() => {
-      handleNext();
+    if (isPaused || shouldReduceMotion || slides.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % slides.length);
     }, 6000);
-    return () => clearInterval(timer);
-  }, [isPaused, collections.length, handleNext]);
-
-  if (!activeCollection) return null;
-
-  const fallbackBanner = '/images/731163514_999523332788054_1114320478812927640_n.png';
-  const coverImages = activeCollection.coverImages || [];
-  const leftImg = coverImages[0] || activeCollection.thumbnail || fallbackBanner;
-  const centerImg = coverImages[1] || coverImages[0] || activeCollection.thumbnail || fallbackBanner;
-  const rightImg = coverImages[2] || coverImages[0] || activeCollection.thumbnail || fallbackBanner;
+    return () => window.clearInterval(timer);
+  }, [isPaused, shouldReduceMotion, slides.length]);
 
   return (
     <section
-      className="relative w-full bg-[#0e161c] text-white overflow-hidden select-none"
+      className="relative isolate overflow-hidden bg-landing-obsidian text-landing-paper"
+      aria-roledescription="carousel"
+      aria-label="Bộ sưu tập nổi bật"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
     >
-      {/* Background ambient lighting */}
-      <div className="absolute inset-0 bg-radial from-[#5D1C34]/20 via-transparent to-transparent opacity-40 pointer-events-none" />
-
-      <div className="max-w-[1440px] mx-auto px-4 md:px-8 pt-8 pb-12 md:py-14">
-        {/* Editorial 3-Panel Hero Grid */}
-        <AnimatePresence mode="wait">
+      <div className="absolute inset-0">
+        <AnimatePresence initial={false} mode="sync">
           <motion.div
-            key={activeCollection.id}
-            initial={{ opacity: 0, scale: 0.99 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.99 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-center"
+            key={activeSlide.id}
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.9, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Left Panel (Hidden on mobile or smaller portrait) */}
-            <div className="hidden md:block md:col-span-3 h-[480px] lg:h-[580px] rounded-2xl overflow-hidden shadow-2xl relative group">
-              <Image
-                src={leftImg}
-                alt={`${activeCollection.name} Look 1`}
-                fill
-                priority
-                sizes="25vw"
-                className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = fallbackBanner;
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-              <div className="absolute bottom-4 left-4 right-4 text-[11px] uppercase tracking-widest text-white/80 font-medium">
-                LOOK 01 • {activeCollection.season}
-              </div>
-            </div>
-
-            {/* Center Main Hero Panel (Full width on mobile, 6 cols on desktop) */}
-            <div className="col-span-1 md:col-span-6 h-[440px] min-[420px]:h-[500px] md:h-[520px] lg:h-[620px] rounded-2xl overflow-hidden shadow-2xl relative group flex flex-col justify-end p-5 sm:p-6 md:p-10">
-              <Image
-                src={centerImg}
-                alt={`${activeCollection.name} Center`}
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover object-top group-hover:scale-103 transition-transform duration-700 ease-out"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = fallbackBanner;
-                }}
-              />
-              {/* Vignette & Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
-
-              {/* Center Content Overlay */}
-              <div className="relative z-10 flex flex-col items-center text-center max-w-[520px] mx-auto">
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-white/60 text-[#5D1C34] text-[11px] font-bold tracking-widest uppercase mb-4 shadow-sm">
-                  {activeCollection.season || 'BỘ SƯU TẬP 2026'}
-                </span>
-
-                <h1 className="text-[28px] min-[420px]:text-[32px] sm:text-[40px] lg:text-[46px] font-bold tracking-tight text-white leading-[1.15] mb-3">
-                  {activeCollection.name}
-                </h1>
-
-                {activeCollection.tagline && (
-                  <p className="text-white/85 text-body-sm sm:text-body-md font-light italic mb-6 line-clamp-2 max-w-[420px]">
-                    &ldquo;{activeCollection.tagline}&rdquo;
-                  </p>
-                )}
-
-                {/* CTAs */}
-                <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
-                  <a
-                    href="#collections"
-                    className="h-11 sm:h-12 px-5 sm:px-7 rounded-full bg-white text-neutral-900 hover:bg-neutral-100 font-semibold text-body-sm flex items-center justify-center gap-2 shadow-xl hover:scale-103 active:scale-97 transition-all duration-200"
-                  >
-                    <span>Khám phá BST</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-
-                  <Link
-                    href="/try-on"
-                    className="h-11 sm:h-12 px-5 sm:px-7 rounded-full bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-body-sm flex items-center justify-center gap-2 shadow-xl border border-white/10 hover:scale-103 active:scale-97 transition-all duration-200"
-                  >
-                    <span>Thử đồ AI</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Panel (Hidden on mobile) */}
-            <div className="hidden md:block md:col-span-3 h-[480px] lg:h-[580px] rounded-2xl overflow-hidden shadow-2xl relative group">
-              <Image
-                src={rightImg}
-                alt={`${activeCollection.name} Look 2`}
-                fill
-                priority
-                sizes="25vw"
-                className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = fallbackBanner;
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-              <div className="absolute bottom-4 left-4 right-4 text-[11px] uppercase tracking-widest text-white/80 font-medium text-right">
-                LOOK 02 • {activeCollection.season}
-              </div>
-            </div>
+            <Image
+              src={activeImage}
+              alt={`${activeSlide.name} - ${activeSlide.season}`}
+              fill
+              priority={safeIndex === 0}
+              sizes="100vw"
+              className="object-cover object-[50%_0%]"
+              onError={() => {
+                setFailedImages((prev) => ({ ...prev, [activeSlide.id]: true }));
+              }}
+            />
           </motion.div>
         </AnimatePresence>
+        <div className="absolute inset-0 bg-gradient-to-r from-landing-obsidian via-landing-obsidian/75 to-landing-obsidian/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-landing-obsidian via-landing-obsidian/15 to-landing-obsidian/20" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_45%,rgba(93,28,52,0.22),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_left,rgba(17,16,15,0.72)_0%,rgba(17,16,15,0.3)_42%,transparent_66%)]" />
+      </div>
 
-        {/* Bottom controls: Carousel Dots & Arrows */}
-        {collections.length > 1 && (
-          <div className="mt-8 flex items-center justify-between max-w-[600px] mx-auto px-4">
-            <button
-              onClick={handlePrev}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors cursor-pointer"
-              aria-label="Previous collection"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+      <p className="sr-only" aria-live="polite">
+        {activeSlide.name}
+      </p>
 
-            {/* Pagination dots with names */}
-            <div className="flex items-center gap-2.5">
-              {collections.map((col, idx) => (
-                <button
-                  key={col.id}
-                  onClick={() => setActiveIndex(idx)}
-                  className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${activeIndex === idx ? 'w-8 bg-brand-gold' : 'w-2.5 bg-white/30 hover:bg-white/60'
-                    }`}
-                  aria-label={`Slide to ${col.name}`}
-                  title={col.name}
-                />
-              ))}
-            </div>
-
-            <button
-              onClick={handleNext}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors cursor-pointer"
-              aria-label="Next collection"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+      <div className="relative z-10 mx-auto flex min-h-[560px] w-full max-w-[1440px] flex-col justify-between px-4 pb-8 pt-14 sm:px-6 sm:pt-20 md:min-h-[800px] md:px-8 md:pb-10 md:pt-28 lg:min-h-[860px] lg:pt-32">
+        <div className="max-w-[720px]">
+          <div className="flex items-center gap-3 text-landing-label font-semibold uppercase tracking-[0.22em] text-landing-brass">
+            <span className="h-px w-12 bg-landing-brass" />
+            <span>Bộ sưu tập / 2026</span>
           </div>
-        )}
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSlide.id}
+              initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <h1 className="mt-6 font-display text-[clamp(2.1rem,10.5vw,2.7rem)] leading-[1.1] tracking-[-0.025em] text-landing-paper sm:mt-7 sm:text-landing-display">
+                <span className="block">
+                  Mặc đúng <em className="font-normal italic text-landing-brass">dáng</em>.
+                </span>
+                <span className="mt-3 block sm:mt-6 lg:mt-8">
+                  Sống đúng <em className="font-normal italic text-landing-brass">chất</em>.
+                </span>
+              </h1>
+
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:items-center">
+            <Link
+              href="#collections"
+              className="group inline-flex h-12 items-center justify-center gap-3 border border-landing-paper bg-landing-paper px-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-obsidian transition-colors hover:border-landing-brass hover:bg-landing-brass"
+            >
+              Khám phá bộ sưu tập
+              <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </Link>
+            <Link
+              href="/try-on"
+              className="inline-flex h-12 items-center justify-center border border-landing-paper/35 px-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper transition-colors hover:border-landing-paper hover:bg-landing-paper hover:text-landing-obsidian"
+            >
+              Thử đồ AI
+            </Link>
+          </div>
+
+          <div className="mt-8 flex items-center justify-between gap-4 border-t border-landing-paper/15 pt-4 md:hidden">
+            <span className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55">
+              {String(safeIndex + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+            </span>
+            <HeroPagination
+              slides={slides}
+              activeIndex={safeIndex}
+              onSelect={setActiveIndex}
+              onPrev={handlePrev}
+              onNext={handleNext}
+            />
+          </div>
+        </div>
+
+        <motion.div
+          className="pointer-events-none absolute right-20 top-48 hidden xl:block"
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 0.9,
+            delay: shouldReduceMotion ? 0 : 0.3,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          aria-hidden="true"
+        >
+          <div className="relative">
+            <div className="relative flex flex-col items-end">
+              <div className="flex items-center gap-3">
+                <span className="h-px w-12 bg-landing-brass/55" />
+                <span className="font-mono text-[10px] font-medium uppercase tracking-[0.34em] text-landing-brass/90">
+                  Atelier N° 01
+                </span>
+              </div>
+              <Image
+                src="/icons/brand-wordmark-paper.png"
+                alt=""
+                width={747}
+                height={307}
+                className="mt-6 h-[clamp(4.5rem,7.5vw,7.5rem)] w-auto"
+              />
+              <span className="mt-6 h-px w-24 bg-gradient-to-l from-landing-brass/60 to-transparent" />
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="mt-16 hidden items-end justify-between gap-6 border-t border-landing-paper/15 pt-5 md:flex">
+          <span className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/55">
+            {String(safeIndex + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+          </span>
+
+          <HeroPagination
+            slides={slides}
+            activeIndex={safeIndex}
+            onSelect={setActiveIndex}
+            onPrev={handlePrev}
+            onNext={handleNext}
+          />
+        </div>
+      </div>
+
+      <div className="pointer-events-none absolute right-6 top-1/2 hidden -translate-y-1/2 rotate-180 text-[9px] font-semibold uppercase tracking-[0.32em] text-landing-paper/40 [writing-mode:vertical-rl] xl:block">
+        Saigon / Issue 01 / 2026
       </div>
     </section>
+  );
+}
+
+interface HeroPaginationProps {
+  slides: HeroSlide[];
+  activeIndex: number;
+  onSelect: (index: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
+function HeroPagination({ slides, activeIndex, onSelect, onPrev, onNext }: HeroPaginationProps) {
+  return (
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5" aria-label="Chọn bộ sưu tập">
+        {slides.map((slide, index) => (
+          <button
+            key={slide.id}
+            type="button"
+            onClick={() => onSelect(index)}
+            aria-label={`Xem ${slide.name}`}
+            aria-current={activeIndex === index ? 'true' : undefined}
+            className={cn(
+              'h-1.5 transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-brass',
+              activeIndex === index
+                ? 'w-8 bg-landing-brass'
+                : 'w-3 bg-landing-paper/30 hover:bg-landing-paper/60',
+            )}
+          />
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={onPrev}
+        disabled={slides.length <= 1}
+        aria-label="Bộ sưu tập trước"
+        className="flex h-11 w-11 items-center justify-center border border-landing-paper/25 text-landing-paper transition-colors hover:border-landing-paper hover:bg-landing-paper hover:text-landing-obsidian disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={slides.length <= 1}
+        aria-label="Bộ sưu tập tiếp theo"
+        className="flex h-11 w-11 items-center justify-center border border-landing-paper/25 text-landing-paper transition-colors hover:border-landing-paper hover:bg-landing-paper hover:text-landing-obsidian disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
   );
 }

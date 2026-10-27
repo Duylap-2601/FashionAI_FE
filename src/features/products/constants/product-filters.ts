@@ -1,3 +1,4 @@
+import type { SortBy } from '@/features/products/types/product-filters';
 import type { GarmentType } from '@/features/products/types/products';
 
 export interface GarmentTypeTab {
@@ -26,11 +27,24 @@ export const SUB_CATEGORIES = [
   { name: 'Suit 3 mảnh', match: ['suit 3', 'suit 3 mảnh'] },
 ];
 
+// `light`: swatch sáng, cần viền và dấu chọn màu tối để không chìm vào nền giấy.
 export const AVAILABLE_COLORS = [
   { name: 'Đen', color: '#111111' },
-  { name: 'Trắng', color: '#FFFFFF', border: true },
+  { name: 'Trắng', color: '#FFFFFF', light: true },
   { name: 'Xám', color: '#888888' },
   { name: 'Navy', color: '#2B3450' },
-  { name: 'Kem', color: '#F9F7F5' },
-  { name: 'Be', color: '#E8E2D2' },
+  { name: 'Kem', color: '#F9F7F5', light: true },
+  { name: 'Be', color: '#E8E2D2', light: true },
 ];
+
+export const SORT_OPTIONS: readonly SortBy[] = ['Mới nhất', 'Giá thấp đến cao', 'Giá cao đến thấp'];
+
+export const DEFAULT_SORT_BY: SortBy = 'Mới nhất';
+
+export const ALL_GARMENTS_TAB = 'Tất cả';
+
+export const PRICE_FILTER = {
+  min: 200000,
+  max: 10000000,
+  step: 100000,
+} as const;

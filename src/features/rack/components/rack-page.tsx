@@ -1,64 +1,100 @@
 'use client';
 
-import type { TabType } from '@/features/rack/types/rack-page';
-import { PageContent, PageHeader } from '@/components/layout/page-frame';
-import { StaggerContainer, StaggerItem } from '@/components/ui/AnimateIn';
-import { HangerIcon } from '@/components/ui/HangerIcon';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { toBackendCategory } from '@/features/products/services/products-utils';
+import { AccountConfirmDialog } from '@/features/profile/components/account-ui';
 import { MannequinDressForm } from '@/features/rack/components/MannequinDressForm';
 import { useClearRack, useRackItems, useUnpinFromRack } from '@/features/rack/hooks/useRack';
-import type { BackendRackProduct, CanvasPlacedItem, RackItem } from '@/features/rack/types/rack';
-import {
-  Check,
-  ChevronRight,
-  Move,
-  Plus,
-  RefreshCw, Search,
-  ShoppingBag,
-  Trash2, X
-} from 'lucide-react';
+import { formatRackPrice, getRackProductImage, RACK_IMAGE_FALLBACK } from '@/features/rack/services/rack-images';
+import type { CanvasPlacedItem, RackItem } from '@/features/rack/types/rack';
+import type { TabType } from '@/features/rack/types/rack-page';
+import { cn } from '@/lib/utils';
+import { Check, Loader2, Search, X } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-function getProductImage(product: BackendRackProduct): string {
-  if (Array.isArray(product?.images) && product.images.length > 0) {
-    const main = product.images.find(img => typeof img === 'object' && img?.isMain);
-    if (main && typeof main === 'object') {
-      const url = main.imageUrl || main.url;
-      if (url) return url;
-    }
-    const first = product.images[0];
-    if (typeof first === 'string') return first;
-    if (first && typeof first === 'object') {
-      const url = first.imageUrl || first.url;
-      if (url) return url;
-    }
-  }
-  if (product?.garmentUrl) return product.garmentUrl;
-  return '/images/731163514_999523332788054_1114320478812927640_n.png';
-}
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+const labelClass = 'text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink';
+const primaryButton = cn(
+  'inline-flex h-11 items-center justify-center gap-2 rounded-[2px] bg-landing-oxblood px-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-paper transition-colors hover:bg-landing-obsidian',
+  focusRing,
+);
 
-function formatPrice(price: string | number): string {
-  const num = Number(price);
-  if (Number.isFinite(num)) {
-    return `${num.toLocaleString('vi-VN')} ₫`;
-  }
-  return String(price || '0');
-}
+const CATEGORY_LABELS: Record<Exclude<TabType, 'ALL'>, string> = {
+  UPPER: 'Áo',
+  LOWER: 'Quần & váy',
+  FULL_BODY: 'Đồ liền',
+};
 
-function getCategoryBadge(catStr?: string, garmentType?: string | null) {
-  const backendCat = toBackendCategory(catStr, garmentType);
-  switch (backendCat) {
-    case 'UPPER':
-      return { label: 'Áo / Top', bg: 'bg-blue-50 text-blue-700 border-blue-200' };
-    case 'LOWER':
-      return { label: 'Quần / Váy', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-    case 'FULL_BODY':
-      return { label: 'Bộ liền / Đầm', bg: 'bg-purple-50 text-purple-700 border-purple-200' };
-  }
+const TABS: { key: TabType; label: string }[] = [
+  { key: 'ALL', label: 'Tất cả' },
+  { key: 'UPPER', label: CATEGORY_LABELS.UPPER },
+  { key: 'LOWER', label: CATEGORY_LABELS.LOWER },
+  { key: 'FULL_BODY', label: CATEGORY_LABELS.FULL_BODY },
+];
+
+function RackCard({
+  item,
+  worn,
+  isUnpinning,
+  onToggle,
+  onUnpin,
+}: {
+  item: RackItem;
+  worn: boolean;
+  isUnpinning: boolean;
+  onToggle: () => void;
+  onUnpin: (e: React.MouseEvent) => void;
+}) {
+  const [imageSrc, setImageSrc] = useState(() => getRackProductImage(item.product));
+  const category = toBackendCategory(item.product.category, item.product.garmentType);
+
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({ productId: item.productId }));
+        e.dataTransfer.setData('text/plain', item.productId);
+        e.dataTransfer.effectAllowed = 'copy';
+      }}
+      className="group relative cursor-grab active:cursor-grabbing"
+    >
+      <button type="button" onClick={onToggle} aria-pressed={worn} className={cn('flex w-full flex-col text-left', focusRing)}>
+        <span className={cn('relative block aspect-[3/4] w-full overflow-hidden rounded-[2px] border bg-landing-ivory transition-colors', worn ? 'border-landing-oxblood' : 'border-landing-line group-hover:border-landing-brass')}>
+          <Image
+            src={imageSrc}
+            alt={item.product.name}
+            fill
+            sizes="(max-width: 1024px) 45vw, 220px"
+            draggable={false}
+            onError={() => setImageSrc(RACK_IMAGE_FALLBACK)}
+            className="pointer-events-none select-none object-cover"
+          />
+          <span className={cn('absolute left-2 top-2 flex items-center gap-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]', worn ? 'bg-landing-oxblood text-landing-paper' : 'bg-landing-paper/90 text-landing-obsidian/80')}>
+            {worn ? <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" /> : null}
+            {worn ? 'Đang mặc' : 'Chạm để mặc'}
+          </span>
+        </span>
+        <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-brass-ink">
+          {category in CATEGORY_LABELS ? CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] : item.product.brand || 'StAie.'}
+        </span>
+        <span className="product-name-line mt-1 line-clamp-1 text-landing-obsidian group-hover:text-landing-oxblood">{item.product.name}</span>
+        <span className="mt-1 font-mono text-xs text-landing-oxblood">{formatRackPrice(item.product.price)}</span>
+      </button>
+      <button
+        type="button"
+        onClick={onUnpin}
+        disabled={isUnpinning}
+        aria-label={`Bỏ ${item.product.name} khỏi giá treo`}
+        className={cn('absolute right-2 top-2 flex h-8 w-8 items-center justify-center bg-landing-paper/90 text-landing-muted transition-colors hover:bg-destructive hover:text-white disabled:opacity-50', focusRing)}
+      >
+        <X className="h-3.5 w-3.5" strokeWidth={1.75} />
+      </button>
+    </div>
+  );
 }
 
 export default function RackPage() {
@@ -319,35 +355,25 @@ export default function RackPage() {
     return counts;
   }, [items]);
 
-  // Loading state - chờ refresh token
   if (status === 'loading') {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 animate-spin text-[#5D1C34]" />
-          <p className="text-body-sm text-neutral-500">Đang tải...</p>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center" role="status">
+        <Loader2 className="h-7 w-7 animate-spin text-landing-oxblood" strokeWidth={1.5} aria-label="Đang tải" />
       </div>
     );
   }
 
-  // Not authenticated
   if (status === 'unauthenticated') {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border border-neutral-100">
-          <div className="w-16 h-16 bg-[#5D1C34]/10 text-[#5D1C34] rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <HangerIcon className="w-8 h-8" />
-          </div>
-          <h2 className="text-heading-h3 font-bold text-brand-navy mb-2">Giá treo đồ ảo</h2>
-          <p className="text-body-sm text-neutral-600 mb-6">
-            Đăng nhập để lưu trữ các món đồ yêu thích, tự do phối đồ trên Ma-nơ-canh và thử đồ ảo AI.
+      <div className="landing-paper-texture px-4 py-16">
+        <div className="mx-auto flex max-w-[520px] flex-col items-center border border-landing-line bg-landing-ivory/60 px-6 py-14 text-center">
+          <p className={labelClass}>Giá treo</p>
+          <h1 className="mt-3 font-display text-3xl leading-tight text-landing-obsidian">Giá treo đồ của bạn</h1>
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-landing-muted">
+            Đăng nhập để lưu món yêu thích, phối chúng trên ma-nơ-canh rồi thử cả bộ bằng Thử đồ AI.
           </p>
-          <Link
-            href="/login?callbackUrl=/rack"
-            className="w-full py-3 bg-brand-navy text-white rounded-xl font-bold hover:bg-brand-navy/90 transition-colors inline-block"
-          >
-            Đăng nhập ngay
+          <Link href="/login?callbackUrl=/rack" className={cn(primaryButton, 'mt-8')}>
+            Đăng nhập
           </Link>
         </div>
       </div>
@@ -355,236 +381,102 @@ export default function RackPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
-      <PageHeader
-        title="Studio Phối Đồ & Giá Treo"
-        subtitle="Gắn trang phục lên ma-nơ-canh để mix & match combo ưng ý, sau đó đưa vào phòng Thử đồ AI"
-        breadcrumbs={
-          <div className="flex items-center gap-2 text-label-sm text-neutral-500">
-            <Link href="/" className="hover:text-brand-navy">Trang chủ</Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-brand-navy font-semibold">Giá treo & Phối đồ</span>
+    <div className="landing-paper-texture">
+      <div className="mx-auto w-full max-w-[1280px] px-4 pb-20 pt-6 md:px-8 md:pt-10">
+        <header className="mb-8 flex flex-col gap-5 border-b border-landing-line pb-6 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className={labelClass}>Giá treo</p>
+            <h1 className="mt-3 font-display text-landing-h2 text-landing-obsidian">Phối trên ma-nơ-canh</h1>
+            <p className="mt-3 max-w-xl text-landing-body text-landing-muted">
+              Chạm hoặc kéo các món đã lưu lên ma-nơ-canh để thử cách phối, rồi đưa cả bộ vào Thử đồ AI.
+            </p>
           </div>
-        }
-        cta={
-          items.length > 0 ? (
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setShowClearConfirm(true)}
-                className="px-3.5 py-2 border border-neutral-200 text-neutral-600 hover:text-semantic-error hover:border-semantic-error/40 rounded-xl text-label-sm font-medium transition-colors flex items-center gap-1.5"
-              >
-                <Trash2 className="w-4 h-4" /> Dọn sạch giá treo
+          {items.length > 0 ? (
+            <div className="flex items-center gap-5">
+              <Link href="/products" className={cn('text-sm text-landing-obsidian underline-offset-4 hover:text-landing-oxblood hover:underline', focusRing)}>
+                Thêm món
+              </Link>
+              <button type="button" onClick={() => setShowClearConfirm(true)} className={cn('text-sm text-landing-muted transition-colors hover:text-destructive', focusRing)}>
+                Dọn giá treo
               </button>
             </div>
-          ) : null
-        }
-      />
+          ) : null}
+        </header>
 
-      <PageContent>
-        {/* Loading State */}
-        {isLoading && (
-          <div className="py-24 flex flex-col items-center justify-center gap-3 text-neutral-400">
-            <RefreshCw className="w-8 h-8 animate-spin text-[#5D1C34]" />
-            <p className="text-body-sm font-medium">Đang tải tủ đồ của bạn...</p>
+        {isLoading ? (
+          <div className="flex justify-center py-24" role="status">
+            <Loader2 className="h-7 w-7 animate-spin text-landing-oxblood" strokeWidth={1.5} aria-label="Đang tải giá treo" />
           </div>
-        )}
-
-        {/* Empty State */}
-        {!isLoading && items.length === 0 && (
-          <div className="bg-white border border-neutral-200 rounded-3xl p-12 text-center max-w-lg mx-auto my-8 shadow-xs">
-            <div className="w-20 h-20 bg-neutral-100 text-neutral-400 rounded-full flex items-center justify-center mx-auto mb-4">
-              <HangerIcon className="w-10 h-10" />
-            </div>
-            <h3 className="text-heading-h3 font-bold text-brand-navy mb-2">Giá treo đồ đang trống</h3>
-            <p className="text-body-sm text-neutral-500 mb-6 max-w-sm mx-auto">
-              Bạn chưa lưu trang phục nào. Hãy khám phá catalog và bấm nút ghim trên mỗi món đồ để mang vào studio phối đồ!
+        ) : items.length === 0 ? (
+          <div className="mx-auto flex max-w-[560px] flex-col items-center border border-landing-line bg-landing-ivory/60 px-6 py-14 text-center">
+            <p className="font-display text-2xl leading-tight text-landing-obsidian">Giá treo đang trống</p>
+            <p className="mt-2 max-w-sm text-sm leading-relaxed text-landing-muted">
+              Mở trang một sản phẩm và bấm “Ghim vào Giá treo” để lưu món vào đây.
             </p>
-            <Link
-              href="/products"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-navy text-white text-label-md font-bold rounded-xl hover:bg-brand-navy/90 transition-colors shadow-sm"
-            >
-              <ShoppingBag className="w-4 h-4" /> Khám phá bộ sưu tập
+            <Link href="/products" className={cn(primaryButton, 'mt-6')}>
+              Xem sản phẩm
             </Link>
           </div>
-        )}
-
-        {/* 2-Column Mix & Match Layout */}
-        {!isLoading && items.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-            {/* Left Column: Wardrobe Inventory (5 cols on lg) */}
-            <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-4">
-              {/* Filter Tabs & Search */}
-              <div className="bg-white border border-neutral-200/80 rounded-2xl p-4 shadow-xs flex flex-col gap-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-body-md font-bold text-brand-navy flex items-center gap-2">
-                      Tủ Đồ Đã Lưu
-                      <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-neutral-100 text-neutral-600">
-                        {items.length} món
-                      </span>
-                    </h3>
-                    <p className="text-xs text-neutral-500">Chạm vào sản phẩm để tự động ướm lên ma-nơ-canh</p>
-                  </div>
-
-                  <Link
-                    href="/products"
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#5D1C34] hover:underline shrink-0"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Thêm đồ mới
-                  </Link>
-                </div>
-
-                {/* Category Tabs */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                  {[
-                    { key: 'ALL' as TabType, label: 'Tất cả', count: categoryCounts.ALL },
-                    { key: 'UPPER' as TabType, label: 'Áo / Top', count: categoryCounts.UPPER },
-                    { key: 'LOWER' as TabType, label: 'Quần & Váy', count: categoryCounts.LOWER },
-                    { key: 'FULL_BODY' as TabType, label: 'Bộ liền / Suit', count: categoryCounts.FULL_BODY },
-                  ].map((tab) => (
+        ) : (
+          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
+            <section aria-label="Món đã lưu" className="min-w-0">
+              <div className="mb-5 flex items-baseline justify-between gap-4">
+                <h2 className="font-display text-[1.375rem] leading-tight text-landing-obsidian">Đã lưu</h2>
+                <span className="font-mono text-xs text-landing-muted">{items.length} món</span>
+              </div>
+              <div role="group" aria-label="Lọc theo loại" className="no-scrollbar mb-4 flex gap-5 overflow-x-auto border-b border-landing-line">
+                {TABS.map((tab) => {
+                  const selected = currentTab === tab.key;
+                  return (
                     <button
                       key={tab.key}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => setCurrentTab(tab.key)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${currentTab === tab.key
-                          ? 'bg-[#5D1C34] text-white shadow-xs'
-                          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200/70'
-                        }`}
+                      className={cn(
+                        'relative flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap text-sm transition-colors',
+                        selected ? 'font-medium text-landing-oxblood after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-landing-oxblood' : 'text-landing-obsidian/70 hover:text-landing-oxblood',
+                        focusRing,
+                      )}
                     >
                       {tab.label}
-                      <span
-                        className={`px-1.5 py-0.2 rounded-md text-[10px] ${currentTab === tab.key ? 'bg-white/20 text-white' : 'bg-neutral-200 text-neutral-600'
-                          }`}
-                      >
-                        {tab.count}
-                      </span>
+                      <span className="font-mono text-[11px] text-landing-muted">{categoryCounts[tab.key]}</span>
                     </button>
+                  );
+                })}
+              </div>
+              {items.length > 6 ? (
+                <div className="relative mb-4">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-landing-muted" strokeWidth={1.75} aria-hidden="true" />
+                  <input
+                    type="search"
+                    aria-label="Tìm trong giá treo"
+                    placeholder="Tìm theo tên hoặc thương hiệu…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={cn('h-11 w-full rounded-[2px] border border-landing-line bg-landing-ivory/80 pl-9 pr-3 text-sm placeholder:text-landing-muted/70 transition-colors hover:border-landing-brass [&::-webkit-search-cancel-button]:appearance-none', focusRing)}
+                  />
+                </div>
+              ) : null}
+              {filteredItems.length === 0 ? (
+                <p className="border border-dashed border-landing-taupe px-6 py-10 text-center text-sm text-landing-muted">Không có món nào khớp.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+                  {filteredItems.map((item) => (
+                    <RackCard
+                      key={item.id}
+                      item={item}
+                      worn={isItemWorn(item.productId)}
+                      isUnpinning={isUnpinning}
+                      onToggle={() => handleItemClick(item)}
+                      onUnpin={(e) => handleUnpin(e, item)}
+                    />
                   ))}
                 </div>
-
-                {/* Search query if items are many */}
-                {items.length > 6 && (
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Tìm kiếm theo tên sản phẩm, thương hiệu..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-hidden focus:border-[#5D1C34] transition-colors"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Wardrobe Items Grid */}
-              {filteredItems.length === 0 ? (
-                <div className="bg-white border border-dashed border-neutral-300 rounded-2xl p-8 text-center">
-                  <p className="text-body-sm text-neutral-500">Không tìm thấy món đồ phù hợp trong mục này.</p>
-                </div>
-              ) : (
-                <StaggerContainer className="grid grid-cols-2 gap-3 sm:gap-4">
-                  {filteredItems.map((item) => {
-                    const worn = isItemWorn(item.productId);
-                    const badge = getCategoryBadge(item.product.category, item.product.garmentType);
-                    const imageUrl = getProductImage(item.product);
-
-                    return (
-                      <StaggerItem key={item.id}>
-                        <div
-                          draggable={true}
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData('application/json', JSON.stringify({ productId: item.productId }));
-                            e.dataTransfer.setData('text/plain', item.productId);
-                            e.dataTransfer.effectAllowed = 'copy';
-                          }}
-                          onClick={() => handleItemClick(item)}
-                          className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all duration-200 shadow-2xs hover:shadow-md ${worn
-                              ? 'border-[#5D1C34] ring-3 ring-[#5D1C34]/20 shadow-md bg-[#5D1C34]/[0.02]'
-                              : 'border-neutral-200 hover:border-neutral-300'
-                            }`}
-                        >
-                          {/* Image Box */}
-                          <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
-                            <img
-                              src={imageUrl}
-                              alt={item.product.name}
-                              draggable={false}
-                              onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).src =
-                                  '/images/731163514_999523332788054_1114320478812927640_n.png';
-                              }}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 select-none pointer-events-none"
-                            />
-
-                            {/* Drag hint on hover */}
-                            <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[9px] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pointer-events-none">
-                              <Move className="w-2.5 h-2.5" /> Kéo vào studio
-                            </div>
-
-                            {/* Worn Indicator Overlay */}
-                            <div
-                              className={`absolute top-2 left-2 px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all ${worn
-                                  ? 'bg-[#5D1C34] text-white shadow-md'
-                                  : 'bg-white/80 backdrop-blur-sm text-neutral-600 border border-neutral-300'
-                                }`}
-                            >
-                              {worn ? (
-                                <>
-                                  <Check className="w-3 h-3 stroke-[3]" /> Đang mặc
-                                </>
-                              ) : (
-                                'Chạm để thử'
-                              )}
-                            </div>
-
-                            {/* Unpin Button */}
-                            <button
-                              type="button"
-                              onClick={(e) => handleUnpin(e, item)}
-                              disabled={isUnpinning}
-                              className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-sm hover:bg-semantic-error hover:text-white rounded-full flex items-center justify-center text-neutral-500 transition-all opacity-80 hover:opacity-100 shadow-sm"
-                              title="Bỏ khỏi giá treo"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Category Badge */}
-                            <div className="absolute bottom-2 left-2 pointer-events-none">
-                              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border shadow-2xs ${badge?.bg}`}>
-                                {badge?.label}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Info Card */}
-                          <div className="p-3 flex flex-col gap-1">
-                            <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
-                              {item.product.brand || 'StAle. SIGNATURE'}
-                            </span>
-                            <h4 className="text-body-sm font-semibold text-brand-navy line-clamp-1 leading-snug">
-                              {item.product.name}
-                            </h4>
-                            <div className="mt-1 flex items-center justify-between">
-                              <span className="text-body-sm font-bold text-[#5D1C34]">
-                                {formatPrice(item.product.price)}
-                              </span>
-                              <span className="text-[10px] font-semibold text-neutral-400 group-hover:text-[#5D1C34] transition-colors">
-                                {worn ? 'Gỡ ra ✕' : 'Mặc vào +'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </StaggerItem>
-                    );
-                  })}
-                </StaggerContainer>
               )}
-            </div>
+            </section>
 
-            {/* Right Column: Virtual Mannequin Studio (7 cols on lg, expanded spacious stage) */}
-            <div className="lg:col-span-7 xl:col-span-7 sticky top-24">
+            <div className="min-w-0 lg:sticky lg:top-[97px]">
               <MannequinDressForm
                 placedItems={placedItems}
                 selectedId={selectedInstanceId}
@@ -602,41 +494,16 @@ export default function RackPage() {
           </div>
         )}
 
-        {/* Clear All Confirmation Modal */}
-        {showClearConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-neutral-200 animate-in zoom-in-95 duration-200">
-              <div className="w-12 h-12 rounded-full bg-semantic-error/10 text-semantic-error flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-6 h-6" />
-              </div>
-              <h3 className="text-heading-h3 font-bold text-center text-brand-navy mb-2">
-                Dọn sạch giá treo đồ?
-              </h3>
-              <p className="text-body-sm text-neutral-600 text-center mb-6">
-                Hành động này sẽ gỡ toàn bộ {items.length} món đồ khỏi Giá treo đồ của bạn. Bạn có chắc chắn không?
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowClearConfirm(false)}
-                  disabled={isClearing}
-                  className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-body-sm font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  disabled={isClearing}
-                  className="flex-1 py-2.5 bg-semantic-error text-white rounded-xl text-body-sm font-semibold hover:bg-semantic-error/90 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  {isClearing ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Xóa tất cả'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </PageContent>
+        <AccountConfirmDialog
+          open={showClearConfirm}
+          onOpenChange={setShowClearConfirm}
+          title="Dọn sạch giá treo?"
+          description={`${items.length} món sẽ bị bỏ khỏi giá treo. Bạn có thể lưu lại từ trang sản phẩm.`}
+          confirmLabel="Dọn tất cả"
+          isPending={isClearing}
+          onConfirm={handleClearAll}
+        />
+      </div>
     </div>
   );
 }

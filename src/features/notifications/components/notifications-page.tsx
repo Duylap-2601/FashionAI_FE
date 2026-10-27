@@ -1,165 +1,152 @@
 'use client';
 
-import { TABS } from '@/features/notifications/constants/notifications-page';
-import { PageContent, PageHeader } from '@/components/layout/page-frame';
-import { NotificationItem } from '@/features/notifications/components/NotificationItem';
+import { useOpenNotification } from '@/features/notifications/hooks/use-open-notification';
 import { useMarkAllNotificationsAsRead, useNotifications } from '@/features/notifications/hooks/useNotifications';
+import { formatRelativeTime } from '@/features/notifications/services/format-relative-time';
 import { useNotificationStore } from '@/features/notifications/store/notificationStore';
+import type { AppNotification, NotificationType } from '@/features/notifications/types/notification';
+import { AccountShell } from '@/features/profile/components/account-shell';
 import {
-  ArrowLeft,
-  Bell, CheckCheck,
-  ChevronLeft, ChevronRight,
-  Info,
-  Loader2
-} from 'lucide-react';
-import { useRouter } from 'next/navigation';
+  AccountPagination,
+  AccountStatePanel,
+  accountButtonClassName,
+  accountFocusRing,
+} from '@/features/profile/components/account-ui';
+import { cn } from '@/lib/utils';
+import type { LucideIcon } from 'lucide-react';
+import { CheckCheck, CreditCard, Info, MessageSquare, Package, Tag } from 'lucide-react';
 import { useState } from 'react';
 
+const PAGE_SIZE = 15;
+
+const TYPE_META: Record<NotificationType, { icon: LucideIcon; label: string; tone: string }> = {
+  ORDER_STATUS: { icon: Package, label: 'Đơn hàng', tone: 'text-landing-oxblood' },
+  PAYMENT: { icon: CreditCard, label: 'Thanh toán', tone: 'text-landing-sage-ink' },
+  PROMOTION: { icon: Tag, label: 'Khuyến mãi', tone: 'text-landing-brass-ink' },
+  REVIEW: { icon: MessageSquare, label: 'Đánh giá', tone: 'text-landing-brass-ink' },
+  SYSTEM: { icon: Info, label: 'Hệ thống', tone: 'text-landing-muted' },
+};
+
+function NotificationRow({ notification, onOpen }: { notification: AppNotification; onOpen: (notification: AppNotification) => void }) {
+  const meta = TYPE_META[notification.type] ?? TYPE_META.SYSTEM;
+  const Icon = meta.icon;
+  const unread = !notification.isRead;
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onOpen(notification)}
+        className={cn(
+          'grid w-full grid-cols-[36px_minmax(0,1fr)] gap-x-4 gap-y-1 px-4 py-4 text-left transition-colors sm:grid-cols-[36px_minmax(0,1fr)_auto] sm:px-5',
+          unread ? 'bg-landing-ivory hover:bg-landing-ivory/60' : 'hover:bg-landing-ivory/60',
+          accountFocusRing,
+        )}
+      >
+        <span className={cn('row-span-2 flex h-9 w-9 items-center justify-center border border-landing-line bg-landing-paper', meta.tone)}>
+          <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+        </span>
+
+        <span className="min-w-0">
+          <span className="flex items-baseline gap-2">
+            {unread ? (
+              <>
+                <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 -translate-y-0.5 rounded-full bg-landing-oxblood" />
+                <span className="sr-only">Chưa đọc:</span>
+              </>
+            ) : null}
+            <span className={cn('text-sm', unread ? 'font-semibold text-landing-obsidian' : 'text-landing-obsidian/80')}>{notification.title}</span>
+          </span>
+          <span className="mt-1 line-clamp-2 block text-sm leading-relaxed text-landing-muted">{notification.message}</span>
+          {notification.data?.orderCode ? (
+            <span className="mt-2 block font-mono text-[11px] text-landing-obsidian/70">Mã đơn #{String(notification.data.orderCode)}</span>
+          ) : null}
+        </span>
+
+        <span className="col-start-2 flex items-center gap-2 text-[11px] text-landing-muted sm:col-start-3 sm:row-start-1 sm:flex-col sm:items-end sm:gap-1 sm:whitespace-nowrap">
+          <span className={cn('font-semibold uppercase tracking-[0.16em]', meta.tone)}>{meta.label}</span>
+          <span aria-hidden="true" className="sm:hidden">·</span>
+          <time dateTime={notification.createdAt}>{formatRelativeTime(notification.createdAt)}</time>
+        </span>
+      </button>
+    </li>
+  );
+}
+
 export default function NotificationsPage() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
-  const limit = 15;
+  const openNotification = useOpenNotification();
 
-  const currentTabConfig = TABS.find((t) => t.id === activeTab);
-  const selectedType = currentTabConfig?.type;
-
-  const { notifications, meta, isLoading, isError, refetch } = useNotifications({
-    page,
-    limit,
-    type: selectedType,
-  });
+  // GET /notifications chưa lọc theo loại, nên trang không có tab lọc; loại hiện trên từng dòng.
+  const { notifications, meta, isLoading, isError, refetch } = useNotifications({ page, limit: PAGE_SIZE });
 
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllNotificationsAsRead();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
-
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
-    setPage(1);
-  };
-
   const totalPages = meta?.totalPages || 1;
 
   return (
-    <div className="min-h-screen bg-brand-cream">
-      <PageHeader
-        title="Thông báo"
-        subtitle="Cập nhật thông tin đơn hàng, thanh toán và các ưu đãi mới nhất"
-        breadcrumbs={
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1.5 text-body-sm font-medium text-neutral-600 hover:text-brand-navy transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Quay lại</span>
+    <AccountShell
+      title="Thông báo"
+      description="Cập nhật về đơn hàng, thanh toán và ưu đãi. Bấm vào một thông báo để mở nơi liên quan."
+      actions={
+        unreadCount > 0 ? (
+          <button type="button" onClick={() => markAllAsRead()} disabled={isMarkingAll} className={accountButtonClassName('outline')}>
+            <CheckCheck className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+            Đánh dấu đã đọc hết
           </button>
-        }
-        cta={
-          unreadCount > 0 ? (
-            <button
-              onClick={() => markAllAsRead()}
-              disabled={isMarkingAll}
-              className="px-4 py-2 bg-white hover:bg-neutral-50 text-[#5D1C34] border border-[#5D1C34]/30 rounded-xl text-body-sm font-medium transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
-            >
-              <CheckCheck className="w-4 h-4" />
-              <span>Đánh dấu tất cả là đã đọc</span>
-            </button>
-          ) : null
-        }
-      />
+        ) : null
+      }
+    >
+      {!isLoading && !isError && notifications.length > 0 ? (
+        <p className="mb-4 text-xs text-landing-muted">
+          <span className="font-mono text-landing-obsidian">{meta?.total ?? notifications.length}</span> thông báo
+          {unreadCount > 0 ? (
+            <>
+              {' · '}
+              <span className="font-mono text-landing-oxblood">{unreadCount}</span> chưa đọc
+            </>
+          ) : null}
+        </p>
+      ) : null}
 
-      <PageContent>
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Tabs Filter */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`px-4 py-2.5 rounded-full text-body-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap ${isActive
-                      ? 'bg-[#5D1C34] text-white shadow-md'
-                      : 'bg-white text-neutral-600 hover:bg-white/80 border border-neutral-200'
-                    }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Main Card List */}
-          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden divide-y divide-neutral-100">
-            {isLoading ? (
-              <div className="py-16 flex flex-col items-center justify-center text-neutral-400 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-[#5D1C34]" />
-                <span className="text-body-sm">Đang tải danh sách thông báo...</span>
-              </div>
-            ) : isError ? (
-              <div className="py-16 flex flex-col items-center justify-center text-center px-4">
-                <div className="w-12 h-12 rounded-full bg-red-50 text-semantic-error flex items-center justify-center mb-3">
-                  <Info className="w-6 h-6" />
-                </div>
-                <p className="font-semibold text-neutral-900 text-body-md">Không thể tải thông báo</p>
-                <p className="text-neutral-500 text-body-sm mt-1 mb-4">Vui lòng thử lại sau.</p>
-                <button
-                  onClick={() => refetch()}
-                  className="px-4 py-2 bg-brand-navy text-white rounded-xl text-body-sm font-medium"
-                >
-                  Tải lại
-                </button>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="py-16 flex flex-col items-center justify-center text-center px-4">
-                <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-3">
-                  <Bell className="w-8 h-8" />
-                </div>
-                <h3 className="font-semibold text-body-lg text-neutral-800">Không có thông báo nào</h3>
-                <p className="text-body-sm text-neutral-500 max-w-sm mt-1">
-                  Khi bạn có đơn hàng, thanh toán hoặc ưu đãi mới, các thông báo sẽ xuất hiện ở đây.
-                </p>
-              </div>
-            ) : (
-              notifications.map((item) => (
-                <NotificationItem key={item.id} notification={item} />
-              ))
-            )}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-2">
-              <div className="text-body-xs text-neutral-500">
-                Hiển thị trang {page} / {totalPages} (Tổng cộng {meta?.total || 0} thông báo)
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="p-2 rounded-xl bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-body-sm font-medium px-3 text-neutral-800">
-                  {page}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="p-2 rounded-xl bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+      {isLoading ? (
+        <div className="divide-y divide-landing-line/70 border border-landing-line" aria-hidden="true">
+          {[0, 1, 2, 3].map((key) => (
+            <div key={key} className="flex gap-4 px-5 py-4">
+              <div className="h-9 w-9 animate-pulse bg-landing-taupe/40" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-1/3 animate-pulse bg-landing-taupe/40" />
+                <div className="h-3 w-2/3 animate-pulse bg-landing-taupe/30" />
               </div>
             </div>
-          )}
+          ))}
         </div>
-      </PageContent>
-    </div>
+      ) : isError ? (
+        <AccountStatePanel
+          tone="error"
+          title="Không tải được thông báo"
+          description="Kiểm tra kết nối rồi thử lại."
+          action={
+            <button type="button" onClick={() => refetch()} className={accountButtonClassName('outline')}>
+              Thử lại
+            </button>
+          }
+        />
+      ) : notifications.length === 0 ? (
+        <AccountStatePanel
+          title="Chưa có thông báo nào"
+          description="Khi đơn hàng, thanh toán hoặc ưu đãi có cập nhật, thông báo sẽ xuất hiện ở đây."
+        />
+      ) : (
+        <>
+          <ul className="divide-y divide-landing-line/70 border border-landing-line">
+            {notifications.map((item) => (
+              <NotificationRow key={item.id} notification={item} onOpen={openNotification} />
+            ))}
+          </ul>
+          <AccountPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
+      )}
+    </AccountShell>
   );
 }

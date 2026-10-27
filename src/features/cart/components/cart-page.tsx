@@ -1,10 +1,39 @@
 'use client';
 
 import { useCommerceViewTracking } from '@/features/analytics/hooks/use-commerce-view-tracking';
+import { CartLine, cartFocusRing, formatCartPrice } from '@/features/cart/components/cart-line';
 import { useCart } from '@/features/cart/hooks/use-cart';
-import { ArrowRight, ChevronLeft, Loader2, Minus, Plus, RotateCcw, ShieldCheck, ShoppingBag, Trash2, Truck } from 'lucide-react';
-import Image from 'next/image';
+import { AccountConfirmDialog } from '@/features/profile/components/account-ui';
+import { cn } from '@/lib/utils';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import type React from 'react';
+import { useState } from 'react';
+
+const labelClass = 'text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink';
+const primaryButton = cn(
+  'flex h-12 w-full items-center justify-center gap-2 rounded-[2px] bg-landing-oxblood px-6 text-[11.5px] font-semibold uppercase tracking-[0.16em] text-landing-paper transition-colors hover:bg-landing-obsidian',
+  cartFocusRing,
+);
+const outlineButton = cn(
+  'inline-flex h-11 items-center justify-center rounded-[2px] border border-landing-line px-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood',
+  cartFocusRing,
+);
+
+/** Những điều thật về đơn may đo, kèm link tới trang liên quan. */
+const ASSURANCES: { title: string; body: string; href?: string; link?: string }[] = [
+  { title: 'May theo số đo của bạn', body: 'Mỗi đơn chụp lại số đo đã lưu trong hồ sơ lúc đặt.', href: '/profile/measurements', link: 'Xem số đo' },
+  { title: '7 ngày để báo lỗi', body: 'Tính từ khi đơn hoàn tất, nếu sai số đo, sai màu hoặc có lỗi may.', href: '/return-policy', link: 'Chính sách đổi trả' },
+  { title: 'Thanh toán qua ZaloPay', body: 'Quét QR hoặc mở ứng dụng ZaloPay ở bước đặt hàng.' },
+];
+
+function CartFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="landing-paper-texture">
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-20 pt-6 md:px-8 md:pt-10">{children}</div>
+    </div>
+  );
+}
 
 export default function CartPage() {
   const {
@@ -18,243 +47,127 @@ export default function CartPage() {
     isError,
     refetch,
   } = useCart();
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const totalQuantity = purchasableItems.reduce((acc, item) => acc + item.quantity, 0);
   useCommerceViewTracking('view_cart', purchasableItems, !isLoading);
 
   if (isLoading) {
     return (
-      <div className="bg-neutral-50 min-h-screen py-16 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-navy" aria-label="Đang tải giỏ hàng" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="bg-brand-cream min-h-screen py-16 px-4">
-        <div className="max-w-[560px] mx-auto bg-white rounded-2xl border border-neutral-200 p-8 md:p-12 text-center shadow-sm">
-          <h1 className="text-[24px] font-bold text-brand-navy mb-2">Không tải được giỏ hàng</h1>
-          <p className="text-body-md text-neutral-500 mb-8">Vui lòng kiểm tra kết nối mạng rồi thử lại.</p>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="h-[50px] px-8 bg-brand-navy text-white text-body-md font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors"
-          >
-            Thử lại
-          </button>
+      <CartFrame>
+        <div className="flex min-h-[50vh] items-center justify-center" role="status">
+          <Loader2 className="h-7 w-7 animate-spin text-landing-oxblood" strokeWidth={1.5} aria-label="Đang tải giỏ hàng" />
         </div>
-      </div>
+      </CartFrame>
     );
   }
 
-  if (items.length === 0) {
+  if (isError || items.length === 0) {
     return (
-      <div className="bg-brand-cream min-h-screen py-16 px-4">
-        <div className="max-w-[560px] mx-auto bg-white rounded-2xl border border-neutral-200 p-8 md:p-12 text-center shadow-sm">
-          <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6 text-neutral-400">
-            <ShoppingBag className="w-10 h-10" />
-          </div>
-          <h1 className="text-[24px] font-bold text-brand-navy mb-2">Giỏ hàng của bạn đang trống</h1>
-          <p className="text-body-md text-neutral-500 mb-8 max-w-[360px] mx-auto">
-            Hãy khám phá các trang phục công sở cao cấp và thử đồ ảo cùng AI trước khi đặt hàng nhé.
+      <CartFrame>
+        <div className="mx-auto flex max-w-[560px] flex-col items-center border border-landing-line bg-landing-ivory/60 px-6 py-16 text-center">
+          <p className={labelClass}>Giỏ hàng</p>
+          <h1 className={cn('mt-3 font-display text-3xl leading-tight', isError ? 'text-destructive' : 'text-landing-obsidian')}>
+            {isError ? 'Không tải được giỏ hàng' : 'Giỏ hàng đang trống'}
+          </h1>
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-landing-muted">
+            {isError ? 'Kiểm tra kết nối mạng rồi thử lại.' : 'Chọn một thiết kế, thử trên bạn bằng Thử đồ AI rồi thêm vào giỏ.'}
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/products"
-              className="h-[50px] px-8 bg-brand-navy text-white text-body-md font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-brand-navy/90 transition-colors shadow-sm"
-            >
-              Khám phá bộ sưu tập <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/profile/orders"
-              className="h-[50px] px-6 bg-neutral-100 text-neutral-700 text-body-md font-semibold rounded-xl flex items-center justify-center hover:bg-neutral-200 transition-colors"
-            >
-              Đơn hàng
+          <div className="mt-8 flex flex-col gap-2 sm:flex-row">
+            {isError ? (
+              <button type="button" onClick={() => refetch()} className={cn(primaryButton, 'w-auto')}>
+                Thử lại
+              </button>
+            ) : (
+              <Link href="/products" className={cn(primaryButton, 'w-auto')}>
+                Xem sản phẩm <ArrowRight className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+              </Link>
+            )}
+            <Link href="/profile/orders" className={outlineButton}>
+              Đơn hàng của tôi
             </Link>
           </div>
         </div>
-      </div>
+      </CartFrame>
     );
   }
 
   return (
-    <div className="bg-neutral-50 min-h-screen py-10 px-4 md:px-8">
-      <div className="max-w-[1180px] mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <Link
-              href="/products"
-              className="inline-flex items-center gap-1.5 text-body-sm text-neutral-500 hover:text-brand-navy font-medium mb-2 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" /> Tiếp tục mua sắm
-            </Link>
-            <h1 className="text-[28px] md:text-[32px] font-bold text-brand-navy tracking-tight">
-              Giỏ hàng của bạn <span className="text-neutral-400 font-normal text-[20px]">({totalQuantity} sản phẩm)</span>
-            </h1>
-          </div>
-          <button
-            onClick={() => clearCart()}
-            className="text-body-sm text-semantic-error hover:underline font-medium"
-          >
-            Xóa tất cả
+    <CartFrame>
+      <header className="mb-8 flex flex-col gap-5 border-b border-landing-line pb-6 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className={labelClass}>Giỏ hàng</p>
+          <h1 className="mt-3 font-display text-landing-h2 text-landing-obsidian">Túi của bạn</h1>
+          <p className="mt-3 text-landing-body text-landing-muted">
+            <span className="font-mono text-landing-obsidian">{totalQuantity}</span> sản phẩm sẵn sàng đặt may.
+          </p>
+        </div>
+        <div className="flex items-center gap-5">
+          <Link href="/products" className={cn('text-sm text-landing-obsidian underline-offset-4 hover:text-landing-oxblood hover:underline', cartFocusRing)}>
+            Tiếp tục mua sắm
+          </Link>
+          <button type="button" onClick={() => setConfirmClear(true)} className={cn('text-sm text-landing-muted transition-colors hover:text-destructive', cartFocusRing)}>
+            Xoá tất cả
           </button>
         </div>
+      </header>
 
-        {/* 2-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left: Items list (8 cols) */}
-          <div className="lg:col-span-8 bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden divide-y divide-neutral-100">
-            {items.map((item) => {
-              const isAvailable = item.available !== false;
-              return (
-              <div key={item.id} className={`p-5 md:p-6 flex flex-col sm:flex-row gap-5 relative group ${isAvailable ? '' : 'opacity-60'}`}>
-                <Link
-                  href={`/products/${item.productId || item.id}`}
-                  className="w-full sm:w-[100px] h-[120px] rounded-xl overflow-hidden shrink-0 hover:opacity-85 transition-opacity relative"
-                >
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    sizes="100px"
-                    className="object-cover bg-neutral-100 border border-neutral-200 cursor-pointer"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
-                    }}
-                  />
-                </Link>
+      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-14">
+        <section aria-label="Sản phẩm trong giỏ" className="divide-y divide-landing-line/70 border-y border-landing-line/70">
+          {items.map((item) => (
+            <CartLine key={item.id} item={item} onUpdateQuantity={updateQuantity} onRemove={removeFromCart} />
+          ))}
+        </section>
 
-                <div className="flex-1 flex flex-col justify-between">
-                  <div className="pr-8">
-                    <h3 className="text-body-md font-bold text-brand-navy line-clamp-1 mb-1">
-                      <Link
-                        href={`/products/${item.productId || item.id}`}
-                        className="hover:underline"
-                      >
-                        {item.name}
-                      </Link>
-                    </h3>
-                    <p className="text-label-sm text-neutral-500 mb-3">{item.variant}</p>
-                    {!isAvailable && (
-                      <p className="text-label-sm font-semibold text-semantic-error -mt-2 mb-3">
-                        Sản phẩm đã ngừng bán, không được tính vào đơn hàng
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between mt-auto">
-                    {/* Quantity controls */}
-                    <div className="flex items-center border border-neutral-300 rounded-xl h-[38px] bg-white shadow-2xs">
-                      <button
-                        onClick={() => updateQuantity(item.id, -1)}
-                        disabled={!isAvailable}
-                        className="w-10 h-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-l-xl transition-colors disabled:cursor-not-allowed"
-                        aria-label="Giảm số lượng"
-                      >
-                        <Minus className="w-3.5 h-3.5" />
-                      </button>
-                      <div className="w-10 h-full flex items-center justify-center text-body-sm font-bold text-brand-navy border-x border-neutral-200">
-                        {item.quantity}
-                      </div>
-                      <button
-                        onClick={() => updateQuantity(item.id, 1)}
-                        disabled={!isAvailable}
-                        className="w-10 h-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-r-xl transition-colors disabled:cursor-not-allowed"
-                        aria-label="Tăng số lượng"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Price */}
-                    <div className="text-right">
-                      <p className="text-body-lg font-bold text-brand-navy">
-                        {(item.price * item.quantity).toLocaleString('vi-VN')}đ
-                      </p>
-                      {item.quantity > 1 && (
-                        <p className="text-label-sm text-neutral-400">
-                          {item.price.toLocaleString('vi-VN')}đ / cái
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Remove button */}
-                <button
-                  onClick={() => removeFromCart(item.id)}
-                  className="absolute top-5 right-5 p-2 text-neutral-400 hover:text-semantic-error rounded-lg hover:bg-red-50 transition-colors"
-                  aria-label="Xóa sản phẩm"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+        <aside className="flex flex-col gap-8 lg:sticky lg:top-[97px]">
+          <div className="border border-landing-line bg-landing-ivory/60 p-5">
+            <h2 className="font-display text-[1.375rem] leading-tight">Tóm tắt</h2>
+            <dl className="mt-4 space-y-2.5 border-b border-landing-line/70 pb-4 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-landing-muted">Sản phẩm</dt>
+                <dd className="font-mono text-landing-obsidian">{totalQuantity}</dd>
               </div>
-              );
-            })}
+              <div className="flex justify-between gap-4">
+                <dt className="text-landing-muted">Phí giao hàng</dt>
+                <dd className="text-landing-obsidian">Tính ở bước đặt hàng</dd>
+              </div>
+            </dl>
+            <div className="flex items-baseline justify-between gap-4 py-4">
+              <span className="font-medium text-landing-obsidian">Tạm tính</span>
+              <span className="font-mono text-2xl text-landing-oxblood">{formatCartPrice(total)}</span>
+            </div>
+            <Link href="/checkout" className={primaryButton}>
+              Tiến hành đặt hàng <ArrowRight className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+            </Link>
           </div>
 
-          {/* Right: Order Summary (4 cols) */}
-          <div className="lg:col-span-4 flex flex-col gap-4">
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
-              <h2 className="text-body-lg font-bold text-brand-navy mb-5">Tóm tắt đơn hàng</h2>
-
-              <div className="flex flex-col gap-3.5 text-body-sm pb-5 border-b border-neutral-100">
-                <div className="flex justify-between text-neutral-600">
-                  <span>Tạm tính ({totalQuantity} sản phẩm)</span>
-                  <span className="font-semibold text-neutral-900">{total.toLocaleString('vi-VN')}đ</span>
-                </div>
-                <div className="flex justify-between text-neutral-600">
-                  <span>Phí vận chuyển</span>
-                  <span className="text-green-600 font-medium">Tính khi đặt hàng</span>
-                </div>
-              </div>
-
-              <div className="py-4 flex justify-between items-baseline mb-6">
-                <span className="text-body-md font-bold text-brand-navy">Tổng thanh toán</span>
-                <span className="text-[24px] font-bold text-[#5D1C34]">{total.toLocaleString('vi-VN')}đ</span>
-              </div>
-
-              <Link
-                href="/checkout"
-                className="w-full h-[52px] bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-white text-body-md font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-95 transition-opacity shadow-md shadow-[#5D1C34]/20"
-              >
-                Tiến hành đặt hàng <ArrowRight className="w-4 h-4" />
-              </Link>
-
-              <Link
-                href="/profile/orders"
-                className="lg:hidden mt-3 w-full h-11 bg-neutral-100 text-brand-navy text-body-sm font-semibold rounded-xl flex items-center justify-center hover:bg-neutral-200 transition-colors"
-              >
-                Đơn hàng
-              </Link>
-            </div>
-
-            {/* Value Props */}
-            <div className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-2xs flex flex-col gap-3.5 text-label-sm text-neutral-600">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-green-50 text-green-700 flex items-center justify-center shrink-0">
-                  <Truck className="w-4 h-4" />
-                </div>
-                <span>Giao hàng toàn quốc 2-4 ngày</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-                  <RotateCcw className="w-4 h-4" />
-                </div>
-                <span>Đổi size & trả hàng trong 7 ngày</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <span>Bảo mật thông tin & thanh toán 100%</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          <ul className="space-y-4">
+            {ASSURANCES.map((item) => (
+              <li key={item.title} className="border-l-2 border-landing-brass pl-4">
+                <p className="text-sm font-medium text-landing-obsidian">{item.title}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-landing-muted">{item.body}</p>
+                {item.href ? (
+                  <Link href={item.href} className={cn('mt-1 inline-block text-xs text-landing-oxblood underline-offset-4 hover:underline', cartFocusRing)}>
+                    {item.link}
+                  </Link>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </aside>
       </div>
-    </div>
+
+      <AccountConfirmDialog
+        open={confirmClear}
+        onOpenChange={setConfirmClear}
+        title="Xoá cả giỏ hàng?"
+        description={`${items.length} sản phẩm sẽ bị bỏ khỏi giỏ. Bạn có thể thêm lại từ trang sản phẩm.`}
+        confirmLabel="Xoá tất cả"
+        onConfirm={() => {
+          clearCart();
+          setConfirmClear(false);
+        }}
+      />
+    </CartFrame>
   );
 }

@@ -15,12 +15,12 @@ import { useMemo } from 'react';
 const NO_PRODUCTS: SuggestedProduct[] = [];
 
 /** Bộ phối + món lẻ AI gợi ý từ catalog, dùng chung cho AI Stylist và AI Chat. */
-// Showcase: vuốt ngang trên mobile, lưới từ md.
+// Showcase: vuốt ngang trên mobile, lưới từ md. `items-start`: mở "Chi tiết" ở một thẻ không kéo cao các thẻ khác.
 const SHOWCASE_CLASS =
-  'flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-2 md:mx-0 md:px-0 md:pb-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible';
+  'flex items-start gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-2 md:mx-0 md:px-0 md:pb-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible';
 
 // Carousel (chat): một băng vuốt ngang cho cả bộ phối lẫn món lẻ, thẻ rộng cố định.
-const CAROUSEL_CLASS = 'flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2';
+const CAROUSEL_CLASS = 'flex items-start gap-3 overflow-x-auto snap-x snap-mandatory pb-2';
 
 export function OutfitSuggestionList({ viewKey, list, outfits, products = NO_PRODUCTS, layout = 'stack', variant = 'compact' }: OutfitSuggestionListProps) {
   // Một sản phẩm nằm ở nhiều bộ chỉ tính một vị trí trong list GA4.

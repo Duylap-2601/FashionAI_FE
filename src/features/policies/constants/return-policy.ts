@@ -7,7 +7,7 @@ export const RETURN_POLICY: PolicyDocument = {
   slug: 'return-policy',
   title: 'Chính sách đổi trả',
   summary:
-    'Mỗi sản phẩm StAle. được may riêng theo số đo của bạn. Nếu sản phẩm nhận được may sai số đo, sai màu hoặc có lỗi, bạn có 7 ngày để gửi yêu cầu đổi hàng hoặc hoàn tiền ngay trong trang đơn hàng.',
+    'Mỗi sản phẩm StAie. được may riêng theo số đo của bạn. Nếu sản phẩm nhận được may sai số đo, sai màu hoặc có lỗi, bạn có 7 ngày để gửi yêu cầu đổi hàng hoặc hoàn tiền ngay trong trang đơn hàng.',
   updatedAt: '19/10/2026',
   highlights: [
     { label: 'Thời hạn gửi yêu cầu', value: '7 ngày' },
@@ -21,7 +21,7 @@ export const RETURN_POLICY: PolicyDocument = {
       blocks: [
         {
           type: 'paragraph',
-          text: 'Chính sách áp dụng cho mọi đơn hàng đặt trên website và ứng dụng StAle. (FashionAI). Vì sản phẩm được cắt may theo số đo bạn lưu trong hồ sơ, việc đổi trả tập trung vào lỗi phát sinh từ phía StAle.: may sai số đo, giao sai màu hoặc lỗi chất lượng.',
+          text: 'Chính sách áp dụng cho mọi đơn hàng đặt trên website và ứng dụng StAie. (FashionAI). Vì sản phẩm được cắt may theo số đo bạn lưu trong hồ sơ, việc đổi trả tập trung vào lỗi phát sinh từ phía StAie.: may sai số đo, giao sai màu hoặc lỗi chất lượng.',
         },
       ],
     },
@@ -47,16 +47,16 @@ export const RETURN_POLICY: PolicyDocument = {
           type: 'table',
           columns: ['Lý do', 'Ví dụ', 'Phí vận chuyển'],
           rows: [
-            ['Sai kích thước / số đo', 'Sản phẩm lệch so với số đo đã chốt trong đơn quá ±1 cm (số đo vòng) hoặc ±1,5 cm (số đo dài)', 'StAle. chịu'],
-            ['Sai màu sắc', 'Nhận màu khác với màu bạn đã chọn khi đặt hàng', 'StAle. chịu'],
-            ['Lỗi đường may / chất lượng vải', 'Bung chỉ, lệch đường may, vải lỗi, khuy hoặc khóa kéo hỏng', 'StAle. chịu'],
+            ['Sai kích thước / số đo', 'Sản phẩm lệch so với số đo đã chốt trong đơn quá ±1 cm (số đo vòng) hoặc ±1,5 cm (số đo dài)', 'StAie. chịu'],
+            ['Sai màu sắc', 'Nhận màu khác với màu bạn đã chọn khi đặt hàng', 'StAie. chịu'],
+            ['Lỗi đường may / chất lượng vải', 'Bung chỉ, lệch đường may, vải lỗi, khuy hoặc khóa kéo hỏng', 'StAie. chịu'],
             ['Lý do khác', 'Không còn ưng kiểu dáng, đổi ý sau khi nhận hàng', 'Thẩm định riêng; nếu được chấp thuận, bạn chịu phí vận chuyển'],
           ],
         },
         {
           type: 'note',
           tone: 'warning',
-          text: 'Sản phẩm may đúng số đo bạn đã nhập nhưng không vừa vì số đo tự đo chưa chính xác không thuộc diện đổi miễn phí. StAle. vẫn hỗ trợ chỉnh sửa theo Chính sách bảo hành.',
+          text: 'Sản phẩm may đúng số đo bạn đã nhập nhưng không vừa vì số đo tự đo chưa chính xác không thuộc diện đổi miễn phí. StAie. vẫn hỗ trợ chỉnh sửa theo Chính sách bảo hành.',
           link: { label: 'Xem Chính sách bảo hành', href: '/warranty' },
         },
       ],
@@ -100,13 +100,13 @@ export const RETURN_POLICY: PolicyDocument = {
       blocks: [
         {
           type: 'paragraph',
-          text: 'Bộ phận chăm sóc khách hàng thẩm định yêu cầu trong 1 - 3 ngày làm việc dựa trên mô tả, ảnh minh chứng và bản số đo đã lưu trong đơn. StAle. có thể chọn hướng xử lý khác với hướng bạn đề xuất nếu phù hợp hơn với tình trạng sản phẩm, và luôn ghi rõ lý do khi từ chối.',
+          text: 'Bộ phận chăm sóc khách hàng thẩm định yêu cầu trong 1 - 3 ngày làm việc dựa trên mô tả, ảnh minh chứng và bản số đo đã lưu trong đơn. StAie. có thể chọn hướng xử lý khác với hướng bạn đề xuất nếu phù hợp hơn với tình trạng sản phẩm, và luôn ghi rõ lý do khi từ chối.',
         },
         {
           type: 'list',
           items: [
             { term: 'Chờ xử lý', text: 'Yêu cầu đã được gửi và đang thẩm định.' },
-            { term: 'Đã duyệt', text: 'Yêu cầu đổi hàng được chấp thuận; StAle. liên hệ hướng dẫn gửi trả sản phẩm.' },
+            { term: 'Đã duyệt', text: 'Yêu cầu đổi hàng được chấp thuận; StAie. liên hệ hướng dẫn gửi trả sản phẩm.' },
             { term: 'Từ chối', text: 'Yêu cầu không được chấp thuận, kèm lý do cụ thể.' },
             { term: 'Đã giải quyết', text: 'Đã hoàn tiền hoặc đã giao sản phẩm thay thế.' },
           ],
@@ -121,7 +121,7 @@ export const RETURN_POLICY: PolicyDocument = {
           type: 'list',
           items: [
             'Số tiền hoàn bằng giá bạn thực trả cho sản phẩm đó (sau khi trừ mã giảm giá).',
-            'Với lỗi từ phía StAle., phí vận chuyển của sản phẩm cũng được hoàn.',
+            'Với lỗi từ phía StAie., phí vận chuyển của sản phẩm cũng được hoàn.',
             'Tiền được hoàn qua chuyển khoản ngân hàng hoặc kênh thanh toán ban đầu trong 5 - 7 ngày làm việc kể từ khi yêu cầu được duyệt.',
           ],
         },
@@ -133,7 +133,7 @@ export const RETURN_POLICY: PolicyDocument = {
       blocks: [
         {
           type: 'paragraph',
-          text: 'Sản phẩm thay thế được may lại theo số đo đã chốt, hoặc theo số đo điều chỉnh sau khi trao đổi với bạn, và giao miễn phí. Thời gian may lại tương đương một đơn hàng mới; StAle. sẽ báo ngày giao dự kiến khi duyệt yêu cầu.',
+          text: 'Sản phẩm thay thế được may lại theo số đo đã chốt, hoặc theo số đo điều chỉnh sau khi trao đổi với bạn, và giao miễn phí. Thời gian may lại tương đương một đơn hàng mới; StAie. sẽ báo ngày giao dự kiến khi duyệt yêu cầu.',
         },
       ],
     },

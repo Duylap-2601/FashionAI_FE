@@ -1,169 +1,111 @@
 'use client';
 
+import { LANDING_MEDIA } from '@/features/home/constants/landing-media';
+import { LandingSectionHeading } from '@/features/home/components/LandingSectionHeading';
 import type { CollectionCarouselProps } from '@/features/home/types/collection-carousel';
-import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useState } from 'react';
+
+const COLLECTION_IMAGES = [
+  LANDING_MEDIA.look01,
+  LANDING_MEDIA.look02,
+  LANDING_MEDIA.look03,
+  LANDING_MEDIA.hero,
+];
 
 export function CollectionCarousel({
   collections,
   onSelectCollection,
   selectedCollectionId,
 }: CollectionCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
-  const checkScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-    setCanScrollLeft(scrollLeft > 10);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-  };
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    checkScroll();
-    el.addEventListener('scroll', checkScroll, { passive: true });
-    window.addEventListener('resize', checkScroll);
-    return () => {
-      el.removeEventListener('scroll', checkScroll);
-      window.removeEventListener('resize', checkScroll);
-    };
-  }, [collections]);
-
-  const handleScroll = (direction: 'left' | 'right') => {
-    if (!scrollRef.current) return;
-    const firstCard = scrollRef.current.firstElementChild as HTMLElement | null;
-    const cardWidth = firstCard?.offsetWidth || 340;
-    const scrollAmount = cardWidth + 24; // Card width + gap
-    scrollRef.current.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
-      behavior: 'smooth',
-    });
-  };
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   return (
-    <section id="collections" className="py-14 md:py-20 bg-white border-b border-neutral-100">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-8">
-        {/* Header with Title */}
-        <div className="mb-8">
-          <span className="text-[11px] font-bold text-brand-navy uppercase tracking-[0.18em] block mb-2">
-            Bộ sưu tập độc quyền
-          </span>
-          <h2 className="text-[28px] md:text-[36px] font-bold text-neutral-900 tracking-tight">
-            BỘ SƯU TẬP MỚI NHẤT
-          </h2>
-          <p className="text-body-sm text-neutral-500 mt-1 max-w-xl">
-            Được thiết kế tinh xảo theo từng mùa thời trang, định hình phong cách quý cô và quý ông hiện đại.
-          </p>
-        </div>
+    <section id="collections" className="scroll-mt-24 bg-landing-paper py-16 md:py-24">
+      <div className="mx-auto max-w-[1440px] px-4 md:px-8">
+        <LandingSectionHeading
+          chapter="02"
+          eyebrow="Bộ sưu tập"
+          title="Bốn chương. Một phong cách."
+          description="Mỗi bộ sưu tập là một lớp cắt may riêng cho nhịp sống công sở. Chọn một chương để xem thiết kế."
+          action={(
+            <Link
+              href="/products"
+              className="group inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-oxblood transition-colors hover:text-landing-obsidian"
+            >
+              Xem tất cả
+              <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </Link>
+          )}
+        />
 
-        {/* Carousel Wrapper with Side Navigation Controls */}
-        <div className="relative group/carousel">
-          {/* Left Arrow Button */}
-          <button
-            type="button"
-            onClick={() => handleScroll('left')}
-            disabled={!canScrollLeft}
-            aria-label="Bộ sưu tập trước"
-            className={`absolute left-0 sm:-left-3 md:-left-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/95 text-neutral-800 hover:text-[#5D1C34] hover:bg-white shadow-xl border border-neutral-200/80 backdrop-blur-md flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 ${
-              canScrollLeft
-                ? 'opacity-100 pointer-events-auto'
-                : 'opacity-0 pointer-events-none'
-            }`}
-          >
-            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
-          </button>
+        <div className="-mx-4 mt-10 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 xl:grid-cols-4">
+          {collections.map((collection, index) => {
+            const isSelected = selectedCollectionId === collection.id;
+            const fallbackImage = COLLECTION_IMAGES[index % COLLECTION_IMAGES.length] || LANDING_MEDIA.look01;
+            const coverImage = collection.thumbnail || collection.coverImages?.find(Boolean);
+            const imageSrc = failedImages[collection.id]
+              ? fallbackImage
+              : coverImage || fallbackImage;
 
-          {/* Carousel Scroll Container */}
-          <div
-            ref={scrollRef}
-            className="flex gap-4 md:gap-6 overflow-x-auto py-4 px-2 scrollbar-hide snap-x snap-mandatory -mx-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {collections.map((col) => {
-              const isSelected = selectedCollectionId === col.id;
-              return (
-                <div
-                  key={col.id}
-                  className={`snap-start shrink-0 w-[min(82vw,280px)] sm:w-[320px] md:w-[360px] rounded-2xl overflow-hidden shadow-lg border transition-all duration-300 relative group flex flex-col justify-end aspect-[3/4] cursor-pointer ${
-                    isSelected
-                      ? 'ring-4 ring-inset ring-[#5D1C34] border-transparent scale-[1.01]'
-                      : 'border-neutral-200 hover:shadow-2xl hover:-translate-y-1'
-                  }`}
-                  onClick={() => onSelectCollection?.(col)}
-                >
-                  {/* Background Image */}
-                  <Image
-                    src={col.thumbnail || col.coverImages?.[0] || '/images/731163514_999523332788054_1114320478812927640_n.png'}
-                    alt={col.name}
-                    fill
-                    sizes="(max-width: 640px) 82vw, (max-width: 768px) 320px, 360px"
-                    className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
-                    }}
-                  />
+            return (
+              <button
+                key={collection.id}
+                type="button"
+                onClick={() => onSelectCollection?.(collection)}
+                aria-pressed={isSelected}
+                className="group relative aspect-[3/4] w-[78vw] shrink-0 snap-start overflow-hidden bg-landing-obsidian text-left transition-shadow duration-500 ease-out hover:shadow-[0_28px_44px_-20px_rgba(17,16,15,0.6)] focus-visible:shadow-[0_28px_44px_-20px_rgba(17,16,15,0.6)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-oxblood md:w-auto"
+              >
+                <Image
+                  src={imageSrc}
+                  alt={`${collection.name} - ${collection.season || 'Bộ sưu tập 2026'}`}
+                  fill
+                  sizes="(max-width: 768px) 78vw, (max-width: 1280px) 45vw, 25vw"
+                  className="object-cover object-[50%_0%] origin-top transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  onError={() => {
+                    setFailedImages((prev) => ({ ...prev, [collection.id]: true }));
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-landing-obsidian via-landing-obsidian/35 to-landing-obsidian/5" />
 
-                  {/* Dark Gradients */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-4 p-5">
+                  <span className="font-mono text-[11px] tracking-[0.18em] text-landing-paper/70">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="max-w-[55%] text-right text-[9px] font-semibold uppercase leading-relaxed tracking-[0.18em] text-landing-paper/60">
+                    {collection.season || 'Bộ sưu tập 2026'}
+                  </span>
+                </div>
 
-                  {/* Top Badge */}
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                    <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold tracking-wider uppercase">
-                      {col.season || '2026'}
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <span className="mb-4 block h-px w-10 bg-landing-brass transition-all duration-500 group-hover:w-16" />
+                  <h3 className="font-display text-[1.55rem] leading-[1.05] text-landing-paper">
+                    {collection.name}
+                  </h3>
+                  {collection.tagline ? (
+                    <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-landing-paper/65">
+                      {collection.tagline}
+                    </p>
+                  ) : null}
+                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-landing-paper/15 pt-3">
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-landing-paper/50">
+                      {collection.itemCount ? `${collection.itemCount} thiết kế` : 'Tuyển chọn'}
                     </span>
-                    {isSelected && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-brand-gold text-brand-navy text-[10px] font-bold flex items-center gap-1 shadow-md">
-                        Đang chọn
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Bottom Content */}
-                  <div className="relative z-10 p-4 sm:p-6 flex flex-col">
-                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 leading-tight group-hover:text-brand-gold transition-colors">
-                      {col.name}
-                    </h3>
-
-                    {col.tagline && (
-                      <p className="text-white/80 text-xs sm:text-body-sm line-clamp-2 mb-4 font-light">
-                        {col.tagline}
-                      </p>
-                    )}
-
-                    {/* "XEM NGAY" Button matching Remmus */}
-                    <div className="flex items-center justify-between pt-2 border-t border-white/20">
-                      <span className="text-[11px] text-white/70 font-medium">
-                        {col.itemCount ? `${col.itemCount} thiết kế` : 'Độc quyền'}
-                      </span>
-
-                      <span className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-white text-neutral-900 font-bold text-[11px] sm:text-xs uppercase tracking-wider group-hover:bg-brand-gold group-hover:text-brand-navy transition-all duration-300 shadow-md">
-                        <span>XEM NGAY</span>
-                        <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-                      </span>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-landing-paper transition-colors group-hover:text-landing-brass">
+                      {isSelected ? 'Đang xem' : 'Mở chương'}
+                      <ArrowUpRight className="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Right Arrow Button */}
-          <button
-            type="button"
-            onClick={() => handleScroll('right')}
-            disabled={!canScrollRight}
-            aria-label="Bộ sưu tập tiếp theo"
-            className={`absolute right-0 sm:-right-3 md:-right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/95 text-neutral-800 hover:text-[#5D1C34] hover:bg-white shadow-xl border border-neutral-200/80 backdrop-blur-md flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 ${
-              canScrollRight
-                ? 'opacity-100 pointer-events-auto'
-                : 'opacity-0 pointer-events-none'
-            }`}
-          >
-            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-          </button>
+                {isSelected ? (
+                  <span className="pointer-events-none absolute inset-2 border border-landing-brass" aria-hidden="true" />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       </div>
     </section>

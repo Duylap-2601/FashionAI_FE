@@ -2,7 +2,12 @@ import type { Product } from '@/features/products/types/products';
 
 export interface ProductCardProps {
   product: Product;
-  pinned: boolean;
-  onToggleRack: (product: Product) => void;
-  onAddToCart: (product: Product) => void;
+  showQuickAdd?: boolean;
+  showTryOn?: boolean;
+  showRating?: boolean;
+  imagePriority?: boolean;
+  className?: string;
+  onAddToCart?: (product: Product) => void;
+  pinned?: boolean;
+  onToggleRack?: (product: Product) => void;
 }

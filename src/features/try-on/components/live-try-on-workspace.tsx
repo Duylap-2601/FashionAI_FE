@@ -1,15 +1,30 @@
 'use client';
 
 import type { Product } from '@/features/products/types/products';
-import { getValidProductColors, normalizeProductColorName, resolveProductImageForColor } from '@/features/products/services/products-utils';
 import { useLiveTryOnQuota } from '@/features/subscription/hooks/useQuota';
-import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
+import {
+  GarmentColorPicker,
+  GarmentSlot,
+  TryOnSegmented,
+  tryOnButtonClassName,
+  tryOnFocusRing,
+  tryOnLabelClassName,
+} from '@/features/try-on/components/garment-slot';
 import { useAutoCapture, type LiveCapture } from '@/features/try-on/hooks/use-live-auto-capture';
+import { useLiveTryOn } from '@/features/try-on/hooks/use-live-try-on';
 import type { LiveTryOnSessionItem } from '@/features/try-on/types/live-try-on';
 import { trackEvent } from '@/lib/analytics';
-import { ArrowRight, Camera, CameraOff, Check, ChevronDown, CirclePause, Download, Expand, Image as ImageIcon, Layers, Loader2, Play, Plus, RefreshCw, Shirt, Square, Timer, Trash2, X, Aperture } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import * as Dialog from '@radix-ui/react-dialog';
+import { Aperture, ArrowRight, Camera, CameraOff, ChevronDown, ChevronLeft, ChevronRight, CirclePause, Download, Expand, Image as ImageIcon, Layers, Loader2, Play, RefreshCw, Shirt, Square, Timer, Trash2, X } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
+
+// Nút nổi trên khung camera tối.
+const stageButton = cn(
+  'flex h-10 w-10 items-center justify-center rounded-[2px] border border-landing-paper/20 bg-landing-obsidian/70 text-landing-paper transition-colors hover:bg-landing-obsidian disabled:cursor-not-allowed disabled:opacity-45',
+  tryOnFocusRing,
+);
 
 const LAYER_ROLE_LABELS: Record<string, string> = {
   OUTER: 'Lớp ngoài',
@@ -41,8 +56,6 @@ interface LiveTryOnWorkspaceProps {
   outfitMode: boolean;
   onOutfitModeChange: (combo: boolean) => void;
 }
-
-const buttonFocus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D1C34] focus-visible:ring-offset-4 disabled:cursor-not-allowed disabled:opacity-45';
 
 export function LiveTryOnWorkspace({
   selectedProduct,
@@ -152,441 +165,253 @@ export function LiveTryOnWorkspace({
   };
 
   return (
-    <section aria-label="Phòng thử đồ trực tiếp" className="pb-40 md:pb-32 lg:pb-0">
-      <div className="mb-5 flex items-end justify-between gap-4 md:mb-7">
-        <div>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#865C68]">Phòng thử trực tiếp</p>
-          <h2 className="font-serif text-[30px] leading-[1.1] tracking-tight text-[#302323] sm:text-[40px]">Phòng thử của bạn</h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-[#81716D]">Một góc nhìn mới, một bộ đồ thật hợp.</p>
-        </div>
-        <span className="hidden shrink-0 items-center gap-2 rounded-full border border-[#E7DDD6] px-3 py-2 text-[12px] text-[#715B55] sm:inline-flex">Thử đồ trực tiếp</span>
-      </div>
-
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] lg:gap-7">
+    <section aria-label="Phòng thử đồ trực tiếp" className="pb-44 md:pb-36 lg:pb-0">
+      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
         <div className="min-w-0">
-          <div className="relative isolate overflow-hidden rounded-[26px] bg-[#272422] shadow-[0_12px_40px_-16px_rgba(48,35,35,0.4)]">
-            <div className={`relative lg:h-[640px] ${isPaused ? 'h-[min(36svh,320px)] min-h-[260px]' : 'h-[min(58svh,560px)] min-h-[300px]'}`}>
+          <div className="relative isolate overflow-hidden bg-landing-obsidian">
+            <div className={cn('relative lg:h-[640px]', isPaused ? 'h-[min(36svh,320px)] min-h-[260px]' : 'h-[min(58svh,560px)] min-h-[300px]')}>
               <video ref={remoteVideoRef} autoPlay muted playsInline aria-label="Kết quả thử đồ trực tiếp" onLoadedData={() => { if ((remoteVideoRef.current?.videoWidth ?? 0) > 0) markFirstFrame(); }} className="h-full w-full object-contain" />
               {(!remoteStream || live.status === 'awaiting-first-frame') && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_50%_35%,#514640_0%,#272422_70%)] px-8 text-center">
-                  <div className="absolute inset-x-[18%] inset-y-[10%] rounded-t-[45%] rounded-b-[26px] border border-white/10" aria-hidden="true" />
-                  <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-white/5 text-[#EBDACD]">
-                    {isBusy ? <Loader2 size={25} className="animate-spin motion-reduce:animate-none" /> : isPaused ? <CirclePause size={28} strokeWidth={1.3} /> : <Shirt size={28} strokeWidth={1.3} />}
+                <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
+                  <div className="absolute inset-x-[18%] inset-y-[10%] rounded-t-[45%] border border-landing-brass/25" aria-hidden="true" />
+                  <div className="relative mb-5 flex h-14 w-14 items-center justify-center border border-landing-paper/20 text-landing-brass" aria-hidden="true">
+                    {isBusy ? <Loader2 size={24} strokeWidth={1.5} className="animate-spin motion-reduce:animate-none" /> : isPaused ? <CirclePause size={26} strokeWidth={1.3} /> : <Shirt size={26} strokeWidth={1.3} />}
                   </div>
-                  <p className="relative font-serif text-[28px] text-[#FFF7EF]">{isPaused ? 'Nghỉ một chút nhé' : isBusy ? 'Đang chuẩn bị cho bạn' : 'Sẵn sàng cho diện mạo mới?'}</p>
-                  <p className="relative mt-3 max-w-[260px] text-[13px] leading-6 text-[#D0C0B6]">{isPaused ? 'Bạn có thể đổi trang phục bên dưới, rồi tiếp tục phiên đang có.' : isBusy ? 'Giữ camera ổn định. Hình ảnh của bạn sẽ xuất hiện tại đây.' : 'Chọn trang phục, bật camera và xem ngay trên chính bạn.'}</p>
+                  <p className="relative font-display text-[28px] leading-tight text-landing-paper">{isPaused ? 'Đang tạm dừng' : isBusy ? 'Đang chuẩn bị' : 'Sẵn sàng thử đồ'}</p>
+                  <p className="relative mt-3 max-w-[280px] text-sm leading-relaxed text-landing-paper/65">{isPaused ? 'Đổi trang phục ở bên cạnh rồi tiếp tục phiên đang có.' : isBusy ? 'Giữ camera ổn định. Hình của bạn sẽ hiện ở đây.' : 'Chọn trang phục, bật camera và xem ngay trên chính bạn.'}</p>
                 </div>
               )}
-              <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#211B1B]/75 px-3 py-2 text-[11px] font-medium text-white backdrop-blur-md" role="status">
-                <span className={`h-1.5 w-1.5 rounded-full ${isLive ? 'bg-[#B8D9B0]' : isPaused ? 'bg-[#EBC790]' : 'bg-white/50'}`} />{statusLabel}
+              <div className="absolute left-4 top-4 flex items-center gap-2 bg-landing-obsidian/80 px-3 py-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-paper" role="status">
+                <span aria-hidden="true" className={cn('h-1.5 w-1.5 rounded-full', isLive ? 'bg-landing-sage' : isPaused ? 'bg-landing-brass' : 'bg-landing-paper/50')} />{statusLabel}
               </div>
               {live.appliedGarment?.items && live.appliedGarment.items.length > 0 && (isLive || isPaused) && (
-                <div className="absolute left-4 top-14 flex items-center gap-1.5 rounded-full bg-[#211B1B]/75 p-1 text-[11px] text-white backdrop-blur-md">
+                <div className="absolute left-4 top-14 flex items-center gap-1.5 bg-landing-obsidian/80 p-1 text-landing-paper">
                   {live.appliedGarment.items.map((item) => (
-                    <div key={item.productId} title={`${item.name} (${LAYER_ROLE_LABELS[item.layerRole] || item.layerRole})`} className="relative h-6 w-6 overflow-hidden rounded-full border border-white/20 bg-white/10">
+                    <div key={item.productId} title={`${item.name} (${LAYER_ROLE_LABELS[item.layerRole] || item.layerRole})`} className="relative h-7 w-6 overflow-hidden border border-landing-paper/20 bg-landing-paper/10">
                       {item.imageUrl && (
                         <Image src={item.imageUrl} alt={item.name} fill sizes="24px" unoptimized className="object-cover" />
                       )}
                     </div>
                   ))}
-                  <span className="pr-2 pl-1 text-[10px] font-medium text-neutral-200">
+                  <span className="pl-1 pr-2 text-[10px] text-landing-paper/80">
                     {live.appliedGarment.items.length} món
                   </span>
                 </div>
               )}
-              {/* --- Auto-capture controls overlay --- */}
               {isLive && (
                 <div className="absolute right-4 top-4 flex items-center gap-1.5">
                   {autoCapture.isAutoCapturing && (
-                    <span className="flex items-center gap-1.5 rounded-full bg-[#211B1B]/75 px-2.5 py-1.5 text-[10px] font-medium text-white backdrop-blur-md">
-                      <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                    <span className="flex items-center gap-1.5 bg-landing-obsidian/80 px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-landing-paper">
+                      <span className="relative flex h-2 w-2" aria-hidden="true">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-landing-oxblood opacity-75 motion-reduce:animate-none" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-landing-oxblood" />
                       </span>
                       Tự chụp
                     </span>
                   )}
-                  <button
-                    type="button"
-                    onClick={autoCapture.captureNow}
-                    title="Chụp ngay"
-                    className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30 ${buttonFocus}`}
-                  >
-                    <Aperture size={17} />
+                  <button type="button" onClick={autoCapture.captureNow} aria-label="Chụp ngay" title="Chụp ngay" className={stageButton}>
+                    <Aperture size={17} strokeWidth={1.75} />
                   </button>
                   <button
                     type="button"
                     onClick={() => autoCapture.setAutoCapture(!autoCapture.isAutoCapturing)}
+                    aria-label={autoCapture.isAutoCapturing ? 'Tắt tự chụp' : 'Bật tự chụp'}
+                    aria-pressed={autoCapture.isAutoCapturing}
                     title={autoCapture.isAutoCapturing ? 'Tắt tự chụp' : 'Bật tự chụp'}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md transition-colors ${buttonFocus} ${autoCapture.isAutoCapturing ? 'bg-[#5D1C34]/80 text-white hover:bg-[#5D1C34]' : 'bg-white/20 text-white/60 hover:bg-white/30 hover:text-white'}`}
+                    className={cn(stageButton, autoCapture.isAutoCapturing && 'border-landing-oxblood bg-landing-oxblood hover:bg-landing-oxblood/85')}
                   >
-                    {autoCapture.isAutoCapturing ? <Camera size={16} /> : <CameraOff size={16} />}
+                    {autoCapture.isAutoCapturing ? <Camera size={16} strokeWidth={1.75} /> : <CameraOff size={16} strokeWidth={1.75} />}
                   </button>
                 </div>
               )}
-              {/* --- Captures thumbnail strip --- */}
               {autoCapture.captures.length > 0 && (isLive || isPaused) && (
                 <div className="absolute bottom-14 left-4 right-28 sm:right-36">
-                  <div className="flex items-end gap-2 overflow-x-auto rounded-xl bg-[#211B1B]/60 p-2 backdrop-blur-md scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                  <div className="no-scrollbar flex items-end gap-2 overflow-x-auto bg-landing-obsidian/80 p-2">
                     {autoCapture.captures.map((cap, idx) => (
                       <button
                         key={cap.id}
                         type="button"
                         onClick={() => setViewingCapture(cap)}
-                        className={`group/thumb relative shrink-0 overflow-hidden rounded-lg border border-white/20 transition-all hover:border-white/50 hover:scale-105 ${buttonFocus}`}
-                        title={`Ảnh chụp ${idx + 1} — ${new Date(cap.capturedAt).toLocaleTimeString('vi-VN')}`}
+                        aria-label={`Xem ảnh chụp ${idx + 1}, lúc ${new Date(cap.capturedAt).toLocaleTimeString('vi-VN')}`}
+                        className={cn('relative shrink-0 overflow-hidden border border-landing-paper/20 transition-colors hover:border-landing-paper/60', tryOnFocusRing)}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={cap.dataUrl} alt={`Ảnh chụp ${idx + 1}`} className="h-14 w-11 object-cover sm:h-16 sm:w-12" />
-                        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent py-0.5 text-center text-[8px] text-white">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- ảnh chụp là data URL tạo trong trình duyệt */}
+                        <img src={cap.dataUrl} alt="" className="h-14 w-11 object-cover sm:h-16 sm:w-12" />
+                        <span className="absolute inset-x-0 bottom-0 bg-landing-obsidian/70 py-0.5 text-center font-mono text-[8px] text-landing-paper">
                           {new Date(cap.capturedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </span>
                       </button>
                     ))}
                   </div>
                   <div className="mt-1.5 flex items-center justify-between">
-                    <span className="text-[10px] text-white/50">{autoCapture.captures.length} ảnh đã chụp</span>
-                    {autoCapture.captures.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={autoCapture.clearCaptures}
-                        className={`text-[10px] text-white/50 hover:text-white/80 ${buttonFocus}`}
-                      >
-                        Xoá tất cả
-                      </button>
-                    )}
+                    <span className="text-[10px] text-landing-paper/60">{autoCapture.captures.length} ảnh đã chụp</span>
+                    <button type="button" onClick={autoCapture.clearCaptures} className={cn('text-[10px] text-landing-paper/60 hover:text-landing-paper', tryOnFocusRing)}>
+                      Xoá tất cả
+                    </button>
                   </div>
                 </div>
               )}
-              <div className={`absolute bottom-4 right-4 w-[88px] overflow-hidden rounded-2xl border border-white/30 bg-[#332E2B] shadow-lg sm:w-[112px] ${cameraStream ? '' : 'hidden'}`}>
+              <div className={cn('absolute bottom-4 right-4 w-[88px] overflow-hidden border border-landing-paper/30 bg-landing-obsidian sm:w-[112px]', !cameraStream && 'hidden')}>
                 <video ref={cameraVideoRef} autoPlay muted playsInline aria-label="Camera gốc của bạn" className="aspect-[3/4] w-full object-cover" />
-                <span className="absolute inset-x-0 bottom-0 bg-black/50 py-1 text-center text-[10px] text-white">Camera của bạn</span>
+                <span className="absolute inset-x-0 bottom-0 bg-landing-obsidian/70 py-1 text-center text-[10px] text-landing-paper">Camera của bạn</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 border-t border-white/10 px-4 py-3 text-[12px] text-[#DFD2C8]"><Expand size={15} className="shrink-0" />{outfitMode ? 'Lùi lại để thấy trọn áo và quần trong khung hình.' : 'Đứng nơi đủ sáng, giữ trang phục trong khung hình.'}</div>
+            <div className="flex items-center gap-2 border-t border-landing-paper/10 px-4 py-3 text-xs text-landing-paper/70">
+              <Expand size={14} strokeWidth={1.75} className="shrink-0" aria-hidden="true" />
+              {outfitMode ? 'Lùi lại để thấy trọn áo và quần trong khung hình.' : 'Đứng nơi đủ sáng, giữ trang phục trong khung hình.'}
+            </div>
           </div>
-          <p className="mt-3 flex items-center justify-center gap-2 text-[11px] text-[#887873]"><Camera size={13} />Camera chỉ được gửi để xử lý khi bạn bắt đầu hoặc tiếp tục thử.</p>
+          <p className="mt-3 flex items-center justify-center gap-2 text-xs text-landing-muted">
+            <Camera size={13} strokeWidth={1.75} aria-hidden="true" />Camera chỉ được gửi để xử lý khi bạn bắt đầu hoặc tiếp tục thử.
+          </p>
         </div>
 
-        <div className="min-w-0 space-y-4 lg:sticky lg:top-24">
-          <div className="rounded-[24px] border border-[#E9E0D9] bg-white p-4 sm:p-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h3 className="text-[16px] font-semibold text-[#302323]">Bạn muốn mặc gì?</h3>
-              <span className="text-[11px] text-[#8D7871]">{outfitMode ? `${String(selectedCount).padStart(2, '0')} món đồ` : '01 món đồ'}</span>
+        <div className="min-w-0 space-y-6 lg:sticky lg:top-[97px]">
+          <div>
+            <div className="mb-4 flex items-baseline justify-between gap-3">
+              <h2 className="font-display text-[1.375rem] leading-tight text-landing-obsidian">Trang phục</h2>
+              <span className="font-mono text-xs text-landing-muted">{String(selectedCount).padStart(2, '0')} món</span>
             </div>
-            <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-[#F4F0EC] p-1" role="group" aria-label="Chế độ trang phục">
-              {[{ label: 'Một món', combo: false }, { label: 'Phối bộ', combo: true }].map(({ label, combo }) => (
-                <button
-                  key={label}
-                  type="button"
-                  aria-pressed={outfitMode === combo}
-                  disabled={selectionLocked}
-                  onClick={() => onOutfitModeChange(combo)}
-                  className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-[13px] font-semibold transition-colors ${buttonFocus} ${outfitMode === combo ? 'bg-white text-[#5D1C34] shadow-sm' : 'text-[#8A7871] hover:text-[#5D1C34]'}`}
-                >
-                  {combo && <Layers size={14} />}
-                  {outfitMode === combo && !combo && <Check size={14} />}
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className={outfitMode ? 'space-y-3' : ''}>
+            <TryOnSegmented
+              ariaLabel="Số món thử"
+              value={outfitMode ? 'combo' : 'single'}
+              onChange={(value) => onOutfitModeChange(value === 'combo')}
+              disabled={selectionLocked}
+              options={[
+                { value: 'single', label: 'Một món' },
+                { value: 'combo', label: 'Phối bộ', icon: <Layers size={14} strokeWidth={1.75} aria-hidden="true" /> },
+              ]}
+            />
+            <div className={cn('mt-5', outfitMode && 'divide-y divide-landing-line/70 border-y border-landing-line/70')}>
               {outfitMode ? (
                 <>
-                  <div className="space-y-1.5">
-                    <GarmentCard
-                      label="Áo khoác"
-                      title="Món 1: Áo khoác / Blazer"
-                      subLabel="Lớp ngoài - Tùy chọn"
-                      product={outerProduct || null}
-                      onSelect={onOpenOuterCatalog || (() => {})}
-                      onClear={outerProduct && onClearOuter ? onClearOuter : undefined}
-                      disabled={selectionLocked}
-                      color={outerColor}
-                      horizontal
-                    />
-                    <ColorSelector
-                      product={outerProduct || null}
-                      selectedColor={outerColor}
-                      onSelectColor={onSelectOuterColor || (() => {})}
-                      disabled={isBusy || isLive || otherSessionRunning}
-                      label="Màu áo khoác"
-                    />
+                  <div className="py-4">
+                    <GarmentSlot label="Lớp ngoài" hint="Tùy chọn" product={outerProduct || null} color={outerColor} emptyLabel="Áo khoác hoặc blazer" onSelect={onOpenOuterCatalog || (() => {})} onClear={outerProduct && onClearOuter ? onClearOuter : undefined} disabled={selectionLocked} />
+                    <GarmentColorPicker product={outerProduct || null} selectedColor={outerColor} onSelectColor={onSelectOuterColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu lớp ngoài" lockedHint="Tạm dừng để đổi màu." />
                   </div>
-
-                  <div className="space-y-1.5">
-                    <GarmentCard
-                      label="Áo"
-                      title="Món 2: Áo trong / Sơ mi / Áo thun"
-                      subLabel="Lớp trong"
-                      product={upperProduct}
-                      onSelect={onOpenUpperCatalog}
-                      disabled={selectionLocked}
-                      color={upperColor}
-                      horizontal
-                    />
-                    <ColorSelector
-                      product={upperProduct}
-                      selectedColor={upperColor}
-                      onSelectColor={onSelectUpperColor}
-                      disabled={isBusy || isLive || otherSessionRunning}
-                      label="Màu áo trong"
-                    />
+                  <div className="py-4">
+                    <GarmentSlot label="Lớp trong" product={upperProduct} color={upperColor} emptyLabel="Sơ mi hoặc áo trong" onSelect={onOpenUpperCatalog} disabled={selectionLocked} />
+                    <GarmentColorPicker product={upperProduct} selectedColor={upperColor} onSelectColor={onSelectUpperColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu lớp trong" lockedHint="Tạm dừng để đổi màu." />
                   </div>
-
-                  <div className="space-y-1.5">
-                    <GarmentCard
-                      label="Quần"
-                      title="Món 3: Quần / Chân váy"
-                      subLabel="Lớp dưới"
-                      product={lowerProduct}
-                      onSelect={onOpenLowerCatalog}
-                      disabled={selectionLocked}
-                      color={lowerColor}
-                      horizontal
-                    />
-                    <ColorSelector
-                      product={lowerProduct}
-                      selectedColor={lowerColor}
-                      onSelectColor={onSelectLowerColor}
-                      disabled={isBusy || isLive || otherSessionRunning}
-                      label="Màu quần / váy"
-                    />
+                  <div className="py-4">
+                    <GarmentSlot label="Phần dưới" product={lowerProduct} color={lowerColor} emptyLabel="Quần hoặc chân váy" onSelect={onOpenLowerCatalog} disabled={selectionLocked} />
+                    <GarmentColorPicker product={lowerProduct} selectedColor={lowerColor} onSelectColor={onSelectLowerColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu phần dưới" lockedHint="Tạm dừng để đổi màu." />
                   </div>
                 </>
               ) : (
                 <>
-                  <GarmentCard
-                    label="Trang phục"
-                    product={selectedProduct}
-                    onSelect={onOpenCatalog}
-                    disabled={selectionLocked}
-                    horizontal
-                    color={selectedColor}
-                  />
-                  <ColorSelector
-                    product={selectedProduct}
-                    selectedColor={selectedColor}
-                    onSelectColor={onSelectColor}
-                    disabled={isBusy || isLive || otherSessionRunning}
-                    label="Màu trang phục"
-                  />
+                  <GarmentSlot label="Trang phục" product={selectedProduct} color={selectedColor} emptyLabel="Chưa chọn trang phục" onSelect={onOpenCatalog} disabled={selectionLocked} />
+                  <GarmentColorPicker product={selectedProduct} selectedColor={selectedColor} onSelectColor={onSelectColor} disabled={isBusy || isLive || otherSessionRunning} label="Màu" lockedHint="Tạm dừng để đổi màu." />
                 </>
               )}
             </div>
-            <p className={`mt-4 flex items-start gap-2 text-[12px] leading-5 ${isPaused ? 'text-[#5D1C34]' : 'text-[#8A7871]'}`}>
-              {isPaused ? <RefreshCw size={14} className="mt-0.5 shrink-0" /> : <CirclePause size={14} className="mt-0.5 shrink-0" />}
+            <p className={cn('mt-4 flex items-start gap-2 text-xs leading-5', isPaused ? 'text-landing-oxblood' : 'text-landing-muted')}>
+              {isPaused ? <RefreshCw size={14} strokeWidth={1.75} className="mt-0.5 shrink-0" aria-hidden="true" /> : <CirclePause size={14} strokeWidth={1.75} className="mt-0.5 shrink-0" aria-hidden="true" />}
               {isPaused ? 'Chọn lại món bạn thích. Nhấn Tiếp tục để mặc trang phục mới.' : isLive ? 'Muốn đổi đồ? Nhấn Tạm dừng trước khi chọn món mới.' : 'Thử cả bộ vẫn dùng chung thời gian của một phiên.'}
             </p>
             {live.appliedGarment?.items && live.appliedGarment.items.length > 0 && (
-              <div className="mt-4 border-t border-[#E9E0D9] pt-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#865C68]">
-                    Đang hiển thị trên camera
-                  </span>
-                  <span className="rounded-full bg-[#5D1C34]/10 px-2 py-0.5 text-[10px] font-semibold text-[#5D1C34]">
-                    {live.appliedGarment.items.length} món
-                  </span>
+              <div className="mt-5 border-t border-landing-line pt-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className={tryOnLabelClassName}>Đang mặc trên camera</span>
+                  <span className="font-mono text-xs text-landing-oxblood">{live.appliedGarment.items.length} món</span>
                 </div>
-                <div className="space-y-2">
+                <ul className="space-y-2">
                   {live.appliedGarment.items.map((item) => (
-                    <div key={item.productId} className="flex items-center gap-2.5 rounded-xl border border-[#ECE3DB] bg-[#FAF7F4] p-2">
-                      <div className="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg bg-white">
+                    <li key={item.productId} className="flex items-center gap-3">
+                      <div className="relative h-12 w-10 shrink-0 overflow-hidden rounded-[2px] bg-landing-ivory">
                         {item.imageUrl ? (
                           <Image src={item.imageUrl} alt={item.name} fill sizes="40px" unoptimized className="object-contain p-1 mix-blend-multiply" />
                         ) : (
-                          <Shirt size={16} className="m-auto text-[#AC9185]" />
+                          <Shirt size={16} strokeWidth={1.5} className="m-auto mt-4 text-landing-muted" aria-hidden="true" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="rounded bg-[#F0E6DE] px-1.5 py-0.5 text-[9px] font-semibold text-[#6E4B41]">
-                            {LAYER_ROLE_LABELS[item.layerRole] || item.layerRole}
-                          </span>
-                          {item.isPrimary && (
-                            <span className="rounded bg-[#5D1C34] px-1.5 py-0.5 text-[9px] font-medium text-white">
-                              Chính
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-0.5 truncate text-[12px] font-medium text-[#302323]">{item.name}</p>
-                        {item.color && (
-                          <p className="text-[10px] text-[#8D7871]">Màu: {item.color}</p>
-                        )}
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-brass-ink">
+                          {LAYER_ROLE_LABELS[item.layerRole] || item.layerRole}
+                          {item.isPrimary ? <span className="ml-2 text-landing-oxblood">Chính</span> : null}
+                        </p>
+                        <p className="mt-0.5 truncate text-sm text-landing-obsidian">{item.name}</p>
+                        {item.color ? <p className="text-xs text-landing-muted">Màu {item.color}</p> : null}
                       </div>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             )}
           </div>
 
-          <div className="fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-40 rounded-[22px] border border-[#E2D4CA] bg-[#FFFDF9]/95 p-3 shadow-[0_4px_32px_rgba(48,35,35,0.16)] backdrop-blur-xl md:bottom-4 md:left-auto md:right-6 md:w-[400px] lg:static lg:w-auto lg:p-5 lg:shadow-none" aria-label="Điều khiển phiên thử trực tiếp">
+          <div className="fixed inset-x-0 bottom-[64px] z-40 border-t border-landing-line bg-landing-paper px-4 py-3 md:bottom-4 md:left-auto md:right-6 md:w-[400px] md:border lg:static lg:w-auto lg:px-5 lg:py-5" aria-label="Điều khiển phiên thử trực tiếp">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-full ${lowTime ? 'bg-[#FBE4DC] text-[#A13E29]' : 'bg-[#F0E6E0] text-[#79544C]'}`}><Timer size={19} strokeWidth={1.6} /></div>
-                <div><p className="text-[11px] font-medium text-[#84716B]">{hasSession ? 'Thời gian phiên còn lại' : 'Thời gian cho phiên mới'}</p><p className={`font-mono text-[30px] font-medium leading-9 tracking-tight tabular-nums ${lowTime ? 'text-[#A13E29]' : 'text-[#472C31]'}`} role="timer" aria-label={`${hasSession ? 'Phiên còn' : 'Phiên mới'} ${formatTime(seconds)}`}>{isLoading && !hasSession ? '--:--' : formatTime(seconds)}</p></div>
+              <div className="flex items-center gap-3">
+                <span className={cn('flex h-10 w-10 items-center justify-center border', lowTime ? 'border-destructive/40 text-destructive' : 'border-landing-line text-landing-brass-ink')} aria-hidden="true">
+                  <Timer size={18} strokeWidth={1.5} />
+                </span>
+                <div>
+                  <p className="text-[11px] text-landing-muted">{hasSession ? 'Thời gian phiên còn lại' : 'Thời gian cho phiên mới'}</p>
+                  <p className={cn('font-mono text-[28px] leading-8 tabular-nums', lowTime ? 'text-destructive' : 'text-landing-obsidian')} role="timer" aria-label={`${hasSession ? 'Phiên còn' : 'Phiên mới'} ${formatTime(seconds)}`}>
+                    {isLoading && !hasSession ? '--:--' : formatTime(seconds)}
+                  </p>
+                </div>
               </div>
-              <span className={`max-w-[120px] text-right text-[11px] font-medium ${isPaused ? 'text-[#976C29]' : lowTime ? 'text-[#A13E29]' : 'text-[#8A7871]'}`} role="status">{isBusy ? busyLabel(live.status) : isPaused ? 'Đã tạm dừng' : lowTime ? 'Sắp hết thời gian' : isLive ? 'Đang tính thời gian' : 'Sẵn sàng khi bạn muốn'}</span>
+              <span className={cn('max-w-[130px] text-right text-[11px]', isPaused ? 'text-landing-brass-ink' : lowTime ? 'text-destructive' : 'text-landing-muted')} role="status">
+                {isBusy ? busyLabel(live.status) : isPaused ? 'Đã tạm dừng' : lowTime ? 'Sắp hết thời gian' : isLive ? 'Đang tính thời gian' : 'Sẵn sàng khi bạn muốn'}
+              </span>
             </div>
-            <div className={`grid gap-2 ${hasSession ? 'grid-cols-[minmax(0,1fr)_auto]' : 'grid-cols-1'}`}>
-              <button type="button" disabled={isLive ? false : !canStart} onClick={isLive ? () => void live.pause('client_pause') : start} className={`flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#5D1C34] px-4 text-[14px] font-semibold text-white transition-colors hover:bg-[#481428] ${buttonFocus}`}>
-                {isBusy ? <Loader2 size={18} className="animate-spin motion-reduce:animate-none" /> : isLive ? <CirclePause size={19} /> : <Play size={17} fill="currentColor" />}
-                {isBusy ? 'Vui lòng chờ…' : isLive ? 'Tạm dừng' : isPaused ? 'Tiếp tục thử' : 'Bắt đầu thử đồ'}
+            <div className={cn('grid gap-2', hasSession ? 'grid-cols-[minmax(0,1fr)_auto]' : 'grid-cols-1')}>
+              <button type="button" disabled={isLive ? false : !canStart} onClick={isLive ? () => void live.pause('client_pause') : start} className={cn(tryOnButtonClassName('primary', 'lg'), 'w-full')}>
+                {isBusy ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : isLive ? <CirclePause size={17} strokeWidth={1.75} aria-hidden="true" /> : <Play size={15} fill="currentColor" aria-hidden="true" />}
+                {isBusy ? 'Vui lòng chờ' : isLive ? 'Tạm dừng' : isPaused ? 'Tiếp tục thử' : 'Bắt đầu thử đồ'}
               </button>
-              {hasSession && <button type="button" disabled={isBusy} onClick={() => void live.stop('client_end', currentSessionId)} className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#DACCC3] px-3 text-[13px] font-semibold text-[#65504A] hover:bg-[#F0E6E0] ${buttonFocus}`}><Square size={14} />Kết thúc</button>}
+              {hasSession && (
+                <button type="button" disabled={isBusy} onClick={() => void live.stop('client_end', currentSessionId)} className={tryOnButtonClassName('outline', 'lg')}>
+                  <Square size={13} strokeWidth={1.75} aria-hidden="true" />Kết thúc
+                </button>
+              )}
             </div>
           </div>
 
-          {(live.error || unavailable) && <div role={live.error ? 'alert' : 'status'} className={`rounded-2xl border px-4 py-3 text-[13px] leading-6 ${live.error ? 'border-red-200 bg-red-50 text-red-800' : 'border-[#E9DED1] bg-[#FBF6ED] text-[#7D6140]'}`}>{live.error || unavailable}{isError && <button type="button" onClick={() => void refetch()} className={`ml-2 inline-flex min-h-11 items-center gap-1 font-semibold underline ${buttonFocus}`}><RefreshCw size={13} />Thử lại</button>}</div>}
-
-          <details className="group rounded-2xl border border-[#E9E0D9] bg-[#F8F5F1] px-4">
-            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 text-[12px] text-[#7C6760] [&::-webkit-details-marker]:hidden"><span>Thời gian thử trực tiếp hôm nay</span><span className="flex items-center gap-2 font-semibold text-[#4E3833]">{isLoading ? 'Đang tải…' : quota ? `${formatTime(quota.remaining)} có thể dùng` : 'Chưa có dữ liệu'}<ChevronDown size={14} className="transition-transform group-open:rotate-180" /></span></summary>
-            {quota && <div className="space-y-2 border-t border-[#E9E0D9] py-3 text-[12px] text-[#87716A]"><div className="flex justify-between"><span>Tổng thời gian mỗi ngày</span><span>{formatTime(quota.limit)}</span></div><div className="flex justify-between"><span>Đã sử dụng</span><span>{formatTime(quota.allocated)}</span></div><div className="flex justify-between"><span>Dành cho phiên đang mở</span><span>{formatTime(quota.reserved)}</span></div><p className="pt-1 leading-5">Thời gian còn lại của phiên hiển thị ở bộ đếm. Thử trực tiếp không trừ lượt thử bằng ảnh.</p></div>}
-          </details>
-          <button type="button" disabled={hasSession || isBusy} onClick={onSwitchToPhoto} className={`flex min-h-11 w-full items-center justify-center gap-2 text-[12px] text-[#8A7871] hover:text-[#5D1C34] ${buttonFocus}`}><ImageIcon size={15} />Thử bằng ảnh<ArrowRight size={14} /></button>
-        </div>
-      </div>
-      {/* --- Full-screen capture viewer --- */}
-      {viewingCapture && (
-        <CaptureViewer
-          capture={viewingCapture}
-          captures={autoCapture.captures}
-          onClose={() => setViewingCapture(null)}
-          onNavigate={setViewingCapture}
-          onDownload={autoCapture.downloadCapture}
-          onRemove={(c) => { autoCapture.removeCapture(c.id); setViewingCapture(null); }}
-        />
-      )}
-    </section>
-  );
-}
-
-function GarmentCard({
-  label,
-  title,
-  subLabel,
-  product,
-  onSelect,
-  onClear,
-  disabled,
-  horizontal = false,
-  color,
-}: {
-  label: string;
-  title?: string;
-  subLabel?: string;
-  product: Product | null;
-  onSelect: () => void;
-  onClear?: () => void;
-  disabled: boolean;
-  horizontal?: boolean;
-  color?: string | null;
-}) {
-  const resolvedImage = product ? resolveProductImageForColor(product, color) : null;
-  const displayImage = resolvedImage?.url || product?.image;
-  const displayTitle = title || label;
-
-  return (
-    <div className={`group w-full min-w-0 overflow-hidden rounded-2xl border border-[#E8DED6] bg-[#FCFAF7] transition-colors hover:border-[#B49789] ${horizontal ? 'p-3' : 'p-2.5'}`}>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-[#5D1C34] truncate">
-            {displayTitle}
-            {subLabel && <span className="ml-1.5 font-normal text-[10px] text-[#987C70]">({subLabel})</span>}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {product && onClear && (
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={onClear}
-              className={`text-[11px] font-semibold text-neutral-400 hover:text-red-600 transition-colors cursor-pointer bg-transparent border-0 ${buttonFocus}`}
-            >
-              Bỏ chọn
-            </button>
+          {(live.error || unavailable) && (
+            <div role={live.error ? 'alert' : 'status'} className={cn('border-l-2 bg-landing-ivory px-4 py-3 text-sm leading-6', live.error ? 'border-destructive text-destructive' : 'border-landing-brass text-landing-obsidian')}>
+              {live.error || unavailable}
+              {isError && (
+                <button type="button" onClick={() => void refetch()} className={cn('ml-2 inline-flex min-h-9 items-center gap-1 font-medium text-landing-oxblood underline underline-offset-4', tryOnFocusRing)}>
+                  <RefreshCw size={13} strokeWidth={1.75} aria-hidden="true" />Thử lại
+                </button>
+              )}
+            </div>
           )}
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={onSelect}
-            className={`inline-flex items-center gap-1 text-[11px] font-semibold text-[#5D1C34] hover:underline cursor-pointer bg-transparent border-0 ${buttonFocus}`}
-          >
-            {product ? 'Đổi món' : '+ Chọn ngay'}
-            <ArrowRight size={11} />
+
+          <details className="group border-y border-landing-line">
+            <summary className={cn('flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 text-xs text-landing-muted [&::-webkit-details-marker]:hidden', tryOnFocusRing)}>
+              <span>Thời gian thử trực tiếp hôm nay</span>
+              <span className="flex items-center gap-2 text-landing-obsidian">
+                {isLoading ? 'Đang tải…' : quota ? <><span className="font-mono">{formatTime(quota.remaining)}</span> còn dùng được</> : 'Chưa có dữ liệu'}
+                <ChevronDown size={14} strokeWidth={1.75} className="transition-transform group-open:rotate-180" aria-hidden="true" />
+              </span>
+            </summary>
+            {quota && (
+              <dl className="space-y-2 border-t border-landing-line/70 py-3 text-xs text-landing-muted">
+                <div className="flex justify-between"><dt>Tổng thời gian mỗi ngày</dt><dd className="font-mono text-landing-obsidian">{formatTime(quota.limit)}</dd></div>
+                <div className="flex justify-between"><dt>Đã sử dụng</dt><dd className="font-mono text-landing-obsidian">{formatTime(quota.allocated)}</dd></div>
+                <div className="flex justify-between"><dt>Dành cho phiên đang mở</dt><dd className="font-mono text-landing-obsidian">{formatTime(quota.reserved)}</dd></div>
+                <p className="pt-1 leading-5">Thời gian còn lại của phiên hiển thị ở bộ đếm. Thử trực tiếp không trừ lượt thử bằng ảnh.</p>
+              </dl>
+            )}
+          </details>
+          <button type="button" disabled={hasSession || isBusy} onClick={onSwitchToPhoto} className={cn(tryOnButtonClassName('quiet', 'sm'), 'w-full')}>
+            <ImageIcon size={14} strokeWidth={1.75} aria-hidden="true" />Thử bằng ảnh<ArrowRight size={13} strokeWidth={1.75} aria-hidden="true" />
           </button>
         </div>
       </div>
-
-      <button
-        type="button"
-        onClick={onSelect}
-        disabled={disabled}
-        aria-label={`${product ? 'Đổi' : 'Chọn'} ${label.toLowerCase()}${product ? `: ${product.name}` : ''}`}
-        className={`w-full text-left bg-transparent border-0 cursor-pointer p-0 ${buttonFocus} ${horizontal ? 'flex items-center gap-3.5' : 'flex items-center gap-3'}`}
-      >
-        <div className={`relative flex items-center justify-center rounded-xl bg-[#F1EBE5] shrink-0 ${horizontal ? 'h-20 w-18' : 'h-18 w-16'}`}>
-          {product && displayImage ? (
-            <Image src={displayImage} alt={product.name} fill sizes="80px" unoptimized className="object-contain p-1.5 mix-blend-multiply" />
-          ) : (
-            <Plus size={22} strokeWidth={1.2} className="text-[#AC9185]" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="line-clamp-2 text-[13px] font-semibold leading-5 text-[#43312C]">
-            {product?.name ?? `Chưa chọn ${label.toLowerCase()}`}
-          </p>
-          {product?.price && (
-            <p className="mt-0.5 text-[12px] text-neutral-500 font-medium">
-              {product.price}
-            </p>
-          )}
-          {!product && (
-            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[#6C3045]">
-              Nhấn để chọn món
-            </span>
-          )}
-        </div>
-      </button>
-    </div>
-  );
-}
-
-function ColorSelector({ product, selectedColor, onSelectColor, disabled, label }: { product: Product | null; selectedColor?: string | null; onSelectColor: (color: string) => void; disabled: boolean; label: string }) {
-  const colors = getValidProductColors(product);
-  if (!product || colors.length < 2) return null;
-  const currentColor = normalizeProductColorName(selectedColor) || normalizeProductColorName(colors[0]?.name);
-
-  return (
-    <div className="mt-4 min-w-0 rounded-2xl border border-[#E9E0D9] bg-[#FCFAF7] p-3">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#987C70]">{label}</p>
-        <span className="truncate text-[12px] font-semibold text-[#5D1C34]">{selectedColor || colors[0]?.name}</span>
-      </div>
-      <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto pr-1" role="radiogroup" aria-label={label}>
-        {colors.map(color => {
-          const selected = normalizeProductColorName(color.name) === currentColor;
-          return (
-            <button
-              key={color.name}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              disabled={disabled}
-              onClick={() => onSelectColor(color.name)}
-              className={`flex min-h-10 max-w-full items-center gap-2 rounded-full border bg-white px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${buttonFocus} ${selected ? 'border-[#5D1C34] text-[#5D1C34] ring-1 ring-[#5D1C34]' : 'border-[#E2D4CA] text-[#65504A] hover:border-[#B49789]'}`}
-              title={color.name}
-            >
-              <span className="h-5 w-5 shrink-0 rounded-full border border-black/15 ring-1 ring-white" style={{ backgroundColor: color.hex }} />
-              <span className="truncate">{color.name}</span>
-              {selected && <Check size={13} className="shrink-0" />}
-            </button>
-          );
-        })}
-      </div>
-      {disabled && <p className="mt-2 text-[11px] leading-4 text-[#8A7871]">Tạm dừng để đổi màu trang phục.</p>}
-    </div>
+      <CaptureViewer
+        capture={viewingCapture}
+        captures={autoCapture.captures}
+        onClose={() => setViewingCapture(null)}
+        onNavigate={setViewingCapture}
+        onDownload={autoCapture.downloadCapture}
+        onRemove={(c) => { autoCapture.removeCapture(c.id); setViewingCapture(null); }}
+      />
+    </section>
   );
 }
 
@@ -610,10 +435,7 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
-// ---------------------------------------------------------------------------
-// Capture Viewer Modal
-// ---------------------------------------------------------------------------
-
+/** Xem lại ảnh tự chụp: Radix Dialog (giữ focus, Esc để đóng), mũi tên trái phải để chuyển ảnh. */
 function CaptureViewer({
   capture,
   captures,
@@ -622,93 +444,82 @@ function CaptureViewer({
   onDownload,
   onRemove,
 }: {
-  capture: LiveCapture;
+  capture: LiveCapture | null;
   captures: LiveCapture[];
   onClose: () => void;
   onNavigate: (c: LiveCapture) => void;
   onDownload: (c: LiveCapture) => void;
   onRemove: (c: LiveCapture) => void;
 }) {
-  const idx = captures.findIndex((c) => c.id === capture.id);
+  const idx = capture ? captures.findIndex((c) => c.id === capture.id) : -1;
   const hasPrev = idx > 0;
-  const hasNext = idx < captures.length - 1;
+  const hasNext = idx >= 0 && idx < captures.length - 1;
 
   useEffect(() => {
+    if (!capture) return;
     const handle = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft' && hasPrev) onNavigate(captures[idx - 1]);
       if (e.key === 'ArrowRight' && hasNext) onNavigate(captures[idx + 1]);
     };
     window.addEventListener('keydown', handle);
     return () => window.removeEventListener('keydown', handle);
-  }, [onClose, onNavigate, captures, idx, hasPrev, hasNext]);
+  }, [capture, onNavigate, captures, idx, hasPrev, hasNext]);
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      role="dialog"
-      aria-label="Xem ảnh chụp"
-    >
-      <div className="relative flex max-h-[90svh] max-w-[90vw] flex-col items-center">
-        {/* Top bar */}
-        <div className="mb-3 flex w-full items-center justify-between gap-4">
-          <span className="rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-medium text-white">
-            {idx + 1} / {captures.length} — {new Date(capture.capturedAt).toLocaleTimeString('vi-VN')}
-          </span>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={() => onDownload(capture)} className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 ${buttonFocus}`} title="Tải xuống">
-              <Download size={16} />
-            </button>
-            <button type="button" onClick={() => onRemove(capture)} className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-red-300 transition-colors hover:bg-red-500/30 ${buttonFocus}`} title="Xoá ảnh này">
-              <Trash2 size={16} />
-            </button>
-            <button type="button" onClick={onClose} className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 ${buttonFocus}`} title="Đóng">
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-        {/* Image */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={capture.dataUrl} alt={`Ảnh chụp thử đồ ${idx + 1}`} className="max-h-[75svh] max-w-full object-contain" />
-        </div>
-        {/* Navigation arrows */}
-        <div className="mt-3 flex items-center gap-3">
-          <button
-            type="button"
-            disabled={!hasPrev}
-            onClick={() => hasPrev && onNavigate(captures[idx - 1])}
-            className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 disabled:opacity-30 ${buttonFocus}`}
-            aria-label="Ảnh trước"
-          >
-            <ArrowRight size={18} className="rotate-180" />
-          </button>
-          {/* Thumbnail strip */}
-          <div className="flex items-center gap-1.5 overflow-x-auto px-1">
-            {captures.map((c, i) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => onNavigate(c)}
-                className={`shrink-0 overflow-hidden rounded-md border-2 transition-all ${buttonFocus} ${c.id === capture.id ? 'border-[#5D1C34] scale-110' : 'border-white/20 opacity-60 hover:opacity-100'}`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={c.dataUrl} alt={`Ảnh ${i + 1}`} className="h-10 w-8 object-cover" />
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            disabled={!hasNext}
-            onClick={() => hasNext && onNavigate(captures[idx + 1])}
-            className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 disabled:opacity-30 ${buttonFocus}`}
-            aria-label="Ảnh tiếp"
-          >
-            <ArrowRight size={18} />
-          </button>
-        </div>
-      </div>
-    </div>
+    <Dialog.Root open={capture !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[100] bg-landing-obsidian/90 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Content className="fixed inset-0 z-[101] flex flex-col items-center justify-center p-4 text-landing-paper focus:outline-none">
+          {capture ? (
+            <>
+              <div className="mb-3 flex w-full max-w-[min(90vw,560px)] items-center justify-between gap-4">
+                <Dialog.Title className="font-mono text-xs text-landing-paper/80">
+                  {idx + 1} / {captures.length} · {new Date(capture.capturedAt).toLocaleTimeString('vi-VN')}
+                </Dialog.Title>
+                <Dialog.Description className="sr-only">Ảnh chụp từ phiên thử trực tiếp</Dialog.Description>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => onDownload(capture)} aria-label="Tải ảnh này" className={stageButton}>
+                    <Download size={16} strokeWidth={1.75} />
+                  </button>
+                  <button type="button" onClick={() => onRemove(capture)} aria-label="Xoá ảnh này" className={cn(stageButton, 'hover:bg-destructive')}>
+                    <Trash2 size={16} strokeWidth={1.75} />
+                  </button>
+                  <Dialog.Close aria-label="Đóng" className={stageButton}>
+                    <X size={18} strokeWidth={1.75} />
+                  </Dialog.Close>
+                </div>
+              </div>
+              <div className="relative overflow-hidden border border-landing-paper/15">
+                {/* eslint-disable-next-line @next/next/no-img-element -- ảnh chụp là data URL tạo trong trình duyệt */}
+                <img src={capture.dataUrl} alt={`Ảnh chụp thử đồ ${idx + 1}`} className="max-h-[72svh] max-w-[90vw] object-contain" />
+              </div>
+              <div className="mt-3 flex max-w-[90vw] items-center gap-3">
+                <button type="button" disabled={!hasPrev} onClick={() => hasPrev && onNavigate(captures[idx - 1])} aria-label="Ảnh trước" className={stageButton}>
+                  <ChevronLeft size={18} strokeWidth={1.75} />
+                </button>
+                <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto px-1">
+                  {captures.map((c, i) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => onNavigate(c)}
+                      aria-label={`Ảnh ${i + 1}`}
+                      aria-current={c.id === capture.id ? 'true' : undefined}
+                      className={cn('shrink-0 overflow-hidden border-2 transition-opacity', c.id === capture.id ? 'border-landing-oxblood' : 'border-landing-paper/20 opacity-60 hover:opacity-100', tryOnFocusRing)}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- ảnh chụp là data URL tạo trong trình duyệt */}
+                      <img src={c.dataUrl} alt="" className="h-10 w-8 object-cover" />
+                    </button>
+                  ))}
+                </div>
+                <button type="button" disabled={!hasNext} onClick={() => hasNext && onNavigate(captures[idx + 1])} aria-label="Ảnh tiếp" className={stageButton}>
+                  <ChevronRight size={18} strokeWidth={1.75} />
+                </button>
+              </div>
+            </>
+          ) : null}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

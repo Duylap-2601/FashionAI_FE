@@ -220,7 +220,7 @@ export default function SearchPage() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-body-sm font-medium text-neutral-900 truncate group-hover:text-brand-navy transition-colors">
+                          <div className="product-name-line text-landing-obsidian truncate group-hover:text-brand-navy transition-colors">
                             {product.name}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">

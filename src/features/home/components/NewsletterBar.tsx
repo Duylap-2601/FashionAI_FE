@@ -1,62 +1,92 @@
 'use client';
 
-import { Mail, Phone } from 'lucide-react';
-import React, { useState } from 'react';
-import { toast } from 'sonner';
+import { LandingSectionHeading } from '@/features/home/components/LandingSectionHeading';
+import { ArrowRight } from 'lucide-react';
+import React, { useId, useState } from 'react';
+
+type SubmitState = 'idle' | 'error' | 'success';
 
 export function NewsletterBar() {
+  const emailId = useId();
   const [email, setEmail] = useState('');
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [status, setStatus] = useState<SubmitState>('idle');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !email.includes('@')) {
-      toast.error('Vui lòng nhập địa chỉ email hợp lệ');
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = email.trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setStatus('error');
       return;
     }
-    setIsSubscribed(true);
-    toast.success('Đăng ký nhận bản tin thành công! Mã ưu đãi 10% đã được gửi vào hòm thư.');
+
+    setStatus('success');
     setEmail('');
   };
 
   return (
-    <section className="bg-[#15434e] text-white py-12 border-t border-[#1b505c] hidden md:block">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-8 ">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left: Newsletter Info */}
-          <div className="lg:col-span-7 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15">
-              <Mail className="w-7 h-7 text-brand-gold" />
-            </div>
-            <div>
-              <h3 className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-white mb-1.5">
-                ĐĂNG KÝ NHẬN BẢN TIN BỘ SƯU TẬP
-              </h3>
-              <p className="text-white/80 text-body-sm font-light">
-                Nhận voucher giảm 10% cho đơn hàng đầu tiên và thông báo sớm nhất khi có bộ sưu tập mới ra mắt.
-              </p>
-            </div>
+    <section id="newsletter" className="scroll-mt-24 bg-landing-paper py-16 md:py-24">
+      <div className="mx-auto max-w-[1440px] px-4 md:px-8">
+        <div className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-16">
+          <div className="lg:col-span-6">
+            <LandingSectionHeading
+              chapter="07"
+              eyebrow="Newsletter"
+              title={<>The <em className="font-normal italic text-landing-oxblood">Quiet</em> Issue.</>}
+              description="Mỗi tháng một lần: bộ sưu tập mới, lookbook và ghi chú từ studio. Không thêm noise vào hộp thư của bạn."
+            />
           </div>
 
-          {/* Right: Email Input & Phone Support */}
-          <div className="lg:col-span-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <form onSubmit={handleSubmit} className="flex-1 flex gap-2">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Nhập email của bạn..."
-                className="flex-1 h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 text-body-sm focus:outline-none focus:bg-white/15 focus:border-brand-gold transition-colors"
-              />
-              <button
-                type="submit"
-                className="h-12 px-6 rounded-xl bg-brand-gold hover:bg-[#b58b52] text-brand-navy font-bold text-xs uppercase tracking-wider transition-colors shrink-0 shadow-md cursor-pointer"
-              >
-                ĐĂNG KÝ
-              </button>
+          <div className="lg:col-span-6">
+            <form
+              onSubmit={handleSubmit}
+              className="border border-landing-line/70 bg-landing-ivory p-5 md:p-8"
+              noValidate
+            >
+              <label htmlFor={emailId} className="text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-brass-ink">
+                Email của bạn
+              </label>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                <input
+                  id={emailId}
+                  type="email"
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (status !== 'idle') setStatus('idle');
+                  }}
+                  placeholder="ban@congty.vn"
+                  autoComplete="email"
+                  aria-invalid={status === 'error'}
+                  aria-describedby={`${emailId}-status`}
+                  className="h-12 min-w-0 flex-1 border-b border-landing-obsidian/25 bg-transparent px-0 text-sm text-landing-obsidian placeholder:text-landing-muted/60 focus:border-landing-oxblood focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="group inline-flex h-12 items-center justify-center gap-2 bg-landing-oxblood px-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-paper transition-colors hover:bg-landing-obsidian"
+                >
+                  Đăng ký
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </button>
+              </div>
+
+              <div id={`${emailId}-status`} aria-live="polite" className="mt-3 min-h-5">
+                {status === 'error' ? (
+                  <p className="text-xs text-destructive">
+                    Vui lòng nhập một địa chỉ email hợp lệ.
+                  </p>
+                ) : null}
+                {status === 'success' ? (
+                  <p className="text-xs text-landing-sage-ink">
+                    Cảm ơn bạn. Bản tin đầu tiên sẽ đến sớm.
+                  </p>
+                ) : null}
+              </div>
+
+              <p className="mt-2 text-[10px] leading-relaxed text-landing-muted">
+                Bằng cách đăng ký, bạn đồng ý nhận email từ StAie. Có thể hủy bất cứ lúc nào.
+              </p>
             </form>
-
-
           </div>
         </div>
       </div>

@@ -1,90 +1,54 @@
 'use client';
 
+import { AccountPagination, AccountStatePanel } from '@/features/profile/components/account-ui';
 import type { SubscriptionHistoryProps } from '@/features/subscription/types/subscription-history';
-import {
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
 
 export function SubscriptionHistory({ isHistoryLoading, history, formatDate, getStatusBadge, historyMeta, setHistoryPage, historyPage }: SubscriptionHistoryProps) {
-  return (
-    <div className="max-w-[960px] mx-auto space-y-6 animate-in fade-in duration-300">
-      <div className="bg-white rounded-3xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-heading-h3 font-bold text-brand-navy">Lịch sử giao dịch gói</h3>
-            <p className="text-body-sm text-neutral-500 mt-0.5">Danh sách các gói cước bạn đã đăng ký</p>
-          </div>
-        </div>
-
-        {isHistoryLoading ? (
-          <div className="p-12 text-center text-neutral-500">Đang tải lịch sử đăng ký...</div>
-        ) : history.length === 0 ? (
-          <div className="p-12 text-center text-neutral-500">
-            Bạn chưa có lịch sử đăng ký gói trả phí nào.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-body-sm border-collapse">
-              <thead>
-                <tr className="bg-neutral-50 text-neutral-500 font-semibold border-b border-neutral-200">
-                  <th className="py-3.5 px-6">Mã đơn</th>
-                  <th className="py-3.5 px-6">Gói cước</th>
-                  <th className="py-3.5 px-6">Thời hạn</th>
-                  <th className="py-3.5 px-6">Số tiền</th>
-                  <th className="py-3.5 px-6">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {history.map((item) => (
-                  <tr key={item.id} className="hover:bg-neutral-50/60 transition-colors">
-                    <td className="py-4 px-6 font-mono text-xs font-semibold text-neutral-700">
-                      #{item.order?.orderCode || item.id.slice(0, 8)}
-                    </td>
-                    <td className="py-4 px-6 font-bold text-brand-navy">
-                      Gói {item.tier}
-                    </td>
-                    <td className="py-4 px-6 text-neutral-600 text-[13px]">
-                      {formatDate(item.startsAt)} &rarr; {formatDate(item.expiresAt)}
-                    </td>
-                    <td className="py-4 px-6 font-bold text-brand-navy">
-                      {item.order?.amount ? `${item.order.amount.toLocaleString('vi-VN')}đ` : '—'}
-                    </td>
-                    <td className="py-4 px-6">
-                      {getStatusBadge(item.status)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {historyMeta && historyMeta.totalPages > 1 && (
-          <div className="p-4 border-t border-neutral-100 flex items-center justify-between">
-            <span className="text-body-sm text-neutral-500">
-              Trang {historyMeta.page} / {historyMeta.totalPages} (Tổng {historyMeta.total} đơn)
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setHistoryPage((p: number) => Math.max(1, p - 1))}
-                disabled={historyPage === 1}
-                className="px-3 py-1.5 border border-neutral-200 rounded-lg text-body-sm font-semibold disabled:opacity-40"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setHistoryPage((p: number) => Math.min(historyMeta.totalPages, p + 1))}
-                disabled={historyPage === historyMeta.totalPages}
-                className="px-3 py-1.5 border border-neutral-200 rounded-lg text-body-sm font-semibold disabled:opacity-40"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+  if (isHistoryLoading) {
+    return (
+      <div className="space-y-2" aria-hidden="true">
+        {[0, 1, 2].map((key) => <div key={key} className="h-12 animate-pulse bg-landing-taupe/30" />)}
       </div>
+    );
+  }
+
+  if (history.length === 0) {
+    return <AccountStatePanel title="Chưa có giao dịch nào" description="Các lần mua và gia hạn gói trả phí sẽ hiện ở đây." />;
+  }
+
+  return (
+    <div>
+      <div className="overflow-x-auto border border-landing-line">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
+          <caption className="sr-only">Lịch sử mua gói thành viên</caption>
+          <thead>
+            <tr className="border-b border-landing-line bg-landing-ivory/60 text-left">
+              {['Mã', 'Gói', 'Thời hạn', 'Số tiền', 'Trạng thái'].map((heading) => (
+                <th key={heading} scope="col" className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-brass-ink">{heading}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {history.map((item) => (
+              <tr key={item.id} className="border-b border-landing-line/60 last:border-b-0">
+                <td className="px-4 py-3 font-mono text-xs text-landing-obsidian">#{item.order?.orderCode || item.id.slice(0, 8)}</td>
+                <td className="px-4 py-3 text-landing-obsidian">{item.tier}</td>
+                <td className="px-4 py-3 font-mono text-xs text-landing-muted">{formatDate(item.startsAt)} – {formatDate(item.expiresAt)}</td>
+                <td className="px-4 py-3 font-mono text-xs text-landing-oxblood">{item.order?.amount ? `${item.order.amount.toLocaleString('vi-VN')}đ` : 'Chưa có'}</td>
+                <td className="px-4 py-3">{getStatusBadge(item.status)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {historyMeta ? (
+        <AccountPagination
+          page={historyPage}
+          totalPages={historyMeta.totalPages}
+          onPageChange={setHistoryPage}
+          summary={`${historyMeta.total} giao dịch`}
+        />
+      ) : null}
     </div>
   );
 }

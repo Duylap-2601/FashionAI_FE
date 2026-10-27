@@ -27,7 +27,6 @@ export interface TryOnWorkspaceProps {
   quotaCost: number;
   onFileSelect: (file: File | null) => void;
   onCameraSelect: () => void;
-  onUseMockPhoto: () => void;
   onModeChange: (mode: GarmentMode) => void;
   onOpenCatalog: (slot: CatalogSlot) => void;
   onGenerate: () => void;

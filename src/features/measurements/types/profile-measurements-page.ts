@@ -1,8 +1,7 @@
-export type BodyType = 'slim' | 'regular' | 'athletic' | 'plus';
+/** Dáng của hình minh họa số đo; chỉ đổi hình, không lưu lên backend. */
+export type FigureVariant = 'female' | 'male';
 
-export type Gender = 'male' | 'female' | 'other';
-
-export type Tab = 'profile' | 'measurements' | 'sizes';
+export type Tab = 'measurements' | 'sizes';
 
 export interface MeasurementField {
   id: string;

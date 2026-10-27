@@ -5,4 +5,6 @@ export interface StarRatingProps {
   showValue?: boolean;
   className?: string;
   readOnly?: boolean;
+  /** `landing`: sao oxblood trên nền giấy (trang khách). Mặc định giữ màu hổ phách cho admin. */
+  tone?: 'default' | 'landing';
 }

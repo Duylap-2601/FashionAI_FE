@@ -1,6 +1,7 @@
 'use client';
 
 import type { ChatWindowProps } from '@/features/chat/types/chat-window';
+import { AssistantMark } from '@/features/chat/components/assistant-mark';
 import { ChatEmptyState } from '@/features/chat/components/ChatEmptyState';
 import { ChatInput } from '@/features/chat/components/ChatInput';
 import { ChatMessage } from '@/features/chat/components/ChatMessage';
@@ -10,6 +11,7 @@ import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import {
   ArrowDown,
+  Loader2,
   Menu,
   RotateCcw,
   Trash2
@@ -92,7 +94,8 @@ export function ChatWindow({
   }, []);
 
   useEffect(() => {
-    if (isAtBottom || isStreaming) {
+    // Màn hình trống (chưa có tin nhắn) giữ ở đầu để lời chào không bị cuộn mất.
+    if (messages.length > 0 && (isAtBottom || isStreaming)) {
       scrollToBottom(!isStreaming);
     }
   }, [messages, isStreaming, isAtBottom, scrollToBottom]);
@@ -108,13 +111,14 @@ export function ChatWindow({
 
   // Find active session title
   const activeSession = sessions.find((s) => s.id === currentSessionId);
-  const sessionTitle = activeSession?.title || 'Trợ lý thời trang StAle.';
+  const sessionTitle = activeSession?.title || 'Trợ lý thời trang StAie.';
 
   return (
-    <div className="flex h-[calc(100dvh-56px)] md:h-[calc(100dvh-64px)] w-full overflow-hidden bg-[#FBF9F6]">
+    // Chiếm trọn chiều cao dưới header landing (72px + 1px viền).
+    <div className="flex h-[calc(100dvh-73px)] w-full overflow-hidden bg-landing-paper text-landing-obsidian">
 
       {/* Desktop Sidebar (Left Panel) */}
-      <div className="hidden md:block w-[280px] lg:w-[320px] h-full shrink-0">
+      <div className="hidden h-full w-[280px] shrink-0 md:block lg:w-[320px]">
         <SessionSidebar
           sessions={sessions}
           currentSessionId={currentSessionId}
@@ -134,8 +138,9 @@ export function ChatWindow({
         direction="left"
       >
         <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50 md:hidden" />
-          <Drawer.Content className="bg-white flex flex-col rounded-r-2xl h-full w-[290px] fixed bottom-0 left-0 z-50 outline-none md:hidden">
+          <Drawer.Overlay className="fixed inset-0 z-50 bg-landing-obsidian/45 md:hidden" />
+          <Drawer.Content aria-label="Lịch sử trò chuyện" className="fixed bottom-0 left-0 z-50 flex h-full w-[300px] max-w-[86vw] flex-col bg-landing-ivory outline-none md:hidden">
+            <Drawer.Title className="sr-only">Lịch sử trò chuyện</Drawer.Title>
             <SessionSidebar
               sessions={sessions}
               currentSessionId={currentSessionId}
@@ -152,33 +157,32 @@ export function ChatWindow({
       </Drawer.Root>
 
       {/* Main Chat Conversation Area (Right Panel) */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-brand-cream/60 relative">
+      <div className="relative flex h-full min-w-0 flex-1 flex-col">
 
         {/* Top Chat Header */}
-        <header className="h-[56px] px-4 md:px-6 flex items-center justify-between border-b border-neutral-200/80 bg-white/90 backdrop-blur-md shrink-0 z-10">
-          <div className="flex items-center gap-3 min-w-0">
+        <header className="z-10 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-landing-line/70 bg-landing-paper/95 px-4 backdrop-blur-md md:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             {/* Mobile Drawer Trigger */}
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="p-2 -ml-2 md:hidden text-neutral-600 hover:text-brand-navy rounded-lg hover:bg-neutral-100 transition-colors"
+              aria-label="Mở lịch sử trò chuyện"
+              className="-ml-2 flex h-10 w-10 items-center justify-center rounded-[2px] text-landing-obsidian transition-colors hover:text-landing-oxblood md:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="h-5 w-5" strokeWidth={1.75} />
             </button>
 
-            {/* Avatar & Title */}
-            <div className="w-8 h-8 rounded-full bg-brand-navy flex items-center justify-center shrink-0 shadow-xs">
-            </div>
+            <AssistantMark />
 
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-body-md font-bold text-neutral-900 truncate leading-tight">
+            <div className="flex min-w-0 flex-col">
+              <h1 className="truncate text-[15px] font-semibold leading-tight text-landing-obsidian">
                 {sessionTitle}
               </h1>
-              <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>StAle. AI Assistant</span>
+              <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-muted">
+                <span className="h-1.5 w-1.5 rounded-full bg-landing-sage-ink" aria-hidden="true" />
+                <span>StAie. AI Assistant</span>
                 {activeProduct && (
-                  <span className="hidden sm:inline-block text-[#5D1C34] font-semibold truncate max-w-[150px]">
+                  <span className="hidden max-w-[180px] truncate normal-case tracking-normal text-landing-oxblood sm:inline-block">
                     · {activeProduct.name}
                   </span>
                 )}
@@ -187,15 +191,16 @@ export function ChatWindow({
           </div>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {messages.length > 0 && (
               <button
                 type="button"
                 onClick={clearCurrentChat}
                 title="Làm mới cuộc trò chuyện"
-                className="p-2 text-neutral-500 hover:text-brand-navy hover:bg-neutral-100 rounded-lg transition-colors"
+                aria-label="Làm mới cuộc trò chuyện"
+                className="flex h-10 w-10 items-center justify-center rounded-[2px] text-landing-muted transition-colors hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="h-4 w-4" strokeWidth={1.75} />
               </button>
             )}
 
@@ -204,9 +209,10 @@ export function ChatWindow({
                 type="button"
                 onClick={() => deleteSession(currentSessionId)}
                 title="Xóa đoạn chat này"
-                className="p-2 text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                aria-label="Xóa đoạn chat này"
+                className="flex h-10 w-10 items-center justify-center rounded-[2px] text-landing-muted transition-colors hover:text-destructive focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" strokeWidth={1.75} />
               </button>
             )}
           </div>
@@ -216,12 +222,12 @@ export function ChatWindow({
         <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 no-scrollbar"
+          className="no-scrollbar flex-1 space-y-6 overflow-y-auto px-4 py-6 md:px-8 md:py-8"
         >
           {isLoadingSession ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-neutral-400">
-              <div className="w-6 h-6 border-2 border-brand-navy border-t-transparent rounded-full animate-spin" />
-              <span className="text-body-sm font-medium">Đang tải cuộc trò chuyện...</span>
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-landing-muted" role="status">
+              <Loader2 className="h-6 w-6 animate-spin text-landing-oxblood" strokeWidth={1.75} />
+              <span className="text-sm">Đang tải cuộc trò chuyện…</span>
             </div>
           ) : messages.length === 0 ? (
             <ChatEmptyState
@@ -252,14 +258,15 @@ export function ChatWindow({
           <button
             type="button"
             onClick={() => scrollToBottom(true)}
-            className="absolute bottom-24 right-6 p-2.5 bg-white border border-neutral-200 text-neutral-700 hover:text-brand-navy rounded-full shadow-lg transition-all animate-in fade-in zoom-in hover:scale-105 active:scale-95 cursor-pointer z-20"
+            aria-label="Cuộn xuống tin nhắn mới nhất"
+            className="absolute bottom-28 right-6 z-20 flex h-10 w-10 items-center justify-center rounded-[2px] border border-landing-line bg-landing-ivory text-landing-obsidian transition-colors animate-in fade-in-0 hover:border-landing-oxblood hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
           >
-            <ArrowDown className="w-4 h-4" />
+            <ArrowDown className="h-4 w-4" strokeWidth={1.75} />
           </button>
         )}
 
         {/* Input Area */}
-        <div className="p-3 md:p-4 bg-transparent shrink-0 max-w-4xl w-full mx-auto">
+        <div className="mx-auto w-full max-w-4xl shrink-0 px-3 pb-3 pt-2 md:px-6 md:pb-5">
           <ChatInput
             onSend={(text) => sendMessage(text, { productId: activeProduct?.id })}
             isStreaming={isStreaming}

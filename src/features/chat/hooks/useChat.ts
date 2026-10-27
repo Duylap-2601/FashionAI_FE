@@ -17,7 +17,6 @@ import {
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
 import { PRODUCTS } from '@/features/products/constants/products';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
-import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
 import { getValidAccessToken } from '@/lib/api';
 import { initChatSocket } from '@/lib/realtimeSocket';
@@ -37,7 +36,6 @@ export function useChat(options: UseChatOptions = {}) {
   const hasSession = authStatus === 'authenticated' && Boolean(accessToken);
 
   const { measurements } = useMeasurements();
-  const { profile } = useUserProfile();
   const { quota, refetch: refetchQuota } = useQuota('CHATBOT');
   const { products: apiProducts } = useProductCatalog();
 
@@ -385,11 +383,10 @@ export function useChat(options: UseChatOptions = {}) {
       setIsStreaming(true);
       setError(null);
 
-      // Build context payload from profile & measurements
+      // Build context payload from tier & measurements (backend has no gender field)
       const contextPayload: ChatContextPayload = sendOptions.customContext || {
         measurements: measurements || undefined,
         tier: String(userTier),
-        gender: profile?.gender,
       };
 
       let accumulatedContent = '';
@@ -637,7 +634,6 @@ export function useChat(options: UseChatOptions = {}) {
       messages,
       measurements,
       userTier,
-      profile?.gender,
       saveSessionsLocally,
       refetchQuota,
       saveMessagesLocally,

@@ -29,8 +29,11 @@ src/
 │   ├── (admin)/admin/
 │   │   ├── collections/     # Admin collection management page
 │   │   └── dashboard/       # Admin dashboard page
-│   ├── (auth)/              # login, register, forgot-password, reset-password,
-│   │                        # verify-email, google callback, mobile-auth callback
+│   ├── (auth)/              # reset-password, verify-email, google callback,
+│   │   │                    # mobile-auth callback
+│   │   └── (split)/         # login, register, forgot-password: shared
+│   │                        # layout.tsx renders AuthSplitLayout once so the
+│   │                        # image panel persists and slides between pages
 │   ├── (main)/              # Authenticated user routes
 │   │   ├── ai-stylist/      # AI stylist page
 │   │   ├── cart/
@@ -98,9 +101,14 @@ src/
 │   │                        # services: session.ts, mutations.ts, queries.ts,
 │   │                        #           auth-events.ts, auth-utils.ts,
 │   │                        #           password-mutations.ts, mutation-keys.ts
-│   │                        # components: AuthBootstrap, AdminGuard, AuthLayout,
-│   │                        #             OnboardingModal, *-page.tsx
+│   │                        # components: AuthBootstrap, AdminGuard, AuthLayout
+│   │                        #             (AuthSplitLayout for login/register/
+│   │                        #             forgot-password), auth-form (shared
+│   │                        #             form primitives), OnboardingModal,
+│   │                        #             *-page.tsx
 │   ├── cart/                # components/ hooks/ services/ store/ types/
+│   │                        # components: cart-line (shared by CartSlideOver and
+│   │                        #   cart-page), CartSync
 │   │                        # hooks: use-cart.ts (server cart when logged in,
 │   │                        #        guest store otherwise)
 │   │                        # services: queries.ts, mutations.ts, query-keys.ts,
@@ -115,7 +123,11 @@ src/
 │   ├── collections/         # components/ hooks/ services/ types/
 │   ├── home/                # components/ constants/ types/
 │   ├── measurements/        # components/ constants/ hooks/ services/ types/
-│   ├── notifications/       # components/ constants/ hooks/ services/ store/ types/
+│   ├── notifications/       # components/ hooks/ services/ store/ types/
+│   │                        # hooks: use-open-notification (mark read + route,
+│   │                        #        shared by the bell panel and /notifications)
+│   │                        # components: NotificationBell/Panel/Item take `tone`
+│   │                        #   (`landing` default, `admin` in the admin topbar)
 │   │                        # store: notificationStore.ts (Zustand)
 │   ├── orders/              # components/ constants/ hooks/ services/ types/
 │   ├── payments/            # components/ hooks/ services/ types/
@@ -126,7 +138,13 @@ src/
 │   ├── products/            # components/ constants/ hooks/ services/ types/
 │   │                        # services: queries.ts, query-keys.ts, product-filters.ts,
 │   │                        #           products-utils.ts, combo-pricing.ts
-│   ├── profile/             # components/ hooks/ services/ types/
+│   ├── profile/             # components/ constants/ hooks/ services/ types/
+│   │                        # components: account-shell (menu + page header shared
+│   │                        #   by /profile, /profile/measurements, /profile/orders,
+│   │                        #   /profile/reviews, /notifications), account-ui
+│   │                        #   (section, dialog, pagination, button/input classes);
+│   │                        #   other features import these for account pages
+│   │                        # constants: account-nav.ts (account menu, tier labels)
 │   ├── rack/                # components/ hooks/ services/ types/
 │   ├── reviews/             # components/ constants/ hooks/ services/ types/
 │   ├── stylist/             # components/ constants/ hooks/ services/ types/
@@ -139,11 +157,14 @@ src/
 │   │                        #   form for stylist-brief-summary once a result
 │   │                        #   shows; history opens in a Sheet.
 │   ├── subscription/        # components/ constants/ hooks/ services/ types/
-│   └── try-on/              # components/ constants/ hooks/ services/ types/
-│                            # components: TryOnWorkspace, TryOnResult, TryOnHeader,
-│                            #             UploadZone, GenerateButton, LoadingOverlay,
+│   └── try-on/              # components/ hooks/ services/ types/
+│                            # components: try-on-page (mode switch, state, quota),
+│                            #             TryOnHeader, TryOnWorkspace (photo),
+│                            #             live-try-on-workspace (camera),
+│                            #             garment-slot (slot, colour picker,
+│                            #             segmented control, button classes shared
+│                            #             by both modes), UploadZone, GenerateButton,
 │                            #             ComparisonSlider, CatalogModal,
-│                            #             live-try-on-workspace, try-on-page,
 │                            #             profile-history-page
 ├── components/
 │   ├── figma/               # ImageWithFallback.tsx

@@ -15,11 +15,9 @@ export interface ProductListProps {
   currentPage: number;
   totalPages: number;
   loadMoreRef: React.RefObject<HTMLDivElement | null>;
-  isPinned: (productId: string) => boolean;
   onRetry: () => void;
   onClearAll: () => void;
   onLoadMore: () => void;
   onPageChange: (page: number) => void;
-  onToggleRack: (product: Product) => void;
   onAddToCart: (product: Product) => void;
 }

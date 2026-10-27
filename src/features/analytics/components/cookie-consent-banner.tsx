@@ -39,7 +39,7 @@ export function CookieConsentBanner() {
     >
       <p className="text-[13px] font-bold text-brand-navy">Cookie phân tích</p>
       <p className="mt-1 text-[12px] leading-relaxed text-neutral-600">
-        StAle. dùng Google Analytics để hiểu cách bạn sử dụng website và cải thiện trải nghiệm mua sắm. Bạn có thể
+        StAie. dùng Google Analytics để hiểu cách bạn sử dụng website và cải thiện trải nghiệm mua sắm. Bạn có thể
         đổi lựa chọn bất cứ lúc nào qua mục &quot;Cài đặt cookie&quot; ở cuối trang.
       </p>
       <div className="mt-3 flex justify-end gap-2">

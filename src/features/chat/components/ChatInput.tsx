@@ -68,23 +68,23 @@ export function ChatInput({
   };
 
   return (
-    <div className="w-full bg-white/80 backdrop-blur-md border border-neutral-200/80 rounded-2xl shadow-md p-2.5 transition-all focus-within:border-brand-navy/60 focus-within:ring-2 focus-within:ring-brand-navy/10">
+    <div className="w-full rounded-[2px] border border-landing-line bg-landing-ivory p-2.5 transition-colors focus-within:border-landing-oxblood">
 
       {/* Attached Product Badge */}
       {attachedProduct && (
-        <div className="flex items-center justify-between gap-2 px-3 py-1.5 mb-2 bg-[#FDFBF7] border border-[#E5DFD5] rounded-xl text-neutral-800 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-[2px] border border-landing-line bg-landing-paper px-3 py-1.5 text-landing-obsidian animate-in fade-in-0 duration-200">
           <div className="flex items-center gap-2 min-w-0">
             {attachedProduct.image ? (
               <img
                 src={attachedProduct.image}
                 alt={attachedProduct.name}
-                className="w-6 h-6 object-cover rounded-md shrink-0 border border-neutral-200"
+                className="h-7 w-6 shrink-0 rounded-[2px] bg-landing-ivory object-contain"
               />
             ) : (
-              <Package className="w-4 h-4 text-brand-navy shrink-0" />
+              <Package className="h-4 w-4 shrink-0 text-landing-oxblood" strokeWidth={1.75} />
             )}
-            <span className="text-[12px] font-semibold truncate">
-              Đang tư vấn: <strong className="text-brand-navy">{attachedProduct.name}</strong>
+            <span className="truncate text-xs">
+              Đang tư vấn: <strong className="font-semibold text-landing-oxblood">{attachedProduct.name}</strong>
             </span>
           </div>
 
@@ -93,9 +93,10 @@ export function ChatInput({
               type="button"
               onClick={onRemoveProduct}
               title="Bỏ đính kèm sản phẩm"
-              className="p-1 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-200/50 rounded-full transition-colors"
+              aria-label="Bỏ đính kèm sản phẩm"
+              className="flex h-8 w-8 items-center justify-center rounded-[2px] text-landing-muted transition-colors hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="h-3.5 w-3.5" strokeWidth={1.75} />
             </button>
           )}
         </div>
@@ -110,8 +111,9 @@ export function ChatInput({
           onKeyDown={handleKeyDown}
           disabled={disabled}
           placeholder={placeholder}
+          aria-label="Tin nhắn cho trợ lý"
           rows={1}
-          className="flex-1 max-h-[140px] resize-none bg-transparent px-2.5 py-2 text-body-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none leading-relaxed disabled:opacity-50"
+          className="max-h-[140px] flex-1 resize-none bg-transparent px-2.5 py-2 text-[15px] leading-relaxed text-landing-obsidian placeholder:text-landing-muted/70 focus:outline-none disabled:opacity-50"
         />
 
         {/* Action Button: Send or Stop */}
@@ -120,9 +122,10 @@ export function ChatInput({
             type="button"
             onClick={onStop}
             title="Dừng phản hồi"
-            className="w-10 h-10 rounded-xl bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shrink-0 transition-all shadow-sm active:scale-95 cursor-pointer"
+            aria-label="Dừng phản hồi"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[2px] bg-landing-oxblood text-landing-paper transition-colors hover:bg-landing-oxblood/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
           >
-            <Square className="w-4 h-4 fill-current" />
+            <Square className="h-3.5 w-3.5 fill-current" strokeWidth={1.75} />
           </button>
         ) : (
           <button
@@ -130,21 +133,22 @@ export function ChatInput({
             onClick={handleSend}
             disabled={!text.trim() || disabled}
             title="Gửi tin nhắn (Enter)"
-            className="w-10 h-10 rounded-xl bg-brand-navy hover:bg-brand-navy/90 disabled:opacity-40 disabled:hover:bg-brand-navy disabled:cursor-not-allowed text-white flex items-center justify-center shrink-0 transition-all shadow-sm active:scale-95 cursor-pointer"
+            aria-label="Gửi tin nhắn"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[2px] bg-landing-oxblood text-landing-paper transition-colors hover:bg-landing-oxblood/90 disabled:cursor-not-allowed disabled:bg-landing-taupe disabled:text-landing-obsidian/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
           >
-            <Send className="w-4 h-4" />
+            <Send className="h-4 w-4" strokeWidth={1.75} />
           </button>
         )}
       </div>
 
       {/* Footer hint */}
-      <div className="flex items-center justify-between px-2 pt-1.5 text-[11px] text-neutral-400">
-        <span className="hidden sm:inline-flex items-center gap-1">
-          <span>StAle. AI có thể giải đáp về size, số đo & mix match</span>
+      <div className="flex items-center justify-between border-t border-landing-line/60 px-2 pt-2 text-[11px] text-landing-muted">
+        <span className="hidden items-center gap-1 sm:inline-flex">
+          <span>StAie. AI có thể giải đáp về size, số đo và cách phối đồ</span>
         </span>
-        <span className="ml-auto hidden sm:inline-flex items-center gap-0.5 font-medium text-neutral-400">
-          <span>Nhấn Enter</span>
-          <CornerDownLeft className="w-2.5 h-2.5" />
+        <span className="ml-auto hidden items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] sm:inline-flex">
+          <span>Enter</span>
+          <CornerDownLeft className="h-2.5 w-2.5" strokeWidth={1.75} />
           <span>để gửi</span>
         </span>
       </div>

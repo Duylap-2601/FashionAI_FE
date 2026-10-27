@@ -1,119 +1,162 @@
+'use client';
+
+import { cn } from '@/components/ui/utils';
 import { FilterSections } from '@/features/products/components/listing/FilterSections';
-import type { FilterPanelProps, SortPanelProps } from '@/features/products/types/product-filter-panels';
-import type { SortBy } from '@/features/products/types/product-filters';
+import { SORT_OPTIONS } from '@/features/products/constants/product-filters';
+import type {
+  DesktopFilterSidebarProps,
+  MobileFilterSheetProps,
+  MobileSortSheetProps,
+} from '@/features/products/types/product-filter-panels';
+import * as Dialog from '@radix-ui/react-dialog';
 import { Check, X } from 'lucide-react';
+import React from 'react';
 
-const SORT_OPTIONS: SortBy[] = ['Mới nhất', 'Giá thấp đến cao', 'Giá cao đến thấp'];
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+const labelText = 'text-[11px] font-semibold uppercase tracking-[0.16em]';
 
-export function MobileFilterSheet(props: FilterPanelProps) {
+interface MobileSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  eyebrow: string;
+  title: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}
+
+// Nằm trên thanh tab dưới (z-[90]) nên overlay và sheet dùng z-[100]+.
+function MobileSheet({ open, onOpenChange, eyebrow, title, children, footer }: MobileSheetProps) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-end md:hidden">
-      <div className="absolute inset-0 bg-black/40 animate-in fade-in" onClick={props.onClose} />
-      <div className="relative z-10 w-full max-h-[82vh] rounded-t-3xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
-          <div>
-            <h2 className="font-bold text-brand-navy">Bộ lọc</h2>
-            <p className="text-[12px] text-neutral-500">Tinh chỉnh sản phẩm hiển thị</p>
-          </div>
-          <button onClick={props.onClose} className="p-2 -mr-2 rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-brand-navy transition-colors" aria-label="Đóng bộ lọc">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-7">
-          {props.activeChips.length > 0 && (
-            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h3 className="text-label-sm font-semibold text-brand-navy">Đang lọc</h3>
-                <button onClick={props.onClearAll} className="shrink-0 text-[12px] font-semibold text-[#5D1C34] underline underline-offset-4">
-                  Xoá tất cả
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {props.activeChips.map(chip => (
-                  <button key={chip.id} type="button" onClick={chip.onRemove} className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium text-neutral-700 shadow-sm ring-1 ring-neutral-200">
-                    {chip.label} <X className="w-3 h-3 text-neutral-500" />
-                  </button>
-                ))}
-              </div>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[100] bg-landing-obsidian/45 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          className="fixed inset-x-0 bottom-0 z-[101] flex max-h-[85svh] flex-col border-t border-landing-line bg-landing-paper text-landing-obsidian duration-300 data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom"
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-landing-line/70 px-4 pb-4 pt-5">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-landing-brass-ink">{eyebrow}</p>
+              <Dialog.Title className="mt-1.5 font-display text-2xl leading-tight text-landing-obsidian">{title}</Dialog.Title>
             </div>
-          )}
+            <Dialog.Close
+              aria-label="Đóng"
+              className={cn('-mr-2 flex h-11 w-11 items-center justify-center text-landing-muted transition-colors hover:text-landing-oxblood', focusRing)}
+            >
+              <X className="h-5 w-5" strokeWidth={1.75} />
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-6">{children}</div>
+          {footer ? (
+            <div className="border-t border-landing-line/70 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">{footer}</div>
+          ) : null}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
 
-          <FilterSections {...props} mobile />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 border-t border-neutral-200 bg-white p-4">
-          <button onClick={props.onClearAll} className="h-12 rounded-xl border border-neutral-200 text-body-sm font-semibold text-neutral-700">
+export function MobileFilterSheet({ open, activeChips, filteredCount, onOpenChange, onClearAll, ...sectionProps }: MobileFilterSheetProps) {
+  return (
+    <MobileSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      eyebrow="Tinh chỉnh"
+      title="Bộ lọc"
+      footer={(
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={onClearAll}
+            disabled={activeChips.length === 0}
+            className={cn('h-12 rounded-[2px] border border-landing-obsidian/70 text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood disabled:opacity-50', labelText, focusRing)}
+          >
             Xoá tất cả
           </button>
-          <button onClick={props.onClose} className="h-12 rounded-xl bg-brand-navy text-body-sm font-semibold text-white shadow-sm">
-            Áp dụng ({props.filteredCount})
-          </button>
+          <Dialog.Close
+            className={cn('h-12 rounded-[2px] bg-landing-obsidian text-landing-paper transition-colors hover:bg-landing-oxblood', labelText, focusRing)}
+          >
+            Xem {filteredCount} sản phẩm
+          </Dialog.Close>
         </div>
-      </div>
-    </div>
+      )}
+    >
+      {activeChips.length > 0 ? (
+        <div className="mb-6 border-b border-landing-line/70 pb-6">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink">Đang lọc</p>
+          <div className="flex flex-wrap gap-2">
+            {activeChips.map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={chip.onRemove}
+                aria-label={`Bỏ lọc ${chip.label}`}
+                className={cn('inline-flex h-9 items-center gap-1.5 rounded-[2px] border border-landing-line bg-landing-ivory/70 px-3 text-xs text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood', focusRing)}
+              >
+                {chip.label}
+                <X className="h-3 w-3" strokeWidth={1.75} />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <FilterSections {...sectionProps} />
+    </MobileSheet>
   );
 }
 
-export function DesktopFilterSidebar(props: Omit<FilterPanelProps, 'activeChips'>) {
+export function DesktopFilterSidebar({ hasActiveFilters, onClearAll, ...sectionProps }: DesktopFilterSidebarProps) {
   return (
-    <div className="w-[260px] shrink-0 pr-8 hidden md:block animate-in slide-in-from-left-8 duration-300 border-r border-neutral-100 min-h-[calc(100vh-200px)] sticky top-[136px]">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-bold text-brand-navy">Bộ lọc</h2>
-        <button onClick={props.onClearAll} className="text-[12px] text-neutral-500 hover:text-brand-navy hover:underline">
-          Xoá tất cả
-        </button>
+    // Toolbar dính ở 72px, cao 105px (dưới xl) hoặc 57px (từ xl); sidebar dính ngay dưới, chừa 24px.
+    <aside
+      aria-label="Bộ lọc sản phẩm"
+      className="sticky top-[201px] mr-8 hidden max-h-[calc(100svh-225px)] w-[232px] xl:top-[153px] xl:max-h-[calc(100svh-177px)] shrink-0 overflow-y-auto border-r border-landing-line/70 pr-6 duration-200 animate-in fade-in-0 [scrollbar-width:thin] md:block lg:mr-10 lg:w-[248px]"
+    >
+      <div className="mb-6 flex min-h-6 items-center justify-between gap-3">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-obsidian">Bộ lọc</h2>
+        {hasActiveFilters ? (
+          <button
+            type="button"
+            onClick={onClearAll}
+            className={cn('text-landing-oxblood underline-offset-4 transition-colors hover:underline', labelText, focusRing)}
+          >
+            Xoá tất cả
+          </button>
+        ) : null}
       </div>
-
-      <div className="flex flex-col gap-8">
-        <FilterSections {...props} />
-        <button onClick={props.onClose} className="w-full py-3 mt-4 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors shadow-sm">
-          Áp dụng ({props.filteredCount} sản phẩm)
-        </button>
-      </div>
-    </div>
+      <FilterSections {...sectionProps} />
+    </aside>
   );
 }
 
-export function MobileSortSheet({ sortBy, onClose, onSortChange }: SortPanelProps) {
+export function MobileSortSheet({ open, sortBy, onOpenChange, onSortChange }: MobileSortSheetProps) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-end md:hidden">
-      <div className="absolute inset-0 bg-black/40 animate-in fade-in" onClick={onClose} />
-      <div className="relative z-10 w-full rounded-t-3xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
-          <div>
-            <h2 className="font-bold text-brand-navy">Sắp xếp</h2>
-            <p className="text-[12px] text-neutral-500">Chọn thứ tự hiển thị sản phẩm</p>
-          </div>
-          <button onClick={onClose} className="p-2 -mr-2 rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-brand-navy transition-colors" aria-label="Đóng sắp xếp">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="px-5 py-4">
-          <div className="flex flex-col gap-2">
-            {SORT_OPTIONS.map(option => {
-              const isActive = sortBy === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => {
-                    onSortChange(option);
-                    onClose();
-                  }}
-                  className={`flex h-12 items-center justify-between rounded-xl border px-4 text-left text-body-sm font-semibold transition-colors ${
-                    isActive ? 'border-brand-navy bg-brand-navy/5 text-brand-navy' : 'border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50'
-                  }`}
-                >
-                  {option}
-                  {isActive && <Check className="w-4 h-4 text-brand-navy" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+    <MobileSheet open={open} onOpenChange={onOpenChange} eyebrow="Thứ tự hiển thị" title="Sắp xếp">
+      <div className="-mt-2 flex flex-col">
+        {SORT_OPTIONS.map((option) => {
+          const isActive = sortBy === option;
+          return (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={isActive}
+              onClick={() => {
+                onSortChange(option);
+                onOpenChange(false);
+              }}
+              className={cn(
+                'flex h-14 items-center justify-between border-b border-landing-line/60 text-left text-sm transition-colors last:border-b-0',
+                isActive ? 'font-semibold text-landing-oxblood' : 'text-landing-obsidian hover:text-landing-oxblood',
+                focusRing,
+              )}
+            >
+              {option}
+              {isActive ? <Check className="h-4 w-4" strokeWidth={2} /> : null}
+            </button>
+          );
+        })}
       </div>
-    </div>
+    </MobileSheet>
   );
 }

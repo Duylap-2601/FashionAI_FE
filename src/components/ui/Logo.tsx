@@ -21,12 +21,9 @@ export function Logo({
 
   return (
     <span
-      className={`font-serif tracking-[-0.02em] leading-none select-none ${SIZE[size]} ${baseColor} ${className}`}
-      style={{
-        fontFamily: "'Playfair Display', Georgia, serif",
-      }}
+      className={`font-display tracking-[-0.02em] leading-none select-none ${SIZE[size]} ${baseColor} ${className}`}
     >
-      St<span style={{ fontWeight: 800 }}>A</span>le.
+      St<span style={{ fontWeight: 800 }}>A</span>ie.
     </span>
   );
 }

@@ -9,25 +9,25 @@ import Link from 'next/link';
 export function SuggestedProductList({ products, onAddToCart, onSelectProduct }: SuggestedProductListProps) {
   return (
     <div className="flex flex-col gap-1.5 min-w-0">
-      <p className="px-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">Sản phẩm gợi ý</p>
+      <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-landing-brass-ink">Sản phẩm gợi ý</p>
       <ul className="flex flex-col gap-1.5">
         {products.map((product) => {
           const details = (
             <>
-              <div className="relative w-10 h-[52px] shrink-0 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-100">
+              <div className="relative h-[52px] w-10 shrink-0 overflow-hidden rounded-[2px] border border-landing-line/70 bg-landing-paper">
                 {product.image ? (
                   <Image src={product.image} alt={product.name} fill sizes="40px" className="object-contain p-0.5" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Package className="w-4 h-4 text-neutral-400" />
+                    <Package className="h-4 w-4 text-landing-muted" strokeWidth={1.75} />
                   </div>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className={`text-body-sm font-semibold leading-snug line-clamp-2 ${product.available ? 'text-neutral-900 group-hover/prod:text-brand-navy' : 'text-neutral-500'}`}>
+                <p className={`product-name-line line-clamp-2 ${product.available ? 'text-landing-obsidian group-hover/prod:text-landing-oxblood' : 'text-landing-muted'}`}>
                   {product.name}
                 </p>
-                <span className={`text-label-sm font-bold ${product.available ? 'text-brand-navy' : 'text-neutral-400 line-through'}`}>
+                <span className={`font-mono text-[12px] ${product.available ? 'text-landing-oxblood' : 'text-landing-muted line-through'}`}>
                   {formatVnd(product.price)}
                 </span>
               </div>
@@ -35,12 +35,12 @@ export function SuggestedProductList({ products, onAddToCart, onSelectProduct }:
           );
 
           return (
-            <li key={product.id} className="flex items-center gap-2 p-2 bg-white border border-neutral-200 rounded-xl shadow-xs">
+            <li key={product.id} className="flex items-center gap-2 rounded-[2px] border border-landing-line bg-landing-ivory p-2">
               {product.available ? (
                 <Link
                   href={`/products/${product.id}`}
                   onClick={() => onSelectProduct(product)}
-                  className="group/prod flex items-center gap-2.5 min-w-0 flex-1"
+                  className="group/prod flex min-w-0 flex-1 items-center gap-2.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
                 >
                   {details}
                 </Link>
@@ -53,12 +53,12 @@ export function SuggestedProductList({ products, onAddToCart, onSelectProduct }:
                   onClick={() => onAddToCart(product)}
                   title="Thêm vào giỏ"
                   aria-label={`Thêm ${product.name} vào giỏ`}
-                  className="w-9 h-9 shrink-0 rounded-full border border-brand-navy/30 text-brand-navy flex items-center justify-center hover:bg-brand-navy hover:text-white transition-colors bg-transparent cursor-pointer"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] border border-landing-obsidian/70 text-landing-obsidian transition-colors hover:border-landing-oxblood hover:bg-landing-oxblood hover:text-landing-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
                 >
-                  <ShoppingBag className="w-4 h-4" />
+                  <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
                 </button>
               ) : (
-                <span className="shrink-0 px-1.5 py-0.5 rounded bg-neutral-100 text-[10px] font-semibold text-semantic-error">
+                <span className="shrink-0 rounded-[2px] border border-destructive/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-destructive">
                   Ngừng bán
                 </span>
               )}

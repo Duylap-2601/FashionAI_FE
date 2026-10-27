@@ -1,6 +1,5 @@
 'use client';
 
-import { HangerIcon } from '@/components/ui/HangerIcon';
 import { useMobileBreakpoint } from '@/components/ui/use-mobile';
 import { useCartPanel } from '@/features/cart/hooks/use-cart-panel';
 import { useCart } from '@/features/cart/hooks/use-cart';
@@ -8,22 +7,22 @@ import { DesktopFilterSidebar, MobileFilterSheet, MobileSortSheet } from '@/feat
 import { ProductList } from '@/features/products/components/listing/ProductList';
 import { ProductResultsHeader } from '@/features/products/components/listing/ProductResultsHeader';
 import { ProductToolbar } from '@/features/products/components/listing/ProductToolbar';
-import { GARMENT_TYPE_TABS, SUB_CATEGORIES } from '@/features/products/constants/product-filters';
+import {
+  ALL_GARMENTS_TAB,
+  DEFAULT_SORT_BY,
+  GARMENT_TYPE_TABS,
+  PRICE_FILTER,
+  SUB_CATEGORIES,
+} from '@/features/products/constants/product-filters';
 import { PRODUCTS } from '@/features/products/constants/products';
 import { ITEMS_PER_PAGE } from '@/features/products/constants/products-page';
 import { useInfiniteProducts, useProducts } from '@/features/products/hooks/useProducts';
 import type { ActiveChip, SortBy } from '@/features/products/types/product-filters';
 import type { Product } from '@/features/products/types/products';
 import type { ProductListParams } from '@/features/products/types/products-hook';
-import { useAuthStore } from '@/features/auth/store/authStore';
-import { usePinToRack, useRackItems, useUnpinFromRack } from '@/features/rack/hooks/useRack';
 import { trackEvent } from '@/lib/analytics';
-import { X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-
-const DEFAULT_SORT_BY: SortBy = 'Mới nhất';
 
 function toSortParam(sortBy: SortBy): ProductListParams['sort'] {
   if (sortBy === 'Giá thấp đến cao') return 'price_asc';
@@ -32,19 +31,14 @@ function toSortParam(sortBy: SortBy): ProductListParams['sort'] {
 }
 
 export default function ProductListing() {
-  const router = useRouter();
-  const user = useAuthStore((state) => state.user);
   const { setIsCartOpen } = useCartPanel();
   const { addToCart } = useCart();
   const isMobile = useMobileBreakpoint();
   const hasResolvedBreakpoint = typeof isMobile === 'boolean';
-  const { isPinned, getItemByProductId } = useRackItems();
-  const { pinProduct } = usePinToRack();
-  const { unpinProduct } = useUnpinFromRack();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('Tất cả');
+  const [activeTab, setActiveTab] = useState<string>(ALL_GARMENTS_TAB);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -53,14 +47,25 @@ export default function ProductListing() {
   const [sortBy, setSortBy] = useState<SortBy>(DEFAULT_SORT_BY);
   const [currentPage, setCurrentPage] = useState(1);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
-  const maxPriceLimit = 10000000;
+  const maxPriceLimit = PRICE_FILTER.max;
   const currentPriceRange = selectedMaxPrice ?? maxPriceLimit;
+
+  // Chỉ cuộn khi đầu lưới đã trôi lên dưới toolbar dính; mốc lấy từ scroll-margin-top của lưới.
+  const scrollToResults = useCallback(() => {
+    const target = resultsRef.current;
+    if (!target) return;
+    const stickyOffset = Number.parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0;
+    if (target.getBoundingClientRect().top >= stickyOffset) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+  }, []);
 
   const resetToFirstPage = useCallback(() => {
     setCurrentPage(1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+    scrollToResults();
+  }, [scrollToResults]);
 
   useEffect(() => {
     const applySearch = (value: string) => {
@@ -143,12 +148,7 @@ export default function ProductListing() {
   const totalPages = Math.max(1, queryMeta.totalPages);
   const hasMoreProducts = Boolean(isMobile && hasNextPage);
 
-  const categoryCounts = useMemo(() => (
-    GARMENT_TYPE_TABS.map((tab) => ({
-      label: tab.label,
-      count: tab.key === 'ALL' ? totalProducts : undefined,
-    }))
-  ), [totalProducts]);
+  const categoryTabs = useMemo(() => GARMENT_TYPE_TABS.map((tab) => ({ label: tab.label })), []);
 
   const subCategoryCounts = useMemo(() => SUB_CATEGORIES.map(sub => ({ name: sub.name })), []);
 
@@ -186,7 +186,7 @@ export default function ProductListing() {
   const handleClearAllFilters = () => {
     setSearchQuery('');
     setDebouncedSearchQuery('');
-    setActiveTab('Tất cả');
+    setActiveTab(ALL_GARMENTS_TAB);
     setSelectedColors([]);
     setSelectedSubCategories([]);
     setSelectedMaxPrice(null);
@@ -198,12 +198,12 @@ export default function ProductListing() {
   const activeChips = useMemo<ActiveChip[]>(() => {
     const chips: ActiveChip[] = [];
 
-    if (activeTab !== 'Tất cả') {
+    if (activeTab !== ALL_GARMENTS_TAB) {
       chips.push({
         id: 'tab',
         label: activeTab,
         onRemove: () => {
-          setActiveTab('Tất cả');
+          setActiveTab(ALL_GARMENTS_TAB);
           resetToFirstPage();
         },
       });
@@ -218,10 +218,10 @@ export default function ProductListing() {
         },
       });
     }
-    if (selectedMaxPrice !== null && selectedMaxPrice < maxPriceLimit) {
+    if (selectedMaxPrice !== null && selectedMaxPrice < PRICE_FILTER.max) {
       chips.push({
         id: 'price',
-        label: `≤ ${(selectedMaxPrice / 1000).toLocaleString('vi-VN')}kđ`,
+        label: `Dưới ${selectedMaxPrice.toLocaleString('vi-VN')} ₫`,
         onRemove: () => {
           setSelectedMaxPrice(null);
           resetToFirstPage();
@@ -233,49 +233,6 @@ export default function ProductListing() {
 
     return chips;
   }, [activeTab, resetToFirstPage, searchQuery, selectedColors, selectedMaxPrice, selectedSubCategories, toggleColor, toggleSubCategory]);
-
-  const handleToggleRack = (product: Product) => {
-    if (!user) {
-      toast.error('Vui lòng đăng nhập để lưu sản phẩm vào Giá treo đồ');
-      router.push('/login?callbackUrl=/products');
-      return;
-    }
-
-    const rackItem = getItemByProductId(product.id);
-    if (rackItem) {
-      unpinProduct(rackItem.id, {
-        onSuccess: () => toast.info(`Đã bỏ ${product.name} khỏi Giá treo đồ`),
-        onError: () => toast.error('Không thể xóa khỏi Giá treo đồ'),
-      });
-      return;
-    }
-
-    pinProduct(product.id, {
-      onSuccess: () => {
-        toast.custom((t) => (
-          <div className="bg-[#FDFBF7] border-l-4 border-[#5D1C34] border-y border-r border-[#E5DFD5] p-4 rounded-xl shadow-lg flex items-start gap-3.5 max-w-[380px] w-full relative">
-            <div className="p-2 bg-[#5D1C34]/10 text-[#5D1C34] rounded-lg shrink-0 mt-0.5">
-              <HangerIcon className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0 pr-4">
-              <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã ghim vào Giá treo đồ!</h4>
-              <p className="text-[12px] text-neutral-700 font-semibold mt-1 truncate">{product.name}</p>
-              <p className="text-[11px] text-neutral-500 mt-0.5">Sẵn sàng để phối đồ và thử đồ ảo</p>
-            </div>
-            <div className="flex flex-col items-end justify-between self-stretch shrink-0 min-h-[56px]">
-              <button type="button" onClick={() => toast.dismiss(t)} className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-neutral-600 transition-colors">
-                <X className="w-3.5 h-3.5" />
-              </button>
-              <button type="button" onClick={() => { router.push('/rack'); toast.dismiss(t); }} className="text-[12px] font-bold text-[#5D1C34] hover:underline underline-offset-2 transition-all mt-auto">
-                Xem giá treo
-              </button>
-            </div>
-          </div>
-        ), { duration: 4000 });
-      },
-      onError: () => toast.error('Không thể ghim vào Giá treo đồ'),
-    });
-  };
 
   const handleAddToCart = (product: Product) => {
     const color = product.colors?.[0]?.name;
@@ -291,24 +248,24 @@ export default function ProductListing() {
 
     toast.custom((t) => (
       <div className="flex w-[min(360px,calc(100vw-56px))] items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-[13px] font-semibold text-brand-navy">Đã thêm {product.name} vào giỏ</p>
-        <button type="button" onClick={() => { setIsCartOpen(true); toast.dismiss(t); }} className="shrink-0 text-[12px] font-bold text-[#5D1C34] hover:underline">
+        <p className="min-w-0 truncate text-[13px] font-semibold text-landing-obsidian">Đã thêm {product.name} vào giỏ</p>
+        <button type="button" onClick={() => { setIsCartOpen(true); toast.dismiss(t); }} className="shrink-0 text-[12px] font-bold text-landing-oxblood hover:underline">
           Xem giỏ
         </button>
       </div>
     ), { duration: 2500 });
   };
 
-  const filterPanelProps = {
-    activeChips,
+  const activeFilterCount = selectedColors.length
+    + selectedSubCategories.length
+    + (selectedMaxPrice !== null && selectedMaxPrice < maxPriceLimit ? 1 : 0);
+
+  const filterSectionProps = {
     currentPriceRange,
     maxPriceLimit,
     selectedColors,
     subCategoryCounts,
     selectedSubCategories,
-    filteredCount: totalProducts,
-    onClose: () => setIsSidebarOpen(false),
-    onClearAll: handleClearAllFilters,
     onPriceChange: (value: number) => {
       setSelectedMaxPrice(value);
       resetToFirstPage();
@@ -317,13 +274,16 @@ export default function ProductListing() {
     onToggleSubCategory: toggleSubCategory,
   };
 
+  const isDesktopSidebarOpen = isSidebarOpen && isMobile === false;
+
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <main className="flex flex-1 flex-col">
       <ProductToolbar
-        categories={categoryCounts}
+        categories={categoryTabs}
         activeTab={activeTab}
         searchQuery={searchQuery}
-        isSidebarOpen={isSidebarOpen}
+        isFilterOpen={isSidebarOpen}
+        activeFilterCount={activeFilterCount}
         sortBy={sortBy}
         onSelectTab={(tab) => {
           setActiveTab(tab);
@@ -333,28 +293,50 @@ export default function ProductListing() {
           setSearchQuery(value);
           setCurrentPage(1);
         }}
-        onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+        onToggleFilters={() => setIsSidebarOpen(prev => !prev)}
+        onOpenSort={() => setIsSortOpen(true)}
         onSortChange={(value) => {
           setSortBy(value);
           resetToFirstPage();
         }}
       />
 
-      {isSidebarOpen && <MobileFilterSheet {...filterPanelProps} />}
-      {isSortOpen && <MobileSortSheet sortBy={sortBy} onClose={() => setIsSortOpen(false)} onSortChange={(value) => {
-        setSortBy(value);
-        resetToFirstPage();
-      }} />}
+      <MobileFilterSheet
+        {...filterSectionProps}
+        open={isSidebarOpen && isMobile === true}
+        activeChips={activeChips}
+        filteredCount={totalProducts}
+        onOpenChange={setIsSidebarOpen}
+        onClearAll={handleClearAllFilters}
+      />
+      <MobileSortSheet
+        open={isSortOpen && isMobile === true}
+        sortBy={sortBy}
+        onOpenChange={setIsSortOpen}
+        onSortChange={(value) => {
+          setSortBy(value);
+          resetToFirstPage();
+        }}
+      />
 
-      <div className="flex-1 flex max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8 items-start relative">
-        {isSidebarOpen && <DesktopFilterSidebar {...filterPanelProps} />}
+      <div className="mx-auto flex w-full max-w-[1440px] flex-1 items-start px-4 pb-16 pt-8 md:px-8 md:pb-24 md:pt-10">
+        {isDesktopSidebarOpen ? (
+          <DesktopFilterSidebar
+            {...filterSectionProps}
+            hasActiveFilters={activeChips.length > 0}
+            onClearAll={handleClearAllFilters}
+          />
+        ) : null}
 
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* scroll-mt = header 72px + toolbar dính (105px dưới xl, 57px từ xl) + khoảng thở. */}
+        <div ref={resultsRef} className="flex min-w-0 flex-1 scroll-mt-[193px] flex-col md:scroll-mt-[201px] xl:scroll-mt-[153px]">
           <ProductResultsHeader
             filteredCount={totalProducts}
+            isLoading={isLoading && queryProducts.length === 0}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            showPageIndex={isMobile === false}
             activeChips={activeChips}
-            onOpenFilters={() => setIsSidebarOpen(true)}
-            onOpenSort={() => setIsSortOpen(true)}
             onClearAll={handleClearAllFilters}
           />
 
@@ -365,14 +347,13 @@ export default function ProductListing() {
             isFetching={isFetching}
             isFetchingNextPage={isFetchingNextPage}
             isMobile={Boolean(isMobile)}
-            isSidebarOpen={isSidebarOpen}
+            isSidebarOpen={isDesktopSidebarOpen}
             products={displayedProducts}
             totalCount={totalProducts}
             hasMoreProducts={hasMoreProducts}
             currentPage={currentPage}
             totalPages={totalPages}
             loadMoreRef={loadMoreRef}
-            isPinned={isPinned}
             onRetry={() => refetch()}
             onClearAll={handleClearAllFilters}
             onLoadMore={() => {
@@ -382,13 +363,12 @@ export default function ProductListing() {
             }}
             onPageChange={(page) => {
               setCurrentPage(page);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              scrollToResults();
             }}
-            onToggleRack={handleToggleRack}
             onAddToCart={handleAddToCart}
           />
         </div>
       </div>
-    </div>
+    </main>
   );
 }

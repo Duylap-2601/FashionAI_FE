@@ -1,17 +1,45 @@
 'use client';
 
-import { AuthCenteredLayout } from '@/features/auth/components/AuthLayout';
+import { cn } from '@/components/ui/utils';
+import {
+  AuthAlert,
+  AuthField,
+  AuthHeading,
+  AuthSubmitButton,
+  authInputClassName,
+  authTextLinkClassName,
+} from '@/features/auth/components/auth-form';
 import { requestPasswordReset } from '@/features/auth/services/mutations';
 import { getErrorMessage } from '@/lib/errors';
-import { ArrowLeft, Mail } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react';
+
+const DEFAULT_ERROR = 'Không thể gửi email đặt lại mật khẩu.';
+
+const secondaryButtonClassName = cn(
+  'inline-flex h-12 w-full items-center justify-center gap-2 rounded-[2px] border border-landing-obsidian/70 text-[11px] font-semibold uppercase tracking-[0.18em] text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood disabled:cursor-wait disabled:opacity-60',
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood',
+);
+
+async function sendResetEmail(email: string) {
+  const response = await requestPasswordReset(email);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message =
+      body?.details?.[0] ||
+      (Array.isArray(body?.message) ? body?.message[0] : body?.message) ||
+      DEFAULT_ERROR;
+    throw new Error(message);
+  }
+}
 
 export default function ForgotPassword() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,89 +47,102 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const response = await requestPasswordReset(email);
-      const body = await response.json().catch(() => null);
-      if (!response.ok) {
-        const message =
-          body?.details?.[0] ||
-          (Array.isArray(body?.message) ? body?.message[0] : body?.message) ||
-          'Không thể gửi email đặt lại mật khẩu.';
-        throw new Error(message);
-      }
+      await sendResetEmail(email);
+      setResendStatus(null);
       setIsSuccess(true);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Không thể gửi email đặt lại mật khẩu.'));
+      setError(getErrorMessage(err, DEFAULT_ERROR));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError(null);
+    setResendStatus(null);
+    setIsLoading(true);
+
+    try {
+      await sendResetEmail(email);
+      setResendStatus('Đã gửi lại link đặt lại mật khẩu.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, DEFAULT_ERROR));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <AuthCenteredLayout>
+    <>
+      <Link
+        href="/login"
+        className={`mb-8 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] ${authTextLinkClassName}`}
+      >
+        <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
+        Quay lại đăng nhập
+      </Link>
+
       {!isSuccess ? (
         <>
-          <Link href="/login" className="inline-flex items-center gap-1.5 text-body-sm text-neutral-500 hover:text-brand-navy font-medium mb-6 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Quay lại
-          </Link>
+          <AuthHeading eyebrow="Khôi phục tài khoản" title="Quên mật khẩu?">
+            Nhập email bạn đã dùng để đăng ký. Chúng tôi sẽ gửi link đặt lại mật khẩu.
+          </AuthHeading>
 
-          <div className="mb-8">
-            <h2 className="text-[24px] font-semibold text-brand-navy mb-2 tracking-tight">Quên mật khẩu?</h2>
-            <p className="text-body-sm text-neutral-500 leading-relaxed">
-              Nhập email của bạn, chúng tôi sẽ gửi link để đặt lại mật khẩu.
-            </p>
-          </div>
-
-          {error && <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-semantic-error text-body-sm">{error}</div>}
+          {error ? <AuthAlert tone="error">{error}</AuthAlert> : null}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            <div>
-              <label className="block text-label-sm font-medium text-neutral-700 mb-1.5" htmlFor="email">Email</label>
+            <AuthField id="email" label="Email">
               <input
                 type="email"
                 id="email"
+                name="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-11 px-3.5 bg-white border border-neutral-300 rounded-xl text-body-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/20 focus:border-[#5D1C34] transition-all"
+                className={authInputClassName}
                 placeholder="nhap@email.com"
                 required
+                disabled={isLoading}
               />
-            </div>
+            </AuthField>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-11 bg-brand-navy text-white text-body-sm font-semibold rounded-xl hover:bg-brand-navy/90 transition-colors mt-2 disabled:opacity-50"
-            >
-              {isLoading ? 'Đang gửi...' : 'Gửi link đặt lại'}
-            </button>
+            <div className="mt-2">
+              <AuthSubmitButton isLoading={isLoading} loadingLabel="Đang gửi">
+                Gửi link đặt lại
+              </AuthSubmitButton>
+            </div>
           </form>
         </>
       ) : (
-        <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-6">
-            <Mail className="w-8 h-8 text-semantic-success" />
-          </div>
-          <h3 className="text-[20px] font-semibold text-brand-navy mb-2 tracking-tight">Kiểm tra email của bạn</h3>
-          <p className="text-body-sm text-neutral-600 leading-relaxed mb-8">
-            Link đặt lại mật khẩu đã được gửi đến <span className="font-medium text-neutral-900">{email || 'email của bạn'}</span>.<br />Có hiệu lực trong 1 giờ.
-          </p>
+        <div className="animate-in fade-in-0">
+          {/* Backend không cho biết email có tồn tại hay không, nên câu chữ không khẳng định đã gửi. */}
+          <AuthHeading eyebrow="Đã gửi yêu cầu" title="Kiểm tra email của bạn">
+            Nếu <span className="font-medium text-landing-obsidian">{email}</span> đã đăng ký tài khoản, link đặt lại
+            mật khẩu đã được gửi tới hộp thư. Link có hiệu lực trong 1 giờ.
+          </AuthHeading>
 
-          <div className="flex flex-col w-full gap-3">
-            <button
-              onClick={() => setIsSuccess(false)}
-              className="w-full h-11 bg-white border border-neutral-200 text-neutral-700 text-body-sm font-semibold rounded-xl hover:bg-neutral-50 hover:border-neutral-300 transition-all"
-            >
-              Gửi lại
+          {error ? <AuthAlert tone="error">{error}</AuthAlert> : null}
+          {resendStatus ? <AuthAlert tone="success">{resendStatus}</AuthAlert> : null}
+
+          <div className="flex flex-col gap-3">
+            <button type="button" onClick={handleResend} disabled={isLoading} className={secondaryButtonClassName}>
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} /> : null}
+              {isLoading ? 'Đang gửi lại' : 'Gửi lại email'}
             </button>
-            <Link
-              href="/login"
-              className="w-full h-11 flex items-center justify-center text-neutral-500 hover:text-brand-navy text-body-sm font-medium transition-colors"
+            <button
+              type="button"
+              onClick={() => {
+                setIsSuccess(false);
+                setError(null);
+                setResendStatus(null);
+              }}
+              className={`h-11 text-[11px] uppercase tracking-[0.18em] ${authTextLinkClassName}`}
             >
-              &larr; Quay lại đăng nhập
-            </Link>
+              Dùng email khác
+            </button>
           </div>
         </div>
       )}
-    </AuthCenteredLayout>
+    </>
   );
 }

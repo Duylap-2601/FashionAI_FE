@@ -40,6 +40,10 @@ export const SHIRT_SIZE_GUIDE: Record<string, { chest: string; waist: string; hi
   '3XL': { chest: '106–112', waist: '89–95', hip: '112–118' },
 };
 
-export const TROUSER_SIZES = ['28', '29', '30', '31', '32', '33', '34', '36'];
 
-export const SHOE_SIZES_VN = ['35', '36', '37', '38', '39', '40', '41', '42', '43', '44'];
+/** Nhóm số đo backend dùng để kiểm tra đủ điều kiện đặt may (GET /users/me/measurements/completeness). */
+export const MEASUREMENT_CATEGORY_LABELS: Record<string, string> = {
+  UPPER: 'Áo',
+  LOWER: 'Quần & váy',
+  FULL_BODY: 'Đồ liền',
+};

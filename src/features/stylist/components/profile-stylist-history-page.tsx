@@ -1,441 +1,281 @@
 'use client';
 
 import { GA_ITEM_LISTS } from '@/features/analytics/constants/ga-item-lists';
+import { AccountShell } from '@/features/profile/components/account-shell';
+import {
+  AccountConfirmDialog,
+  AccountPagination,
+  AccountStatePanel,
+  accountButtonClassName,
+  accountFocusRing,
+  accountInputClassName,
+  accountLabelClassName,
+} from '@/features/profile/components/account-ui';
 import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
 import { OCCASION_LABELS } from '@/features/stylist/constants/profile-stylist-history-page';
 import { useDeleteStylistHistory, useStylistHistory } from '@/features/stylist/hooks/useStylist';
 import type { StylistResult } from '@/features/stylist/types/stylist';
-import {
-  AlertCircle,
-  Calendar,
-  ChevronDown,
-  ChevronLeft,
-  ChevronUp, Crown,
-  Heart,
-  Loader2,
-  Palette,
-  Search,
-  ShoppingBag,
-  Star,
-  Trash2,
-  User
-} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ArrowRight, ChevronDown, Search, Trash2, User } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
+import type React from 'react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 12;
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('vi-VN', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }
 
-// ─── Expandable Result Card ──────────────────────────────────────────────────
-function StylistCard({ item, onDelete, isDeleting }: {
-  item: StylistResult;
-  onDelete: (id: string) => void;
-  isDeleting: boolean;
-}) {
+function scoreTone(score: number) {
+  if (score >= 80) return { text: 'text-landing-sage-ink', dot: 'bg-landing-sage' };
+  if (score >= 60) return { text: 'text-landing-brass-ink', dot: 'bg-landing-brass' };
+  return { text: 'text-destructive', dot: 'bg-destructive' };
+}
+
+function DetailBlock({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className={accountLabelClassName}>{label}</p>
+      <div className="mt-1.5 text-sm leading-relaxed text-landing-obsidian/85">{children}</div>
+    </div>
+  );
+}
+
+function StylistCard({ item, onDelete, isDeleting }: { item: StylistResult; onDelete: () => void; isDeleting: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const detailId = `stylist-${item.id}-detail`;
 
   const score = item.productCompatibilityScore;
   // Lịch sử cũ chưa có bộ phối từ catalog (`outfits` rỗng): hiện gợi ý dạng chữ như trước.
   const legacyOutfits = item.outfits.length === 0 && Array.isArray(item.outfitCombinations) ? item.outfitCombinations : [];
   const colors = Array.isArray(item.colorSuggestions) ? item.colorSuggestions : [];
-
-  const handleDelete = () => {
-    if (confirm('Bạn có chắc chắn muốn xóa kết quả tư vấn này?')) {
-      onDelete(item.id);
-    }
-  };
+  const occasion = (item.occasion && OCCASION_LABELS[item.occasion]) || item.occasion || 'Tư vấn phối đồ';
+  const hasDetails = Boolean(item.fitRecommendation || item.stylingTips || colors.length > 0 || item.outfits.length > 0 || legacyOutfits.length > 0 || item.product);
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between group">
-
-      {/* Card Header & Main Overview */}
-      <div className="p-5 flex flex-col gap-4">
-        {/* Top bar: Image + Occasion/Date + Score + Delete */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3.5 min-w-0">
-            {/* Human Image Thumbnail */}
-            {item.humanImageUrl && !imgError ? (
-              <div className="w-14 h-18 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-neutral-200 shadow-2xs">
-                <img
-                  src={item.humanImageUrl}
-                  alt="Ảnh phân tích"
-                  className="w-full h-full object-cover"
-                  onError={() => setImgError(true)}
-                />
-              </div>
-            ) : (
-              <div className="w-14 h-18 rounded-xl bg-gradient-to-br from-brand-navy/10 to-brand-navy/5 flex items-center justify-center shrink-0 border border-neutral-200">
-                <User className="w-6 h-6 text-brand-navy/40" />
-              </div>
-            )}
-
+    <article className="border border-landing-line bg-landing-ivory/50">
+      <div className="flex flex-col gap-5 p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="relative flex h-[72px] w-14 shrink-0 items-center justify-center overflow-hidden rounded-[2px] bg-landing-paper">
+              {item.humanImageUrl && !imgError ? (
+                <Image src={item.humanImageUrl} alt="Ảnh đã phân tích" fill sizes="56px" unoptimized className="object-cover" onError={() => setImgError(true)} />
+              ) : (
+                <User className="h-5 w-5 text-landing-muted" strokeWidth={1.5} aria-hidden="true" />
+              )}
+            </span>
             <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2.5 py-0.5 rounded-full bg-brand-navy/10 text-brand-navy font-bold text-[12px] shrink-0">
-                  {(item.occasion && OCCASION_LABELS[item.occasion]) || item.occasion || 'Tư vấn outfit'}
-                </span>
-              </div>
-              <span className="text-[12px] text-neutral-400 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 shrink-0" />
-                {formatDate(item.createdAt)}
-              </span>
+              <p className="font-display text-xl leading-tight text-landing-obsidian">{occasion}</p>
+              <p className="mt-1 font-mono text-[11px] text-landing-muted">{formatDate(item.createdAt)}</p>
+              {score != null ? (
+                <p className={cn('mt-1.5 inline-flex items-center gap-1.5 text-xs', scoreTone(score).text)}>
+                  <span aria-hidden="true" className={cn('h-1.5 w-1.5 rounded-full', scoreTone(score).dot)} />
+                  Độ hợp <span className="font-mono">{score}/100</span>
+                </p>
+              ) : null}
             </div>
           </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Compatibility Score */}
-            {score != null && (
-              <div className={`px-2.5 py-1 rounded-xl flex items-center gap-1 font-bold text-[13px] border ${score >= 80 ? 'bg-green-50 border-green-200 text-green-700'
-                  : score >= 60 ? 'bg-amber-50 border-amber-200 text-amber-700'
-                    : 'bg-red-50 border-red-200 text-red-700'
-                }`}>
-                <Star className="w-3.5 h-3.5 fill-current" />
-                <span>{score}/100</span>
-              </div>
-            )}
-
-            {/* Delete button */}
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-semantic-error hover:bg-red-50 transition-colors disabled:opacity-50 border-0 bg-transparent cursor-pointer"
-              title="Xóa kết quả"
-            >
-              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={isDeleting}
+            aria-label="Xoá kết quả tư vấn này"
+            className={cn('-mr-2 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center text-landing-muted transition-colors hover:text-destructive disabled:opacity-50', accountFocusRing)}
+          >
+            <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+          </button>
         </div>
 
-        {/* Stylist Warnings */}
-        {item.warnings && item.warnings.length > 0 && (
-          <div className="p-3 bg-amber-50/90 rounded-xl border border-amber-200/80 flex items-start gap-2 text-[12px] text-amber-900">
-            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <span className="font-semibold text-amber-950">Lưu ý từ AI:</span>
-              {item.warnings.map((w, idx) => (
-                <p key={idx} className="text-amber-800 leading-relaxed">{w}</p>
-              ))}
-            </div>
+        {item.warnings && item.warnings.length > 0 ? (
+          <div className="border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-xs leading-relaxed text-landing-obsidian">
+            <p className="font-medium">Lưu ý</p>
+            {item.warnings.map((warning, idx) => <p key={idx} className="mt-0.5 text-landing-muted">{warning}</p>)}
           </div>
-        )}
+        ) : null}
 
-        {/* Structured Analysis Sections */}
-        <div className="flex flex-col gap-2.5">
-          {/* Personal Color */}
-          {item.personalColor && (
-            <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200/70">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-800 uppercase tracking-wider mb-1">
-                <Palette className="w-3.5 h-3.5 text-amber-700" />
-                <span>Màu sắc cá nhân (Personal Color)</span>
-              </div>
-              <p className="text-[13px] text-amber-950 font-medium leading-relaxed">
-                {item.personalColor}
-              </p>
-            </div>
-          )}
+        {(item.personalColor || item.bodyType || item.skinTone) ? (
+          <dl className="grid gap-4 sm:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+            {item.personalColor ? <div><dt className={accountLabelClassName}>Màu hợp bạn</dt><dd className="mt-1.5 text-sm leading-relaxed text-landing-obsidian/85">{item.personalColor}</dd></div> : null}
+            {item.bodyType ? <div><dt className={accountLabelClassName}>Dáng người</dt><dd className="mt-1.5 text-sm leading-relaxed text-landing-obsidian/85">{item.bodyType}</dd></div> : null}
+            {item.skinTone ? <div><dt className={accountLabelClassName}>Tông da</dt><dd className="mt-1.5 text-sm leading-relaxed text-landing-obsidian/85">{item.skinTone}</dd></div> : null}
+          </dl>
+        ) : null}
 
-          {/* Body Type & Skin Tone */}
-          {(item.bodyType || item.skinTone) && (
-            <div className="grid grid-cols-1 gap-2">
-              {item.bodyType && (
-                <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200">
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-600 uppercase tracking-wider mb-1">
-                    <User className="w-3.5 h-3.5 text-brand-sage" />
-                    <span>Dáng người</span>
-                  </div>
-                  <p className="text-[13px] text-neutral-700 leading-relaxed">
-                    {item.bodyType}
-                  </p>
-                </div>
-              )}
-
-              {item.skinTone && (
-                <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200">
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-600 uppercase tracking-wider mb-1">
-                    <span>Sắc tố da (Skin Tone)</span>
-                  </div>
-                  <p className="text-[13px] text-neutral-700 leading-relaxed">
-                    {item.skinTone}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Verdict snippet */}
-        {item.verdict && (
-          <div className="p-3 bg-brand-cream/50 rounded-xl border-l-4 border-[#5D1C34] border-y border-r border-neutral-200">
-            <p className="text-[13px] text-neutral-700 italic leading-relaxed line-clamp-3">
-              &ldquo;{item.verdict}&rdquo;
-            </p>
-          </div>
-        )}
+        {item.verdict ? (
+          <blockquote className="border-l-2 border-landing-oxblood pl-4 font-display text-lg italic leading-snug text-landing-obsidian line-clamp-3">
+            {item.verdict}
+          </blockquote>
+        ) : null}
       </div>
 
-      {/* Expand toggle */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-center gap-1.5 py-3 border-t border-neutral-100 text-label-sm font-semibold text-neutral-600 hover:text-brand-navy hover:bg-neutral-50 transition-colors bg-transparent cursor-pointer"
-      >
-        {expanded ? <><ChevronUp className="w-4 h-4" /> Ẩn chi tiết gợi ý</> : <><ChevronDown className="w-4 h-4" /> Xem gợi ý phối đồ & màu sắc</>}
-      </button>
+      {hasDetails ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+            aria-controls={detailId}
+            className={cn('flex w-full items-center justify-center gap-1.5 border-t border-landing-line/70 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-muted transition-colors hover:text-landing-oxblood', accountFocusRing)}
+          >
+            {expanded ? 'Thu gọn' : 'Xem gợi ý phối đồ'}
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')} strokeWidth={1.75} aria-hidden="true" />
+          </button>
 
-      {/* Expanded Detail */}
-      {expanded && (
-        <div className="px-5 pb-5 pt-2 border-t border-neutral-100 space-y-4 animate-in fade-in duration-200">
-
-          {/* Fit Recommendation */}
-          {item.fitRecommendation && (
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5 text-label-sm font-semibold text-neutral-700 uppercase tracking-wide">
-                <Star className="w-3.5 h-3.5 text-brand-gold" /> Kiểu dáng phù hợp
-              </div>
-              <p className="text-body-sm text-neutral-700 leading-relaxed">{item.fitRecommendation}</p>
+          {expanded ? (
+            <div id={detailId} className="flex flex-col gap-6 border-t border-landing-line/70 p-5">
+              {item.fitRecommendation ? <DetailBlock label="Kiểu dáng hợp">{item.fitRecommendation}</DetailBlock> : null}
+              {item.stylingTips ? <DetailBlock label="Mẹo phối">{item.stylingTips}</DetailBlock> : null}
+              {colors.length > 0 ? (
+                <DetailBlock label="Màu gợi ý">
+                  <ul className="flex flex-wrap gap-1.5">
+                    {colors.map((color, i) => (
+                      <li key={i} className="flex h-8 items-center gap-2 border border-landing-line bg-landing-paper px-2.5 text-xs">
+                        {typeof color !== 'string' && color.hex ? (
+                          <span aria-hidden="true" className="h-3 w-3 rounded-full border border-landing-obsidian/15" style={{ backgroundColor: color.hex }} />
+                        ) : null}
+                        {typeof color === 'string' ? color : color.name}
+                      </li>
+                    ))}
+                  </ul>
+                </DetailBlock>
+              ) : null}
+              {item.outfits.length > 0 || legacyOutfits.length > 0 ? (
+                <DetailBlock label="Bộ phối gợi ý">
+                  {item.outfits.length > 0 ? (
+                    <OutfitSuggestionList viewKey={item.id} list={GA_ITEM_LISTS.aiStylist} outfits={item.outfits} />
+                  ) : (
+                    <ul className="space-y-2">
+                      {legacyOutfits.map((outfit, i) => (
+                        <li key={i} className="border border-landing-line bg-landing-paper px-3 py-2.5">
+                          {typeof outfit === 'string' ? outfit : (
+                            <>
+                              <p className="font-medium text-landing-obsidian">{outfit.name}</p>
+                              <p className="mt-1 text-xs text-landing-muted">{(outfit.items || []).map((part) => `${part.type}: ${part.name}`).join(' · ')}</p>
+                            </>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </DetailBlock>
+              ) : null}
+              {item.product ? (
+                <Link
+                  href={`/products/${item.product.id}`}
+                  className={cn('group flex items-center justify-between gap-3 border-t border-landing-line/70 pt-4', accountFocusRing)}
+                >
+                  <span className="min-w-0">
+                    <span className="block text-xs text-landing-muted">Sản phẩm được phân tích</span>
+                    <span className="product-name-line mt-0.5 block truncate text-landing-obsidian group-hover:text-landing-oxblood">{item.product.name}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-landing-oxblood" strokeWidth={1.75} aria-hidden="true" />
+                </Link>
+              ) : null}
             </div>
-          )}
-
-          {/* Styling Tips */}
-          {item.stylingTips && (
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5 text-label-sm font-semibold text-neutral-700 uppercase tracking-wide">
-                Mẹo phong cách
-              </div>
-              <p className="text-body-sm text-neutral-700 leading-relaxed">{item.stylingTips}</p>
-            </div>
-          )}
-
-          {/* Color Suggestions */}
-          {colors.length > 0 && (
-            <div>
-              <div className="flex items-center gap-1.5 mb-2 text-label-sm font-semibold text-neutral-700 uppercase tracking-wide">
-                <Palette className="w-3.5 h-3.5 text-brand-navy" /> Gợi ý màu sắc
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {colors.map((c, i) => {
-                  if (typeof c === 'string') {
-                    return (
-                      <span key={i} className="text-label-sm px-2.5 py-1 bg-neutral-100 border border-neutral-200 rounded-full text-neutral-700">
-                        {c}
-                      </span>
-                    );
-                  }
-                  return (
-                    <div key={i} className="flex items-center gap-1.5 px-2.5 py-1 bg-neutral-50 border border-neutral-200 rounded-full">
-                      <div className="w-3 h-3 rounded-full border border-white shadow-sm" style={{ backgroundColor: c.hex ?? undefined }} />
-                      <span className="text-label-sm text-neutral-700">{c.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Outfit Combinations */}
-          {(item.outfits.length > 0 || legacyOutfits.length > 0) && (
-            <div>
-              <div className="flex items-center gap-1.5 mb-2 text-label-sm font-semibold text-neutral-700 uppercase tracking-wide">
-                <Heart className="w-3.5 h-3.5 text-semantic-error" /> Gợi ý outfit
-              </div>
-              {item.outfits.length > 0 ? (
-                <OutfitSuggestionList viewKey={item.id} list={GA_ITEM_LISTS.aiStylist} outfits={item.outfits} />
-              ) : (
-                <div className="space-y-2">
-                  {legacyOutfits.map((outfit, i) => {
-                    if (typeof outfit === 'string') {
-                      return (
-                        <div key={i} className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-body-sm text-neutral-700">
-                          {outfit}
-                        </div>
-                      );
-                    }
-                    return (
-                      <div key={i} className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl">
-                        <p className="text-label-sm font-semibold text-brand-navy mb-1.5">{outfit.name}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {(outfit.items || []).map((item, j) => (
-                            <span key={j} className="text-label-sm px-2 py-0.5 bg-white border border-neutral-200 rounded-full text-neutral-600">
-                              {item.type}: {item.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Product reference */}
-          {item.product && (
-            <div className="flex items-center gap-3 p-3 bg-brand-cream/40 border border-neutral-200 rounded-xl">
-              <ShoppingBag className="w-4 h-4 text-brand-navy shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-label-sm text-neutral-500">Sản phẩm được phân tích</p>
-                <p className="text-body-sm font-medium text-neutral-900 truncate">{item.product.name}</p>
-              </div>
-              <Link href={`/products/${item.product.id}`} className="text-label-sm text-brand-navy font-medium hover:underline shrink-0">
-                Xem →
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+          ) : null}
+        </>
+      ) : null}
+    </article>
   );
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
 export default function StylistHistoryPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
-  const { history, meta, isLoading, isError } = useStylistHistory(page, 12);
+  const { history, meta, isLoading, isError, refetch } = useStylistHistory(page, PAGE_SIZE);
   const { deleteHistoryItem, isDeleting } = useDeleteStylistHistory();
 
-  const filtered = history.filter(item => {
-    const q = search.toLowerCase();
-    return (
-      !q ||
-      item.personalColor?.toLowerCase().includes(q) ||
-      item.bodyType?.toLowerCase().includes(q) ||
-      item.occasion?.toLowerCase().includes(q) ||
-      item.verdict?.toLowerCase().includes(q)
-    );
-  });
+  const query = search.trim().toLowerCase();
+  const filtered = history.filter((item) => (
+    !query ||
+    item.personalColor?.toLowerCase().includes(query) ||
+    item.bodyType?.toLowerCase().includes(query) ||
+    item.occasion?.toLowerCase().includes(query) ||
+    item.verdict?.toLowerCase().includes(query)
+  ));
+
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    deleteHistoryItem(pendingDelete, {
+      onSuccess: () => {
+        toast.success('Đã xoá kết quả tư vấn');
+        setPendingDelete(null);
+      },
+      onError: () => toast.error('Không xoá được. Vui lòng thử lại.'),
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-brand-cream pb-24">
-      <div className="max-w-[1100px] mx-auto px-4 md:px-8 py-8 md:py-12">
-
-        {/* Back */}
-        <div className="mb-4">
-          <Link href="/profile" className="inline-flex items-center gap-1.5 text-body-sm text-neutral-500 hover:text-brand-navy transition-colors">
-            <ChevronLeft className="w-4 h-4" /> Quay lại Hồ sơ
-          </Link>
-        </div>
-
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-heading-h2 font-semibold text-neutral-900 flex items-center gap-3">
-              Lịch sử AI Stylist
-              {!isLoading && (
-                <span className="text-label-md bg-neutral-200 text-neutral-600 px-2.5 py-0.5 rounded-full font-medium">
-                  {meta?.total ?? filtered.length}
-                </span>
-              )}
-            </h1>
-            <p className="text-body-sm text-neutral-500 mt-1">Các lần tư vấn phong cách đã thực hiện với AI Gemini</p>
-          </div>
-
-          {/* Search */}
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+    <AccountShell
+      title="Lịch sử AI Stylist"
+      description="Các lần tư vấn phối đồ bạn đã nhận, kèm bộ phối từ sản phẩm trong cửa hàng."
+      actions={
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center md:w-auto">
+          <div className="relative w-full sm:w-[240px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-landing-muted" strokeWidth={1.75} aria-hidden="true" />
             <input
-              type="text"
-              placeholder="Tìm theo màu da, dịp, v.v..."
+              type="search"
+              aria-label="Tìm trong lịch sử tư vấn"
+              placeholder="Tìm theo màu, dáng, dịp…"
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-full text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all"
+              onChange={(e) => setSearch(e.target.value)}
+              className={cn(accountInputClassName, 'pl-9 [&::-webkit-search-cancel-button]:appearance-none')}
             />
           </div>
-        </div>
-
-        {/* CTA Banner */}
-        <div className="mb-6 bg-gradient-to-r from-brand-navy to-brand-navy/80 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div>
-              <p className="text-body-sm font-semibold text-white">Nhận tư vấn phong cách mới</p>
-              <p className="text-label-sm text-white/70">AI phân tích dáng người, màu da và gợi ý outfit hoàn hảo</p>
-            </div>
-          </div>
-          <Link
-            href="/ai-stylist"
-            className="w-full md:w-auto px-5 py-2.5 bg-brand-gold hover:bg-brand-gold/90 text-neutral-900 font-semibold text-label-md rounded-xl transition-colors text-center shrink-0"
-          >
-            Thử ngay →
+          <Link href="/ai-stylist" className={accountButtonClassName('primary')}>
+            Tư vấn mới
           </Link>
         </div>
+      }
+    >
+      {isLoading ? (
+        <div className="space-y-4" aria-hidden="true">
+          {[0, 1].map((key) => <div key={key} className="h-48 animate-pulse bg-landing-taupe/30" />)}
+        </div>
+      ) : isError ? (
+        <AccountStatePanel
+          tone="error"
+          title="Không tải được lịch sử"
+          description="Kiểm tra kết nối rồi thử lại."
+          action={<button type="button" onClick={() => refetch()} className={accountButtonClassName('outline')}>Thử lại</button>}
+        />
+      ) : filtered.length === 0 ? (
+        <AccountStatePanel
+          title={query ? 'Không có kết quả khớp' : 'Chưa có lần tư vấn nào'}
+          description={query ? 'Thử từ khóa khác.' : 'AI Stylist xem ảnh và mô tả của bạn rồi gợi ý bộ phối từ sản phẩm trong cửa hàng.'}
+          action={query ? undefined : <Link href="/ai-stylist" className={accountButtonClassName('primary')}>Nhờ AI Stylist</Link>}
+        />
+      ) : (
+        <>
+          <p className="mb-4 text-xs text-landing-muted">
+            <span className="font-mono text-landing-obsidian">{meta?.total ?? filtered.length}</span> lần tư vấn
+          </p>
+          <div className="grid gap-5 xl:grid-cols-2">
+            {filtered.map((item) => (
+              <StylistCard key={item.id} item={item} onDelete={() => setPendingDelete(item.id)} isDeleting={isDeleting && pendingDelete === item.id} />
+            ))}
+          </div>
+          {!query && meta ? <AccountPagination page={page} totalPages={meta.totalPages} onPageChange={setPage} /> : null}
+        </>
+      )}
 
-        {/* Content */}
-        {isLoading ? (
-          <div className="flex justify-center items-center py-40">
-            <div className="w-10 h-10 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <AlertCircle className="w-12 h-12 text-semantic-error mb-3" />
-            <p className="text-body-md font-medium text-neutral-900 mb-1">Không thể tải lịch sử</p>
-            <p className="text-body-sm text-neutral-500">Vui lòng thử lại sau</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white rounded-2xl border border-neutral-200 border-dashed">
-            <div className="relative w-24 h-24 mb-6">
-              <div className="absolute inset-0 bg-brand-navy/5 rounded-full animate-pulse" />
-              <Crown className="w-6 h-6 text-brand-gold absolute top-2 right-2" />
-            </div>
-            <h3 className="text-heading-h3 font-semibold text-neutral-900 mb-2">
-              {search ? 'Không tìm thấy kết quả' : 'Chưa có lịch sử tư vấn'}
-            </h3>
-            <p className="text-body-md text-neutral-500 mb-8 max-w-md">
-              {search
-                ? 'Hãy thử từ khóa khác'
-                : 'Hãy để AI Stylist phân tích ảnh của bạn và gợi ý những bộ trang phục phù hợp nhất!'}
-            </p>
-            {!search && (
-              <Link
-                href="/ai-stylist"
-                className="px-6 py-3 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-label-md font-semibold transition-colors shadow-md flex items-center gap-2"
-              >
-                Bắt đầu tư vấn
-              </Link>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filtered.map(item => (
-                <StylistCard
-                  key={item.id}
-                  item={item}
-                  onDelete={(id) => deleteHistoryItem(id)}
-                  isDeleting={isDeleting}
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {meta && meta.totalPages > 1 && !search && (
-              <div className="flex items-center justify-center gap-2 mt-8">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-4 py-2 text-body-sm border border-neutral-200 rounded-lg hover:bg-white disabled:opacity-40 transition-colors"
-                >
-                  ← Trước
-                </button>
-                <span className="text-body-sm text-neutral-500 px-2">
-                  Trang {page} / {meta.totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
-                  disabled={page === meta.totalPages}
-                  className="px-4 py-2 text-body-sm border border-neutral-200 rounded-lg hover:bg-white disabled:opacity-40 transition-colors"
-                >
-                  Tiếp →
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+      <AccountConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => { if (!open) setPendingDelete(null); }}
+        title="Xoá kết quả tư vấn?"
+        description="Kết quả và các bộ phối gợi ý sẽ bị xoá khỏi lịch sử."
+        confirmLabel="Xoá"
+        isPending={isDeleting}
+        onConfirm={confirmDelete}
+      />
+    </AccountShell>
   );
 }
