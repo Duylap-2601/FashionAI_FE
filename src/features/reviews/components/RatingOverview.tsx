@@ -2,7 +2,21 @@
 
 import type { RatingOverviewProps } from '@/features/reviews/types/rating-overview';
 import { StarRating } from '@/features/reviews/components/StarRating';
+import { cn } from '@/lib/utils';
 import { Star } from 'lucide-react';
+
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+const labelText = 'text-[11px] font-semibold uppercase tracking-[0.14em]';
+
+function filterClassName(active: boolean) {
+  return cn(
+    'inline-flex items-center gap-1.5 border-b-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors',
+    active
+      ? 'border-landing-oxblood text-landing-oxblood'
+      : 'border-transparent text-landing-muted hover:text-landing-obsidian',
+    focusRing,
+  );
+}
 
 export function RatingOverview({
   stats,
@@ -16,88 +30,83 @@ export function RatingOverview({
   const starRows = [5, 4, 3, 2, 1] as const;
 
   return (
-    <div className="bg-neutral-50/70 border border-neutral-200/80 rounded-2xl p-6 md:p-8">
-      <div className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-12 pb-8 border-b border-neutral-200">
-        {/* Điểm số trung bình lớn */}
-        <div className="flex flex-col items-center justify-center text-center shrink-0 min-w-[200px]">
-          <div className="text-[56px] font-black text-brand-navy tracking-tight leading-none mb-2">
+    <div className="border border-landing-line bg-landing-ivory p-5 md:p-7">
+      <div className="flex flex-col gap-8 border-b border-landing-line pb-7 md:flex-row md:items-start md:gap-12">
+        <div className="flex min-w-[200px] shrink-0 flex-col items-center justify-center text-center">
+          <div className="font-mono text-[56px] font-medium leading-none tracking-tight text-landing-obsidian">
             {avg}
           </div>
-          <StarRating value={Number(avg)} size="lg" className="mb-2" />
-          <p className="text-body-sm text-neutral-500 font-medium">
+          <StarRating value={Number(avg)} size="lg" tone="landing" className="mt-3" />
+          <p className="mt-2 text-xs text-landing-muted">
             {count > 0 ? `Dựa trên ${count} lượt đánh giá` : 'Chưa có lượt đánh giá nào'}
           </p>
         </div>
 
-        {/* Thanh phân bố tỷ lệ từng sao (5★ -> 1★) */}
-        <div className="flex-1 w-full flex flex-col gap-2.5 max-w-[500px]">
-          {starRows.map((s) => {
-            const numCount = dist[String(s) as keyof typeof dist] || 0;
+        <div className="flex w-full max-w-[500px] flex-1 flex-col gap-2.5">
+          {starRows.map((star) => {
+            const numCount = dist[String(star) as keyof typeof dist] || 0;
             const percentage = count > 0 ? Math.round((numCount / count) * 100) : 0;
-            const isRowSelected = selectedRating === s;
+            const isRowSelected = selectedRating === star;
 
             return (
               <button
-                key={s}
+                key={star}
                 type="button"
-                onClick={() => onSelectRating(isRowSelected ? undefined : s)}
-                className={`flex items-center gap-3 text-label-sm font-medium w-full text-left transition-opacity hover:opacity-80 cursor-pointer ${isRowSelected ? 'font-bold text-brand-navy' : 'text-neutral-600'
-                  }`}
-                title={`Lọc ${s} sao (${numCount} đánh giá)`}
+                onClick={() => onSelectRating(isRowSelected ? undefined : star)}
+                aria-pressed={isRowSelected}
+                aria-label={`Lọc ${star} sao (${numCount} đánh giá)`}
+                className={cn('flex w-full items-center gap-3 text-left transition-opacity hover:opacity-80', focusRing)}
               >
-                <div className="flex items-center gap-1 w-10 shrink-0">
-                  <span>{s}</span>
-                  <Star className="w-3.5 h-3.5 fill-[#F59E0B] text-[#F59E0B]" />
-                </div>
-                <div className="flex-1 h-2.5 bg-neutral-200 rounded-full overflow-hidden relative">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${isRowSelected ? 'bg-[#5D1C34]' : 'bg-[#F59E0B]'
-                      }`}
+                <span className="flex w-10 shrink-0 items-center gap-1 font-mono text-xs text-landing-muted">
+                  {star}
+                  <Star className="h-3 w-3 fill-landing-oxblood text-landing-oxblood" strokeWidth={1.75} aria-hidden="true" />
+                </span>
+                <span className="relative h-2 flex-1 overflow-hidden bg-landing-paper">
+                  <span
+                    className={cn(
+                      'block h-full transition-all duration-500',
+                      isRowSelected ? 'bg-landing-oxblood' : 'bg-landing-taupe',
+                    )}
                     style={{ width: `${percentage}%` }}
                   />
-                </div>
-                <div className="w-12 text-right text-[12px] text-neutral-400 shrink-0">
+                </span>
+                <span className="w-10 shrink-0 text-right font-mono text-[11px] text-landing-muted">
                   {percentage}%
-                </div>
-                <div className="w-10 text-right text-[12px] text-neutral-500 shrink-0 font-medium">
+                </span>
+                <span className="w-9 shrink-0 text-right font-mono text-[11px] text-landing-muted">
                   ({numCount})
-                </div>
+                </span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Tabs Lọc theo số sao */}
-      <div className="flex items-center gap-2 pt-6 flex-wrap">
-        <span className="text-body-sm font-semibold text-neutral-700 mr-2">Lọc theo:</span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-5">
+        <span className={cn('text-landing-brass-ink', labelText)}>Lọc theo</span>
         <button
           type="button"
           onClick={() => onSelectRating(undefined)}
-          className={`px-4 py-2 rounded-xl text-body-sm font-medium transition-all cursor-pointer ${selectedRating === undefined
-              ? 'bg-brand-navy text-white shadow-xs'
-              : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100'
-            }`}
+          aria-pressed={selectedRating === undefined}
+          className={filterClassName(selectedRating === undefined)}
         >
-          Tất cả {count > 0 && `(${count})`}
+          Tất cả {count > 0 ? `(${count})` : ''}
         </button>
 
-        {starRows.map((s) => {
-          const numCount = dist[String(s) as keyof typeof dist] || 0;
-          const isSelected = selectedRating === s;
+        {starRows.map((star) => {
+          const numCount = dist[String(star) as keyof typeof dist] || 0;
+          const isSelected = selectedRating === star;
 
           return (
             <button
-              key={s}
+              key={star}
               type="button"
-              onClick={() => onSelectRating(isSelected ? undefined : s)}
-              className={`px-4 py-2 rounded-xl text-body-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer ${isSelected
-                  ? 'bg-brand-navy text-white shadow-xs'
-                  : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100'
-                }`}
+              onClick={() => onSelectRating(isSelected ? undefined : star)}
+              aria-pressed={isSelected}
+              className={filterClassName(isSelected)}
             >
-              <span>{s} sao</span>
-              <span className={`text-[12px] ${isSelected ? 'text-white/80' : 'text-neutral-400'}`}>
+              <span>{star} sao</span>
+              <span className={cn('font-mono text-[10px]', isSelected ? 'text-landing-oxblood/70' : 'text-landing-muted')}>
                 ({numCount})
               </span>
             </button>

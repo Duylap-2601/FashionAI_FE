@@ -23,14 +23,9 @@ export function ProductCard({
   const router = useRouter();
   const { addToCart, setIsCartOpen } = useCart();
   const [imageFailed, setImageFailed] = useState(false);
-  const [secondImageFailed, setSecondImageFailed] = useState(false);
 
   const fallbackSrc = LANDING_MEDIA.productFallback;
   const imageSrc = imageFailed || !product.image ? fallbackSrc : product.image;
-  const hasSecondImage = Boolean(
-    product.gallery && product.gallery.length > 1 && !secondImageFailed,
-  );
-  const secondImageSrc = secondImageFailed ? fallbackSrc : (product.gallery?.[1] || fallbackSrc);
 
   const hasDiscount = Boolean(product.originalPrice && product.numericPrice < product.originalPrice);
   const discountPercent = hasDiscount && product.originalPrice
@@ -100,22 +95,9 @@ export function ProductCard({
             fill
             priority={imagePriority}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className={cn(
-              'object-cover object-top transition-all duration-500 group-hover:scale-[1.03]',
-              hasSecondImage ? 'group-hover:opacity-0' : '',
-            )}
+            className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
             onError={() => setImageFailed(true)}
           />
-          {hasSecondImage && secondImageSrc ? (
-            <Image
-              src={secondImageSrc}
-              alt={`${product.name} - góc nhìn thứ hai`}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover object-top opacity-0 transition-all duration-500 group-hover:scale-[1.03] group-hover:opacity-100"
-              onError={() => setSecondImageFailed(true)}
-            />
-          ) : null}
         </Link>
 
         {/* Badges */}

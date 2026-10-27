@@ -23,6 +23,7 @@ import {
   Users,
   XCircle
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export function DashboardOverview({
@@ -480,10 +481,13 @@ export function DashboardOverview({
                   onClick={() => openProductEditor(p)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <img
+                    <Image
                       src={p.image}
                       alt={p.name}
-                      className="w-10 h-10 rounded-lg object-cover bg-neutral-200 shrink-0 border border-neutral-200"
+                      width={40}
+                      height={40}
+                      unoptimized
+                      className="h-10 w-10 shrink-0 rounded-lg border border-neutral-200 bg-neutral-200 object-cover"
                     />
                     <div className="min-w-0">
                       <p className="text-body-sm font-semibold text-neutral-900 truncate">{p.name}</p>

@@ -1,9 +1,12 @@
 'use client';
 
-import type { ReviewCardProps } from '@/features/reviews/types/review-card';
+import { AccountConfirmDialog } from '@/features/profile/components/account-ui';
 import { StarRating } from '@/features/reviews/components/StarRating';
 import { useCreateReply, useDeleteReply, useReviewReplies, useUpdateReply } from '@/features/reviews/hooks/useReviews';
+import type { ReviewCardProps } from '@/features/reviews/types/review-card';
 import type { ReviewReply } from '@/features/reviews/types/reviews';
+import { cn } from '@/lib/utils';
+import * as Dialog from '@radix-ui/react-dialog';
 import {
   CheckCircle2,
   CornerDownRight,
@@ -13,10 +16,14 @@ import {
   MoreVertical,
   ShieldAlert,
   Trash2,
-  X
+  X,
 } from 'lucide-react';
+import Image from 'next/image';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
+const labelText = 'text-[10px] font-semibold uppercase tracking-[0.14em]';
 
 export function ReviewCard({
   review,
@@ -29,11 +36,11 @@ export function ReviewCard({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Trạng thái phản hồi (Replies)
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editReplyText, setEditReplyText] = useState('');
+  const [replyToDelete, setReplyToDelete] = useState<ReviewReply | null>(null);
 
   const { replies: fetchedReplies } = useReviewReplies(review.id);
   const createReplyMutation = useCreateReply();
@@ -43,6 +50,7 @@ export function ReviewCard({
   const replies = fetchedReplies.length > 0 ? fetchedReplies : (review.replies || []);
 
   const isAuthor = currentUserId && review.userId === currentUserId;
+  const avatarUrl = review.user?.avatarUrl || null;
 
   const formattedDate = review.createdAt
     ? new Date(review.createdAt).toLocaleDateString('vi-VN', {
@@ -55,7 +63,6 @@ export function ReviewCard({
   const userName = review.user?.name || 'Khách hàng';
   const initial = (userName.trim()[0] || 'K').toUpperCase();
 
-  // Xử lý gửi phản hồi mới
   const handleSubmitReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUserId) {
@@ -89,13 +96,11 @@ export function ReviewCard({
     }
   };
 
-  // Bắt đầu sửa reply
   const handleStartEditReply = (rep: ReviewReply) => {
     setEditingReplyId(rep.id);
-    setEditReplyText(rep.content || rep.comment || "");
+    setEditReplyText(rep.content || rep.comment || '');
   };
 
-  // Lưu chỉnh sửa reply
   const handleSaveEditReply = async (replyId: string) => {
     const trimmed = editReplyText.trim();
     if (!trimmed) {
@@ -122,16 +127,16 @@ export function ReviewCard({
     }
   };
 
-  // Xóa reply
-  const handleDeleteReply = async (replyId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa phản hồi này?')) return;
+  const confirmDeleteReply = async () => {
+    if (!replyToDelete) return;
     try {
       await deleteReplyMutation.mutateAsync({
-        id: replyId,
+        id: replyToDelete.id,
         reviewId: review.id,
         productId: review.productId,
       });
       toast.success('Đã xóa phản hồi');
+      setReplyToDelete(null);
     } catch {
       toast.error('Không thể xóa phản hồi.');
     }
@@ -139,54 +144,56 @@ export function ReviewCard({
 
   return (
     <>
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 flex flex-col gap-4 transition-all hover:shadow-xs">
-        {/* Header: User Avatar + Name + Stars + Action Dropdown */}
+      <article className="flex flex-col gap-4 border border-landing-line bg-landing-paper p-5 md:p-6">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            {review.user?.avatarUrl ? (
-              <img
-                src={review.user.avatarUrl}
-                alt={userName}
-                className="w-10 h-10 rounded-full object-cover border border-neutral-200"
-              />
+          <div className="flex min-w-0 items-center gap-3">
+            {avatarUrl ? (
+              <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-landing-line bg-landing-ivory">
+                <Image
+                  src={avatarUrl}
+                  alt={userName}
+                  fill
+                  sizes="40px"
+                  unoptimized={avatarUrl.startsWith('data:')}
+                  className="object-cover"
+                />
+              </span>
             ) : (
-              <div className="w-10 h-10 rounded-full bg-brand-navy/10 text-brand-navy flex items-center justify-center font-bold text-body-sm shrink-0">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-landing-line bg-landing-paper text-sm font-semibold text-landing-brass-ink">
                 {initial}
-              </div>
+              </span>
             )}
 
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-brand-navy text-body-md">
-                  {userName}
-                </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="truncate text-sm font-semibold text-landing-obsidian">{userName}</span>
+                <span className={cn('inline-flex items-center gap-1 text-landing-sage-ink', labelText)}>
+                  <CheckCircle2 className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
                   Đã mua hàng
                 </span>
               </div>
-              <div className="text-[12px] text-neutral-400 mt-0.5">{formattedDate}</div>
+              <p className="mt-0.5 font-mono text-[10px] text-landing-muted">{formattedDate}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <StarRating value={review.rating} size="sm" readOnly />
+          <div className="flex shrink-0 items-center gap-2">
+            <StarRating value={review.rating} size="sm" readOnly tone="landing" />
 
-            {/* Menu thao tác nếu là tác giả hoặc admin */}
             {(isAuthor || isAdmin) && (
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="p-1.5 text-neutral-400 hover:text-neutral-700 rounded-lg hover:bg-neutral-100 transition-colors cursor-pointer"
-                  title="Tùy chọn"
+                  aria-label="Tùy chọn đánh giá"
+                  aria-expanded={menuOpen}
+                  className={cn('flex h-9 w-9 items-center justify-center text-landing-muted transition-colors hover:text-landing-oxblood', focusRing)}
                 >
-                  <MoreVertical className="w-4 h-4" />
+                  <MoreVertical className="h-4 w-4" strokeWidth={1.75} />
                 </button>
 
                 {menuOpen && (
                   <div
-                    className="absolute right-0 top-8 z-20 w-44 bg-white rounded-xl shadow-lg border border-neutral-200 py-1.5 text-body-sm"
+                    className="absolute right-0 top-10 z-20 w-48 border border-landing-line bg-landing-paper py-1 text-sm"
                     onMouseLeave={() => setMenuOpen(false)}
                   >
                     {isAuthor && onEdit && (
@@ -196,10 +203,10 @@ export function ReviewCard({
                           setMenuOpen(false);
                           onEdit(review);
                         }}
-                        className="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center gap-2 text-neutral-700 cursor-pointer"
+                        className={cn('flex w-full items-center gap-2 px-3 py-2 text-left text-landing-muted transition-colors hover:bg-landing-ivory hover:text-landing-obsidian', focusRing)}
                       >
-                        <Edit3 className="w-4 h-4 text-neutral-500" />
-                        Chỉnh sửa nhận xét
+                        <Edit3 className="h-4 w-4" strokeWidth={1.75} />
+                        Chỉnh sửa
                       </button>
                     )}
 
@@ -210,9 +217,9 @@ export function ReviewCard({
                           setMenuOpen(false);
                           onDelete(review);
                         }}
-                        className="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600 cursor-pointer"
+                        className={cn('flex w-full items-center gap-2 px-3 py-2 text-left text-destructive transition-colors hover:bg-destructive/10', focusRing)}
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="h-4 w-4" strokeWidth={1.75} />
                         Xóa đánh giá
                       </button>
                     )}
@@ -224,10 +231,10 @@ export function ReviewCard({
                           setMenuOpen(false);
                           onAdminDelete(review);
                         }}
-                        className="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600 border-t border-neutral-100 cursor-pointer"
+                        className={cn('flex w-full items-center gap-2 border-t border-landing-line px-3 py-2 text-left text-destructive transition-colors hover:bg-destructive/10', focusRing)}
                       >
-                        <ShieldAlert className="w-4 h-4 text-red-500" />
-                        Xóa (Quyền Admin)
+                        <ShieldAlert className="h-4 w-4" strokeWidth={1.75} />
+                        Xóa (quyền Admin)
                       </button>
                     )}
                   </div>
@@ -237,40 +244,36 @@ export function ReviewCard({
           </div>
         </div>
 
-        {/* Nội dung Comment */}
         {review.comment ? (
-          <p className="text-body-md text-neutral-700 leading-relaxed whitespace-pre-line">
-            {review.comment}
-          </p>
+          <p className="text-sm leading-relaxed text-landing-muted whitespace-pre-line">{review.comment}</p>
         ) : (
-          <p className="text-body-sm text-neutral-400 italic">
-            Người mua không để lại nhận xét bằng chữ.
-          </p>
+          <p className="text-xs italic text-landing-muted">Người mua không để lại nhận xét bằng chữ.</p>
         )}
 
-        {/* Gallery ảnh khách hàng đính kèm */}
         {Array.isArray(review.images) && review.images.length > 0 && (
-          <div className="flex items-center gap-2.5 pt-1 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             {review.images.map((imgUrl, idx) => (
               <button
-                key={idx}
+                key={`${imgUrl}-${idx}`}
                 type="button"
                 onClick={() => setSelectedImage(imgUrl)}
-                className="w-20 h-20 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 hover:opacity-90 hover:scale-105 transition-all cursor-pointer relative group"
+                aria-label={`Xem ảnh đánh giá ${idx + 1}`}
+                className={cn('relative h-20 w-20 overflow-hidden rounded-[2px] border border-landing-line bg-landing-ivory transition-opacity hover:opacity-90', focusRing)}
               >
-                <img
+                <Image
                   src={imgUrl}
-                  alt={`Review feedback ${idx + 1}`}
-                  className="w-full h-full object-cover"
+                  alt={`Ảnh đánh giá ${idx + 1}`}
+                  fill
+                  sizes="80px"
+                  unoptimized
+                  className="object-cover"
                 />
               </button>
             ))}
           </div>
         )}
 
-        {/* ─── PHẦN PHẢN HỒI (REPLIES LIST) ─────────────────────────────────── */}
-        <div className="mt-2 pt-3 border-t border-neutral-100 flex flex-col gap-3">
-          {/* Danh sách các câu trả lời */}
+        <div className="mt-1 flex flex-col gap-3 border-t border-landing-line pt-3">
           {replies.length > 0 && (
             <div className="flex flex-col gap-2.5">
               {replies.map((rep) => {
@@ -290,67 +293,65 @@ export function ReviewCard({
                 return (
                   <div
                     key={rep.id}
-                    className={`rounded-xl p-3.5 flex flex-col gap-1.5 transition-colors border ${isShop
-                        ? 'bg-[#5D1C34]/[0.03] border-[#5D1C34]/15'
-                        : 'bg-neutral-50 border-neutral-200/70'
-                      }`}
+                    className={cn(
+                      'flex flex-col gap-1.5 border p-3.5',
+                      isShop ? 'border-landing-oxblood/25 bg-landing-ivory' : 'border-landing-line bg-landing-ivory/60',
+                    )}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-2">
                         {isShop ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-navy text-white text-[10px] font-bold tracking-wide uppercase">
+                          <span className={cn('bg-landing-oxblood px-2 py-0.5 text-landing-paper', labelText)}>
                             Phản hồi từ shop
                           </span>
                         ) : (
-                          <span className="font-semibold text-brand-navy text-body-sm">
+                          <span className="text-xs font-semibold text-landing-obsidian">
                             {rep.user?.name || 'Thành viên'}
                           </span>
                         )}
-                        <span className="text-[11px] text-neutral-400">{repDate}</span>
+                        <span className="font-mono text-[10px] text-landing-muted">{repDate}</span>
                       </div>
 
-                      {/* Nút sửa / xóa reply */}
                       {canManageReply && editingReplyId !== rep.id && (
                         <div className="flex items-center gap-1">
                           {rep.userId === currentUserId && (
                             <button
                               type="button"
                               onClick={() => handleStartEditReply(rep)}
-                              className="p-1 text-neutral-400 hover:text-neutral-700 rounded transition-colors cursor-pointer"
-                              title="Chỉnh sửa phản hồi"
+                              aria-label="Chỉnh sửa phản hồi"
+                              className={cn('flex h-8 w-8 items-center justify-center text-landing-muted transition-colors hover:text-landing-oxblood', focusRing)}
                             >
-                              <Edit3 className="w-3.5 h-3.5" />
+                              <Edit3 className="h-3.5 w-3.5" strokeWidth={1.75} />
                             </button>
                           )}
                           <button
                             type="button"
-                            onClick={() => handleDeleteReply(rep.id)}
-                            className="p-1 text-neutral-400 hover:text-red-500 rounded transition-colors cursor-pointer"
-                            title="Xóa phản hồi"
+                            onClick={() => setReplyToDelete(rep)}
+                            aria-label="Xóa phản hồi"
+                            className={cn('flex h-8 w-8 items-center justify-center text-landing-muted transition-colors hover:text-destructive', focusRing)}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
                           </button>
                         </div>
                       )}
                     </div>
 
-                    {/* Nội dung phản hồi hoặc Form chỉnh sửa inline */}
                     {editingReplyId === rep.id ? (
-                      <div className="flex flex-col gap-2 mt-1">
+                      <div className="mt-1 flex flex-col gap-2">
                         <textarea
                           rows={2}
                           value={editReplyText}
                           onChange={(e) => setEditReplyText(e.target.value)}
                           maxLength={1000}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm text-neutral-800 focus:outline-none focus:border-brand-navy resize-none"
+                          className={cn('w-full resize-none rounded-[2px] border border-landing-line bg-landing-paper px-3 py-2 text-sm text-landing-obsidian', focusRing)}
                         />
-                        <div className="flex items-center justify-between text-[11px] text-neutral-400">
-                          <span>{editReplyText.length}/1000 ký tự</span>
+                        <div className="flex items-center justify-between text-[10px] text-landing-muted">
+                          <span className="font-mono">{editReplyText.length}/1000</span>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
                               onClick={() => setEditingReplyId(null)}
-                              className="px-2.5 py-1 text-neutral-500 hover:text-neutral-800 cursor-pointer"
+                              className={cn('px-2.5 py-1 text-landing-muted transition-colors hover:text-landing-obsidian', focusRing)}
                             >
                               Hủy
                             </button>
@@ -358,15 +359,15 @@ export function ReviewCard({
                               type="button"
                               onClick={() => handleSaveEditReply(rep.id)}
                               disabled={updateReplyMutation.isPending}
-                              className="px-3 py-1 bg-brand-navy text-white font-medium rounded-md hover:bg-brand-navy/90 cursor-pointer disabled:opacity-50"
+                              className={cn('rounded-[2px] bg-landing-oxblood px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-landing-paper transition-colors hover:bg-landing-obsidian disabled:opacity-50', focusRing)}
                             >
-                              {updateReplyMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+                              {updateReplyMutation.isPending ? 'Đang lưu' : 'Lưu'}
                             </button>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-body-sm text-neutral-700 leading-relaxed whitespace-pre-line">
+                      <p className="text-sm leading-relaxed text-landing-muted whitespace-pre-line">
                         {rep.content || rep.comment}
                       </p>
                     )}
@@ -376,7 +377,6 @@ export function ReviewCard({
             </div>
           )}
 
-          {/* Nút bấm mở Form Trả lời */}
           {!showReplyForm ? (
             <button
               type="button"
@@ -387,29 +387,28 @@ export function ReviewCard({
                 }
                 setShowReplyForm(true);
               }}
-              className="self-start text-[12px] font-semibold text-brand-navy hover:text-[#5D1C34] flex items-center gap-1.5 transition-colors cursor-pointer"
+              className={cn('flex w-fit items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-landing-oxblood transition-colors hover:underline', focusRing)}
             >
-              <CornerDownRight className="w-3.5 h-3.5" />
+              <CornerDownRight className="h-3.5 w-3.5" strokeWidth={1.75} />
               Trả lời
             </button>
           ) : (
-            /* Form nhập phản hồi Inline */
-            <form onSubmit={handleSubmitReply} className="flex flex-col gap-2 p-3.5 bg-neutral-50 rounded-xl border border-neutral-200">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] font-semibold text-neutral-700 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-brand-navy" />
-                  {isAdmin ? 'Phản hồi với tư cách Shop / Quản trị viên' : 'Gửi câu trả lời của bạn'}
+            <form onSubmit={handleSubmitReply} className="flex flex-col gap-2 border border-landing-line bg-landing-ivory p-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-landing-obsidian">
+                  <MessageSquare className="h-3.5 w-3.5 text-landing-oxblood" strokeWidth={1.75} aria-hidden="true" />
+                  {isAdmin ? 'Phản hồi với tư cách quản trị viên' : 'Gửi câu trả lời của bạn'}
                 </span>
-                <span className="text-[11px] text-neutral-400">{replyText.length}/1000</span>
+                <span className="font-mono text-[10px] text-landing-muted">{replyText.length}/1000</span>
               </div>
 
               <textarea
                 rows={2}
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Viết phản hồi chi tiết về đánh giá này (tối đa 1000 ký tự)..."
+                placeholder="Viết phản hồi chi tiết về đánh giá này."
                 maxLength={1000}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm text-neutral-800 focus:outline-none focus:border-brand-navy resize-none bg-white"
+                className={cn('w-full resize-none rounded-[2px] border border-landing-line bg-landing-paper px-3 py-2 text-sm text-landing-obsidian placeholder:text-landing-muted/70', focusRing)}
               />
 
               <div className="flex items-center justify-end gap-2 pt-1">
@@ -419,49 +418,63 @@ export function ReviewCard({
                     setShowReplyForm(false);
                     setReplyText('');
                   }}
-                  className="px-3 py-1.5 text-[12px] font-medium text-neutral-600 hover:text-neutral-800 cursor-pointer"
+                  className={cn('px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-landing-muted transition-colors hover:text-landing-obsidian', focusRing)}
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={createReplyMutation.isPending || !replyText.trim() || replyText.length > 1000}
-                  className="px-4 py-1.5 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-lg text-[12px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className={cn('inline-flex items-center gap-1.5 rounded-[2px] bg-landing-oxblood px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-landing-paper transition-colors hover:bg-landing-obsidian disabled:opacity-50', focusRing)}
                 >
-                  {createReplyMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
+                  {createReplyMutation.isPending && <Loader2 className="h-3 w-3 animate-spin" strokeWidth={1.75} />}
                   Gửi phản hồi
                 </button>
               </div>
             </form>
           )}
         </div>
-      </div>
+      </article>
 
-      {/* Lightbox xem ảnh feedback phóng to */}
-      {selectedImage && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
-        >
-          <div
-            className="relative max-w-3xl max-h-[85vh] bg-black rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <AccountConfirmDialog
+        open={Boolean(replyToDelete)}
+        onOpenChange={(open) => { if (!open) setReplyToDelete(null); }}
+        title="Xóa phản hồi"
+        description="Phản hồi này sẽ bị gỡ khỏi đánh giá. Bạn có chắc chắn muốn tiếp tục?"
+        confirmLabel="Xóa phản hồi"
+        isPending={deleteReplyMutation.isPending}
+        onConfirm={confirmDeleteReply}
+      />
+
+      <Dialog.Root open={Boolean(selectedImage)} onOpenChange={(open) => { if (!open) setSelectedImage(null); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-[100] bg-landing-obsidian/95 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+          <Dialog.Content className="fixed inset-0 z-[101] flex items-center justify-center p-4 focus:outline-none">
+            <Dialog.Title className="sr-only">Ảnh đánh giá</Dialog.Title>
+            <Dialog.Description className="sr-only">Ảnh thực tế từ khách hàng.</Dialog.Description>
             <button
               type="button"
               onClick={() => setSelectedImage(null)}
-              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/60 text-white hover:bg-black/90 flex items-center justify-center cursor-pointer transition-colors"
+              aria-label="Đóng ảnh"
+              className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center border border-landing-paper/20 bg-landing-obsidian/70 text-landing-paper transition-colors hover:border-landing-brass hover:text-landing-brass focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-brass"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" strokeWidth={1.75} />
             </button>
-            <img
-              src={selectedImage}
-              alt="Review full"
-              className="max-w-full max-h-[85vh] object-contain"
-            />
-          </div>
-        </div>
-      )}
+            {selectedImage ? (
+              <div className="relative h-[80vh] w-[min(90vw,900px)]">
+                <Image
+                  src={selectedImage}
+                  alt="Ảnh đánh giá"
+                  fill
+                  sizes="90vw"
+                  unoptimized
+                  className="object-contain"
+                />
+              </div>
+            ) : null}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </>
   );
 }
