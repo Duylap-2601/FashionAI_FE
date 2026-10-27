@@ -179,8 +179,8 @@ src/
 │   │                        #   actions/column-visibility/skeleton/empty-state
 │   │                        #   primitives). See docs/table-design.md.
 │   └── ui/                  # shadcn/Radix primitives + custom: AnimateIn,
-│                            # HangerIcon, Logo, PageTransition, chart.tsx,
-│                            # sidebar.tsx, and full Radix component set
+│                            # AtelierLoader, HangerIcon, Logo, PageTransition,
+│                            # chart.tsx, sidebar.tsx, and full Radix component set
 ├── hooks/
 │   └── usePWAInstall.ts
 ├── lib/
@@ -199,6 +199,7 @@ src/
 │   ├── fonts.css
 │   ├── tailwind.css
 │   ├── theme.css            # CSS custom properties / design tokens
+│   ├── atelier-loader.css   # AtelierLoader sewing-machine animation
 │   └── globals.css          # (reference, do not delete)
 ├── middleware.ts             # auth_marker cookie guard for protected routes
 └── (project root)
@@ -318,6 +319,9 @@ src/
   Use `<img>` only when there is a specific technical constraint and document the reason in review.
 - Check Tailwind source discovery after moving files. Do not delete stylesheets only because
   names look duplicated; `app/globals.css` is an existing reference file.
+- Use `AtelierLoader` from `components/ui` for page and section loading states instead of
+  ad-hoc rounded spinners. Keep Lucide `Loader2` only for tiny inline or button-level
+  progress affordances.
 - Preserve URLs, API payloads, cookies, storage keys, query keys, socket events, and streaming behavior.
 - Protected routes (middleware): `/try-on`, `/profile`, `/ai-stylist`, `/chat`, `/checkout`,
   `/admin` — all guarded by the `auth_marker` cookie. Do not add or remove routes here

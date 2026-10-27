@@ -13,7 +13,8 @@ import {
 } from '@/features/auth/components/auth-form';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useState } from 'react';
@@ -160,7 +161,7 @@ export default function Login() {
   return (
     <Suspense fallback={
       <div className="flex min-h-[320px] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-landing-oxblood" strokeWidth={1.75} aria-label="Đang tải" />
+        <AtelierLoader size="md" label="Đang luồn chỉ" />
       </div>
     }>
       <LoginFormContent />

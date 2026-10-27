@@ -25,8 +25,9 @@ import {
 } from '@/features/admin/services/analytics-format';
 import { fetchAnalyticsRealtime, fetchAnalyticsReport } from '@/features/admin/services/queries';
 import type { AnalyticsRange, AnalyticsRealtimeResult, AnalyticsReportResult } from '@/features/admin/types/admin-analytics';
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { getErrorMessage } from '@/lib/errors';
-import { ExternalLink, Loader2, RefreshCw } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 function isAbortError(error: unknown) {
@@ -162,7 +163,7 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
 
       {isLoading && !report ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-navy" aria-label="Đang tải báo cáo" />
+          <AtelierLoader size="md" label="Đang may báo cáo" />
         </div>
       ) : null}
 

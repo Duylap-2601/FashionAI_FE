@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
@@ -22,7 +23,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   if (status === 'loading' || !isLoggedIn) {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-100">
-        <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+        <AtelierLoader size="md" label="Đang mở xưởng" />
       </div>
     );
   }

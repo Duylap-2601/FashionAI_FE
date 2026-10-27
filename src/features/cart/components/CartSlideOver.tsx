@@ -4,7 +4,8 @@ import { useCart } from '@/features/cart/hooks/use-cart';
 import type { CartSlideOverProps } from '@/features/cart/types/cart-slide-over';
 import { cn } from '@/lib/utils';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Loader2, X } from 'lucide-react';
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
+import { X } from 'lucide-react';
 import Link from 'next/link';
 
 const primaryButton = cn(
@@ -47,8 +48,8 @@ export function CartSlideOver({ isOpen, onClose }: CartSlideOverProps) {
 
           <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5">
             {isLoading ? (
-              <div className="flex h-full items-center justify-center" role="status">
-                <Loader2 className="h-6 w-6 animate-spin text-landing-oxblood" strokeWidth={1.5} aria-label="Đang tải giỏ hàng" />
+              <div className="flex h-full items-center justify-center">
+                <AtelierLoader size="sm" label="Đang may giỏ hàng" />
               </div>
             ) : isError ? (
               <div className="flex h-full flex-col items-center justify-center text-center">

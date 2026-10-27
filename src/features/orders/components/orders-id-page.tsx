@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { STATUS_MAP, TAILORING_STEPS } from '@/features/orders/constants/orders-id-page';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
@@ -145,10 +146,7 @@ export default function OrderDetailPage() {
   if (isLoading) {
     return (
       <div className="bg-brand-cream min-h-screen py-16 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
-          <p className="text-body-sm font-medium text-neutral-600">Đang tải thông tin đơn hàng...</p>
-        </div>
+        <AtelierLoader size="md" label="Đang may đơn hàng" />
       </div>
     );
   }

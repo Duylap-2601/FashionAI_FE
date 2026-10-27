@@ -1,8 +1,9 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { fetchPaymentOrderByCodeResponse } from '@/features/payments/services/queries';
 import { useOrder } from '@/features/orders/hooks/useOrders';
-import { AlertCircle, CheckCircle2, ChevronRight, Clock, CreditCard, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronRight, Clock, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
@@ -77,7 +78,7 @@ function PaymentSuccessContent() {
     return (
       <div className="bg-white min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 text-brand-navy animate-spin" />
+          <AtelierLoader size="md" />
           <p className="text-body-sm text-neutral-600">Đang kiểm tra trạng thái thanh toán...</p>
         </div>
       </div>
@@ -176,7 +177,7 @@ export default function PaymentSuccessPage() {
       fallback={
         <div className="bg-white min-h-screen flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-8 h-8 text-brand-navy animate-spin" />
+            <AtelierLoader size="md" />
             <p className="text-body-sm text-neutral-600">Đang kiểm tra trạng thái thanh toán...</p>
           </div>
         </div>

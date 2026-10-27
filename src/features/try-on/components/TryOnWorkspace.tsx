@@ -1,3 +1,4 @@
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { ComparisonSlider } from '@/features/try-on/components/ComparisonSlider';
 import { GarmentColorPicker, GarmentSlot, TryOnSegmented, tryOnButtonClassName, tryOnFocusRing } from '@/features/try-on/components/garment-slot';
 import { GenerateButton } from '@/features/try-on/components/GenerateButton';
@@ -5,7 +6,7 @@ import { UploadZone } from '@/features/try-on/components/UploadZone';
 import type { GarmentMode } from '@/features/try-on/types/try-on-types';
 import type { TryOnWorkspaceProps } from '@/features/try-on/types/try-on-workspace';
 import { cn } from '@/lib/utils';
-import { Download, History, Layers, Loader2, Share2 } from 'lucide-react';
+import { Download, History, Layers, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import type React from 'react';
 
@@ -66,8 +67,8 @@ export function TryOnWorkspace({
           )}
 
           {isLoading ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 border border-landing-line bg-landing-paper/90 px-6 text-center" role="status" aria-live="polite">
-              <Loader2 className="h-8 w-8 animate-spin text-landing-oxblood motion-reduce:animate-none" strokeWidth={1.5} aria-hidden="true" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 border border-landing-line bg-landing-paper/90 px-6 text-center">
+              <AtelierLoader size="md" />
               <p className="font-display text-2xl leading-tight text-landing-obsidian">Đang thử trang phục</p>
               <p className="max-w-[260px] text-sm text-landing-muted">Giữ nguyên ảnh và trang phục cho tới khi có kết quả.</p>
             </div>
