@@ -13,11 +13,11 @@ export const AdminSidebar = React.memo(function AdminSidebar({
   onClose,
   onLogout,
 }: AdminSidebarProps) {
-  // Quản lý trạng thái mở/đóng của các nhóm tab
+  // Mở sẵn mọi nhóm để toàn bộ mục điều hướng vẫn nhìn thấy sau khi gom nhóm.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     ADMIN_NAV_ENTRIES.forEach((entry) => {
-      if (entry.children && entry.children.some((child) => child.id === activeTab)) {
+      if (entry.children) {
         initial[entry.id] = true;
       }
     });
@@ -45,48 +45,41 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       {/* MOBILE OVERLAY */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-landing-obsidian/70 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />
       )}
 
       {/* h-dvh: 100vh trên trình duyệt mobile cao hơn vùng nhìn thấy, che mất nút đăng xuất ở đáy */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[240px] shrink-0 bg-brand-navy flex flex-col h-dvh lg:h-full transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <div className="px-5 pt-6 pb-5 border-b border-white/10 flex flex-col gap-1 shrink-0">
-          <span className="text-white font-bold text-heading-h3 tracking-wide">FashionAI</span>
-          <span className="inline-flex items-center self-start px-2 py-0.5 bg-brand-gold text-brand-navy text-[9px] font-bold tracking-widest rounded-full uppercase">
-            Admin Panel
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[240px] shrink-0 bg-landing-obsidian flex flex-col h-dvh transition-transform duration-300 lg:sticky lg:top-0 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="px-5 pt-6 pb-5 border-b border-landing-paper/15 flex flex-col gap-2 shrink-0">
+          <span className="font-display text-2xl leading-none tracking-tight text-landing-paper">
+            FashionAI
+          </span>
+          <span className="inline-flex items-center self-start border border-landing-brass/40 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.2em] text-landing-brass">
+            Bảng quản trị
           </span>
         </div>
 
-        <nav className="flex-1 px-3 py-3 flex flex-col gap-1 overflow-y-auto min-h-0 custom-scrollbar">
-          {ADMIN_NAV_ENTRIES.map((entry, index) => {
-            const isFirstSingleAfterGroups =
-              !entry.children &&
-              entry.id !== 'dashboard' &&
-              Boolean(ADMIN_NAV_ENTRIES[index - 1]?.children);
-
+        <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto min-h-0 custom-scrollbar">
+          {ADMIN_NAV_ENTRIES.map((entry) => {
             // Trường hợp: Tab đơn (không có nhóm con)
             if (!entry.children) {
               const IconComponent = entry.icon;
               const active = activeTab === entry.id;
               return (
-                <React.Fragment key={entry.id}>
-                  {isFirstSingleAfterGroups && (
-                    <div className="my-1.5 border-t border-white/10" />
-                  )}
-                  <button
-                    onClick={() => onNavigate(entry.id)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-body-sm font-medium transition-all text-left w-full border-0 cursor-pointer ${
-                      active
-                        ? 'bg-white text-brand-navy shadow-xs font-semibold'
-                        : 'text-white/75 hover:text-white hover:bg-white/10 bg-transparent'
-                    }`}
-                  >
-                    <IconComponent className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{entry.label}</span>
-                  </button>
-                </React.Fragment>
+                <button
+                  key={entry.id}
+                  onClick={() => onNavigate(entry.id)}
+                  className={`flex items-center gap-3 border-l-2 px-3 py-2 text-[13px] font-medium transition-colors text-left w-full ${
+                    active
+                      ? 'border-landing-brass bg-landing-paper/10 text-landing-paper font-semibold'
+                      : 'border-transparent text-landing-paper/65 hover:bg-landing-paper/10 hover:text-landing-paper'
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                  <span className="truncate">{entry.label}</span>
+                </button>
               );
             }
 
@@ -100,20 +93,21 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                 <button
                   type="button"
                   onClick={() => toggleGroup(entry.id)}
-                  className={`flex items-center justify-between px-3 py-2 rounded-xl text-body-sm font-medium transition-all text-left w-full border-0 cursor-pointer ${
+                  className={`flex items-center justify-between border-l-2 px-3 py-2 text-[13px] font-medium transition-colors text-left w-full ${
                     hasActiveChild
-                      ? 'text-white bg-white/10 font-semibold'
-                      : 'text-white/75 hover:text-white hover:bg-white/10 bg-transparent'
+                      ? 'border-landing-brass/60 bg-landing-paper/5 text-landing-paper font-semibold'
+                      : 'border-transparent text-landing-paper/65 hover:bg-landing-paper/10 hover:text-landing-paper'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <GroupIcon className="w-4 h-4 shrink-0" />
+                    <GroupIcon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
                     <span className="truncate">{entry.label}</span>
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 shrink-0 text-white/60 transition-transform duration-200 ${
-                      isExpanded ? 'rotate-180 text-white' : ''
+                    className={`w-4 h-4 shrink-0 text-landing-brass transition-transform duration-200 ${
+                      isExpanded ? 'rotate-180' : 'text-landing-paper/40'
                     }`}
+                    strokeWidth={1.75}
                   />
                 </button>
 
@@ -127,7 +121,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                       transition={{ duration: 0.2, ease: 'easeInOut' }}
                       className="overflow-hidden flex flex-col pl-4"
                     >
-                      <div className="border-l border-white/15 pl-2 flex flex-col gap-0.5 my-1">
+                      <div className="border-l border-landing-paper/15 pl-2 flex flex-col gap-0.5 my-1">
                         {entry.children.map((child) => {
                           const ChildIcon = child.icon;
                           const active = activeTab === child.id;
@@ -135,13 +129,13 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                             <button
                               key={child.id}
                               onClick={() => onNavigate(child.id)}
-                              className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-left w-full border-0 cursor-pointer ${
+                              className={`flex items-center gap-2.5 border-l px-2.5 py-1.5 text-xs font-medium transition-colors text-left w-full ${
                                 active
-                                  ? 'bg-white text-brand-navy shadow-xs font-semibold'
-                                  : 'text-white/70 hover:text-white hover:bg-white/10 bg-transparent'
+                                  ? 'border-landing-brass bg-landing-paper/10 text-landing-paper font-semibold'
+                                  : 'border-transparent text-landing-paper/60 hover:text-landing-paper hover:bg-landing-paper/5'
                               }`}
                             >
-                              <ChildIcon className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                              <ChildIcon className="w-3.5 h-3.5 shrink-0 opacity-80" strokeWidth={1.75} />
                               <span className="truncate">{child.label}</span>
                             </button>
                           );
@@ -155,12 +149,12 @@ export const AdminSidebar = React.memo(function AdminSidebar({
           })}
         </nav>
 
-        <div className="px-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col gap-2 border-t border-white/10 pt-3 shrink-0">
+        <div className="px-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col gap-2 border-t border-landing-paper/15 pt-3 shrink-0">
           <button
             onClick={onLogout}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-body-sm font-medium text-white/60 hover:text-white hover:bg-white/8 transition-colors w-full border-0 bg-transparent cursor-pointer"
+            className="flex items-center gap-3 border border-landing-paper/15 px-3 py-2 text-[13px] font-medium text-landing-paper/60 transition-colors w-full hover:border-landing-paper/30 hover:text-landing-paper"
           >
-            <LogOut className="w-4 h-4" /> Đăng xuất
+            <LogOut className="w-4 h-4" strokeWidth={1.75} /> Đăng xuất
           </button>
         </div>
       </aside>

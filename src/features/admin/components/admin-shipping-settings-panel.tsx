@@ -2,6 +2,7 @@
 
 import { syncGhnLocations, updateGhnPickupSettings } from '@/features/admin/services/mutations';
 import { fetchGhnPickupSettings } from '@/features/admin/services/queries';
+import { AdminLoadingBar, AdminPanelLoading } from '@/features/admin/components/admin-loading';
 import type { GhnPickupSettings } from '@/features/admin/types/admin-dashboard-page';
 import { getPostMergerProvinces, getPostMergerWards, getShippingCapabilities } from '@/features/checkout/services/ghn-location';
 import type { GhnCatalogOption } from '@/features/checkout/services/ghn-location';
@@ -142,19 +143,29 @@ export function AdminShippingSettingsPanel() {
     }
   };
 
+  if (isLoading && !settings) {
+    return <AdminPanelLoading label="Đang tải cấu hình GHN" />;
+  }
+
   return (
     <div className="flex flex-col gap-6 max-w-[900px]">
       <div>
-        <h1 className="text-heading-h2 font-bold text-neutral-900">Cài đặt giao hàng GHN</h1>
-        <p className="text-body-sm text-neutral-500 mt-1">Cấu hình địa chỉ lấy hàng dùng để tính phí vận chuyển và tạo vận đơn.</p>
+        <h1 className="font-display text-[clamp(1.6rem,2.6vw,2.2rem)] leading-[1.08] tracking-[-0.025em] text-landing-obsidian">Cài đặt giao hàng GHN</h1>
+        <p className="text-body-sm text-landing-muted mt-1">Cấu hình địa chỉ lấy hàng dùng để tính phí vận chuyển và tạo vận đơn.</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-neutral-200 shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between gap-2 flex-wrap">
+      {(isLoading || isLoadingWards) && (
+        <AdminLoadingBar
+          label={isLoadingWards ? 'Đang tải Phường/Xã...' : 'Đang tải cấu hình GHN...'}
+        />
+      )}
+
+      <div className="bg-landing-ivory rounded-[2px] border border-landing-line overflow-hidden">
+        <div className="px-6 py-4 border-b border-landing-line flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <Truck className="w-4 h-4 text-brand-navy" />
-            <h2 className="text-body-sm font-bold text-neutral-800">Địa chỉ lấy hàng</h2>
-            <span className="ml-2 text-label-xs text-neutral-400">
+            <Truck className="w-4 h-4 text-landing-oxblood" />
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-brass-ink">Địa chỉ lấy hàng</h2>
+            <span className="ml-2 text-label-xs text-landing-muted">
               Nguồn: {settings?.source === 'database' ? 'Admin setting' : 'Chưa cấu hình'}
             </span>
           </div>
@@ -163,7 +174,7 @@ export function AdminShippingSettingsPanel() {
             type="button"
             onClick={handleSync}
             disabled={isSyncing || isLoading}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-neutral-200 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[2px] border border-landing-line text-xs font-semibold text-landing-obsidian hover:bg-landing-paper/60 disabled:opacity-50 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
             {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ danh mục GHN'}
@@ -171,12 +182,12 @@ export function AdminShippingSettingsPanel() {
         </div>
 
         {loadError && (
-          <div className="mx-6 mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="mx-6 mt-4 p-4 rounded-[2px] border border-metric-users/30 bg-metric-users/10 text-xs text-metric-users flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-metric-users shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-semibold text-amber-950">Danh mục địa chỉ GHN chưa sẵn sàng hoặc đã hết hiệu lực</p>
-              <p className="mt-0.5 text-amber-800">{loadError}</p>
-              <p className="mt-1 text-amber-700">
+              <p className="font-semibold text-metric-users">Danh mục địa chỉ GHN chưa sẵn sàng hoặc đã hết hiệu lực</p>
+              <p className="mt-0.5 text-metric-users">{loadError}</p>
+              <p className="mt-1 text-metric-users">
                 Bấm nút <strong>&quot;Đồng bộ danh mục GHN&quot;</strong> ở góc trên bên phải để cập nhật dữ liệu mới nhất từ GHN.
               </p>
             </div>
@@ -184,7 +195,7 @@ export function AdminShippingSettingsPanel() {
               type="button"
               onClick={handleSync}
               disabled={isSyncing}
-              className="px-3 py-1.5 rounded-lg bg-amber-700 text-white font-semibold shrink-0 hover:bg-amber-800 disabled:opacity-50 transition-colors"
+              className="px-3 py-1.5 rounded-[2px] bg-metric-users text-landing-paper font-semibold shrink-0 hover:bg-landing-obsidian disabled:opacity-50 transition-colors"
             >
               {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ ngay'}
             </button>
@@ -193,12 +204,12 @@ export function AdminShippingSettingsPanel() {
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Tỉnh/Thành phố *</label>
+            <label className="block text-body-sm font-medium text-landing-oxblood mb-1.5">Tỉnh/Thành phố *</label>
             <select
               value={provinceId}
               onChange={(event) => { setProvinceId(event.target.value); setWardId(''); }}
               disabled={isLoadingProvinces || provinces.length === 0}
-              className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all disabled:bg-neutral-50"
+              className="w-full h-[48px] px-4 rounded-[2px] border border-landing-line bg-landing-ivory focus:outline-none focus:border-landing-oxblood focus:ring-1 focus:ring-landing-oxblood transition-all disabled:bg-landing-paper/60"
             >
               {isLoadingProvinces && <option value="">Đang tải Tỉnh/Thành...</option>}
               {!isLoadingProvinces && provinces.length === 0 && <option value="">Không có dữ liệu Tỉnh/Thành</option>}
@@ -207,12 +218,12 @@ export function AdminShippingSettingsPanel() {
           </div>
 
           <div>
-            <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Phường/Xã *</label>
+            <label className="block text-body-sm font-medium text-landing-oxblood mb-1.5">Phường/Xã *</label>
             <select
               value={wardId}
               onChange={(event) => setWardId(event.target.value)}
               disabled={isLoadingWards || wards.length === 0}
-              className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all disabled:bg-neutral-50"
+              className="w-full h-[48px] px-4 rounded-[2px] border border-landing-line bg-landing-ivory focus:outline-none focus:border-landing-oxblood focus:ring-1 focus:ring-landing-oxblood transition-all disabled:bg-landing-paper/60"
             >
               {isLoadingWards && <option value="">Đang tải Phường/Xã...</option>}
               {!isLoadingWards && wards.length === 0 && <option value="">Không có dữ liệu Phường/Xã</option>}
@@ -220,18 +231,18 @@ export function AdminShippingSettingsPanel() {
             </select>
           </div>
           <div className="md:col-span-2">
-            <label className="block text-body-sm font-medium text-brand-navy mb-1.5">Số nhà, tên đường *</label>
+            <label className="block text-body-sm font-medium text-landing-oxblood mb-1.5">Số nhà, tên đường *</label>
             <input
               value={addressLine}
               onChange={(event) => setAddressLine(event.target.value)}
               placeholder="Ví dụ: Long Thạnh Mỹ"
-              className="w-full h-[48px] px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all"
+              className="w-full h-[48px] px-4 rounded-[2px] border border-landing-line bg-landing-ivory focus:outline-none focus:border-landing-oxblood focus:ring-1 focus:ring-landing-oxblood transition-all"
             />
           </div>
         </div>
 
         <div className="px-6 pb-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-label-sm text-neutral-500">
+          <div className="flex items-center gap-2 text-label-sm text-landing-muted">
             <MapPin className="w-4 h-4" />
             <span>Lưu cấu hình lấy hàng theo địa chỉ hành chính sau sáp nhập.</span>
           </div>
@@ -239,7 +250,7 @@ export function AdminShippingSettingsPanel() {
             type="button"
             onClick={handleSave}
             disabled={isSaving || isLoadingLocation}
-            className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-brand-navy text-white text-body-sm font-bold hover:bg-brand-navy/90 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 h-11 px-5 rounded-[2px] bg-landing-oxblood text-landing-paper text-body-sm font-bold hover:bg-landing-oxblood/90 disabled:opacity-50 transition-colors"
           >
             <Save className="w-4 h-4" />
             {isSaving ? 'Đang lưu...' : 'Lưu'}

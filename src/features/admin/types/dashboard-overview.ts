@@ -4,6 +4,7 @@ export interface DashboardOverviewProps {
   metrics: DashboardMetrics;
   orders: AdminOrder[];
   products: AdminProduct[];
+  isLoading: boolean;
   setActiveTab: (tab: AdminPage) => void;
   openProductEditor: (product: Partial<AdminProduct> | null) => void;
   chartDays: RevenueChartDays;

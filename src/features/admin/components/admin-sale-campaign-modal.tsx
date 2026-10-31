@@ -184,7 +184,7 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 bg-landing-obsidian/50 backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -192,21 +192,21 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
       />
 
       <motion.div
-        className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col z-10 overflow-hidden"
+        className="relative bg-landing-ivory rounded-[2px] max-w-2xl w-full max-h-[90vh] flex flex-col z-10 overflow-hidden"
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100 shrink-0">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-landing-line shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-navy/10 flex items-center justify-center text-brand-navy">
+            <div className="w-10 h-10 rounded-[2px] bg-landing-oxblood/10 flex items-center justify-center text-landing-oxblood">
               <BadgePercent className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-body-lg font-bold text-neutral-900">
+              <h2 className="font-display text-[1.15rem] leading-tight text-landing-obsidian">
                 {isEditing ? `Chỉnh sửa chiến dịch: ${campaign?.name}` : 'Tạo chiến dịch sale mới'}
               </h2>
-              <p className="text-label-sm text-neutral-500">
+              <p className="text-label-sm text-landing-muted">
                 Giảm giá theo phần trăm cho nhóm sản phẩm trong thời gian đã chọn
               </p>
             </div>
@@ -214,7 +214,7 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors border-0 bg-transparent cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-landing-paper text-landing-muted hover:text-landing-obsidian transition-colors border-0 bg-transparent cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -222,7 +222,7 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
           {errorMsg && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700">
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-[2px] flex items-start gap-2.5 text-xs text-destructive">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
@@ -230,8 +230,8 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-body-sm font-semibold text-neutral-700">
-                Tên chiến dịch <span className="text-red-500">*</span>
+              <label className="text-body-sm font-semibold text-landing-obsidian">
+                Tên chiến dịch <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -239,22 +239,22 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="VD: Sale Thu 2026"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-neutral-900 focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy"
+                className="w-full px-3.5 py-2.5 rounded-[2px] border border-landing-taupe text-landing-obsidian focus:outline-none focus:border-landing-oxblood focus:ring-1 focus:ring-landing-oxblood"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-body-sm font-semibold text-neutral-700 block">Trạng thái</label>
+              <label className="text-body-sm font-semibold text-landing-obsidian block">Trạng thái</label>
               <button
                 type="button"
                 onClick={() => setIsActive((value) => !value)}
-                className={`w-full py-2.5 px-3 rounded-xl font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer border ${
+                className={`w-full py-2.5 px-3 rounded-[2px] font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer border ${
                   isActive
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                    : 'bg-neutral-100 text-neutral-600 border-neutral-300'
+                    ? 'bg-metric-products/10 text-metric-products border-metric-products'
+                    : 'bg-landing-paper text-landing-obsidian border-landing-taupe'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-neutral-400'}`} />
+                <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-metric-products' : 'bg-landing-taupe'}`} />
                 {isActive ? 'Kích hoạt' : 'Đã tắt'}
               </button>
             </div>
@@ -262,8 +262,8 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="text-body-sm font-semibold text-neutral-700">
-                Giảm giá (%) <span className="text-red-500">*</span>
+              <label className="text-body-sm font-semibold text-landing-obsidian">
+                Giảm giá (%) <span className="text-destructive">*</span>
               </label>
               <input
                 type="number"
@@ -274,56 +274,56 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
                 value={discountPercent}
                 onChange={(e) => setDiscountPercent(e.target.value)}
                 placeholder="VD: 30"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-neutral-900 focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy"
+                className="w-full px-3.5 py-2.5 rounded-[2px] border border-landing-taupe text-landing-obsidian focus:outline-none focus:border-landing-oxblood focus:ring-1 focus:ring-landing-oxblood"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-body-sm font-semibold text-neutral-700">
-                Bắt đầu <span className="text-neutral-400 font-normal">(tùy chọn)</span>
+              <label className="text-body-sm font-semibold text-landing-obsidian">
+                Bắt đầu <span className="text-landing-muted font-normal">(tùy chọn)</span>
               </label>
               <input
                 type="datetime-local"
                 value={startsAt}
                 onChange={(e) => setStartsAt(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-neutral-900 focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy text-xs"
+                className="w-full px-3.5 py-2.5 rounded-[2px] border border-landing-taupe text-landing-obsidian focus:outline-none focus:border-landing-oxblood focus:ring-1 focus:ring-landing-oxblood text-xs"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-body-sm font-semibold text-neutral-700">
-                Kết thúc <span className="text-neutral-400 font-normal">(tùy chọn)</span>
+              <label className="text-body-sm font-semibold text-landing-obsidian">
+                Kết thúc <span className="text-landing-muted font-normal">(tùy chọn)</span>
               </label>
               <input
                 type="datetime-local"
                 value={endsAt}
                 onChange={(e) => setEndsAt(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-neutral-900 focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy text-xs"
+                className="w-full px-3.5 py-2.5 rounded-[2px] border border-landing-taupe text-landing-obsidian focus:outline-none focus:border-landing-oxblood focus:ring-1 focus:ring-landing-oxblood text-xs"
               />
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <label className="text-body-sm font-semibold text-neutral-700">
-                Sản phẩm áp dụng <span className="text-red-500">*</span>
+              <label className="text-body-sm font-semibold text-landing-obsidian">
+                Sản phẩm áp dụng <span className="text-destructive">*</span>
               </label>
-              <span className="text-xs text-neutral-500">Đã chọn {productIds.length}</span>
+              <span className="text-xs text-landing-muted">Đã chọn {productIds.length}</span>
             </div>
 
             <div className="relative">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-landing-muted absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
                 placeholder="Tìm sản phẩm theo tên..."
-                className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm focus:outline-none focus:border-brand-navy"
+                className="w-full pl-9 pr-4 py-2 border border-landing-line rounded-[2px] bg-landing-ivory text-body-sm focus:outline-none focus:border-landing-oxblood"
               />
             </div>
 
-            <div className="border border-neutral-200 rounded-xl max-h-64 overflow-y-auto custom-scrollbar divide-y divide-neutral-100">
+            <div className="border border-landing-line rounded-[2px] max-h-64 overflow-y-auto custom-scrollbar divide-y divide-landing-line">
               {isBusy && (
-                <div className="flex items-center justify-center gap-2 py-8 text-sm text-neutral-500">
+                <div className="flex items-center justify-center gap-2 py-8 text-sm text-landing-muted">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Đang tải sản phẩm...</span>
                 </div>
@@ -337,17 +337,17 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
                     type="button"
                     onClick={() => toggleProduct(product.id)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors cursor-pointer ${
-                      selected ? 'bg-brand-navy/5' : 'hover:bg-neutral-50'
+                      selected ? 'bg-landing-oxblood/5' : 'hover:bg-landing-paper/60'
                     }`}
                   >
                     <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                      selected ? 'bg-brand-navy border-brand-navy text-white' : 'border-neutral-300 bg-white'
+                      selected ? 'bg-landing-oxblood border-landing-oxblood text-landing-paper' : 'border-landing-taupe bg-landing-ivory'
                     }`}>
                       {selected && <Check className="w-3 h-3" />}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium text-neutral-900 truncate">{product.name}</span>
-                      <span className="block text-[11px] text-neutral-500">
+                      <span className="block text-sm font-medium text-landing-obsidian truncate">{product.name}</span>
+                      <span className="block text-[11px] text-landing-muted">
                         {fmt(product.price)} · {product.status}
                       </span>
                     </span>
@@ -356,26 +356,26 @@ export function AdminSaleCampaignModal({ isOpen, campaign, onClose, onSuccess }:
               })}
 
               {!isBusy && filteredProducts.length === 0 && (
-                <div className="py-8 text-center text-sm text-neutral-400">
+                <div className="py-8 text-center text-sm text-landing-muted">
                   Không tìm thấy sản phẩm phù hợp
                 </div>
               )}
             </div>
           </div>
 
-          <div className="pt-4 border-t border-neutral-100 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-landing-line flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-body-sm font-medium transition-colors cursor-pointer"
+              className="px-4 py-2.5 rounded-[2px] border border-landing-line text-landing-obsidian hover:bg-landing-paper/60 text-body-sm font-medium transition-colors cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={submitting || isBusy}
-              className="px-6 py-2.5 rounded-xl bg-brand-navy text-white text-body-sm font-bold hover:bg-brand-navy/90 disabled:opacity-50 transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+              className="px-6 py-2.5 rounded-[2px] bg-landing-oxblood text-landing-paper text-body-sm font-bold hover:bg-landing-oxblood/90 disabled:opacity-50 transition-colors flex items-center gap-2 cursor-pointer"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>{isEditing ? 'Lưu thay đổi' : 'Tạo chiến dịch'}</span>

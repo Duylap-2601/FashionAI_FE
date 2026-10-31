@@ -109,28 +109,28 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-heading-h2 font-bold text-neutral-900">Phân tích truy cập</h1>
-          <p className="mt-1 text-body-sm text-neutral-500">
+          <h1 className="font-display text-[clamp(1.6rem,2.6vw,2.2rem)] leading-[1.08] tracking-[-0.025em] text-landing-obsidian">Phân tích truy cập</h1>
+          <p className="mt-1 text-body-sm text-landing-muted">
             Nguồn Google Analytics 4 · số liệu trễ vài giờ · nút làm mới trên header bỏ qua cache 15 phút · doanh thu và đơn
             hàng xem ở tab Dashboard
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {realtime?.configured ? (
-            <span className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[12px] text-neutral-600">
+            <span className="flex items-center gap-1.5 rounded-[2px] border border-landing-line bg-landing-ivory px-3 py-1.5 text-[12px] text-landing-obsidian">
               <span className="h-2 w-2 rounded-full bg-semantic-success" aria-hidden />
-              <strong className="text-neutral-900">{formatCount(realtime.activeUsers)}</strong> người đang online
+              <strong className="text-landing-obsidian">{formatCount(realtime.activeUsers)}</strong> người đang online
             </span>
           ) : null}
-          <div className="flex rounded-lg border border-neutral-200 bg-white p-0.5" role="group" aria-label="Khoảng thời gian">
+          <div className="flex rounded-[2px] border border-landing-line bg-landing-ivory p-0.5" role="group" aria-label="Khoảng thời gian">
             {ANALYTICS_RANGE_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 aria-pressed={range === option.value}
                 onClick={() => setRange(option.value)}
-                className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors ${
-                  range === option.value ? 'bg-brand-navy text-white' : 'text-neutral-600 hover:text-neutral-900'
+                className={`rounded-[2px] px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                  range === option.value ? 'bg-landing-oxblood text-landing-paper' : 'text-landing-obsidian hover:text-landing-obsidian'
                 }`}
               >
                 {option.label}
@@ -141,7 +141,7 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
             href={GA4_CONSOLE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-neutral-600 hover:text-neutral-900"
+            className="flex items-center gap-1 rounded-[2px] border border-landing-line bg-landing-ivory px-3 py-1.5 text-[12px] font-semibold text-landing-obsidian hover:text-landing-obsidian"
           >
             Mở GA4 <ExternalLink className="h-3 w-3" />
           </a>
@@ -149,7 +149,7 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
       </div>
 
       {error ? (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-body-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-[2px] border border-destructive/30 bg-destructive/10 p-4 text-body-sm text-destructive">
           <span>{error}</span>
           <button
             type="button"
@@ -179,6 +179,7 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
               current={data.kpis.current.activeUsers}
               previous={data.kpis.previous.activeUsers}
               periodLabel={periodLabel}
+              accent="orders"
             />
             <AnalyticsKpiTile
               label="Người dùng mới"
@@ -186,6 +187,7 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
               current={data.kpis.current.newUsers}
               previous={data.kpis.previous.newUsers}
               periodLabel={periodLabel}
+              accent="products"
             />
             <AnalyticsKpiTile
               label="Phiên truy cập"
@@ -193,6 +195,7 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
               current={data.kpis.current.sessions}
               previous={data.kpis.previous.sessions}
               periodLabel={periodLabel}
+              accent="ai"
             />
             <AnalyticsKpiTile
               label="Tỷ lệ tương tác"
@@ -200,6 +203,7 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
               current={data.kpis.current.engagementRate}
               previous={data.kpis.previous.engagementRate}
               periodLabel={periodLabel}
+              accent="users"
             />
             <AnalyticsKpiTile
               label="Thời lượng phiên TB"
@@ -207,6 +211,7 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
               current={data.kpis.current.averageSessionDuration}
               previous={data.kpis.previous.averageSessionDuration}
               periodLabel={periodLabel}
+              accent="reviews"
             />
             <AnalyticsKpiTile
               label="Tỷ lệ chuyển đổi"
@@ -214,6 +219,7 @@ export function AdminAnalyticsPanel({ refreshSignal = 0 }: { refreshSignal?: num
               current={safeRatio(data.kpis.current.purchases, data.kpis.current.sessions)}
               previous={safeRatio(data.kpis.previous.purchases, data.kpis.previous.sessions)}
               periodLabel={periodLabel}
+              accent="revenue"
             />
           </div>
 

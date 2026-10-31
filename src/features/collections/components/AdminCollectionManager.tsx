@@ -229,15 +229,15 @@ export function AdminCollectionManager() {
   };
 
   return (
-    <div className="flex flex-col gap-6 flex-1 min-h-0">
+    <div className="flex flex-col gap-6">
       {/* Top action bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-xs shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-landing-ivory p-5 rounded-[2px] border border-landing-line shrink-0">
         <div>
-          <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2.5">
-            <Layers className="w-5 h-5 text-[#5D1C34]" />
+          <h2 className="font-display text-[1.25rem] leading-tight text-landing-obsidian flex items-center gap-2.5">
+            <Layers className="w-5 h-5 text-landing-oxblood" />
             Quản lý Bộ Sưu Tập (Collections)
           </h2>
-          <p className="text-body-sm text-neutral-500 mt-0.5">
+          <p className="text-body-sm text-landing-muted mt-0.5">
             Tạo, xuất bản, chỉnh sửa và gắn sản phẩm vào các bộ sưu tập trên Landing Page.
           </p>
         </div>
@@ -245,7 +245,7 @@ export function AdminCollectionManager() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleOpenNew}
-            className="h-10 px-5 rounded-xl bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer shrink-0"
+            className="h-10 px-5 rounded-[2px] bg-landing-oxblood hover:bg-landing-obsidian text-landing-paper font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Thêm bộ sưu tập</span>
@@ -257,7 +257,7 @@ export function AdminCollectionManager() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-1 min-w-[240px] max-w-md">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-landing-muted" />
             <input
               type="text"
               value={searchQuery}
@@ -266,7 +266,7 @@ export function AdminCollectionManager() {
                 setCurrentPage(1);
               }}
               placeholder="Tìm kiếm bộ sưu tập theo tên, mùa, slug..."
-              className="w-full h-10 pl-10 pr-4 text-body-sm bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#5D1C34]"
+              className="w-full h-10 pl-10 pr-4 text-body-sm bg-landing-ivory border border-landing-line rounded-[2px] focus:outline-none focus:border-landing-oxblood"
             />
           </div>
 
@@ -277,20 +277,20 @@ export function AdminCollectionManager() {
                 setStatusFilter(e.target.value as 'all' | 'published' | 'draft');
                 setCurrentPage(1);
               }}
-              className="appearance-none h-10 pl-3.5 pr-8 border border-neutral-200/90 rounded-xl bg-white text-xs font-medium text-neutral-700 hover:border-neutral-300 focus:outline-none focus:border-[#5D1C34] focus:ring-1 focus:ring-[#5D1C34]/10 transition-colors cursor-pointer shadow-2xs"
+              className="appearance-none h-10 pl-3.5 pr-8 border border-landing-line/90 rounded-[2px] bg-landing-ivory text-xs font-medium text-landing-obsidian hover:border-landing-taupe focus:outline-none focus:border-landing-oxblood focus:ring-1 focus:ring-landing-oxblood/10 transition-colors cursor-pointer"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="published">Đang hiển thị (Live)</option>
               <option value="draft">Bản nháp (Ẩn)</option>
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 text-landing-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           {isFiltered && (
             <button
               type="button"
               onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 px-3 h-10 text-xs font-semibold text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-neutral-200 hover:border-red-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 h-10 text-xs font-semibold text-landing-obsidian hover:text-destructive hover:bg-destructive/10 rounded-[2px] border border-landing-line hover:border-destructive/30 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Đặt lại</span>
@@ -298,18 +298,18 @@ export function AdminCollectionManager() {
           )}
         </div>
 
-        <div className="text-body-sm text-neutral-500 font-medium shrink-0">
-          Tổng: <span className="font-bold text-neutral-900">{collections.length}</span> bộ sưu tập
-          {' '}(<span className="text-emerald-600 font-semibold">{collections.filter((c) => c.isPublished).length}</span> đang hiển thị)
+        <div className="text-body-sm text-landing-muted font-medium shrink-0">
+          Tổng: <span className="font-bold text-landing-obsidian">{collections.length}</span> bộ sưu tập
+          {' '}(<span className="text-metric-products font-semibold">{collections.filter((c) => c.isPublished).length}</span> đang hiển thị)
         </div>
       </div>
 
       {/* Table list: Fixed Header + Scrollable Data Body */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-xs flex flex-col flex-1 min-h-0">
-        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
-          <div className="min-w-[1050px] flex-1 flex flex-col min-h-0">
+      <div className="bg-landing-ivory rounded-[2px] border border-landing-line overflow-hidden">
+        <div className="overflow-x-auto">
+          <div className="min-w-[1050px]">
             {/* Fixed Header */}
-            <div className="bg-neutral-50 border-b border-neutral-200 text-[11px] font-bold uppercase tracking-wider text-neutral-500 shrink-0 select-none shadow-2xs">
+            <div className="bg-landing-paper/60 border-b border-landing-line text-[11px] font-bold uppercase tracking-wider text-landing-muted shrink-0 select-none">
               <div className="grid grid-cols-[100px_minmax(220px,1fr)_90px_130px_170px_200px_140px] items-center">
                 <div className="py-3.5 px-4">Ảnh bìa</div>
                 <div className="py-3.5 px-4">Tên bộ sưu tập</div>
@@ -322,21 +322,21 @@ export function AdminCollectionManager() {
             </div>
 
             {/* Scrollable Data Body */}
-            <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
+            <div className="divide-y divide-landing-line text-body-sm">
               {isLoading ? (
-                <div className="py-16 text-center text-neutral-400">
+                <div className="py-16 text-center text-landing-muted">
                   <AtelierLoader size="sm" label="Đang may bộ sưu tập" />
                 </div>
               ) : paginatedCollections.length === 0 ? (
-                <div className="py-16 text-center text-neutral-400">
+                <div className="py-16 text-center text-landing-muted">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <Layers className="w-8 h-8 text-neutral-300" />
+                    <Layers className="w-8 h-8 text-landing-muted" />
                     <p className="text-body-sm font-medium">
                       {isFiltered ? 'Không tìm thấy bộ sưu tập nào phù hợp với bộ lọc' : 'Chưa có bộ sưu tập nào'}
                     </p>
                     <button
                       onClick={handleOpenNew}
-                      className="mt-2 text-xs text-[#5D1C34] hover:underline font-semibold cursor-pointer"
+                      className="mt-2 text-xs text-landing-oxblood hover:underline font-semibold cursor-pointer"
                     >
                       + Tạo bộ sưu tập đầu tiên
                     </button>
@@ -346,11 +346,11 @@ export function AdminCollectionManager() {
                 paginatedCollections.map((col) => (
                   <div
                     key={col.id}
-                    className="grid grid-cols-[100px_minmax(220px,1fr)_90px_130px_170px_200px_140px] items-center hover:bg-neutral-50/60 transition-colors"
+                    className="grid grid-cols-[100px_minmax(220px,1fr)_90px_130px_170px_200px_140px] items-center hover:bg-landing-paper/60 transition-colors"
                   >
                     {/* Cover Thumbnail */}
                     <div className="py-3 px-4">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 relative shrink-0">
+                      <div className="w-16 h-16 rounded-[2px] overflow-hidden bg-landing-paper border border-landing-line relative shrink-0">
                         {col.coverImages?.[0] ? (
                           <Image
                             src={col.coverImages[0]}
@@ -370,12 +370,12 @@ export function AdminCollectionManager() {
                             className="object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                          <div className="w-full h-full flex items-center justify-center text-landing-muted">
                             <ImageIcon className="w-6 h-6" />
                           </div>
                         )}
                         {col.coverImages && col.coverImages.length > 1 && (
-                          <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] font-bold px-1 rounded-sm">
+                          <div className="absolute bottom-1 right-1 bg-landing-obsidian/70 text-landing-paper text-[9px] font-bold px-1 rounded-sm">
                             +{col.coverImages.length - 1}
                           </div>
                         )}
@@ -384,29 +384,29 @@ export function AdminCollectionManager() {
 
                     {/* Name & Tagline */}
                     <div className="py-3 px-4 min-w-0">
-                      <div className="font-semibold text-neutral-900 text-sm line-clamp-1 truncate">
+                      <div className="font-semibold text-landing-obsidian text-sm line-clamp-1 truncate">
                         {col.name}
                       </div>
                       {col.tagline && (
-                        <div className="text-xs text-neutral-500 line-clamp-1 mt-0.5 truncate">
+                        <div className="text-xs text-landing-muted line-clamp-1 mt-0.5 truncate">
                           {col.tagline}
                         </div>
                       )}
-                      <div className="text-[10px] text-neutral-400 mt-1 font-mono truncate">
+                      <div className="text-[10px] text-landing-muted mt-1 font-mono truncate">
                         slug: /{col.slug}
                       </div>
                     </div>
 
                     {/* Display Order */}
                     <div className="py-3 px-4">
-                      <span className="px-2 py-0.5 bg-neutral-100 text-neutral-700 text-xs font-mono font-semibold rounded">
+                      <span className="px-2 py-0.5 bg-landing-paper text-landing-obsidian text-xs font-mono font-semibold rounded">
                         #{col.displayOrder ?? 0}
                       </span>
                     </div>
 
                     {/* Season */}
                     <div className="py-3 px-4">
-                      <span className="px-2.5 py-1 bg-neutral-100 text-neutral-700 text-xs font-semibold rounded-md">
+                      <span className="px-2.5 py-1 bg-landing-paper text-landing-obsidian text-xs font-semibold rounded-[2px]">
                         {col.season || '2026'}
                       </span>
                     </div>
@@ -416,10 +416,10 @@ export function AdminCollectionManager() {
                       <button
                         type="button"
                         onClick={() => setManagingProductsCollection(col)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-neutral-100 text-xs font-medium text-neutral-600 hover:text-brand-navy transition-colors cursor-pointer group"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] hover:bg-landing-paper text-xs font-medium text-landing-obsidian hover:text-landing-oxblood transition-colors cursor-pointer group"
                         title="Bấm để xem và quản lý sản phẩm trong BST"
                       >
-                        <Package className="w-3.5 h-3.5 text-neutral-400 group-hover:text-brand-navy transition-colors" />
+                        <Package className="w-3.5 h-3.5 text-landing-muted group-hover:text-landing-oxblood transition-colors" />
                         <span className="group-hover:underline">{col.itemCount ?? col._count?.products ?? 0} sản phẩm</span>
                       </button>
                     </div>
@@ -429,23 +429,23 @@ export function AdminCollectionManager() {
                       <button
                         type="button"
                         onClick={() => handleTogglePublish(col.id, col.isPublished)}
-                        className="inline-flex items-center gap-2 py-1 px-2.5 -ml-2 rounded-lg hover:bg-neutral-100/80 transition-colors cursor-pointer group text-left"
+                        className="inline-flex items-center gap-2 py-1 px-2.5 -ml-2 rounded-[2px] hover:bg-landing-paper/80 transition-colors cursor-pointer group text-left"
                         title={col.isPublished ? 'Đang hiển thị trên Landing Page. Bấm để chuyển về Bản nháp' : 'Bản nháp ẩn. Bấm để xuất bản lên Landing Page'}
                       >
                         {col.isPublished ? (
                           <>
                             <span className="relative flex h-2 w-2 shrink-0">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40" />
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.35)]" />
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-metric-products opacity-40" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-metric-products" />
                             </span>
-                            <span className="text-xs font-medium text-neutral-800 tracking-tight group-hover:text-[#5D1C34]">
+                            <span className="text-xs font-medium text-landing-obsidian tracking-tight group-hover:text-landing-oxblood">
                               Đang hiển thị
                             </span>
                           </>
                         ) : (
                           <>
-                            <span className="inline-flex rounded-full h-2 w-2 bg-neutral-300 shrink-0" />
-                            <span className="text-xs font-medium text-neutral-500 tracking-tight group-hover:text-neutral-700">
+                            <span className="inline-flex rounded-full h-2 w-2 bg-landing-taupe shrink-0" />
+                            <span className="text-xs font-medium text-landing-muted tracking-tight group-hover:text-landing-obsidian">
                               Bản nháp
                             </span>
                           </>
@@ -458,14 +458,14 @@ export function AdminCollectionManager() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setManagingProductsCollection(col)}
-                          className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-landing-obsidian hover:text-landing-obsidian hover:bg-landing-paper rounded-[2px] transition-colors cursor-pointer"
                           title="Gắn sản phẩm vào BST"
                         >
                           <Package className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleOpenEdit(col)}
-                          className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-landing-obsidian hover:text-landing-obsidian hover:bg-landing-paper rounded-[2px] transition-colors cursor-pointer"
                           title="Chỉnh sửa bộ sưu tập"
                         >
                           <Pencil className="w-4 h-4" />
@@ -474,14 +474,14 @@ export function AdminCollectionManager() {
                           href="/"
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors"
+                          className="p-1.5 text-landing-obsidian hover:text-landing-obsidian hover:bg-landing-paper rounded-[2px] transition-colors"
                           title="Xem trên trang chủ"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
                         <button
                           onClick={() => handleDelete(col.id, col.name)}
-                          className="p-1.5 text-semantic-error hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-semantic-error hover:bg-destructive/10 rounded-[2px] transition-colors cursor-pointer"
                           title="Xóa bộ sưu tập"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -497,7 +497,7 @@ export function AdminCollectionManager() {
 
         {/* Pagination */}
         {totalItems > 0 && (
-          <div className="shrink-0 border-t border-neutral-100">
+          <div className="shrink-0 border-t border-landing-line">
             <AdminPagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -516,16 +516,16 @@ export function AdminCollectionManager() {
 
       {/* Modal Create / Edit Collection */}
       {isModalOpen && editingCollection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 border border-neutral-200 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100 mb-5">
-              <h3 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
-                <Layers className="w-5 h-5 text-[#5D1C34]" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-landing-obsidian/70 backdrop-blur-xs">
+          <div className="bg-landing-ivory rounded-[2px] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 border border-landing-line animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-landing-line mb-5">
+              <h3 className="flex items-center gap-2 font-display text-[1.15rem] leading-tight text-landing-obsidian">
+                <Layers className="w-5 h-5 text-landing-oxblood" />
                 {editingCollection.id ? 'Chỉnh sửa Bộ Sưu Tập' : 'Tạo Bộ Sưu Tập Mới'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-neutral-400 hover:text-neutral-700 rounded-lg hover:bg-neutral-100"
+                className="p-1.5 text-landing-muted hover:text-landing-obsidian rounded-[2px] hover:bg-landing-paper"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -534,7 +534,7 @@ export function AdminCollectionManager() {
             <form onSubmit={handleSave} className="flex flex-col gap-4">
               {/* Name */}
               <div>
-                <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                <label className="block text-xs font-bold uppercase text-landing-obsidian mb-1">
                   Tên bộ sưu tập <span className="text-semantic-error">*</span>
                 </label>
                 <input
@@ -543,14 +543,14 @@ export function AdminCollectionManager() {
                   value={editingCollection.name || ''}
                   onChange={(e) => setEditingCollection({ ...editingCollection, name: e.target.value })}
                   placeholder="Ví dụ: Elegance Office 2026, Urban Power Suit..."
-                  className="w-full h-10 px-3 text-body-sm bg-neutral-50 border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] focus:bg-white"
+                  className="w-full h-10 px-3 text-body-sm bg-landing-paper/60 border border-landing-taupe rounded-[2px] focus:outline-none focus:border-landing-oxblood focus:bg-landing-ivory"
                 />
               </div>
 
               {/* Season, Slug, DisplayOrder */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                  <label className="block text-xs font-bold uppercase text-landing-obsidian mb-1">
                     Mùa / Season
                   </label>
                   <input
@@ -558,11 +558,11 @@ export function AdminCollectionManager() {
                     value={editingCollection.season || ''}
                     onChange={(e) => setEditingCollection({ ...editingCollection, season: e.target.value })}
                     placeholder="SPRING / SUMMER 2026"
-                    className="w-full h-10 px-3 text-body-sm bg-neutral-50 border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] focus:bg-white"
+                    className="w-full h-10 px-3 text-body-sm bg-landing-paper/60 border border-landing-taupe rounded-[2px] focus:outline-none focus:border-landing-oxblood focus:bg-landing-ivory"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                  <label className="block text-xs font-bold uppercase text-landing-obsidian mb-1">
                     Slug đường dẫn
                   </label>
                   <input
@@ -570,11 +570,11 @@ export function AdminCollectionManager() {
                     value={editingCollection.slug || ''}
                     onChange={(e) => setEditingCollection({ ...editingCollection, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
                     placeholder="tự tạo nếu để trống"
-                    className="w-full h-10 px-3 text-body-sm bg-neutral-50 border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] focus:bg-white"
+                    className="w-full h-10 px-3 text-body-sm bg-landing-paper/60 border border-landing-taupe rounded-[2px] focus:outline-none focus:border-landing-oxblood focus:bg-landing-ivory"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                  <label className="block text-xs font-bold uppercase text-landing-obsidian mb-1">
                     Thứ tự hiển thị
                   </label>
                   <input
@@ -587,14 +587,14 @@ export function AdminCollectionManager() {
                       })
                     }
                     placeholder="1, 2, 3..."
-                    className="w-full h-10 px-3 text-body-sm bg-neutral-50 border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] focus:bg-white"
+                    className="w-full h-10 px-3 text-body-sm bg-landing-paper/60 border border-landing-taupe rounded-[2px] focus:outline-none focus:border-landing-oxblood focus:bg-landing-ivory"
                   />
                 </div>
               </div>
 
               {/* Tagline */}
               <div>
-                <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                <label className="block text-xs font-bold uppercase text-landing-obsidian mb-1">
                   Khẩu hiệu / Tagline
                 </label>
                 <input
@@ -602,13 +602,13 @@ export function AdminCollectionManager() {
                   value={editingCollection.tagline || ''}
                   onChange={(e) => setEditingCollection({ ...editingCollection, tagline: e.target.value })}
                   placeholder="Chuẩn dáng từ đầu, đẹp từng đường may"
-                  className="w-full h-10 px-3 text-body-sm bg-neutral-50 border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] focus:bg-white"
+                  className="w-full h-10 px-3 text-body-sm bg-landing-paper/60 border border-landing-taupe rounded-[2px] focus:outline-none focus:border-landing-oxblood focus:bg-landing-ivory"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                <label className="block text-xs font-bold uppercase text-landing-obsidian mb-1">
                   Mô tả chi tiết
                 </label>
                 <textarea
@@ -616,30 +616,30 @@ export function AdminCollectionManager() {
                   value={editingCollection.description || ''}
                   onChange={(e) => setEditingCollection({ ...editingCollection, description: e.target.value })}
                   placeholder="Mô tả phong cách, chất liệu, ý tưởng của bộ sưu tập..."
-                  className="w-full p-3 text-body-sm bg-neutral-50 border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] focus:bg-white"
+                  className="w-full p-3 text-body-sm bg-landing-paper/60 border border-landing-taupe rounded-[2px] focus:outline-none focus:border-landing-oxblood focus:bg-landing-ivory"
                 />
               </div>
 
               {/* File Upload for Cover Images */}
-              <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200">
-                <label className="block text-xs font-bold uppercase text-neutral-700 mb-1.5 flex items-center justify-between">
+              <div className="p-3.5 bg-landing-paper/60 rounded-[2px] border border-landing-line">
+                <label className="block text-xs font-bold uppercase text-landing-obsidian mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
-                    <Upload className="w-3.5 h-3.5 text-[#5D1C34]" />
+                    <Upload className="w-3.5 h-3.5 text-landing-oxblood" />
                     Tải lên file ảnh bìa (Tối đa 3 ảnh - Banner 3 khung)
                   </span>
-                  <span className="text-[10px] text-neutral-400 font-normal">PNG, JPG, WEBP</span>
+                  <span className="text-[10px] text-landing-muted font-normal">PNG, JPG, WEBP</span>
                 </label>
                 <input
                   type="file"
                   multiple
                   accept="image/*"
                   onChange={handleFileChange}
-                  className="block w-full text-xs text-neutral-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#5D1C34] file:text-white hover:file:bg-[#732240] cursor-pointer"
+                  className="block w-full text-xs text-landing-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-[2px] file:border-0 file:text-xs file:font-semibold file:bg-landing-oxblood file:text-landing-paper hover:file:bg-[#732240] cursor-pointer"
                 />
                 {filePreviews.length > 0 && (
                   <div className="flex items-center gap-2 mt-2.5">
                     {filePreviews.map((preview, idx) => (
-                      <div key={idx} className="w-14 h-18 rounded-lg overflow-hidden border border-neutral-300 bg-white relative">
+                      <div key={idx} className="w-14 h-18 rounded-[2px] overflow-hidden border border-landing-taupe bg-landing-ivory relative">
                         <Image
                           src={preview}
                           alt="Upload preview"
@@ -648,7 +648,7 @@ export function AdminCollectionManager() {
                           sizes="56px"
                           className="object-cover"
                         />
-                        <span className="absolute bottom-0.5 right-0.5 text-[9px] bg-black/60 text-white px-1 rounded">
+                        <span className="absolute bottom-0.5 right-0.5 text-[9px] bg-landing-obsidian/70 text-landing-paper px-1 rounded">
                           #{idx + 1}
                         </span>
                       </div>
@@ -659,16 +659,16 @@ export function AdminCollectionManager() {
 
               {/* Or URL inputs for Cover Images */}
               <div>
-                <label className="block text-xs font-bold uppercase text-neutral-700 mb-1.5 flex items-center justify-between">
+                <label className="block text-xs font-bold uppercase text-landing-obsidian mb-1.5 flex items-center justify-between">
                   <span>Hoặc Nhập URL ảnh bìa (Hero Banner)</span>
-                  <span className="text-[11px] text-neutral-400 font-normal lowercase">Preview trực tiếp</span>
+                  <span className="text-[11px] text-landing-muted font-normal lowercase">Preview trực tiếp</span>
                 </label>
                 <div className="flex flex-col gap-2">
                   {[0, 1, 2].map((idx) => {
                     const currentImg = editingCollection.coverImages?.[idx] || '';
                     return (
                       <div key={idx} className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-neutral-400 w-14">Ảnh {idx + 1}:</span>
+                        <span className="text-xs font-bold text-landing-muted w-14">Ảnh {idx + 1}:</span>
                         <input
                           type="text"
                           value={currentImg}
@@ -678,10 +678,10 @@ export function AdminCollectionManager() {
                             setEditingCollection({ ...editingCollection, coverImages: newCovers });
                           }}
                           placeholder={`URL ảnh ${idx === 1 ? '(Ảnh trung tâm)' : ''}`}
-                          className="flex-1 h-9 px-3 text-xs bg-neutral-50 border border-neutral-300 rounded-lg focus:outline-none focus:border-[#5D1C34]"
+                          className="flex-1 h-9 px-3 text-xs bg-landing-paper/60 border border-landing-taupe rounded-[2px] focus:outline-none focus:border-landing-oxblood"
                         />
                         {currentImg && (
-                          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded border border-neutral-200 bg-neutral-100">
+                          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded border border-landing-line bg-landing-paper">
                             <Image
                               src={currentImg}
                               alt=""
@@ -700,9 +700,9 @@ export function AdminCollectionManager() {
 
               {/* Quick Pick From Real Products' Images */}
               {availableProducts && availableProducts.length > 0 && (
-                <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200">
-                  <div className="text-[11px] font-bold uppercase text-neutral-600 mb-2 flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5 text-[#5D1C34]" />
+                <div className="p-3 bg-landing-paper/60 rounded-[2px] border border-landing-line">
+                  <div className="text-[11px] font-bold uppercase text-landing-obsidian mb-2 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-landing-oxblood" />
                     <span>Chọn nhanh ảnh từ sản phẩm có sẵn trên website:</span>
                   </div>
                   <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -720,7 +720,7 @@ export function AdminCollectionManager() {
                           });
                           toast.success(`Đã lấy ảnh từ "${p.name}"`);
                         }}
-                        className="shrink-0 w-12 h-16 rounded-lg overflow-hidden border border-neutral-300 hover:border-[#5D1C34] hover:scale-105 transition-all relative group"
+                        className="shrink-0 w-12 h-16 rounded-[2px] overflow-hidden border border-landing-taupe hover:border-landing-oxblood hover:scale-105 transition-all relative group"
                         title={`Chọn ảnh từ ${p.name}`}
                       >
                         <Image
@@ -744,27 +744,27 @@ export function AdminCollectionManager() {
                   id="isPublished"
                   checked={editingCollection.isPublished ?? true}
                   onChange={(e) => setEditingCollection({ ...editingCollection, isPublished: e.target.checked })}
-                  className="w-4 h-4 text-[#5D1C34] rounded border-neutral-300 focus:ring-[#5D1C34]"
+                  className="w-4 h-4 text-landing-oxblood rounded border-landing-taupe focus:ring-landing-oxblood"
                 />
-                <label htmlFor="isPublished" className="text-body-sm font-semibold text-neutral-900 cursor-pointer">
+                <label htmlFor="isPublished" className="text-body-sm font-semibold text-landing-obsidian cursor-pointer">
                   Xuất bản ngay lên Landing Page (Người dùng thấy được ngay)
                 </label>
               </div>
 
               {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-100 mt-2">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-landing-line mt-2">
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 font-semibold text-xs hover:bg-neutral-50 transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-[2px] border border-landing-line text-landing-obsidian font-semibold text-xs hover:bg-landing-paper/60 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-xs shadow-md transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-[2px] bg-landing-oxblood hover:bg-landing-obsidian text-landing-paper font-semibold text-xs transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{isSubmitting ? 'Đang lưu...' : 'Lưu bộ sưu tập'}</span>
@@ -851,22 +851,22 @@ function CollectionProductsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-neutral-200 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-landing-obsidian/70 backdrop-blur-xs">
+      <div className="bg-landing-ivory rounded-[2px] w-full max-w-2xl max-h-[90vh] flex flex-col border border-landing-line animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-neutral-100">
+        <div className="flex items-center justify-between p-5 border-b border-landing-line">
           <div>
-            <h3 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
-              <Package className="w-5 h-5 text-[#5D1C34]" />
-              Sản phẩm trong: <span className="text-[#5D1C34]">{collection.name}</span>
+            <h3 className="flex items-center gap-2 font-display text-[1.15rem] leading-tight text-landing-obsidian">
+              <Package className="w-5 h-5 text-landing-oxblood" />
+              Sản phẩm trong: <span className="text-landing-oxblood">{collection.name}</span>
             </h3>
-            <p className="text-xs text-neutral-500 mt-0.5">
+            <p className="text-xs text-landing-muted mt-0.5">
               Quản lý danh sách sản phẩm hiển thị khi khách hàng chọn BST này trên Landing Page.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-700 rounded-lg hover:bg-neutral-100"
+            className="p-1.5 text-landing-muted hover:text-landing-obsidian rounded-[2px] hover:bg-landing-paper"
           >
             <X className="w-5 h-5" />
           </button>
@@ -875,8 +875,8 @@ function CollectionProductsModal({
         {/* Content Body */}
         <div className="p-5 flex-1 overflow-y-auto flex flex-col gap-5">
           {/* Add product section */}
-          <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-200 flex flex-col gap-2.5">
-            <label className="text-xs font-bold uppercase text-neutral-700">
+          <div className="p-4 bg-landing-paper/60 rounded-[2px] border border-landing-line flex flex-col gap-2.5">
+            <label className="text-xs font-bold uppercase text-landing-obsidian">
               Thêm sản phẩm mới vào BST:
             </label>
             <div className="flex gap-2">
@@ -884,7 +884,7 @@ function CollectionProductsModal({
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(e.target.value)}
                 disabled={isProcessing || candidateProducts.length === 0}
-                className="flex-1 h-10 px-3 text-body-sm bg-white border border-neutral-300 rounded-xl focus:outline-none focus:border-[#5D1C34] disabled:opacity-60"
+                className="flex-1 h-10 px-3 text-body-sm bg-landing-ivory border border-landing-taupe rounded-[2px] focus:outline-none focus:border-landing-oxblood disabled:opacity-60"
               >
                 <option value="">
                   {candidateProducts.length === 0
@@ -901,7 +901,7 @@ function CollectionProductsModal({
                 type="button"
                 onClick={handleAddProduct}
                 disabled={!selectedProductId || isProcessing}
-                className="h-10 px-4 rounded-xl bg-[#5D1C34] hover:bg-[#732240] text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                className="h-10 px-4 rounded-[2px] bg-landing-oxblood hover:bg-landing-obsidian text-landing-paper font-semibold text-xs flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 <span>Thêm</span>
@@ -912,22 +912,22 @@ function CollectionProductsModal({
           {/* Current products list */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase text-neutral-600">
+              <span className="text-xs font-bold uppercase text-landing-obsidian">
                 Danh sách hiện có ({collectionProducts.length} sản phẩm):
               </span>
-              {isLoading && <Loader2 className="w-4 h-4 animate-spin text-[#5D1C34]" />}
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin text-landing-oxblood" />}
             </div>
 
             {collectionProducts.length === 0 ? (
-              <div className="text-center py-8 text-neutral-400 text-body-sm bg-neutral-50/50 rounded-xl border border-dashed border-neutral-200">
+              <div className="text-center py-8 text-landing-muted text-body-sm bg-landing-paper/50 rounded-[2px] border border-dashed border-landing-line">
                 Bộ sưu tập này chưa có sản phẩm nào. Hãy chọn sản phẩm ở trên để thêm vào.
               </div>
             ) : (
-              <div className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden bg-white">
+              <div className="divide-y divide-landing-line border border-landing-line rounded-[2px] overflow-hidden bg-landing-ivory">
                 {collectionProducts.map((p) => (
-                  <div key={p.id} className="p-3 flex items-center justify-between gap-3 hover:bg-neutral-50/70 transition-colors">
+                  <div key={p.id} className="p-3 flex items-center justify-between gap-3 hover:bg-landing-paper/70 transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100">
+                      <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-[2px] border border-landing-line bg-landing-paper">
                         <Image
                           src={p.image || '/images/placeholder.png'}
                           alt={p.name}
@@ -938,9 +938,9 @@ function CollectionProductsModal({
                         />
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-neutral-900 text-body-sm truncate">{p.name}</div>
-                        <div className="text-xs text-neutral-500 flex items-center gap-2 mt-0.5">
-                          <span className="font-medium text-[#5D1C34]">
+                        <div className="font-semibold text-landing-obsidian text-body-sm truncate">{p.name}</div>
+                        <div className="text-xs text-landing-muted flex items-center gap-2 mt-0.5">
+                          <span className="font-medium text-landing-oxblood">
                             {p.price}
                           </span>
                           <span>•</span>
@@ -953,7 +953,7 @@ function CollectionProductsModal({
                       type="button"
                       onClick={() => handleRemoveProduct(p.id, p.name)}
                       disabled={isProcessing}
-                      className="p-2 text-semantic-error hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                      className="p-2 text-semantic-error hover:bg-destructive/10 rounded-[2px] transition-colors cursor-pointer shrink-0 disabled:opacity-50"
                       title="Xóa khỏi bộ sưu tập"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -966,11 +966,11 @@ function CollectionProductsModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-neutral-100 flex justify-end">
+        <div className="p-4 border-t border-landing-line flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-semibold text-xs transition-colors cursor-pointer"
+            className="px-5 py-2 rounded-[2px] bg-landing-paper hover:bg-landing-taupe text-landing-obsidian font-semibold text-xs transition-colors cursor-pointer"
           >
             Đóng
           </button>

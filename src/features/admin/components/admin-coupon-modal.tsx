@@ -18,8 +18,8 @@ interface AdminCouponModalProps {
 }
 
 const fieldClass =
-  'w-full rounded-lg border border-[#E5DFD5] bg-white px-3 py-2 text-[13px] text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/15';
-const labelTextClass = 'text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-500';
+  'w-full rounded-[2px] border border-landing-line bg-landing-ivory px-3 py-2 text-[13px] text-landing-obsidian outline-none transition-colors placeholder:text-landing-muted focus:border-landing-oxblood focus:ring-2 focus:ring-landing-oxblood/15';
+const labelTextClass = 'text-[11px] font-semibold uppercase tracking-[0.1em] text-landing-muted';
 
 function FieldHint({ children }: { children: React.ReactNode }) {
   return (
@@ -28,7 +28,7 @@ function FieldHint({ children }: { children: React.ReactNode }) {
         <button
           type="button"
           aria-label="Trợ giúp"
-          className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-neutral-300 text-[9px] font-bold leading-none text-neutral-500 transition-colors hover:border-brand-navy hover:text-brand-navy"
+          className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-landing-taupe text-[9px] font-bold leading-none text-landing-muted transition-colors hover:border-landing-oxblood hover:text-landing-oxblood"
         >
           ?
         </button>
@@ -36,7 +36,7 @@ function FieldHint({ children }: { children: React.ReactNode }) {
       <PopoverContent
         side="top"
         align="start"
-        className="w-60 border-[#E5DFD5] bg-white p-3 text-[12px] leading-relaxed text-neutral-600 shadow-lg"
+        className="w-60 border-landing-line bg-landing-ivory p-3 text-[12px] leading-relaxed text-landing-obsidian"
       >
         {children}
       </PopoverContent>
@@ -49,7 +49,7 @@ function FieldLabel({ htmlFor, text, required, hint }: { htmlFor: string; text: 
     <div className="mb-1.5 flex items-center gap-1.5">
       <label htmlFor={htmlFor} className={labelTextClass}>
         {text}
-        {required && <span className="text-red-500"> *</span>}
+        {required && <span className="text-destructive"> *</span>}
       </label>
       {hint && <FieldHint>{hint}</FieldHint>}
     </div>
@@ -189,7 +189,7 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 bg-landing-obsidian/50 backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         onClick={onClose}
@@ -199,17 +199,17 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
         role="dialog"
         aria-modal="true"
         aria-labelledby="coupon-modal-title"
-        className="relative z-10 flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="relative z-10 flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-[2px] bg-landing-ivory"
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
       >
-        <div className="flex items-center justify-between gap-4 border-b border-[#E5DFD5] px-6 py-4">
+        <div className="flex items-center justify-between gap-4 border-b border-landing-line px-6 py-4">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-navy/10 text-brand-navy">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[2px] bg-landing-oxblood/10 text-landing-oxblood">
               <Tag className="h-4 w-4" />
             </span>
-            <h2 id="coupon-modal-title" className="truncate text-[16px] font-bold text-neutral-900">
+            <h2 id="coupon-modal-title" className="truncate font-display text-[1.15rem] leading-tight text-landing-obsidian">
               {isEditing ? `Chỉnh sửa mã ${coupon?.code}` : 'Tạo mã giảm giá mới'}
             </h2>
           </div>
@@ -217,7 +217,7 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-landing-muted transition-colors hover:bg-landing-paper hover:text-landing-obsidian"
           >
             <X className="h-4 w-4" />
           </button>
@@ -226,7 +226,7 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto px-6 py-5">
             {errorMsg && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+              <div className="flex items-start gap-2 rounded-[2px] border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -258,13 +258,13 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
                   role="switch"
                   aria-checked={isActive}
                   onClick={() => setIsActive((v) => !v)}
-                  className={`flex h-[38px] min-w-[110px] items-center justify-center gap-2 rounded-lg border px-3 text-[12px] font-semibold transition-colors ${
+                  className={`flex h-[38px] min-w-[110px] items-center justify-center gap-2 rounded-[2px] border px-3 text-[12px] font-semibold transition-colors ${
                     isActive
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                      : 'border-[#E5DFD5] bg-neutral-50 text-neutral-500'
+                      ? 'border-metric-products bg-metric-products/10 text-metric-products'
+                      : 'border-landing-line bg-landing-paper/60 text-landing-muted'
                   }`}
                 >
-                  <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-neutral-400'}`} />
+                  <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-metric-products' : 'bg-landing-taupe'}`} />
                   {isActive ? 'Bật' : 'Tắt'}
                 </button>
               </div>
@@ -279,10 +279,10 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
                 <button
                   type="button"
                   onClick={() => setDiscountType('PERCENTAGE')}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-[13px] font-semibold transition-colors ${
+                  className={`flex items-center gap-2 rounded-[2px] border px-3 py-2.5 text-left text-[13px] font-semibold transition-colors ${
                     discountType === 'PERCENTAGE'
-                      ? 'border-brand-navy bg-brand-navy/5 text-brand-navy'
-                      : 'border-[#E5DFD5] bg-white text-neutral-600 hover:bg-neutral-50'
+                      ? 'border-landing-oxblood bg-landing-oxblood/5 text-landing-oxblood'
+                      : 'border-landing-line bg-landing-ivory text-landing-obsidian hover:bg-landing-paper/60'
                   }`}
                 >
                   <Percent className="h-4 w-4 shrink-0" />
@@ -293,10 +293,10 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
                 <button
                   type="button"
                   onClick={() => setDiscountType('FIXED_AMOUNT')}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-[13px] font-semibold transition-colors ${
+                  className={`flex items-center gap-2 rounded-[2px] border px-3 py-2.5 text-left text-[13px] font-semibold transition-colors ${
                     discountType === 'FIXED_AMOUNT'
-                      ? 'border-brand-navy bg-brand-navy/5 text-brand-navy'
-                      : 'border-[#E5DFD5] bg-white text-neutral-600 hover:bg-neutral-50'
+                      ? 'border-landing-oxblood bg-landing-oxblood/5 text-landing-oxblood'
+                      : 'border-landing-line bg-landing-ivory text-landing-obsidian hover:bg-landing-paper/60'
                   }`}
                 >
                   <DollarSign className="h-4 w-4 shrink-0" />
@@ -326,7 +326,7 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
                   className={fieldClass}
                 />
                 {discountType === 'FIXED_AMOUNT' && discountValue && !isNaN(Number(discountValue)) && (
-                  <p className="mt-1 text-[11px] text-neutral-500">{fmt(Number(discountValue))}</p>
+                  <p className="mt-1 text-[11px] text-landing-muted">{fmt(Number(discountValue))}</p>
                 )}
               </div>
 
@@ -347,7 +347,7 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
                     className={fieldClass}
                   />
                   {maxDiscountVnd && !isNaN(Number(maxDiscountVnd)) && (
-                    <p className="mt-1 text-[11px] text-neutral-500">{fmt(Number(maxDiscountVnd))}</p>
+                    <p className="mt-1 text-[11px] text-landing-muted">{fmt(Number(maxDiscountVnd))}</p>
                   )}
                 </div>
               )}
@@ -432,19 +432,19 @@ export function AdminCouponModal({ isOpen, coupon, onClose, onSuccess }: AdminCo
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-[#E5DFD5] px-6 py-4">
+          <div className="flex items-center justify-end gap-3 border-t border-landing-line px-6 py-4">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="rounded-lg px-4 py-2 text-[13px] font-medium text-neutral-600 transition-colors hover:bg-neutral-100 disabled:opacity-50"
+              className="rounded-[2px] px-4 py-2 text-[13px] font-medium text-landing-obsidian transition-colors hover:bg-landing-paper disabled:opacity-50"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-lg bg-brand-navy px-5 py-2 text-[13px] font-bold text-white transition-colors hover:bg-brand-navy/90 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-[2px] bg-landing-oxblood px-5 py-2 text-[13px] font-bold text-landing-paper transition-colors hover:bg-landing-oxblood/90 disabled:opacity-50"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               <span>{isEditing ? 'Lưu thay đổi' : 'Tạo mã giảm giá'}</span>
