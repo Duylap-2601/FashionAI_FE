@@ -150,12 +150,12 @@ export function AdminCouponsPanel() {
   };
 
   return (
-    <div className="flex flex-col gap-6 flex-1 min-h-0">
+    <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
-          <h1 className="text-heading-h2 font-bold text-neutral-900">Quản lý Mã giảm giá (Coupons)</h1>
-          <p className="text-body-sm text-neutral-500 mt-1">
+          <h1 className="font-display text-[clamp(1.6rem,2.6vw,2.2rem)] leading-[1.08] tracking-[-0.025em] text-landing-obsidian">Quản lý Mã giảm giá (Coupons)</h1>
+          <p className="text-body-sm text-landing-muted mt-1">
             Tạo, cấu hình mức chiết khấu và theo dõi hiệu lực của các mã khuyến mãi
           </p>
         </div>
@@ -166,7 +166,7 @@ export function AdminCouponsPanel() {
             setSelectedCoupon(null);
             setModalOpen(true);
           }}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-navy hover:bg-brand-navy/90 text-white font-bold text-body-sm rounded-xl shadow-xs transition-colors cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-landing-oxblood hover:bg-landing-oxblood/90 text-landing-paper font-bold text-body-sm rounded-[2px] transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo mã giảm giá mới</span>
@@ -174,18 +174,18 @@ export function AdminCouponsPanel() {
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="bg-landing-ivory rounded-[2px] border border-landing-line overflow-hidden">
         {/* Filter Bar */}
-        <div className="p-4 border-b border-neutral-100 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-neutral-50/50">
+        <div className="p-4 border-b border-landing-line flex flex-wrap items-center justify-between gap-3 shrink-0 bg-landing-paper/50">
           <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
             {/* Search */}
             <div className="relative min-w-[220px] max-w-sm flex-1">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-landing-muted absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 value={filters.search ?? ''}
                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 placeholder="Tìm mã giảm giá..."
-                className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm focus:outline-none focus:border-brand-navy"
+                className="w-full pl-9 pr-4 py-2 border border-landing-line rounded-[2px] bg-landing-ivory text-body-sm focus:outline-none focus:border-landing-oxblood"
               />
             </div>
 
@@ -193,7 +193,7 @@ export function AdminCouponsPanel() {
             <select
               value={filters.discountType || 'ALL'}
               onChange={(e) => setFilters(prev => ({ ...prev, discountType: e.target.value }))}
-              className="px-3 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm text-neutral-700 focus:outline-none focus:border-brand-navy cursor-pointer"
+              className="px-3 py-2 border border-landing-line rounded-[2px] bg-landing-ivory text-body-sm text-landing-obsidian focus:outline-none focus:border-landing-oxblood cursor-pointer"
             >
               <option value="ALL">Tất cả loại giảm giá</option>
               <option value="PERCENTAGE">Theo phần trăm (%)</option>
@@ -204,7 +204,7 @@ export function AdminCouponsPanel() {
             <select
               value={filters.status || 'ALL'}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="px-3 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm text-neutral-700 focus:outline-none focus:border-brand-navy cursor-pointer"
+              className="px-3 py-2 border border-landing-line rounded-[2px] bg-landing-ivory text-body-sm text-landing-obsidian focus:outline-none focus:border-landing-oxblood cursor-pointer"
             >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="ACTIVE">Đang kích hoạt (Active)</option>
@@ -216,7 +216,7 @@ export function AdminCouponsPanel() {
             <button
               type="button"
               onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-neutral-200 hover:border-red-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-landing-obsidian hover:text-destructive hover:bg-destructive/10 rounded-[2px] border border-landing-line hover:border-destructive/30 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Đặt lại</span>
@@ -225,10 +225,10 @@ export function AdminCouponsPanel() {
         </div>
 
         {/* Table Content */}
-        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
-          <div className="min-w-[960px] flex-1 flex flex-col min-h-0">
+        <div className="overflow-x-auto">
+          <div className="min-w-[960px]">
             {/* Table Header */}
-            <div className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase shrink-0 shadow-2xs select-none">
+            <div className="bg-landing-paper/60 border-b border-landing-line text-landing-muted text-label-sm font-semibold uppercase shrink-0 select-none">
               <div className="grid grid-cols-[140px_180px_140px_130px_180px_110px_90px] items-center">
                 <div className="px-6 py-3">Mã Code</div>
                 <div className="px-4 py-3">Chiết khấu</div>
@@ -241,7 +241,7 @@ export function AdminCouponsPanel() {
             </div>
 
             {/* Table Body */}
-            <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
+            <div className="divide-y divide-landing-line text-body-sm">
               {filteredCoupons.map((c) => {
                 const numVal = Number(c.discountValue);
                 const numMax = c.maxDiscountVnd ? Number(c.maxDiscountVnd) : null;
@@ -251,21 +251,21 @@ export function AdminCouponsPanel() {
                 return (
                   <div
                     key={c.id}
-                    className="grid grid-cols-[140px_180px_140px_130px_180px_110px_90px] items-center hover:bg-neutral-50/80 transition-colors"
+                    className="grid grid-cols-[140px_180px_140px_130px_180px_110px_90px] items-center hover:bg-landing-paper/80 transition-colors"
                   >
                     {/* Code */}
                     <div className="px-6 py-3.5 flex items-center gap-1.5 min-w-0">
-                      <span className="font-mono font-bold text-neutral-900 bg-neutral-100 px-2 py-0.5 rounded text-xs truncate">
+                      <span className="font-mono font-bold text-metric-revenue bg-metric-revenue/10 px-2 py-0.5 rounded-[2px] text-xs truncate">
                         {c.code}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleCopyCode(c.code)}
                         title="Sao chép mã"
-                        className="text-neutral-400 hover:text-brand-navy transition-colors border-0 bg-transparent cursor-pointer p-0.5"
+                        className="text-landing-muted hover:text-landing-oxblood transition-colors border-0 bg-transparent cursor-pointer p-0.5"
                       >
                         {copiedId === c.code ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-metric-products" />
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
@@ -276,23 +276,23 @@ export function AdminCouponsPanel() {
                     <div className="px-4 py-3.5 min-w-0">
                       {c.discountType === 'PERCENTAGE' ? (
                         <div className="flex flex-col">
-                          <span className="font-bold text-brand-navy flex items-center gap-1">
-                            <Percent className="w-3.5 h-3.5 text-purple-600" /> Giảm {numVal}%
+                          <span className="font-bold text-landing-oxblood flex items-center gap-1">
+                            <Percent className="w-3.5 h-3.5 text-metric-ai" /> Giảm {numVal}%
                           </span>
                           {numMax ? (
-                            <span className="text-[11px] text-neutral-500 truncate">
+                            <span className="text-[11px] text-landing-muted truncate">
                               Tối đa {fmt(numMax)}
                             </span>
                           ) : (
-                            <span className="text-[11px] text-neutral-400">Không giới hạn mức giảm</span>
+                            <span className="text-[11px] text-landing-muted">Không giới hạn mức giảm</span>
                           )}
                         </div>
                       ) : (
                         <div className="flex flex-col">
-                          <span className="font-bold text-brand-navy flex items-center gap-1">
-                            <DollarSign className="w-3.5 h-3.5 text-emerald-600" /> Giảm {fmt(numVal)}
+                          <span className="font-bold text-landing-oxblood flex items-center gap-1">
+                            <DollarSign className="w-3.5 h-3.5 text-metric-products" /> Giảm {fmt(numVal)}
                           </span>
-                          <span className="text-[11px] text-neutral-400">Cố định</span>
+                          <span className="text-[11px] text-landing-muted">Cố định</span>
                         </div>
                       )}
                     </div>
@@ -300,20 +300,20 @@ export function AdminCouponsPanel() {
                     {/* Min Order */}
                     <div className="px-4 py-3.5 min-w-0">
                       {numMin ? (
-                        <span className="text-neutral-800 font-medium">{fmt(numMin)}</span>
+                        <span className="text-landing-obsidian font-medium">{fmt(numMin)}</span>
                       ) : (
-                        <span className="text-neutral-400 text-xs">Không yêu cầu</span>
+                        <span className="text-landing-muted text-xs">Không yêu cầu</span>
                       )}
                     </div>
 
                     {/* Usage */}
                     <div className="px-4 py-3.5 min-w-0">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-neutral-800">
+                        <span className="font-semibold text-landing-obsidian">
                           {c.usedCount} / {c.usageLimit !== null && c.usageLimit !== undefined ? c.usageLimit : '∞'}
                         </span>
                         {c.usageLimitPerUser && (
-                          <span className="text-[11px] text-neutral-400">
+                          <span className="text-[11px] text-landing-muted">
                             {c.usageLimitPerUser} lượt / khách
                           </span>
                         )}
@@ -326,19 +326,19 @@ export function AdminCouponsPanel() {
                         {c.startsAt || c.expiresAt ? (
                           <>
                             {c.startsAt && (
-                              <span className="text-neutral-600">
+                              <span className="text-landing-obsidian">
                                 Từ: {new Date(c.startsAt).toLocaleDateString('vi-VN')}
                               </span>
                             )}
                             {c.expiresAt && (
-                              <span className={isExpired ? 'text-red-600 font-semibold' : 'text-neutral-600'}>
+                              <span className={isExpired ? 'text-destructive font-semibold' : 'text-landing-obsidian'}>
                                 Đến: {new Date(c.expiresAt).toLocaleDateString('vi-VN')}
                                 {isExpired && ' (Hết hạn)'}
                               </span>
                             )}
                           </>
                         ) : (
-                          <span className="text-neutral-400">Vô thời hạn</span>
+                          <span className="text-landing-muted">Vô thời hạn</span>
                         )}
                       </div>
                     </div>
@@ -350,8 +350,8 @@ export function AdminCouponsPanel() {
                         onClick={() => handleToggleActive(c)}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-colors border ${
                           c.isActive
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                            : 'bg-neutral-100 text-neutral-500 border-neutral-200 hover:bg-neutral-200'
+                            ? 'bg-metric-products/10 text-metric-products border-metric-products/30 hover:bg-metric-products/10'
+                            : 'bg-landing-paper text-landing-muted border-landing-line hover:bg-landing-taupe'
                         }`}
                         title="Bấm để bật/tắt kích hoạt"
                       >
@@ -368,7 +368,7 @@ export function AdminCouponsPanel() {
                           setSelectedCoupon(c);
                           setModalOpen(true);
                         }}
-                        className="p-1.5 text-neutral-500 hover:text-brand-navy hover:bg-neutral-100 rounded-lg transition-colors border-0 bg-transparent cursor-pointer"
+                        className="p-1.5 text-landing-muted hover:text-landing-oxblood hover:bg-landing-paper rounded-[2px] transition-colors border-0 bg-transparent cursor-pointer"
                         title="Chỉnh sửa mã"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -377,7 +377,7 @@ export function AdminCouponsPanel() {
                         type="button"
                         onClick={() => handleDelete(c)}
                         disabled={deletingId === c.id}
-                        className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border-0 bg-transparent cursor-pointer disabled:opacity-40"
+                        className="p-1.5 text-landing-muted hover:text-destructive hover:bg-destructive/10 rounded-[2px] transition-colors border-0 bg-transparent cursor-pointer disabled:opacity-40"
                         title="Xóa mã"
                       >
                         {deletingId === c.id ? (
@@ -392,8 +392,8 @@ export function AdminCouponsPanel() {
               })}
 
               {filteredCoupons.length === 0 && (
-                <div className="py-16 text-center text-neutral-400 flex flex-col items-center gap-2">
-                  <Tag className="w-8 h-8 text-neutral-300" />
+                <div className="py-16 text-center text-landing-muted flex flex-col items-center gap-2">
+                  <Tag className="w-8 h-8 text-landing-muted" />
                   <p>
                     {isFiltered
                       ? 'Không tìm thấy mã giảm giá nào phù hợp với bộ lọc'

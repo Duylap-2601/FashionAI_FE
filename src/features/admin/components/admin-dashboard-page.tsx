@@ -72,7 +72,7 @@ function AdminDashboardContent() {
   }, [logout]);
 
   return (
-    <div className="flex bg-neutral-100 h-dvh overflow-hidden text-neutral-800 font-sans">
+    <div className="flex min-h-dvh bg-landing-paper font-sans text-landing-obsidian">
       <AdminSidebar
         activeTab={activeTab}
         isOpen={sidebarOpen}
@@ -82,7 +82,7 @@ function AdminDashboardContent() {
       />
 
       {/* MAIN CONTENT WRAPPER */}
-      <div className="flex-1 flex flex-col min-w-0 h-dvh overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopbar
           activeTab={activeTab}
           adminName={adminName}
@@ -93,7 +93,8 @@ function AdminDashboardContent() {
         />
 
         {/* MAIN CONTENT AREA */}
-        <main className="flex-1 min-h-0 p-6 md:p-8 flex flex-col overflow-y-auto custom-scrollbar">
+        <main className="flex-1 bg-landing-paper landing-paper-texture px-4 py-8 md:px-8 md:py-12">
+          <div className="mx-auto flex w-full max-w-[1440px] flex-col">
           {activeTab === 'dashboard' && (
             <DashboardOverview
               metrics={metrics}
@@ -153,6 +154,7 @@ function AdminDashboardContent() {
           {activeTab === 'reviews' && <AdminReviewTable />}
           {activeTab === 'coupons' && <AdminCouponsPanel />}
           {activeTab === 'sale-campaigns' && <AdminSaleCampaignsPanel />}
+          </div>
         </main>
 
         {/* ─── DRAWER: USER DETAIL ────────────────────────────────────────────── */}

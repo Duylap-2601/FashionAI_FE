@@ -78,12 +78,12 @@ const ADMIN_ORDER_STATUS_OPTIONS: BackendOrderStatus[] = [
 function getPaymentBadgeStyle(status?: string) {
   switch (status?.toUpperCase()) {
     case 'PAID':
-      return 'bg-emerald-500/10 text-emerald-800 ring-1 ring-emerald-600/25';
+      return 'bg-metric-products/10 text-metric-products ring-1 ring-metric-products';
     case 'FAILED':
-      return 'bg-red-500/10 text-red-700 ring-1 ring-red-600/25';
+      return 'bg-destructive/10 text-destructive ring-1 ring-destructive';
     case 'PENDING':
     default:
-      return 'bg-amber-500/10 text-amber-800 ring-1 ring-amber-600/25';
+      return 'bg-metric-users/10 text-metric-users ring-1 ring-metric-users';
   }
 }
 
@@ -229,7 +229,7 @@ export default function AdminOrderMeasurementsPage() {
   if (isLoading) {
     return (
       <AdminGuard>
-        <div className="min-h-screen bg-brand-cream flex items-center justify-center">
+        <div className="min-h-dvh bg-landing-paper flex items-center justify-center">
           <AtelierLoader size="md" label="Đang may phiếu đo" />
         </div>
       </AdminGuard>
@@ -239,14 +239,14 @@ export default function AdminOrderMeasurementsPage() {
   if (isError || !order) {
     return (
       <AdminGuard>
-        <div className="min-h-screen bg-brand-cream p-6 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-3xl border border-[#E5DFD5] text-center max-w-md w-full shadow-sm">
-            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-            <h2 className="text-body-lg font-bold text-brand-navy mb-1">Không tìm thấy đơn hàng</h2>
-            <p className="text-body-sm text-neutral-500 mb-6">Mã đơn hàng không tồn tại hoặc bạn không có quyền truy cập.</p>
+        <div className="min-h-dvh bg-landing-paper p-6 flex items-center justify-center">
+          <div className="bg-landing-ivory p-8 rounded-[2px] border border-landing-line text-center max-w-md w-full">
+            <AlertTriangle className="w-12 h-12 text-metric-users mx-auto mb-3" />
+            <h2 className="font-display text-[1.15rem] leading-tight text-landing-oxblood mb-1">Không tìm thấy đơn hàng</h2>
+            <p className="text-body-sm text-landing-muted mb-6">Mã đơn hàng không tồn tại hoặc bạn không có quyền truy cập.</p>
             <Link
               href="/admin/dashboard?tab=orders"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-navy text-white text-xs font-semibold rounded-full hover:bg-brand-navy/90 transition-colors no-underline"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-landing-oxblood text-landing-paper text-xs font-semibold rounded-[2px] hover:bg-landing-obsidian transition-colors no-underline"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Quay lại Quản lý đơn hàng</span>
@@ -285,14 +285,14 @@ export default function AdminOrderMeasurementsPage() {
 
   return (
     <AdminGuard>
-      <div className="min-h-screen bg-brand-cream text-neutral-900 font-sans p-4 sm:p-6 md:p-8 print:bg-white print:p-0">
+      <div className="min-h-dvh bg-landing-paper text-landing-obsidian font-sans p-4 sm:p-6 md:p-8 print:bg-landing-ivory print:p-0">
         <div className="max-w-[1360px] mx-auto space-y-6">
 
           {/* Top Navigation & Actions Bar (Hidden when printing) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
             <Link
               href="/admin/dashboard?tab=orders"
-              className="inline-flex items-center gap-2 text-body-sm font-semibold text-neutral-600 hover:text-brand-navy transition-colors no-underline"
+              className="inline-flex items-center gap-2 text-body-sm font-semibold text-landing-obsidian hover:text-landing-oxblood transition-colors no-underline"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Quay lại Quản lý đơn hàng</span>
@@ -306,19 +306,19 @@ export default function AdminOrderMeasurementsPage() {
                   onClick={() => !isTerminalStatus && setStatusMenuOpen((open) => !open)}
                   disabled={updatingStatus || isTerminalStatus}
                   title={isTerminalStatus ? `Đơn hàng đã ở trạng thái "${statusCfg.label}", không thể thay đổi` : undefined}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#E5DFD5] bg-white px-4 py-2 text-xs font-bold text-neutral-900 shadow-2xs hover:border-brand-navy/40 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-75 disabled:hover:border-[#E5DFD5] disabled:hover:bg-white transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-[2px] border border-landing-line bg-landing-ivory px-4 py-2 text-xs font-bold text-landing-obsidian hover:border-landing-oxblood/40 hover:bg-landing-paper/60 disabled:cursor-not-allowed disabled:opacity-75 disabled:hover:border-landing-line disabled:hover:bg-landing-ivory transition-all cursor-pointer"
                 >
-                  {updatingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-navy" /> : <StatusIcon className="w-3.5 h-3.5 text-brand-navy" />}
-                  <span className="text-neutral-500 font-semibold hidden sm:inline">Trạng thái:</span>
-                  <span className="text-brand-navy">{statusCfg.label}</span>
+                  {updatingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin text-landing-oxblood" /> : <StatusIcon className="w-3.5 h-3.5 text-landing-oxblood" />}
+                  <span className="text-landing-muted font-semibold hidden sm:inline">Trạng thái:</span>
+                  <span className="text-landing-oxblood">{statusCfg.label}</span>
                   {!isTerminalStatus && (
-                    <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${statusMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 text-landing-muted transition-transform ${statusMenuOpen ? 'rotate-180' : ''}`} />
                   )}
                 </button>
 
                 {statusMenuOpen && !isTerminalStatus && (
-                  <div className="absolute right-0 z-40 mt-2 w-64 overflow-hidden rounded-2xl border border-[#E5DFD5] bg-white p-1.5 shadow-xl">
-                    <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[#8B8880]">
+                  <div className="absolute right-0 z-40 mt-2 w-64 overflow-hidden rounded-[2px] border border-landing-line bg-landing-ivory p-1.5">
+                    <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-landing-muted">
                       Chọn trạng thái đơn
                     </div>
                     <div className="max-h-72 overflow-y-auto custom-scrollbar pr-1">
@@ -333,10 +333,10 @@ export default function AdminOrderMeasurementsPage() {
                               setStatusMenuOpen(false);
                               void handleStatusChange(st);
                             }}
-                            className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-colors border-0 cursor-pointer ${
+                            className={`flex w-full items-center justify-between gap-3 rounded-[2px] px-3 py-2 text-left text-xs font-semibold transition-colors border-0 cursor-pointer ${
                               selected
-                                ? 'bg-brand-navy text-white'
-                                : 'bg-transparent text-neutral-700 hover:bg-brand-cream'
+                                ? 'bg-landing-oxblood text-landing-paper'
+                                : 'bg-transparent text-landing-obsidian hover:bg-landing-paper'
                             }`}
                           >
                             <span>{optionLabel}</span>
@@ -356,7 +356,7 @@ export default function AdminOrderMeasurementsPage() {
                   onClick={onCreateShipment}
                   disabled={!canCreateShipment || creatingShipment}
                   title={shipmentBlockedReason || undefined}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-navy text-white text-xs font-bold rounded-full hover:bg-brand-navy/90 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed transition-all border-0 cursor-pointer shadow-xs active:scale-[0.98]"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-landing-oxblood text-landing-paper text-xs font-bold rounded-[2px] hover:bg-landing-obsidian disabled:bg-landing-taupe disabled:text-landing-muted disabled:cursor-not-allowed transition-all border-0 cursor-pointer active:scale-[0.98]"
                 >
                   {creatingShipment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
                   <span>{creatingShipment ? 'Đang tạo...' : 'Tạo vận đơn GHN'}</span>
@@ -367,9 +367,9 @@ export default function AdminOrderMeasurementsPage() {
               <button
                 type="button"
                 onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-brand-navy border border-[#E5DFD5] rounded-full text-xs font-bold hover:bg-neutral-50 transition-colors shadow-2xs cursor-pointer active:scale-[0.98]"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-landing-ivory text-landing-oxblood border border-landing-line rounded-[2px] text-xs font-bold hover:bg-landing-paper/60 transition-colors cursor-pointer active:scale-[0.98]"
               >
-                <Printer className="w-4 h-4 text-brand-navy" />
+                <Printer className="w-4 h-4 text-landing-oxblood" />
                 <span>In phiếu</span>
               </button>
             </div>
@@ -379,14 +379,14 @@ export default function AdminOrderMeasurementsPage() {
           <div className="space-y-3 print:hidden">
             {/* Manual Payment Confirmation Banner */}
             {isPending && (
-              <div className="bg-amber-50/70 border border-amber-300/80 rounded-2xl sm:rounded-3xl p-5 md:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="bg-metric-users/10 border border-metric-users rounded-[2px] sm:rounded-[2px] p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-amber-100/80 border border-amber-300/50 flex items-center justify-center shrink-0 text-amber-800 shadow-2xs">
+                  <div className="w-11 h-11 rounded-[2px] bg-metric-users/10 border border-metric-users flex items-center justify-center shrink-0 text-metric-users">
                     <CreditCard className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-body-md font-bold text-amber-950">Xác nhận thanh toán thủ công</h3>
-                    <p className="text-xs text-amber-800/90 mt-0.5 leading-relaxed">
+                    <h3 className="font-display text-[1.05rem] leading-tight text-metric-users">Xác nhận thanh toán thủ công</h3>
+                    <p className="text-xs text-metric-users mt-0.5 leading-relaxed">
                       Đơn hàng đang chờ thanh toán. Dùng khi khách đã chuyển khoản và bạn đã nhận được tiền nhưng hệ thống chưa tự động cập nhật.
                     </p>
                   </div>
@@ -397,13 +397,13 @@ export default function AdminOrderMeasurementsPage() {
                     placeholder="Ghi chú / Mã sao kê giao dịch..."
                     value={manualPaymentNote}
                     onChange={(e) => setManualPaymentNote(e.target.value)}
-                    className="px-4 py-2.5 text-xs bg-white border border-amber-300/80 rounded-xl focus:outline-none focus:border-amber-600 min-w-[280px] shadow-2xs"
+                    className="px-4 py-2.5 text-xs bg-landing-ivory border border-metric-users rounded-[2px] focus:outline-none focus:border-metric-users min-w-[280px]"
                   />
                   <button
                     type="button"
                     onClick={onConfirmManualPayment}
                     disabled={submittingPayment}
-                    className="px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50 border-0 cursor-pointer shadow-xs whitespace-nowrap active:scale-[0.98]"
+                    className="px-5 py-2.5 bg-landing-oxblood hover:bg-landing-obsidian text-landing-paper text-xs font-bold rounded-[2px] transition-colors disabled:opacity-50 border-0 cursor-pointer whitespace-nowrap active:scale-[0.98]"
                   >
                     {submittingPayment ? 'Đang xác nhận...' : 'Xác nhận đã nhận tiền'}
                   </button>
@@ -413,14 +413,14 @@ export default function AdminOrderMeasurementsPage() {
 
             {/* Refund Required Banner */}
             {refundRequired && (
-              <div className="bg-rose-50/70 border border-rose-300/80 rounded-2xl sm:rounded-3xl p-5 md:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="bg-destructive/10 border border-destructive rounded-[2px] sm:rounded-[2px] p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-rose-100/80 border border-rose-300/50 flex items-center justify-center shrink-0 text-rose-800 shadow-2xs">
+                  <div className="w-11 h-11 rounded-[2px] bg-destructive/10 border border-destructive flex items-center justify-center shrink-0 text-destructive">
                     <RefreshCw className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-body-md font-bold text-rose-950">Cần hoàn tiền cho khách</h3>
-                    <p className="text-xs text-rose-800/90 mt-0.5 leading-relaxed">
+                    <h3 className="font-display text-[1.05rem] leading-tight text-destructive">Cần hoàn tiền cho khách</h3>
+                    <p className="text-xs text-destructive mt-0.5 leading-relaxed">
                       Đơn đã bị hủy sau khi khách thanh toán. Sau khi chuyển khoản hoàn lại tiền, vui lòng nhập mã giao dịch/bằng chứng hoàn và xác nhận.
                     </p>
                   </div>
@@ -431,13 +431,13 @@ export default function AdminOrderMeasurementsPage() {
                     placeholder="Ghi chú / Bằng chứng hoàn tiền..."
                     value={refundNote}
                     onChange={(e) => setRefundNote(e.target.value)}
-                    className="px-4 py-2.5 text-xs bg-white border border-rose-300/80 rounded-xl focus:outline-none focus:border-rose-600 min-w-[280px] shadow-2xs"
+                    className="px-4 py-2.5 text-xs bg-landing-ivory border border-destructive rounded-[2px] focus:outline-none focus:border-destructive min-w-[280px]"
                   />
                   <button
                     type="button"
                     onClick={onConfirmRefund}
                     disabled={submittingRefund}
-                    className="px-5 py-2.5 bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50 border-0 cursor-pointer shadow-xs whitespace-nowrap active:scale-[0.98]"
+                    className="px-5 py-2.5 bg-destructive hover:bg-destructive/90 text-landing-paper text-xs font-bold rounded-[2px] transition-colors disabled:opacity-50 border-0 cursor-pointer whitespace-nowrap active:scale-[0.98]"
                   >
                     {submittingRefund ? 'Đang xác nhận...' : 'Xác nhận đã hoàn tiền'}
                   </button>
@@ -447,28 +447,28 @@ export default function AdminOrderMeasurementsPage() {
 
             {/* Refund Completed Notification */}
             {refundCompleted && (
-              <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl sm:rounded-3xl p-4 flex items-center gap-3 text-emerald-800 text-xs shadow-2xs">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div className="bg-metric-products/10 border border-metric-products/30 rounded-[2px] sm:rounded-[2px] p-4 flex items-center gap-3 text-metric-products text-xs">
+                <CheckCircle2 className="w-5 h-5 text-metric-products shrink-0" />
                 <span className="font-semibold">Đã hoàn tiền cho khách thành công cho đơn hàng này.</span>
-                {order.refundEvidence && <span className="text-emerald-700 italic">({order.refundEvidence})</span>}
+                {order.refundEvidence && <span className="text-metric-products italic">({order.refundEvidence})</span>}
               </div>
             )}
           </div>
 
           {/* Main Dossier Paper / Card */}
-          <div className="bg-white rounded-3xl border border-[#E5DFD5] shadow-[0_4px_24px_rgba(93,28,52,0.03)] p-6 sm:p-8 md:p-9 print:border-none print:shadow-none print:p-0">
+          <div className="bg-landing-ivory rounded-[2px] border border-landing-line p-6 sm:p-8 md:p-9 print:border-none print:shadow-none print:p-0">
 
             {/* Document Header */}
-            <div className="border-b border-[#E5DFD5] pb-6 mb-7 flex flex-col md:flex-row md:items-start justify-between gap-4">
+            <div className="border-b border-landing-line pb-6 mb-7 flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-navy mb-1.5">
-                  <Scissors className="w-4 h-4 text-brand-navy" />
+                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-landing-oxblood mb-1.5">
+                  <Scissors className="w-4 h-4 text-landing-oxblood" />
                   <span>Chi tiết đơn hàng &amp; Phiếu may đo kỹ thuật</span>
                 </div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-brand-navy tracking-tight">
+                <h1 className="font-display text-[clamp(1.6rem,2.6vw,2.2rem)] font-medium leading-[1.08] tracking-[-0.025em] text-landing-oxblood">
                   Đơn Hàng #{order.orderCode}
                 </h1>
-                <p className="text-[12px] text-neutral-400 font-mono mt-1">Mã hệ thống: {order.id}</p>
+                <p className="text-[12px] text-landing-muted font-mono mt-1">Mã hệ thống: {order.id}</p>
               </div>
 
               <div className="flex flex-col items-start md:items-end gap-2.5">
@@ -486,7 +486,7 @@ export default function AdminOrderMeasurementsPage() {
                   )}
                 </div>
 
-                <p className="flex items-center gap-1.5 text-xs text-[#8B8880]">
+                <p className="flex items-center gap-1.5 text-xs text-landing-muted">
                   <Calendar className="w-3.5 h-3.5" />
                   <span>Ngày đặt: {new Date(order.createdAt).toLocaleString('vi-VN')}</span>
                 </p>
@@ -494,40 +494,40 @@ export default function AdminOrderMeasurementsPage() {
             </div>
 
             {/* Customer, Delivery & Shipping Information Bar */}
-            <div className="bg-[#F9F7F5] rounded-2xl sm:rounded-3xl border border-[#E5DFD5] p-2 sm:p-3 mb-8 shadow-2xs">
+            <div className="bg-landing-paper/60 rounded-[2px] sm:rounded-[2px] border border-landing-line p-2 sm:p-3 mb-8">
               <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#E5DFD5]">
                 {/* Customer */}
                 <div className="p-4 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-[#E5DFD5] flex items-center justify-center shrink-0 text-brand-navy shadow-2xs">
+                  <div className="w-10 h-10 rounded-[2px] bg-landing-ivory border border-landing-line flex items-center justify-center shrink-0 text-landing-oxblood">
                     <User className="w-5 h-5 stroke-[1.75]" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#8B8880]">Khách hàng</p>
-                    <p className="text-body-sm font-bold text-brand-navy truncate mt-0.5">{order.shippingInfo?.name || 'Khách vãng lai'}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-landing-muted">Khách hàng</p>
+                    <p className="text-body-sm font-bold text-landing-oxblood truncate mt-0.5">{order.shippingInfo?.name || 'Khách vãng lai'}</p>
                     {customerEmail && (
-                      <p className="text-[12px] text-neutral-600 truncate flex items-center gap-1 mt-0.5">
-                        <Mail className="w-3 h-3 text-neutral-400 shrink-0" />
+                      <p className="text-[12px] text-landing-obsidian truncate flex items-center gap-1 mt-0.5">
+                        <Mail className="w-3 h-3 text-landing-muted shrink-0" />
                         <span>{customerEmail}</span>
                       </p>
                     )}
-                    {order.userId && <p className="text-[11px] text-neutral-400 font-mono mt-0.5 truncate">User ID: {order.userId}</p>}
+                    {order.userId && <p className="text-[11px] text-landing-muted font-mono mt-0.5 truncate">User ID: {order.userId}</p>}
                   </div>
                 </div>
 
                 {/* Delivery Address & Contact */}
                 <div className="p-4 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-[#E5DFD5] flex items-center justify-center shrink-0 text-brand-navy shadow-2xs">
+                  <div className="w-10 h-10 rounded-[2px] bg-landing-ivory border border-landing-line flex items-center justify-center shrink-0 text-landing-oxblood">
                     <MapPin className="w-5 h-5 stroke-[1.75]" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#8B8880]">Liên hệ &amp; Giao nhận</p>
-                    <p className="text-body-sm font-semibold text-neutral-800 flex items-center gap-1 mt-0.5">
-                      <Phone className="w-3.5 h-3.5 text-neutral-400" />
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-landing-muted">Liên hệ &amp; Giao nhận</p>
+                    <p className="text-body-sm font-semibold text-landing-obsidian flex items-center gap-1 mt-0.5">
+                      <Phone className="w-3.5 h-3.5 text-landing-muted" />
                       <span>{order.shippingInfo?.phone || '—'}</span>
                     </p>
-                    <p className="text-[12px] text-neutral-600 line-clamp-2 mt-0.5 leading-relaxed">{order.shippingInfo?.address || '—'}</p>
+                    <p className="text-[12px] text-landing-obsidian line-clamp-2 mt-0.5 leading-relaxed">{order.shippingInfo?.address || '—'}</p>
                     {(order.shippingInfo?.notes || order.shippingInfo?.note) && (
-                      <p className="text-[11px] text-neutral-500 italic mt-1">
+                      <p className="text-[11px] text-landing-muted italic mt-1">
                         Ghi chú: {order.shippingInfo?.notes || order.shippingInfo?.note}
                       </p>
                     )}
@@ -536,32 +536,32 @@ export default function AdminOrderMeasurementsPage() {
 
                 {/* Shipment Tracking / GHN */}
                 <div className="p-4 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-[#E5DFD5] flex items-center justify-center shrink-0 text-brand-navy shadow-2xs">
+                  <div className="w-10 h-10 rounded-[2px] bg-landing-ivory border border-landing-line flex items-center justify-center shrink-0 text-landing-oxblood">
                     <Truck className="w-5 h-5 stroke-[1.75]" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#8B8880]">Vận chuyển GHN</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-landing-muted">Vận chuyển GHN</p>
                     {order.shipment ? (
                       <div className="mt-0.5 space-y-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-mono font-bold text-xs text-brand-navy">
+                          <span className="font-mono font-bold text-xs text-landing-oxblood">
                             {order.shipment.providerOrderCode || 'Chưa có mã'}
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-cream border border-[#E5DFD5] text-brand-navy font-bold uppercase">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-landing-paper border border-landing-line text-landing-oxblood font-bold uppercase">
                             {order.shipment.provider}
                           </span>
                         </div>
-                        <p className="text-[12px] text-neutral-600">
-                          Trạng thái: <strong className="text-neutral-800">{shipmentStatusLabel(order.shipment.status, rawShipment?.rawStatus)}</strong>
+                        <p className="text-[12px] text-landing-obsidian">
+                          Trạng thái: <strong className="text-landing-obsidian">{shipmentStatusLabel(order.shipment.status, rawShipment?.rawStatus)}</strong>
                         </p>
                         {order.shipment.expectedDeliveryTime && (
-                          <p className="text-[11px] text-neutral-500">
+                          <p className="text-[11px] text-landing-muted">
                             Dự kiến: {order.shipment.expectedDeliveryTime.substring(0, 16).replace('T', ' ')}
                           </p>
                         )}
                         <Link
                           href={`/admin/dashboard?tab=shipments&shipmentCode=${order.shipment.providerOrderCode || ''}`}
-                          className="inline-flex items-center gap-1 text-[11px] text-brand-navy font-bold hover:underline no-underline mt-1"
+                          className="inline-flex items-center gap-1 text-[11px] text-landing-oxblood font-bold hover:underline no-underline mt-1"
                         >
                           <ExternalLink className="w-3 h-3" />
                           <span>Xem trong tab Vận đơn</span>
@@ -569,9 +569,9 @@ export default function AdminOrderMeasurementsPage() {
                       </div>
                     ) : (
                       <div className="mt-0.5">
-                        <p className="text-xs text-neutral-500 italic">Đơn chưa tạo vận đơn GHN.</p>
+                        <p className="text-xs text-landing-muted italic">Đơn chưa tạo vận đơn GHN.</p>
                         {shipmentBlockedReason && (
-                          <p className="text-[11px] text-neutral-500 mt-1">{shipmentBlockedReason}</p>
+                          <p className="text-[11px] text-landing-muted mt-1">{shipmentBlockedReason}</p>
                         )}
                       </div>
                     )}
@@ -585,14 +585,14 @@ export default function AdminOrderMeasurementsPage() {
 
               {/* LEFT: Order Items & Tailor Garment Measurements */}
               <div className="lg:col-span-8 space-y-6">
-                <div className="flex items-center justify-between border-b border-[#E5DFD5] pb-3.5">
+                <div className="flex items-center justify-between border-b border-landing-line pb-3.5">
                   <div className="flex items-center gap-2">
-                    <Scissors className="w-5 h-5 text-brand-navy" />
-                    <h2 className="text-lg font-bold text-brand-navy">
+                    <Scissors className="w-5 h-5 text-landing-oxblood" />
+                    <h2 className="font-display text-[1.15rem] leading-tight text-landing-oxblood">
                       Sản phẩm &amp; Thông số may đo ({order.items?.length || 0} món)
                     </h2>
                   </div>
-                  <span className="text-xs text-[#8B8880] font-medium uppercase tracking-wider">Bảng kỹ thuật may</span>
+                  <span className="text-xs text-landing-muted font-medium uppercase tracking-wider">Bảng kỹ thuật may</span>
                 </div>
 
                 {order.items && order.items.length > 0 ? (
@@ -607,39 +607,39 @@ export default function AdminOrderMeasurementsPage() {
                       const itemLineTotal = item.lineTotalVnd ?? (item.price * item.quantity);
 
                       return (
-                        <div key={itemId} className="rounded-2xl sm:rounded-3xl border border-[#E5DFD5] overflow-hidden bg-white shadow-2xs">
+                        <div key={itemId} className="rounded-[2px] sm:rounded-[2px] border border-landing-line overflow-hidden bg-landing-ivory">
                           {/* Item Card Header */}
-                          <div className="p-4 sm:p-5 bg-brand-cream/60 border-b border-[#E5DFD5] flex items-center justify-between gap-4">
+                          <div className="p-4 sm:p-5 bg-landing-paper/60 border-b border-landing-line flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3.5 min-w-0">
                               <Image
                                 src={img}
                                 alt={name}
                                 width={60}
                                 height={75}
-                                className="w-15 h-19 sm:w-16 sm:h-20 object-cover rounded-xl bg-white shrink-0 border border-[#E5DFD5] shadow-2xs"
+                                className="w-15 h-19 sm:w-16 sm:h-20 object-cover rounded-[2px] bg-landing-ivory shrink-0 border border-landing-line"
                               />
                               <div className="min-w-0">
-                                <h3 className="text-body-md font-bold text-brand-navy truncate">{name}</h3>
+                                <h3 className="font-display text-[1.05rem] leading-tight text-landing-oxblood truncate">{name}</h3>
                                 {item.productSkuSnapshot && (
-                                  <p className="text-[11px] text-neutral-400 font-mono mt-0.5">SKU: {item.productSkuSnapshot}</p>
+                                  <p className="text-[11px] text-landing-muted font-mono mt-0.5">SKU: {item.productSkuSnapshot}</p>
                                 )}
-                                <div className="flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 mt-1.5">
-                                  <span className="px-2 py-0.5 rounded bg-white border border-[#E5DFD5]/80">
-                                    Màu: <strong className="text-brand-navy font-semibold">{item.color || 'Mặc định'}</strong>
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs text-landing-obsidian mt-1.5">
+                                  <span className="px-2 py-0.5 rounded bg-landing-ivory border border-landing-line/80">
+                                    Màu: <strong className="text-landing-oxblood font-semibold">{item.color || 'Mặc định'}</strong>
                                   </span>
-                                  <span className="px-2 py-0.5 rounded bg-white border border-[#E5DFD5]/80">
-                                    Vải: <strong className="text-brand-navy font-semibold">{item.fabricSnapshot || 'Tiêu chuẩn'}</strong>
+                                  <span className="px-2 py-0.5 rounded bg-landing-ivory border border-landing-line/80">
+                                    Vải: <strong className="text-landing-oxblood font-semibold">{item.fabricSnapshot || 'Tiêu chuẩn'}</strong>
                                   </span>
-                                  <span className="px-2 py-0.5 rounded bg-white border border-[#E5DFD5]/80">
-                                    SL: <strong className="text-brand-navy font-bold">{item.quantity}</strong>
+                                  <span className="px-2 py-0.5 rounded bg-landing-ivory border border-landing-line/80">
+                                    SL: <strong className="text-landing-oxblood font-bold">{item.quantity}</strong>
                                   </span>
                                 </div>
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <span className="text-body-md font-bold text-brand-navy">{fmt(itemLineTotal)}</span>
+                              <span className="font-display text-[1.05rem] leading-tight text-landing-oxblood">{fmt(itemLineTotal)}</span>
                               {item.quantity > 1 && (
-                                <p className="text-[11px] text-neutral-400 mt-0.5">({fmt(itemUnitPrice)}/cái)</p>
+                                <p className="text-[11px] text-landing-muted mt-0.5">({fmt(itemUnitPrice)}/cái)</p>
                               )}
                             </div>
                           </div>
@@ -647,12 +647,12 @@ export default function AdminOrderMeasurementsPage() {
                           {/* Garment Measurements Display (Warm Bespoke Styling) */}
                           <div className="p-5 sm:p-6">
                             <div className="mb-3.5 flex items-center justify-between">
-                              <span className="text-xs font-bold text-brand-navy uppercase tracking-wider flex items-center gap-1.5">
-                                <Scissors className="w-3.5 h-3.5 text-brand-navy" />
+                              <span className="text-xs font-bold text-landing-oxblood uppercase tracking-wider flex items-center gap-1.5">
+                                <Scissors className="w-3.5 h-3.5 text-landing-oxblood" />
                                 <span>Số đo may đo thành phẩm</span>
                               </span>
                               {item.measurementDisplay && item.measurementDisplay.length > 0 && (
-                                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-cream border border-[#E5DFD5] text-brand-navy">
+                                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-landing-paper border border-landing-line text-landing-oxblood">
                                   {item.measurementDisplay.length} thông số
                                 </span>
                               )}
@@ -663,47 +663,47 @@ export default function AdminOrderMeasurementsPage() {
                                 {item.measurementDisplay.map((m) => (
                                   <div
                                     key={m.field}
-                                    className="p-3.5 rounded-xl bg-brand-cream/60 border border-[#E5DFD5]/90 hover:border-brand-navy/30 transition-all flex flex-col justify-between shadow-2xs"
+                                    className="p-3.5 rounded-[2px] bg-landing-paper/60 border border-landing-line/90 hover:border-landing-oxblood/30 transition-all flex flex-col justify-between"
                                   >
-                                    <span className="text-[11px] font-semibold text-[#8B8880] uppercase tracking-wider mb-1 truncate">{m.label}</span>
+                                    <span className="text-[11px] font-semibold text-landing-muted uppercase tracking-wider mb-1 truncate">{m.label}</span>
                                     <div className="flex items-baseline gap-1">
-                                      <span className="text-lg font-bold text-brand-navy font-mono tracking-tight">
+                                      <span className="font-display text-[1.15rem] leading-tight text-landing-oxblood font-mono tracking-tight">
                                         {m.value}
                                       </span>
-                                      <span className="text-xs text-[#8B8880] font-normal">{m.unit}</span>
+                                      <span className="text-xs text-landing-muted font-normal">{m.unit}</span>
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             ) : item.measurementDisplay && item.measurementDisplay.length === 0 ? (
-                              <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
-                                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                              <div className="p-4 rounded-[2px] bg-metric-users/10 border border-metric-users/30 text-xs text-metric-users flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4 text-metric-users shrink-0" />
                                 <span>Chưa đủ dữ liệu số đo bắt buộc cho loại trang phục này. Thợ may cần yêu cầu khách bổ sung số đo.</span>
                               </div>
                             ) : (
-                              <p className="text-xs text-neutral-400 italic">Không có thông số may đo cho sản phẩm này.</p>
+                              <p className="text-xs text-landing-muted italic">Không có thông số may đo cho sản phẩm này.</p>
                             )}
 
                             {/* Raw 16-field snapshot accordion for cross-referencing */}
                             {item.measurementSnapshot && Object.keys(item.measurementSnapshot).length > 0 && (
-                              <div className="mt-4 pt-4 border-t border-[#E5DFD5]/70">
+                              <div className="mt-4 pt-4 border-t border-landing-line/70">
                                 <button
                                   type="button"
                                   onClick={() => toggleSnapshot(itemId)}
-                                  className="w-full flex items-center justify-between text-xs font-semibold text-neutral-600 hover:text-brand-navy py-1 bg-transparent border-0 cursor-pointer"
+                                  className="w-full flex items-center justify-between text-xs font-semibold text-landing-obsidian hover:text-landing-oxblood py-1 bg-transparent border-0 cursor-pointer"
                                 >
                                   <span>Đối chiếu bảng 16 số đo thô ban đầu (measurementSnapshot)</span>
                                   {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                 </button>
 
                                 {isExpanded && (
-                                  <div className="mt-3 p-3.5 bg-brand-cream/40 rounded-xl border border-[#E5DFD5] grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                  <div className="mt-3 p-3.5 bg-landing-paper/40 rounded-[2px] border border-landing-line grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                                     {Object.entries(item.measurementSnapshot).map(([key, val]) => {
                                       if (val === null || val === undefined || val === '') return null;
                                       return (
-                                        <div key={key} className="bg-white p-2 rounded-lg border border-[#E5DFD5] flex flex-col">
-                                          <span className="text-[10.5px] text-[#8B8880] font-mono truncate">{key}</span>
-                                          <span className="font-bold text-brand-navy font-mono mt-0.5">{String(val)} cm</span>
+                                        <div key={key} className="bg-landing-ivory p-2 rounded-[2px] border border-landing-line flex flex-col">
+                                          <span className="text-[10.5px] text-landing-muted font-mono truncate">{key}</span>
+                                          <span className="font-bold text-landing-oxblood font-mono mt-0.5">{String(val)} cm</span>
                                         </div>
                                       );
                                     })}
@@ -717,7 +717,7 @@ export default function AdminOrderMeasurementsPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="p-8 text-center bg-brand-cream/50 rounded-2xl border border-[#E5DFD5] text-neutral-400 text-body-sm">
+                  <div className="p-8 text-center bg-landing-paper/50 rounded-[2px] border border-landing-line text-landing-muted text-body-sm">
                     Đơn hàng không có sản phẩm nào.
                   </div>
                 )}
@@ -727,118 +727,118 @@ export default function AdminOrderMeasurementsPage() {
               <div className="lg:col-span-4 space-y-6">
 
                 {/* Payment & Financial Breakdown Card */}
-                <div className="rounded-2xl sm:rounded-3xl border border-[#E5DFD5] p-5 sm:p-6 bg-white shadow-2xs">
-                  <div className="flex items-center gap-2 border-b border-[#E5DFD5] pb-3.5 mb-4">
-                    <Receipt className="w-4 h-4 text-brand-navy" />
-                    <h3 className="text-body-md font-bold text-brand-navy">Thanh toán &amp; Chi phí</h3>
+                <div className="rounded-[2px] sm:rounded-[2px] border border-landing-line p-5 sm:p-6 bg-landing-ivory">
+                  <div className="flex items-center gap-2 border-b border-landing-line pb-3.5 mb-4">
+                    <Receipt className="w-4 h-4 text-landing-oxblood" />
+                    <h3 className="font-display text-[1.05rem] leading-tight text-landing-oxblood">Thanh toán &amp; Chi phí</h3>
                   </div>
 
                   <div className="space-y-2.5 text-xs">
-                    <div className="flex justify-between text-neutral-600">
+                    <div className="flex justify-between text-landing-obsidian">
                       <span>Phương thức:</span>
-                      <span className="font-semibold text-brand-navy">{order.paymentMethod || '—'}</span>
+                      <span className="font-semibold text-landing-oxblood">{order.paymentMethod || '—'}</span>
                     </div>
 
                     {order.paymentProvider && (
-                      <div className="flex justify-between text-neutral-600">
+                      <div className="flex justify-between text-landing-obsidian">
                         <span>Cổng thanh toán:</span>
-                        <span className="font-semibold text-brand-navy">{order.paymentProvider}</span>
+                        <span className="font-semibold text-landing-oxblood">{order.paymentProvider}</span>
                       </div>
                     )}
 
-                    <div className="flex justify-between text-neutral-600">
+                    <div className="flex justify-between text-landing-obsidian">
                       <span>Trạng thái thanh toán:</span>
-                      <span className="font-semibold text-brand-navy">{order.paymentStatus || '—'}</span>
+                      <span className="font-semibold text-landing-oxblood">{order.paymentStatus || '—'}</span>
                     </div>
 
                     {order.itemsSubtotalVnd !== undefined ? (
-                      <div className="flex justify-between text-neutral-600">
+                      <div className="flex justify-between text-landing-obsidian">
                         <span>Tiền hàng:</span>
-                        <span className="text-neutral-900 font-medium">{fmt(order.itemsSubtotalVnd)}</span>
+                        <span className="text-landing-obsidian font-medium">{fmt(order.itemsSubtotalVnd)}</span>
                       </div>
                     ) : order.itemsTotal ? (
-                      <div className="flex justify-between text-neutral-600">
+                      <div className="flex justify-between text-landing-obsidian">
                         <span>Tiền hàng:</span>
-                        <span className="text-neutral-900 font-medium">{fmt(order.itemsTotal)}</span>
+                        <span className="text-landing-obsidian font-medium">{fmt(order.itemsTotal)}</span>
                       </div>
                     ) : null}
 
                     {order.shippingFeeVnd !== undefined ? (
-                      <div className="flex justify-between text-neutral-600">
+                      <div className="flex justify-between text-landing-obsidian">
                         <span>Phí vận chuyển:</span>
-                        <span className="text-neutral-900 font-medium">{fmt(order.shippingFeeVnd)}</span>
+                        <span className="text-landing-obsidian font-medium">{fmt(order.shippingFeeVnd)}</span>
                       </div>
                     ) : order.shippingFee ? (
-                      <div className="flex justify-between text-neutral-600">
+                      <div className="flex justify-between text-landing-obsidian">
                         <span>Phí vận chuyển:</span>
-                        <span className="text-neutral-900 font-medium">{fmt(order.shippingFee)}</span>
+                        <span className="text-landing-obsidian font-medium">{fmt(order.shippingFee)}</span>
                       </div>
                     ) : null}
 
                     {/* Fixed rogue 0 bug with explicit Boolean check */}
                     {Boolean((order.discountVnd && order.discountVnd > 0) || (order.discountAmount && order.discountAmount > 0)) && (
-                      <div className="flex justify-between text-emerald-700 font-medium">
+                      <div className="flex justify-between text-metric-products font-medium">
                         <span>Giảm giá{(order as unknown as { couponCode?: string })?.couponCode ? ` (${(order as unknown as { couponCode?: string }).couponCode})` : ''}:</span>
                         <span>-{fmt(order.discountVnd ?? order.discountAmount)}</span>
                       </div>
                     )}
 
-                    <div className="flex justify-between text-body-md font-bold text-brand-navy pt-3 border-t border-[#E5DFD5]">
+                    <div className="flex justify-between font-display text-[1.05rem] leading-tight text-landing-oxblood pt-3 border-t border-landing-line">
                       <span>Tổng tiền đơn:</span>
                       <span className="text-lg">{fmt(order.totalVnd ?? order.totalAmount)}</span>
                     </div>
 
                     {order.amountPaidVnd !== undefined && (
-                      <div className="flex justify-between text-xs text-neutral-600 pt-1">
+                      <div className="flex justify-between text-xs text-landing-obsidian pt-1">
                         <span>Đã thu khách:</span>
-                        <span className="font-bold text-emerald-700">{fmt(order.amountPaidVnd)}</span>
+                        <span className="font-bold text-metric-products">{fmt(order.amountPaidVnd)}</span>
                       </div>
                     )}
 
                     {order.amountRefundedVnd !== undefined && order.amountRefundedVnd > 0 && (
-                      <div className="flex justify-between text-xs text-neutral-600">
+                      <div className="flex justify-between text-xs text-landing-obsidian">
                         <span>Đã hoàn lại:</span>
-                        <span className="font-bold text-red-600">-{fmt(order.amountRefundedVnd)}</span>
+                        <span className="font-bold text-destructive">-{fmt(order.amountRefundedVnd)}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Customer Profile Measurements */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#E5DFD5] p-5 sm:p-6 shadow-2xs space-y-4">
-                  <div className="flex items-center justify-between border-b border-[#E5DFD5] pb-3.5">
+                <div className="bg-landing-ivory rounded-[2px] sm:rounded-[2px] border border-landing-line p-5 sm:p-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-landing-line pb-3.5">
                     <div className="flex items-center gap-2">
-                      <UserCheck className="w-4 h-4 text-brand-navy" />
-                      <h3 className="text-body-md font-bold text-brand-navy">
+                      <UserCheck className="w-4 h-4 text-landing-oxblood" />
+                      <h3 className="font-display text-[1.05rem] leading-tight text-landing-oxblood">
                         Hồ sơ số đo của khách
                       </h3>
                     </div>
-                    <span className="text-[10px] text-[#8B8880] font-mono uppercase tracking-wider">Hồ sơ cá nhân</span>
+                    <span className="text-[10px] text-landing-muted font-mono uppercase tracking-wider">Hồ sơ cá nhân</span>
                   </div>
 
                   {isLoadingUserMeasurements ? (
-                    <div className="py-6 flex flex-col items-center justify-center gap-2 text-xs text-neutral-500">
+                    <div className="py-6 flex flex-col items-center justify-center gap-2 text-xs text-landing-muted">
                       <AtelierLoader size="sm" label="Đang may số đo" />
                     </div>
                   ) : !order.userId ? (
-                    <div className="p-4 rounded-xl bg-brand-cream/50 border border-[#E5DFD5] text-xs text-neutral-500 italic text-center">
+                    <div className="p-4 rounded-[2px] bg-landing-paper/50 border border-landing-line text-xs text-landing-muted italic text-center">
                       Đơn hàng không có mã tài khoản khách hàng (khách vãng lai).
                     </div>
                   ) : userMeasurements && Object.values(userMeasurements).some((v) => v !== null && v !== undefined) ? (
                     <div className="space-y-4">
                       {/* Overview group */}
                       <div>
-                        <h4 className="text-[11px] font-bold text-[#8B8880] uppercase tracking-wider mb-2">Chỉ số tổng quan</h4>
+                        <h4 className="text-[11px] font-bold text-landing-muted uppercase tracking-wider mb-2">Chỉ số tổng quan</h4>
                         <div className="grid grid-cols-2 gap-2">
-                          <div className="p-2.5 bg-brand-cream/60 rounded-xl border border-[#E5DFD5] flex justify-between items-center text-xs">
-                            <span className="text-neutral-600">Chiều cao</span>
-                            <span className="font-bold text-brand-navy font-mono">
+                          <div className="p-2.5 bg-landing-paper/60 rounded-[2px] border border-landing-line flex justify-between items-center text-xs">
+                            <span className="text-landing-obsidian">Chiều cao</span>
+                            <span className="font-bold text-landing-oxblood font-mono">
                               {userMeasurements.height ? `${userMeasurements.height} cm` : '—'}
                             </span>
                           </div>
-                          <div className="p-2.5 bg-brand-cream/60 rounded-xl border border-[#E5DFD5] flex justify-between items-center text-xs">
-                            <span className="text-neutral-600">Cân nặng</span>
-                            <span className="font-bold text-brand-navy font-mono">
+                          <div className="p-2.5 bg-landing-paper/60 rounded-[2px] border border-landing-line flex justify-between items-center text-xs">
+                            <span className="text-landing-obsidian">Cân nặng</span>
+                            <span className="font-bold text-landing-oxblood font-mono">
                               {userMeasurements.weight ? `${userMeasurements.weight} kg` : '—'}
                             </span>
                           </div>
@@ -847,7 +847,7 @@ export default function AdminOrderMeasurementsPage() {
 
                       {/* Detailed Measurements List */}
                       <div>
-                        <h4 className="text-[11px] font-bold text-[#8B8880] uppercase tracking-wider mb-2">Số đo chi tiết</h4>
+                        <h4 className="text-[11px] font-bold text-landing-muted uppercase tracking-wider mb-2">Số đo chi tiết</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           {allMeasurementFields
                             .filter((f) => f.id !== 'height' && f.id !== 'weight')
@@ -857,10 +857,10 @@ export default function AdminOrderMeasurementsPage() {
                               return (
                                 <div
                                   key={field.id}
-                                  className="p-2 bg-brand-cream/60 rounded-lg border border-[#E5DFD5] flex justify-between items-center"
+                                  className="p-2 bg-landing-paper/60 rounded-[2px] border border-landing-line flex justify-between items-center"
                                 >
-                                  <span className="text-neutral-600 truncate">{field.label}:</span>
-                                  <span className="font-bold text-brand-navy font-mono shrink-0 ml-1">{val} {field.unit}</span>
+                                  <span className="text-landing-obsidian truncate">{field.label}:</span>
+                                  <span className="font-bold text-landing-oxblood font-mono shrink-0 ml-1">{val} {field.unit}</span>
                                 </div>
                               );
                             })}
@@ -868,7 +868,7 @@ export default function AdminOrderMeasurementsPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="p-6 text-center bg-brand-cream/50 rounded-xl border border-[#E5DFD5] text-xs text-neutral-500 italic">
+                    <div className="p-6 text-center bg-landing-paper/50 rounded-[2px] border border-landing-line text-xs text-landing-muted italic">
                       Khách hàng chưa cập nhật số đo nào trong hồ sơ cá nhân.
                     </div>
                   )}
@@ -878,18 +878,18 @@ export default function AdminOrderMeasurementsPage() {
             </div>
 
             {/* Document Signature for Print Preview */}
-            <div className="hidden print:grid grid-cols-3 gap-8 mt-16 pt-8 border-t border-neutral-300 text-center text-xs text-neutral-600">
+            <div className="hidden print:grid grid-cols-3 gap-8 mt-16 pt-8 border-t border-landing-taupe text-center text-xs text-landing-obsidian">
               <div>
-                <p className="font-bold text-neutral-900 mb-12">Người lập phiếu</p>
-                <p className="border-t border-neutral-400 pt-2 w-36 mx-auto">(Ký và ghi rõ họ tên)</p>
+                <p className="font-bold text-landing-obsidian mb-12">Người lập phiếu</p>
+                <p className="border-t border-landing-muted pt-2 w-36 mx-auto">(Ký và ghi rõ họ tên)</p>
               </div>
               <div>
-                <p className="font-bold text-neutral-900 mb-12">Thợ cắt / Kỹ thuật</p>
-                <p className="border-t border-neutral-400 pt-2 w-36 mx-auto">(Ký và ghi rõ họ tên)</p>
+                <p className="font-bold text-landing-obsidian mb-12">Thợ cắt / Kỹ thuật</p>
+                <p className="border-t border-landing-muted pt-2 w-36 mx-auto">(Ký và ghi rõ họ tên)</p>
               </div>
               <div>
-                <p className="font-bold text-neutral-900 mb-12">Quản lý kiểm tra (QC)</p>
-                <p className="border-t border-neutral-400 pt-2 w-36 mx-auto">(Ký và ghi rõ họ tên)</p>
+                <p className="font-bold text-landing-obsidian mb-12">Quản lý kiểm tra (QC)</p>
+                <p className="border-t border-landing-muted pt-2 w-36 mx-auto">(Ký và ghi rõ họ tên)</p>
               </div>
             </div>
 

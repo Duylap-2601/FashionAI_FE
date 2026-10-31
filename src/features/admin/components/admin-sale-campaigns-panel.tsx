@@ -96,11 +96,11 @@ export function AdminSaleCampaignsPanel() {
   const isFiltered = Boolean(filters.search || filters.status !== 'ALL');
 
   return (
-    <div className="flex flex-col gap-6 flex-1 min-h-0">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
-          <h1 className="text-heading-h2 font-bold text-neutral-900">Quản lý Chiến dịch sale</h1>
-          <p className="text-body-sm text-neutral-500 mt-1">
+          <h1 className="font-display text-[clamp(1.6rem,2.6vw,2.2rem)] leading-[1.08] tracking-[-0.025em] text-landing-obsidian">Quản lý Chiến dịch sale</h1>
+          <p className="text-body-sm text-landing-muted mt-1">
             Giảm giá theo phần trăm cho nhóm sản phẩm trong khoảng thời gian đã chọn
           </p>
         </div>
@@ -111,18 +111,18 @@ export function AdminSaleCampaignsPanel() {
             setSelectedCampaign(null);
             setModalOpen(true);
           }}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-navy hover:bg-brand-navy/90 text-white font-bold text-body-sm rounded-xl shadow-xs transition-colors cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-landing-oxblood hover:bg-landing-oxblood/90 text-landing-paper font-bold text-body-sm rounded-[2px] transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo chiến dịch mới</span>
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="p-4 border-b border-neutral-100 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-neutral-50/50">
+      <div className="bg-landing-ivory rounded-[2px] border border-landing-line overflow-hidden">
+        <div className="p-4 border-b border-landing-line flex flex-wrap items-center justify-between gap-3 shrink-0 bg-landing-paper/50">
           <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
             <div className="relative min-w-[220px] max-w-sm flex-1">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-landing-muted absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 value={filters.search}
                 onChange={(e) => {
@@ -130,7 +130,7 @@ export function AdminSaleCampaignsPanel() {
                   setFilters((prev) => ({ ...prev, search: e.target.value }));
                 }}
                 placeholder="Tìm chiến dịch sale..."
-                className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm focus:outline-none focus:border-brand-navy"
+                className="w-full pl-9 pr-4 py-2 border border-landing-line rounded-[2px] bg-landing-ivory text-body-sm focus:outline-none focus:border-landing-oxblood"
               />
             </div>
 
@@ -140,7 +140,7 @@ export function AdminSaleCampaignsPanel() {
                 setPage(1);
                 setFilters((prev) => ({ ...prev, status: e.target.value as AdminSaleCampaignFilters['status'] }));
               }}
-              className="px-3 py-2 border border-neutral-200 rounded-xl bg-white text-body-sm text-neutral-700 focus:outline-none focus:border-brand-navy cursor-pointer"
+              className="px-3 py-2 border border-landing-line rounded-[2px] bg-landing-ivory text-body-sm text-landing-obsidian focus:outline-none focus:border-landing-oxblood cursor-pointer"
             >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="ACTIVE">Đang kích hoạt</option>
@@ -155,7 +155,7 @@ export function AdminSaleCampaignsPanel() {
                 setPage(1);
                 setFilters(EMPTY_FILTERS);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-neutral-200 hover:border-red-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-landing-obsidian hover:text-destructive hover:bg-destructive/10 rounded-[2px] border border-landing-line hover:border-destructive/30 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Đặt lại</span>
@@ -163,9 +163,9 @@ export function AdminSaleCampaignsPanel() {
           )}
         </div>
 
-        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
-          <div className="min-w-[900px] flex-1 flex flex-col min-h-0">
-            <div className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase shrink-0 shadow-2xs select-none">
+        <div className="overflow-x-auto">
+          <div className="min-w-[900px]">
+            <div className="bg-landing-paper/60 border-b border-landing-line text-landing-muted text-label-sm font-semibold uppercase shrink-0 select-none">
               <div className="grid grid-cols-[240px_130px_190px_130px_120px_100px] items-center">
                 <div className="px-6 py-3">Chiến dịch</div>
                 <div className="px-4 py-3">Giảm giá</div>
@@ -176,37 +176,37 @@ export function AdminSaleCampaignsPanel() {
               </div>
             </div>
 
-            <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
+            <div className="divide-y divide-landing-line text-body-sm">
               {campaigns.map((campaign) => {
                 const startsAt = formatDate(campaign.startsAt);
                 const endsAt = formatDate(campaign.endsAt);
                 return (
                   <div
                     key={campaign.id}
-                    className="grid grid-cols-[240px_130px_190px_130px_120px_100px] items-center hover:bg-neutral-50/80 transition-colors"
+                    className="grid grid-cols-[240px_130px_190px_130px_120px_100px] items-center hover:bg-landing-paper/80 transition-colors"
                   >
                     <div className="px-6 py-3.5 min-w-0">
-                      <p className="font-semibold text-neutral-900 truncate">{campaign.name}</p>
-                      <p className="text-[11px] text-neutral-400">Cập nhật {formatDate(campaign.updatedAt)}</p>
+                      <p className="font-semibold text-landing-obsidian truncate">{campaign.name}</p>
+                      <p className="text-[11px] text-landing-muted">Cập nhật {formatDate(campaign.updatedAt)}</p>
                     </div>
 
                     <div className="px-4 py-3.5">
-                      <span className="inline-flex items-center gap-1 font-bold text-brand-navy">
-                        <BadgePercent className="w-3.5 h-3.5 text-purple-600" />
+                      <span className="inline-flex items-center gap-1 font-bold text-landing-oxblood">
+                        <BadgePercent className="w-3.5 h-3.5 text-metric-ai" />
                         -{campaign.discountPercent}%
                       </span>
                     </div>
 
                     <div className="px-4 py-3.5">
-                      <div className="flex flex-col gap-0.5 text-xs text-neutral-600">
+                      <div className="flex flex-col gap-0.5 text-xs text-landing-obsidian">
                         <span>Từ: {startsAt ?? 'Ngay'}</span>
                         <span>Đến: {endsAt ?? 'Không hết hạn'}</span>
                       </div>
                     </div>
 
                     <div className="px-4 py-3.5">
-                      <span className="inline-flex items-center gap-1.5 text-neutral-800 font-medium">
-                        <CalendarDays className="w-3.5 h-3.5 text-neutral-400" />
+                      <span className="inline-flex items-center gap-1.5 text-landing-obsidian font-medium">
+                        <CalendarDays className="w-3.5 h-3.5 text-landing-muted" />
                         {campaign.productCount} sản phẩm
                       </span>
                     </div>
@@ -217,8 +217,8 @@ export function AdminSaleCampaignsPanel() {
                         onClick={() => void handleToggleActive(campaign)}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-colors border ${
                           campaign.isActive
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                            : 'bg-neutral-100 text-neutral-500 border-neutral-200 hover:bg-neutral-200'
+                            ? 'bg-metric-products/10 text-metric-products border-metric-products/30 hover:bg-metric-products/10'
+                            : 'bg-landing-paper text-landing-muted border-landing-line hover:bg-landing-taupe'
                         }`}
                         title="Bấm để bật/tắt kích hoạt"
                       >
@@ -234,7 +234,7 @@ export function AdminSaleCampaignsPanel() {
                           setSelectedCampaign(campaign);
                           setModalOpen(true);
                         }}
-                        className="p-1.5 text-neutral-500 hover:text-brand-navy hover:bg-neutral-100 rounded-lg transition-colors border-0 bg-transparent cursor-pointer"
+                        className="p-1.5 text-landing-muted hover:text-landing-oxblood hover:bg-landing-paper rounded-[2px] transition-colors border-0 bg-transparent cursor-pointer"
                         title="Chỉnh sửa chiến dịch"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -243,7 +243,7 @@ export function AdminSaleCampaignsPanel() {
                         type="button"
                         onClick={() => void handleDelete(campaign)}
                         disabled={deletingId === campaign.id}
-                        className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border-0 bg-transparent cursor-pointer disabled:opacity-40"
+                        className="p-1.5 text-landing-muted hover:text-destructive hover:bg-destructive/10 rounded-[2px] transition-colors border-0 bg-transparent cursor-pointer disabled:opacity-40"
                         title="Xóa chiến dịch"
                       >
                         {deletingId === campaign.id ? (
@@ -258,8 +258,8 @@ export function AdminSaleCampaignsPanel() {
               })}
 
               {campaigns.length === 0 && (
-                <div className="py-16 text-center text-neutral-400 flex flex-col items-center gap-2">
-                  <BadgePercent className="w-8 h-8 text-neutral-300" />
+                <div className="py-16 text-center text-landing-muted flex flex-col items-center gap-2">
+                  <BadgePercent className="w-8 h-8 text-landing-muted" />
                   <p>
                     {isFiltered
                       ? 'Không tìm thấy chiến dịch sale nào phù hợp với bộ lọc'

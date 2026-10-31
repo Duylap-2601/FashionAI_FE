@@ -19,6 +19,7 @@ import {
   Radio,
   RotateCcw,
   Scissors,
+  Settings,
   Share2,
   ShieldAlert,
   ShoppingBag,
@@ -53,41 +54,51 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
 ];
 
-/** Menu sidebar admin hỗ trợ các nhóm tab sổ xuống (collapsible accordion).
- * Các tab có tab con được ưu tiên xếp lên trên, các tab độc lập ở phía dưới.
+/** Menu sidebar admin: Dashboard là mục độc lập, toàn bộ trang còn lại nằm trong
+ * nhóm sổ xuống theo đúng luồng vận hành.
  */
 export const ADMIN_NAV_ENTRIES: AdminSidebarItem[] = [
   // 1. Dashboard tổng quan
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
 
-  // 2. Các nhóm có tab con (đẩy lên trên)
+  // 2. Bán hàng & Khuyến mãi
   {
-    id: 'group-products-collections',
-    label: 'Sản phẩm & Bộ sưu tập',
+    id: 'group-commerce',
+    label: 'Bán hàng & Khuyến mãi',
     icon: Package,
     children: [
       { id: 'products', label: 'Sản phẩm', icon: Package },
       { id: 'collections', label: 'Bộ sưu tập', icon: Layers },
+      { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
+      { id: 'sale-campaigns', label: 'Chiến dịch sale', icon: BadgePercent },
     ],
   },
+
+  // 3. Đơn hàng & Đối soát
   {
-    id: 'group-orders-shipments',
-    label: 'Đơn hàng & Vận đơn',
+    id: 'group-orders-fulfillment',
+    label: 'Đơn hàng & Đối soát',
     icon: ShoppingBag,
     children: [
       { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
       { id: 'shipments', label: 'Vận đơn', icon: Truck },
+      { id: 'order-issues', label: 'Báo lỗi & Đổi trả', icon: ShieldAlert },
+      { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
     ],
   },
+
+  // 4. Khách hàng
   {
-    id: 'group-users-reviews',
-    label: 'Người dùng & Đánh giá',
+    id: 'group-customers',
+    label: 'Khách hàng',
     icon: Users,
     children: [
       { id: 'users', label: 'Người dùng', icon: Users },
       { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
     ],
   },
+
+  // 5. Phân tích & Nền tảng
   {
     id: 'group-analytics-platforms',
     label: 'Phân tích & Nền tảng',
@@ -98,13 +109,16 @@ export const ADMIN_NAV_ENTRIES: AdminSidebarItem[] = [
     ],
   },
 
-  // 3. Các tab đơn lẻ không có tab con (ở dưới)
-  { id: 'order-issues', label: 'Báo lỗi & Đổi trả', icon: ShieldAlert },
-  { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
-  { id: 'sale-campaigns', label: 'Chiến dịch sale', icon: BadgePercent },
-  { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
-  { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
-  { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
+  // 6. Cấu hình hệ thống
+  {
+    id: 'group-settings',
+    label: 'Cấu hình hệ thống',
+    icon: Settings,
+    children: [
+      { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
+      { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
+    ],
+  },
 ];
 
 export const ADMIN_PAGE_TITLES: Record<AdminPage, string> = {
@@ -177,38 +191,38 @@ export const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL', 'Free'];
 export const PRODUCT_STATUS_CFG: Record<ProductStatus, { label: string; cls: string; dotCls: string }> = {
   ACTIVE: {
     label: 'Đang bán',
-    cls: 'text-neutral-900',
-    dotCls: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.45)]',
+    cls: 'text-landing-obsidian',
+    dotCls: 'bg-metric-products',
   },
   DRAFT: {
     label: 'Bản nháp',
-    cls: 'text-neutral-500',
-    dotCls: 'bg-neutral-300',
+    cls: 'text-landing-muted',
+    dotCls: 'bg-landing-taupe',
   },
   ARCHIVED: {
     label: 'Ngừng bán',
-    cls: 'text-neutral-400',
-    dotCls: 'bg-stone-400',
+    cls: 'text-landing-muted',
+    dotCls: 'bg-landing-muted',
   },
 };
 
 export const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon: LucideIcon }> = {
-  CREATED: { label: 'Đã tạo', cls: 'bg-slate-500/10 text-slate-800 border border-slate-500/20', icon: Clock },
-  PENDING: { label: 'Chờ xác nhận', cls: 'bg-amber-500/10 text-amber-900 border border-amber-500/20', icon: Clock },
-  PAID: { label: 'Đã thanh toán', cls: 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20', icon: CheckCircle2 },
-  CONFIRMED: { label: 'Đã xác nhận', cls: 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20', icon: CheckCircle2 },
-  MEASUREMENT_REVIEW: { label: 'Kiểm tra số đo', cls: 'bg-brand-navy/8 text-brand-navy border border-brand-navy/15', icon: Scissors },
-  MEASUREMENT_CONFIRMED: { label: 'Chốt số đo', cls: 'bg-brand-navy/10 text-brand-navy border border-brand-navy/20', icon: CheckCircle2 },
-  TAILORING: { label: 'Đang may', cls: 'bg-[#5D1C34]/10 text-[#5D1C34] border border-[#5D1C34]/20', icon: Scissors },
-  QUALITY_CHECK: { label: 'Kiểm tra chất lượng', cls: 'bg-brand-gold/15 text-brand-navy border border-brand-gold/30', icon: CheckCircle2 },
-  READY_TO_SHIP: { label: 'Sẵn sàng giao', cls: 'bg-sky-500/10 text-sky-900 border border-sky-500/20', icon: Truck },
-  SHIPPING: { label: 'Đang giao', cls: 'bg-brand-navy/10 text-brand-navy border border-brand-navy/20', icon: Truck },
-  DELIVERED: { label: 'Đã giao hàng', cls: 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20', icon: CheckCircle2 },
-  COMPLETED: { label: 'Hoàn thành', cls: 'bg-emerald-500/12 text-emerald-950 border border-emerald-600/25', icon: CheckCircle2 },
-  CANCELLED: { label: 'Đã hủy', cls: 'bg-rose-500/10 text-rose-900 border border-rose-500/20', icon: XCircle },
-  RETURNED: { label: 'Hoàn trả', cls: 'bg-neutral-100 text-neutral-700 border border-neutral-200', icon: RotateCcw },
-  EXPIRED: { label: 'Hết hạn', cls: 'bg-neutral-100 text-neutral-500 border border-neutral-200', icon: XCircle },
-  FAILED: { label: 'Thất bại', cls: 'bg-rose-500/10 text-rose-900 border border-rose-500/20', icon: XCircle },
+  CREATED: { label: 'Đã tạo', cls: 'bg-landing-paper text-landing-muted border border-landing-line', icon: Clock },
+  PENDING: { label: 'Chờ xác nhận', cls: 'bg-metric-users/10 text-metric-users border border-metric-users/30', icon: Clock },
+  PAID: { label: 'Đã thanh toán', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30', icon: CheckCircle2 },
+  CONFIRMED: { label: 'Đã xác nhận', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30', icon: CheckCircle2 },
+  MEASUREMENT_REVIEW: { label: 'Kiểm tra số đo', cls: 'bg-metric-orders/10 text-metric-orders border border-metric-orders/30', icon: Scissors },
+  MEASUREMENT_CONFIRMED: { label: 'Chốt số đo', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30', icon: CheckCircle2 },
+  TAILORING: { label: 'Đang may', cls: 'bg-metric-ai/10 text-metric-ai border border-metric-ai/30', icon: Scissors },
+  QUALITY_CHECK: { label: 'Kiểm tra chất lượng', cls: 'bg-metric-orders/10 text-metric-orders border border-metric-orders/30', icon: CheckCircle2 },
+  READY_TO_SHIP: { label: 'Sẵn sàng giao', cls: 'bg-metric-orders/10 text-metric-orders border border-metric-orders/30', icon: Truck },
+  SHIPPING: { label: 'Đang giao', cls: 'bg-metric-orders/10 text-metric-orders border border-metric-orders/30', icon: Truck },
+  DELIVERED: { label: 'Đã giao hàng', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30', icon: CheckCircle2 },
+  COMPLETED: { label: 'Hoàn thành', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30', icon: CheckCircle2 },
+  CANCELLED: { label: 'Đã hủy', cls: 'bg-destructive/10 text-destructive border border-destructive/30', icon: XCircle },
+  RETURNED: { label: 'Hoàn trả', cls: 'bg-landing-paper text-landing-muted border border-landing-line', icon: RotateCcw },
+  EXPIRED: { label: 'Hết hạn', cls: 'bg-landing-paper text-landing-muted border border-landing-line', icon: XCircle },
+  FAILED: { label: 'Thất bại', cls: 'bg-destructive/10 text-destructive border border-destructive/30', icon: XCircle },
 };
 
 export function resolveOrderStatusCfg(

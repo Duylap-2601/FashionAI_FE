@@ -12,20 +12,20 @@ const REASON_LABEL: Record<string, string> = {
 
 export function AdminWebhookFailuresPanel({ failures, onResolve }: AdminWebhookFailuresPanelProps) {
   return (
-    <div className="flex flex-col gap-6 flex-1 min-h-0">
+    <div className="flex flex-col gap-6">
       <div className="shrink-0">
-        <h1 className="text-heading-h2 font-bold text-neutral-900">Giao dịch chưa khớp đơn hàng</h1>
-        <p className="text-body-sm text-neutral-500 mt-1">
+        <h1 className="font-display text-[clamp(1.6rem,2.6vw,2.2rem)] leading-[1.08] tracking-[-0.025em] text-landing-obsidian">Giao dịch chưa khớp đơn hàng</h1>
+        <p className="text-body-sm text-landing-muted mt-1">
           Các webhook thanh toán từ SePay mà hệ thống không tự xử lý được (sai nội dung chuyển khoản, không tìm thấy đơn, sai số tiền...). Kiểm tra kỹ trước khi dùng &quot;Xác nhận thanh toán thủ công&quot; ở trang Đơn hàng.
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="bg-landing-ivory rounded-[2px] border border-landing-line overflow-hidden">
         {/* Webhook Failures Table: Fixed Header + Scrollable Data Body */}
-        <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
-          <div className="min-w-[920px] flex-1 flex flex-col min-h-0">
+        <div className="overflow-x-auto">
+          <div className="min-w-[920px]">
             {/* Fixed Header */}
-            <div className="bg-neutral-50 border-b border-neutral-100 text-neutral-500 text-label-sm font-semibold uppercase shrink-0 select-none shadow-2xs">
+            <div className="bg-landing-paper/60 border-b border-landing-line text-landing-muted text-label-sm font-semibold uppercase shrink-0 select-none">
               <div className="grid grid-cols-[170px_110px_160px_120px_minmax(200px,1fr)_160px] items-center">
                 <div className="px-6 py-3">Thời gian</div>
                 <div className="px-4 py-3">Nguồn</div>
@@ -37,33 +37,33 @@ export function AdminWebhookFailuresPanel({ failures, onResolve }: AdminWebhookF
             </div>
 
             {/* Scrollable Data Body */}
-            <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
+            <div className="divide-y divide-landing-line text-body-sm">
               {failures.map(f => (
                 <div
                   key={f.id}
                   className={`grid grid-cols-[170px_110px_160px_120px_minmax(200px,1fr)_160px] items-center ${
-                    f.resolved ? 'opacity-50' : 'hover:bg-neutral-50'
+                    f.resolved ? 'opacity-50' : 'hover:bg-landing-paper/60'
                   } transition-colors`}
                 >
-                  <div className="px-6 py-3.5 text-neutral-500 whitespace-nowrap truncate">{new Date(f.createdAt).toLocaleString('vi-VN')}</div>
-                  <div className="px-4 py-3.5 font-medium text-neutral-700 truncate">{f.provider}</div>
+                  <div className="px-6 py-3.5 text-landing-muted whitespace-nowrap truncate">{new Date(f.createdAt).toLocaleString('vi-VN')}</div>
+                  <div className="px-4 py-3.5 font-medium text-landing-obsidian truncate">{f.provider}</div>
                   <div className="px-4 py-3.5">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-semibold bg-amber-50 text-amber-700">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-semibold bg-metric-users/10 text-metric-users">
                       <AlertTriangle className="w-3 h-3" />
                       {REASON_LABEL[f.reason] || f.reason}
                     </span>
                   </div>
-                  <div className="px-4 py-3.5 font-mono text-neutral-700 truncate">{f.orderCode ? `#${f.orderCode}` : '—'}</div>
-                  <div className="px-4 py-3.5 text-neutral-500 truncate" title={f.message}>{f.message}</div>
+                  <div className="px-4 py-3.5 font-mono text-landing-obsidian truncate">{f.orderCode ? `#${f.orderCode}` : '—'}</div>
+                  <div className="px-4 py-3.5 text-landing-muted truncate" title={f.message}>{f.message}</div>
                   <div className="px-6 py-3.5">
                     {f.resolved ? (
-                      <span className="inline-flex items-center gap-1 text-neutral-400">
+                      <span className="inline-flex items-center gap-1 text-landing-muted">
                         <CheckCircle2 className="w-4 h-4" /> Đã xử lý
                       </span>
                     ) : (
                       <button
                         onClick={() => onResolve(f.id)}
-                        className="text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
+                        className="text-landing-oxblood font-semibold hover:underline bg-transparent border-0 cursor-pointer"
                       >
                         Đánh dấu đã xử lý
                       </button>
@@ -73,7 +73,7 @@ export function AdminWebhookFailuresPanel({ failures, onResolve }: AdminWebhookF
               ))}
 
               {failures.length === 0 && (
-                <div className="py-16 text-center text-neutral-400">Chưa có giao dịch nào bị lỗi</div>
+                <div className="py-16 text-center text-landing-muted">Chưa có giao dịch nào bị lỗi</div>
               )}
             </div>
           </div>
