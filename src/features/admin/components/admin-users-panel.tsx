@@ -3,6 +3,7 @@
 import type { AdminUsersPanelProps } from '@/features/admin/types/admin-users-panel';
 import type { UserRole, UserTier } from '@/features/admin/types/admin-dashboard-page';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
+import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';
 import { RotateCcw, Search } from 'lucide-react';
 
 export function AdminUsersPanel({
@@ -114,6 +115,12 @@ export function AdminUsersPanel({
 
             {/* Scrollable Data Body */}
             <div className="divide-y divide-landing-line text-body-sm">
+              {isFetching && users.length > 0 && (
+                <AdminLoadingBar label="Đang cập nhật người dùng..." />
+              )}
+              {isFetching && users.length === 0 && (
+                <AdminTableLoading label="Đang tải người dùng" />
+              )}
               {users.map(u => (
                 <div
                   key={u.id}
@@ -162,7 +169,7 @@ export function AdminUsersPanel({
                 </div>
               ))}
 
-              {users.length === 0 && (
+              {users.length === 0 && !isFetching && (
                 <div className="py-16 text-center text-landing-muted">
                   {isFiltered ? 'Không tìm thấy người dùng phù hợp với bộ lọc' : 'Chưa có người dùng nào'}
                 </div>

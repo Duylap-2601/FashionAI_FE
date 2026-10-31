@@ -3,20 +3,22 @@
 import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import type { AdminShipmentModalProps } from '@/features/admin/types/admin-shipment-modal';
-import { ExternalLink, RefreshCw, X } from 'lucide-react';
+import { ExternalLink, Loader2, RefreshCw, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 
 export function AdminShipmentModal({ shipment, onClose, onSync, onCancel, onSimulateDelivered, onOpenOrder }: AdminShipmentModalProps) {
-  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<'sync' | 'deliver' | 'cancel' | null>(null);
   const canSimulateDelivered = !['DELIVERED', 'RETURNED', 'CANCELLED'].includes(shipment.status);
+  const busy = busyAction !== null;
 
-  const run = async (action: () => Promise<void>) => {
-    setBusy(true);
+  const run = async (action: () => Promise<void>, key: 'sync' | 'deliver' | 'cancel') => {
+    if (busy) return;
+    setBusyAction(key);
     try {
       await action();
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   };
 
@@ -105,9 +107,22 @@ export function AdminShipmentModal({ shipment, onClose, onSync, onCancel, onSimu
         </div>
 
         <div className="p-4 border-t border-landing-line flex gap-3">
-          <button disabled={busy} onClick={() => run(() => onSync(shipment.id))} className="flex-1 h-10 rounded-[2px] bg-landing-oxblood text-landing-paper font-semibold text-body-sm hover:opacity-90 disabled:opacity-50 border-0 cursor-pointer inline-flex items-center justify-center gap-2"><RefreshCw className="w-4 h-4" /> Sync GHN</button>
-          {canSimulateDelivered && <button disabled={busy} onClick={() => run(() => onSimulateDelivered(shipment.id))} className="flex-1 h-10 rounded-[2px] bg-metric-products text-landing-paper font-semibold text-body-sm hover:bg-landing-obsidian disabled:opacity-50 border-0 cursor-pointer">Giả lập đã giao</button>}
-          {shipment.canCancel && <button disabled={busy} onClick={() => run(() => onCancel(shipment.id))} className="flex-1 h-10 rounded-[2px] bg-destructive text-landing-paper font-semibold text-body-sm hover:bg-destructive disabled:opacity-50 border-0 cursor-pointer">Hủy vận đơn</button>}
+          <button disabled={busy} onClick={() => run(() => onSync(shipment.id), 'sync')} className="flex-1 h-10 rounded-[2px] bg-landing-oxblood text-landing-paper font-semibold text-body-sm hover:opacity-90 disabled:opacity-50 border-0 cursor-pointer inline-flex items-center justify-center gap-2">
+            {busyAction === 'sync' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {busyAction === 'sync' ? 'Đang sync...' : 'Sync GHN'}
+          </button>
+          {canSimulateDelivered && (
+            <button disabled={busy} onClick={() => run(() => onSimulateDelivered(shipment.id), 'deliver')} className="flex-1 h-10 rounded-[2px] bg-metric-products text-landing-paper font-semibold text-body-sm hover:bg-landing-obsidian disabled:opacity-50 border-0 cursor-pointer inline-flex items-center justify-center gap-2">
+              {busyAction === 'deliver' && <Loader2 className="w-4 h-4 animate-spin" />}
+              {busyAction === 'deliver' ? 'Đang xử lý...' : 'Giả lập đã giao'}
+            </button>
+          )}
+          {shipment.canCancel && (
+            <button disabled={busy} onClick={() => run(() => onCancel(shipment.id), 'cancel')} className="flex-1 h-10 rounded-[2px] bg-destructive text-landing-paper font-semibold text-body-sm hover:bg-destructive/90 disabled:opacity-50 border-0 cursor-pointer inline-flex items-center justify-center gap-2">
+              {busyAction === 'cancel' && <Loader2 className="w-4 h-4 animate-spin" />}
+              {busyAction === 'cancel' ? 'Đang hủy...' : 'Hủy vận đơn'}
+            </button>
+          )}
         </div>
       </motion.div>
     </div>

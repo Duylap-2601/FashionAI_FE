@@ -2,6 +2,7 @@
 
 import { updateLiveTryOnSettings } from '@/features/admin/services/mutations';
 import { fetchLiveTryOnSettings } from '@/features/admin/services/queries';
+import { AdminPanelLoading } from '@/features/admin/components/admin-loading';
 import type { GarmentCategory, LiveTryOnSettings, UpdateLiveTryOnSettingsInput, UserTier } from '@/features/admin/types/admin-dashboard-page';
 import { getErrorMessage } from '@/lib/errors';
 import { Activity, Gauge, Save, ShieldCheck, SlidersHorizontal } from 'lucide-react';
@@ -133,7 +134,7 @@ export function AdminLiveTryOnSettingsPanel() {
   };
 
   if (isLoading) {
-    return <div className="rounded-[2px] border border-landing-line bg-landing-ivory p-6 text-body-sm text-landing-muted">Đang tải cấu hình Live Try-On...</div>;
+    return <AdminPanelLoading label="Đang tải cấu hình Live Try-On" />;
   }
 
   if (!settings) {

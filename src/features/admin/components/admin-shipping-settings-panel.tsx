@@ -2,6 +2,7 @@
 
 import { syncGhnLocations, updateGhnPickupSettings } from '@/features/admin/services/mutations';
 import { fetchGhnPickupSettings } from '@/features/admin/services/queries';
+import { AdminLoadingBar, AdminPanelLoading } from '@/features/admin/components/admin-loading';
 import type { GhnPickupSettings } from '@/features/admin/types/admin-dashboard-page';
 import { getPostMergerProvinces, getPostMergerWards, getShippingCapabilities } from '@/features/checkout/services/ghn-location';
 import type { GhnCatalogOption } from '@/features/checkout/services/ghn-location';
@@ -142,12 +143,22 @@ export function AdminShippingSettingsPanel() {
     }
   };
 
+  if (isLoading && !settings) {
+    return <AdminPanelLoading label="Đang tải cấu hình GHN" />;
+  }
+
   return (
     <div className="flex flex-col gap-6 max-w-[900px]">
       <div>
         <h1 className="font-display text-[clamp(1.6rem,2.6vw,2.2rem)] leading-[1.08] tracking-[-0.025em] text-landing-obsidian">Cài đặt giao hàng GHN</h1>
         <p className="text-body-sm text-landing-muted mt-1">Cấu hình địa chỉ lấy hàng dùng để tính phí vận chuyển và tạo vận đơn.</p>
       </div>
+
+      {(isLoading || isLoadingWards) && (
+        <AdminLoadingBar
+          label={isLoadingWards ? 'Đang tải Phường/Xã...' : 'Đang tải cấu hình GHN...'}
+        />
+      )}
 
       <div className="bg-landing-ivory rounded-[2px] border border-landing-line overflow-hidden">
         <div className="px-6 py-4 border-b border-landing-line flex items-center justify-between gap-2 flex-wrap">

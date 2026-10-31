@@ -1,6 +1,7 @@
 'use client';
 
 import { AdminRevenueChart } from '@/features/admin/components/admin-revenue-chart';
+import { AdminLoadingBar } from '@/features/admin/components/admin-loading';
 import {
   ADMIN_REFRESH_INTERVAL_MS,
   CATEGORY_LABEL,
@@ -181,6 +182,7 @@ export function DashboardOverview({
   metrics,
   orders,
   products,
+  isLoading,
   setActiveTab,
   openProductEditor,
   chartDays,
@@ -220,7 +222,7 @@ export function DashboardOverview({
   const verifiedUsers = users.filter(u => u.isVerified).length;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8" aria-busy={isLoading}>
       {/* Page header */}
       <header className="border-b border-landing-line pb-6">
         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-landing-brass-ink">
@@ -243,6 +245,8 @@ export function DashboardOverview({
           </p>
         </div>
       </header>
+
+      {isLoading && <AdminLoadingBar label="Đang tải số liệu tổng quan..." />}
 
       {/* Headline KPIs: revenue ledger + four drilldowns */}
       <section aria-labelledby="headline-kpis" className="flex flex-col gap-4">

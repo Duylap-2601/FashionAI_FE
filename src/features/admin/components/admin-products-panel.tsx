@@ -4,6 +4,7 @@ import { CATEGORY_LABEL, PRODUCT_STATUS_CFG } from '@/features/admin/constants/a
 import { fmt } from '@/features/admin/services/format';
 import type { AdminProductsPanelProps } from '@/features/admin/types/admin-products-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
+import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';
 import {
   ChevronDown,
   Pencil,
@@ -135,6 +136,12 @@ export function AdminProductsPanel({
 
             {/* Scrollable Data Body - Scrollbar starts below header and stays strictly in data area */}
             <div className="divide-y divide-landing-line text-body-sm">
+              {isFetching && products.length > 0 && (
+                <AdminLoadingBar label="Đang cập nhật sản phẩm..." />
+              )}
+              {isFetching && products.length === 0 && (
+                <AdminTableLoading label="Đang tải sản phẩm" />
+              )}
               {products.map((p) => (
                 <div
                   key={p.id}
@@ -235,7 +242,7 @@ export function AdminProductsPanel({
                 </div>
               ))}
 
-              {products.length === 0 && (
+              {products.length === 0 && !isFetching && (
                 <div className="py-16 text-center text-landing-muted">
                   {isFiltered ? 'Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại' : 'Chưa có sản phẩm nào'}
                 </div>

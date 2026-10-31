@@ -100,6 +100,7 @@ function AdminDashboardContent() {
               metrics={metrics}
               orders={orders.items}
               products={products.items}
+              isLoading={isLoading}
               setActiveTab={navigateAdminTab}
               openProductEditor={productEditor.openProductEditor}
               chartDays={chartDays}

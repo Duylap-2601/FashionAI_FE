@@ -30,7 +30,7 @@ export function AdminReconciliationPanel({ onStatsRefresh }: AdminReconciliation
   const [resolvedTab, setResolvedTab] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [autoPolling, setAutoPolling] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Pagination
   const [pagination, setPagination] = useState<ReconciliationPagination>({

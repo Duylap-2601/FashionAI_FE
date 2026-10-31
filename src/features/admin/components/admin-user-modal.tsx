@@ -4,11 +4,25 @@ import { fmt } from '@/features/admin/services/format';
 import type { UserTier } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminUserModalProps } from '@/features/admin/types/admin-user-modal';
 import {
+  Loader2,
   X
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useState } from 'react';
 
 export function AdminUserModal({ setSelectedUser, selectedUser, handleUpdateUser }: AdminUserModalProps) {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const updateUser = async (patch: Partial<Pick<typeof selectedUser, 'tier' | 'role'>>) => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+    try {
+      await handleUpdateUser(selectedUser.id, patch);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex">
       <motion.div
@@ -22,7 +36,10 @@ export function AdminUserModal({ setSelectedUser, selectedUser, handleUpdateUser
         transition={{ duration: 0.28, ease: 'easeInOut' }}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-landing-line">
-          <h2 className="font-display text-[1.15rem] leading-tight text-landing-obsidian">Chi tiết người dùng</h2>
+          <h2 className="flex items-center gap-2 font-display text-[1.15rem] leading-tight text-landing-obsidian">
+            Chi tiết người dùng
+            {isUpdating && <Loader2 className="h-4 w-4 animate-spin text-landing-oxblood" />}
+          </h2>
           <button onClick={() => setSelectedUser(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-landing-paper border-0 bg-transparent cursor-pointer">
             <X className="w-4 h-4" />
           </button>
@@ -45,8 +62,9 @@ export function AdminUserModal({ setSelectedUser, selectedUser, handleUpdateUser
               <label className="block text-body-sm font-semibold text-landing-obsidian mb-1.5">Phân quyền (Tier)</label>
               <select
                 value={selectedUser.tier}
-                onChange={e => handleUpdateUser(selectedUser.id, { tier: e.target.value as UserTier })}
-                className="w-full h-10 px-3 rounded-[2px] border border-landing-taupe"
+                onChange={e => void updateUser({ tier: e.target.value as UserTier })}
+                disabled={isUpdating}
+                className="w-full h-10 px-3 rounded-[2px] border border-landing-taupe disabled:opacity-60"
               >
                 <option value="FREE">Free Account</option>
                 <option value="MEMBER">Gold Member</option>
@@ -58,15 +76,17 @@ export function AdminUserModal({ setSelectedUser, selectedUser, handleUpdateUser
               <label className="block text-body-sm font-semibold text-landing-obsidian mb-1.5">Vai trò hệ thống</label>
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleUpdateUser(selectedUser.id, { role: 'USER' })}
-                  className={`flex-1 py-2 rounded-[2px] font-semibold text-label-sm border cursor-pointer ${selectedUser.role === 'USER' ? 'bg-metric-products/10 text-metric-products border-metric-products/30' : 'bg-landing-ivory border-landing-line text-landing-obsidian'
+                  onClick={() => void updateUser({ role: 'USER' })}
+                  disabled={isUpdating}
+                  className={`flex-1 py-2 rounded-[2px] font-semibold text-label-sm border cursor-pointer disabled:opacity-60 ${selectedUser.role === 'USER' ? 'bg-metric-products/10 text-metric-products border-metric-products/30' : 'bg-landing-ivory border-landing-line text-landing-obsidian'
                     }`}
                 >
                   USER
                 </button>
                 <button
-                  onClick={() => handleUpdateUser(selectedUser.id, { role: 'ADMIN' })}
-                  className={`flex-1 py-2 rounded-[2px] font-semibold text-label-sm border cursor-pointer ${selectedUser.role === 'ADMIN' ? 'bg-landing-oxblood/10 text-landing-oxblood border-landing-oxblood/30' : 'bg-landing-ivory border-landing-line text-landing-obsidian'
+                  onClick={() => void updateUser({ role: 'ADMIN' })}
+                  disabled={isUpdating}
+                  className={`flex-1 py-2 rounded-[2px] font-semibold text-label-sm border cursor-pointer disabled:opacity-60 ${selectedUser.role === 'ADMIN' ? 'bg-landing-oxblood/10 text-landing-oxblood border-landing-oxblood/30' : 'bg-landing-ivory border-landing-line text-landing-obsidian'
                     }`}
                 >
                   ADMIN

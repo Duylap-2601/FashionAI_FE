@@ -22,11 +22,12 @@ import { deleteAdminCoupon, updateAdminCoupon } from '@/features/admin/services/
 import type { AdminCoupon, AdminCouponsResponse, AdminCouponFilters } from '@/features/admin/types/admin-coupons';
 import { AdminCouponModal } from '@/features/admin/components/admin-coupon-modal';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
+import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';
 import { getErrorMessage } from '@/lib/errors';
 
 export function AdminCouponsPanel() {
   const [coupons, setCoupons] = useState<AdminCoupon[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
@@ -242,6 +243,12 @@ export function AdminCouponsPanel() {
 
             {/* Table Body */}
             <div className="divide-y divide-landing-line text-body-sm">
+              {isLoading && filteredCoupons.length > 0 && (
+                <AdminLoadingBar label="Đang cập nhật mã giảm giá..." />
+              )}
+              {isLoading && coupons.length === 0 && (
+                <AdminTableLoading label="Đang tải mã giảm giá" />
+              )}
               {filteredCoupons.map((c) => {
                 const numVal = Number(c.discountValue);
                 const numMax = c.maxDiscountVnd ? Number(c.maxDiscountVnd) : null;
@@ -391,7 +398,7 @@ export function AdminCouponsPanel() {
                 );
               })}
 
-              {filteredCoupons.length === 0 && (
+              {filteredCoupons.length === 0 && !isLoading && (
                 <div className="py-16 text-center text-landing-muted flex flex-col items-center gap-2">
                   <Tag className="w-8 h-8 text-landing-muted" />
                   <p>

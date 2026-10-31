@@ -17,6 +17,7 @@ import { readAdminList } from '@/features/admin/services/admin-mappers';
 import { fetchAdminSaleCampaigns } from '@/features/admin/services/queries';
 import { deleteAdminSaleCampaign, updateAdminSaleCampaign } from '@/features/admin/services/mutations';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
+import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';
 import { AdminSaleCampaignModal } from '@/features/admin/components/admin-sale-campaign-modal';
 import type {
   AdminSaleCampaign,
@@ -33,7 +34,7 @@ function formatDate(value: string | null) {
 
 export function AdminSaleCampaignsPanel() {
   const [campaigns, setCampaigns] = useState<AdminSaleCampaign[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
@@ -177,6 +178,12 @@ export function AdminSaleCampaignsPanel() {
             </div>
 
             <div className="divide-y divide-landing-line text-body-sm">
+              {isLoading && campaigns.length > 0 && (
+                <AdminLoadingBar label="Đang cập nhật chiến dịch sale..." />
+              )}
+              {isLoading && campaigns.length === 0 && (
+                <AdminTableLoading label="Đang tải chiến dịch sale" />
+              )}
               {campaigns.map((campaign) => {
                 const startsAt = formatDate(campaign.startsAt);
                 const endsAt = formatDate(campaign.endsAt);
@@ -257,7 +264,7 @@ export function AdminSaleCampaignsPanel() {
                 );
               })}
 
-              {campaigns.length === 0 && (
+              {campaigns.length === 0 && !isLoading && (
                 <div className="py-16 text-center text-landing-muted flex flex-col items-center gap-2">
                   <BadgePercent className="w-8 h-8 text-landing-muted" />
                   <p>

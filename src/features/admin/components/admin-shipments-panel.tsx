@@ -3,6 +3,7 @@
 import { shipmentStatusLabel, fmt } from '@/features/admin/services/format';
 import type { AdminShipmentsPanelProps } from '@/features/admin/types/admin-shipments-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
+import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';
 import { PackageCheck, RotateCcw, Search, XCircle } from 'lucide-react';
 
 const STATUS_OPTIONS = ['READY_TO_PICK', 'CREATED', 'PICKING', 'PICKED', 'SHIPPING', 'IN_TRANSIT', 'DELIVERING', 'DELIVERED', 'DELIVERY_FAILED', 'RETURNING', 'RETURNED', 'CANCELLED', 'FAILED'];
@@ -134,6 +135,12 @@ export function AdminShipmentsPanel({
 
             {/* Scrollable Data Body */}
             <div className="divide-y divide-landing-line text-body-sm">
+              {isFetching && shipments.length > 0 && (
+                <AdminLoadingBar label="Đang cập nhật vận đơn..." />
+              )}
+              {isFetching && shipments.length === 0 && (
+                <AdminTableLoading label="Đang tải vận đơn" />
+              )}
               {shipments.map(shipment => (
                 <div
                   key={shipment.id}
@@ -249,7 +256,7 @@ export function AdminShipmentsPanel({
                 </div>
               ))}
 
-              {shipments.length === 0 && (
+              {shipments.length === 0 && !isFetching && (
                 <div className="py-16 text-center text-landing-muted">
                   {isFiltered ? 'Không tìm thấy vận đơn nào phù hợp với bộ lọc' : 'Chưa có vận đơn nào'}
                 </div>

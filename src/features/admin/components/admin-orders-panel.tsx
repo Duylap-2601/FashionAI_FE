@@ -4,6 +4,7 @@ import { resolveOrderStatusCfg } from '@/features/admin/constants/admin-dashboar
 import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import type { AdminOrdersPanelProps } from '@/features/admin/types/admin-orders-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
+import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';
 import { Calendar, ChevronDown, Eye, RotateCcw, Search } from 'lucide-react';
 import Link from 'next/link';
 
@@ -148,6 +149,12 @@ export function AdminOrdersPanel({
 
             {/* Scrollable Data Body */}
             <div className="divide-y divide-landing-line text-body-sm">
+              {isFetching && orders.length > 0 && (
+                <AdminLoadingBar label="Đang cập nhật đơn hàng..." />
+              )}
+              {isFetching && orders.length === 0 && (
+                <AdminTableLoading label="Đang tải đơn hàng" />
+              )}
               {orders.map((o) => {
                 const cfg = resolveOrderStatusCfg(o.status, o.displayStatus);
                 const Icon = cfg.icon;
@@ -222,7 +229,7 @@ export function AdminOrdersPanel({
                 );
               })}
 
-              {orders.length === 0 && (
+              {orders.length === 0 && !isFetching && (
                 <div className="py-16 text-center text-landing-muted">
                   {isFiltered ? 'Không tìm thấy đơn hàng nào phù hợp với bộ lọc' : 'Chưa có đơn hàng nào'}
                 </div>

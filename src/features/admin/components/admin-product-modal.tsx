@@ -3,12 +3,14 @@
 import type { GarmentCategory, GarmentType, LayerRole, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminProductModalProps } from '@/features/admin/types/admin-product-modal';
 import {
+  Loader2,
   Package,
   Trash2,
   X
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import Image from 'next/image';
+import { useState } from 'react';
 
 const GARMENT_TYPES_BY_CATEGORY: Record<GarmentCategory, { value: GarmentType; label: string }[]> = {
   UPPER: [
@@ -36,6 +38,17 @@ const LAYER_ROLES: { value: LayerRole; label: string }[] = [
 export function AdminProductModal({ closeProductEditor, editingProduct, setEditingProduct, addColor, updateColor, removeColor, productImages, handleSelectImages, handleSetPrimaryImage, handleSetImageColor, handleRemoveImage, handleSaveProduct }: AdminProductModalProps) {
   const currentCategory = (editingProduct.category || 'UPPER') as GarmentCategory;
   const availableGarmentTypes = GARMENT_TYPES_BY_CATEGORY[currentCategory] || [];
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await handleSaveProduct();
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleCategoryChange = (newCategory: GarmentCategory) => {
     const validTypes = GARMENT_TYPES_BY_CATEGORY[newCategory] || [];
@@ -375,15 +388,18 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
           <div className="flex gap-3 justify-end mt-4">
             <button
               onClick={closeProductEditor}
-              className="px-4 py-2 border border-landing-line text-landing-obsidian rounded-[2px] font-medium hover:bg-landing-paper/60 transition-colors cursor-pointer bg-landing-ivory"
+              disabled={isSaving}
+              className="px-4 py-2 border border-landing-line text-landing-obsidian rounded-[2px] font-medium hover:bg-landing-paper/60 transition-colors cursor-pointer bg-landing-ivory disabled:opacity-50"
             >
               Hủy
             </button>
             <button
-              onClick={handleSaveProduct}
-              className="px-5 py-2 bg-landing-oxblood hover:bg-landing-oxblood/90 text-landing-paper rounded-[2px] font-bold border-0 cursor-pointer"
+              onClick={() => void handleSubmit()}
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 px-5 py-2 bg-landing-oxblood hover:bg-landing-obsidian text-landing-paper rounded-[2px] font-bold border-0 cursor-pointer disabled:opacity-60"
             >
-              Lưu
+              {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isSaving ? 'Đang lưu...' : 'Lưu'}
             </button>
           </div>
         </div>
