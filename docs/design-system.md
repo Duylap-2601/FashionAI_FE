@@ -356,6 +356,21 @@ Contract:
 - Footer includes a mobile bottom-tab clearance.
 - The header search (desktop input and mobile icon) is hidden on `/products`, which has its own toolbar search.
 
+### `BottomTabBar`
+
+File: `src/components/layout/BottomTabBar.tsx`, rendered by `AppLayout` below `md`.
+
+Contract:
+
+- Fixed `inset-x-0 bottom-0`, `64px` tall, `z-[90]`, hidden from `md`. Sheets and dialogs stay above it at `z-[100]`.
+- Surface: `bg-landing-paper/95` with `backdrop-blur-md`, one top hairline in `border-landing-line`, no shadow.
+- Five tabs in order: `Trang chủ` (`/`), `Sản phẩm` (`/products`), `Thử đồ` (`/try-on`), `AI Stylist` (`/ai-stylist` and `/chat`), `Tài khoản` (`/profile` and `/notifications`).
+- Each tab is a real `Link` with at least a `44px` touch target, an `aria-current="page"` flag and a Lucide icon at `20px`, stroke `1.75`.
+- Label: `10px` uppercase, tracking `0.1em`, `landing-muted` when idle and `landing-oxblood` when active. Icons follow the same colour. Hover uses `landing-obsidian`.
+- Active state is a `2px` oxblood top rule. No pill background, no rounded-xl, no badge counts, no English labels.
+- The bar is hidden on `/chat` and `/search`. Page content keeps `pb-[64px]` on mobile, and the footer and try-on session dock clear the bar.
+- If the bar height changes, update `pb-[64px]`, the footer clearance and the try-on dock offset together.
+
 ## Products Listing
 
 Page: `src/features/products/components/products-page.tsx`, rendered by `src/app/(main)/products/page.tsx`. The page owns filter state, queries, and scrolling; the components below only render.
@@ -751,3 +766,4 @@ Manual checks:
 | 2026-10-26 | Try-on contract: header mode switch, shared garment slot and colour picker, live stage and session dock, photo frame, catalog dialog |
 | 2026-10-26 | Cart line and slide-over, rack and mannequin chrome, notification `tone`, plans from `/payments/plans` |
 | 2026-10-28 | Product detail contract: gallery lightbox, purchase panel, detail tabs, review states and related products on Atelier Paper |
+| 2026-10-30 | Mobile bottom tab bar contract: 64px paper bar, five Vietnamese tabs, oxblood active rule, `z-[90]` under sheets |

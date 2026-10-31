@@ -25,6 +25,7 @@ export function mapOrder(order: BackendOrder): Order {
     refundEvidence: order.refundEvidence ?? null,
     totalAmount: Number(order.amount),
     itemsTotal,
+    listItemsTotal: order.listItemsTotal !== undefined && order.listItemsTotal !== null ? Number(order.listItemsTotal) : undefined,
     shippingFee: Number(order.shippingFee ?? 0),
     discountAmount: Number(order.discountAmount ?? 0),
     shippingInfo: {
@@ -53,6 +54,7 @@ export function mapOrder(order: BackendOrder): Order {
       productImageSnapshot: item.productImageSnapshot,
       productCategorySnapshot: item.productCategorySnapshot,
       brandSnapshot: item.brandSnapshot,
+      listUnitPriceVnd: item.listUnitPriceVnd !== undefined && item.listUnitPriceVnd !== null ? Number(item.listUnitPriceVnd) : null,
       unitPriceVnd: item.unitPriceVnd !== undefined && item.unitPriceVnd !== null ? Number(item.unitPriceVnd) : Number(item.price),
       lineTotalVnd: item.lineTotalVnd !== undefined && item.lineTotalVnd !== null ? Number(item.lineTotalVnd) : Number(item.price) * item.quantity,
       measurementSnapshot: item.measurementSnapshot || undefined,

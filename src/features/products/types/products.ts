@@ -8,8 +8,9 @@ export interface Product {
   brand: string;
   price: string;
   numericPrice: number;
-  originalPrice?: number;
-  originalPriceFormatted?: string;
+  listPrice?: number;
+  listPriceFormatted?: string;
+  sale?: { percent: number; salePrice: number } | null;
   category: string;
   garmentCategory?: 'UPPER' | 'LOWER' | 'FULL_BODY';
   garmentType?: GarmentType;

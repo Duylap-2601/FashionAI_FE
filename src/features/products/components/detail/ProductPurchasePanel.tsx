@@ -39,13 +39,16 @@ function isLightHex(hex: string) {
 
 function ProductPrice({ product, selectedType, isComboSuit }: Pick<ProductPurchasePanelProps, 'product' | 'selectedType' | 'isComboSuit'>) {
   const displayPrice = isComboSuit ? getComboDisplayPrice(selectedType) : product.price;
+  const hasSale = Boolean(product.sale && product.sale.salePrice < (product.listPrice ?? Number.POSITIVE_INFINITY));
   const originalPrice = isComboSuit
     ? getComboOriginalPrice(selectedType)
-    : product.originalPriceFormatted || (product.originalPrice ? `${product.originalPrice.toLocaleString('vi-VN')}đ` : null);
+    : hasSale
+      ? product.listPriceFormatted
+      : null;
   const discount = isComboSuit
     ? getComboDiscount(selectedType)
-    : product.originalPrice && product.numericPrice < product.originalPrice
-      ? `-${Math.round(((product.originalPrice - product.numericPrice) / product.originalPrice) * 100)}%`
+    : hasSale && product.sale
+      ? `-${product.sale.percent}%`
       : null;
 
   return (

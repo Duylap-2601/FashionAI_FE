@@ -171,6 +171,8 @@ export default function ProductDetail() {
       productId: product.id,
       name,
       price,
+      listPrice: !isComboSuit && product.sale ? product.listPrice : undefined,
+      salePercent: !isComboSuit ? product.sale?.percent : undefined,
       quantity,
       image: thumbs[activeThumb] || product.image,
       // Sản phẩm không khai báo màu: selectedColor chỉ là nhãn hiển thị ("Trắng"), không gửi lên giỏ.
@@ -199,6 +201,8 @@ export default function ProductDetail() {
       productId: relatedProduct.id,
       name: relatedProduct.name,
       price: relatedProduct.numericPrice,
+      listPrice: relatedProduct.sale ? relatedProduct.listPrice : undefined,
+      salePercent: relatedProduct.sale?.percent,
       quantity: 1,
       image: relatedProduct.image,
       color,

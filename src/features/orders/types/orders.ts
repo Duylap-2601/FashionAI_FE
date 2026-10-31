@@ -39,6 +39,7 @@ export interface CreateOrderRequest {
 
 export interface OrderQuote {
   itemsTotal: number;
+  listItemsTotal?: number;
   shippingFee: number;
   discountAmount: number;
   couponCode?: string;
@@ -142,6 +143,7 @@ export interface OrderItem {
   productImageSnapshot?: string | null;
   productCategorySnapshot?: string | null;
   brandSnapshot?: string | null;
+  listUnitPriceVnd?: number | null;
   unitPriceVnd?: number;
   lineTotalVnd?: number;
   measurementSnapshot?: MeasurementSnapshot;
@@ -177,6 +179,7 @@ export interface Order {
   refundEvidence?: string | null;
   totalAmount: number;
   itemsTotal: number;
+  listItemsTotal?: number;
   shippingFee: number;
   discountAmount: number;
   shippingInfo: ShippingInfo;
@@ -206,6 +209,7 @@ export interface BackendOrderItem {
   productImageSnapshot?: string | null;
   productCategorySnapshot?: string | null;
   brandSnapshot?: string | null;
+  listUnitPriceVnd?: number | string | null;
   unitPriceVnd?: number | string | null;
   lineTotalVnd?: number | string | null;
   measurementSnapshot?: MeasurementSnapshot | null;
@@ -296,6 +300,7 @@ export interface BackendOrder {
   refundEvidence?: string | null;
   amount: number | string;
   itemsTotal?: number | string;
+  listItemsTotal?: number | string | null;
   shippingFee?: number | string | null;
   discountAmount?: number | string | null;
   shippingInfo?: ShippingInfo | null;

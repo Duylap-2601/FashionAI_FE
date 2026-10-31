@@ -23,13 +23,16 @@ export function clampCartQuantity(quantity: number) {
 export function toCartItem(item: ServerCartItem): CartItem {
   const combo = item.comboType ? COMBO_OPTIONS.find((option) => option.value === item.comboType) : undefined;
   const color = item.color ?? undefined;
+  const sale = item.product.sale;
   return {
     id: item.id,
     productId: item.productId,
     name: combo ? `${item.product.name} (${combo.label})` : item.product.name,
     variant: color ? `Màu: ${color} · Đặt may theo số đo` : 'Đặt may theo số đo',
     // BE chưa có giá theo phần combo nên giữ giá hiển thị như trang sản phẩm.
-    price: combo ? combo.price : item.product.price,
+    price: combo ? combo.price : (sale?.salePrice ?? item.product.price),
+    listPrice: combo ? undefined : (sale ? item.product.price : undefined),
+    salePercent: combo ? undefined : sale?.percent,
     quantity: item.quantity,
     image: item.product.imageUrl,
     color,

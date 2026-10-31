@@ -6,7 +6,7 @@ export interface ServerCartProduct {
   id: string;
   name: string;
   price: number;
-  originalPrice: number | null;
+  sale: { percent: number; salePrice: number } | null;
   status: CartProductStatus;
   category: string;
   garmentType: string | null;

@@ -403,6 +403,7 @@ export default function OrderDetailPage() {
                   const name = item.productNameSnapshot || item.product?.name || `Trang phục #${item.productId}`;
                   const itemUnitPrice = item.unitPriceVnd ?? item.price;
                   const itemLineTotal = item.lineTotalVnd ?? (item.price * item.quantity);
+                  const itemListUnitPrice = item.listUnitPriceVnd && item.listUnitPriceVnd > itemUnitPrice ? item.listUnitPriceVnd : null;
 
                   return (
                     <div key={item.id || index} className="py-5 flex gap-4 items-start sm:items-center">
@@ -483,6 +484,11 @@ export default function OrderDetailPage() {
                         </div>
                       </div>
                       <div className="text-right shrink-0 pt-1 sm:pt-0">
+                        {itemListUnitPrice ? (
+                          <div className="text-[11px] text-neutral-400 line-through">
+                            {(itemListUnitPrice * item.quantity).toLocaleString('vi-VN')}đ
+                          </div>
+                        ) : null}
                         <div className="text-body-md font-bold text-brand-navy">
                           {itemLineTotal.toLocaleString('vi-VN')}đ
                         </div>
