@@ -13,6 +13,7 @@ import { allMeasurementFields } from '@/features/measurements/constants/profile-
 import { useUserMeasurements } from '@/features/measurements/hooks/useMeasurements';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { getErrorMessage } from '@/lib/errors';
 import {
   AlertTriangle,
@@ -229,10 +230,7 @@ export default function AdminOrderMeasurementsPage() {
     return (
       <AdminGuard>
         <div className="min-h-screen bg-brand-cream flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-brand-navy" />
-            <p className="text-body-sm text-neutral-600 font-medium">Đang tải chi tiết đơn hàng & phiếu may đo...</p>
-          </div>
+          <AtelierLoader size="md" label="Đang may phiếu đo" />
         </div>
       </AdminGuard>
     );
@@ -820,8 +818,7 @@ export default function AdminOrderMeasurementsPage() {
 
                   {isLoadingUserMeasurements ? (
                     <div className="py-6 flex flex-col items-center justify-center gap-2 text-xs text-neutral-500">
-                      <Loader2 className="w-5 h-5 animate-spin text-brand-navy" />
-                      <span>Đang tải hồ sơ số đo khách hàng...</span>
+                      <AtelierLoader size="sm" label="Đang may số đo" />
                     </div>
                   ) : !order.userId ? (
                     <div className="p-4 rounded-xl bg-brand-cream/50 border border-[#E5DFD5] text-xs text-neutral-500 italic text-center">

@@ -6,6 +6,7 @@ import { AssistantMark } from '@/features/chat/components/assistant-mark';
 import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
 import { ChatSuggestionsSkeleton } from './ChatSuggestionsSkeleton';
 import { Check, Copy, ExternalLink, Package, RotateCcw } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
@@ -55,9 +56,12 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
             className="group/prod mb-1 flex items-center gap-2.5 rounded-[2px] border border-landing-line bg-landing-ivory p-2 transition-colors hover:border-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
           >
             {message.product.image ? (
-              <img
+              <Image
                 src={message.product.image}
                 alt={message.product.name}
+                width={36}
+                height={44}
+                unoptimized
                 className="h-11 w-9 shrink-0 rounded-[2px] bg-landing-paper object-contain"
               />
             ) : (

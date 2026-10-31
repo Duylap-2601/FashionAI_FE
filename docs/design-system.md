@@ -356,6 +356,21 @@ Contract:
 - Footer includes a mobile bottom-tab clearance.
 - The header search (desktop input and mobile icon) is hidden on `/products`, which has its own toolbar search.
 
+### `BottomTabBar`
+
+File: `src/components/layout/BottomTabBar.tsx`, rendered by `AppLayout` below `md`.
+
+Contract:
+
+- Fixed `inset-x-0 bottom-0`, `64px` tall, `z-[90]`, hidden from `md`. Sheets and dialogs stay above it at `z-[100]`.
+- Surface: `bg-landing-paper/95` with `backdrop-blur-md`, one top hairline in `border-landing-line`, no shadow.
+- Five tabs in order: `Trang chủ` (`/`), `Sản phẩm` (`/products`), `Thử đồ` (`/try-on`), `AI Stylist` (`/ai-stylist` and `/chat`), `Tài khoản` (`/profile` and `/notifications`).
+- Each tab is a real `Link` with at least a `44px` touch target, an `aria-current="page"` flag and a Lucide icon at `20px`, stroke `1.75`.
+- Label: `10px` uppercase, tracking `0.1em`, `landing-muted` when idle and `landing-oxblood` when active. Icons follow the same colour. Hover uses `landing-obsidian`.
+- Active state is a `2px` oxblood top rule. No pill background, no rounded-xl, no badge counts, no English labels.
+- The bar is hidden on `/chat` and `/search`. Page content keeps `pb-[64px]` on mobile, and the footer and try-on session dock clear the bar.
+- If the bar height changes, update `pb-[64px]`, the footer clearance and the try-on dock offset together.
+
 ## Products Listing
 
 Page: `src/features/products/components/products-page.tsx`, rendered by `src/app/(main)/products/page.tsx`. The page owns filter state, queries, and scrolling; the components below only render.
@@ -434,6 +449,115 @@ File: `src/features/products/components/listing/ProductList.tsx`
 | Mobile | `shown / total` count, hairline progress bar, and `Xem thêm`. The page also loads the next page ahead with an IntersectionObserver on the same block |
 
 Grid: `grid-cols-2`, then `md:grid-cols-3 lg:grid-cols-4`. With the sidebar open: `md:grid-cols-2 lg:grid-cols-3`.
+
+## Product Detail
+
+Page: `src/features/products/components/products-id-page.tsx`, rendered by `src/app/(main)/products/[id]/page.tsx`. The page owns selection, cart, rack, measurement and analytics state. Detail components only render.
+
+### Layout
+
+- Surface: `bg-landing-paper` with `landing-paper-texture` on the page wrapper.
+- Container: `mx-auto w-full max-w-[1440px] px-4 md:px-8`.
+- Main grid: one column below `md`, `md:grid-cols-[55%_1fr]`, `gap-8 lg:gap-16`.
+- Purchase panel: `bg-landing-ivory` block with `border border-landing-line`, `p-5 md:p-7`.
+- Section rhythm: `py-12 md:py-16` inside tabs, `py-16 md:py-24` for reviews and related products.
+- Bottom clearance: the app layout adds `pb-[64px]` below the page for the mobile bottom tab bar; the related section also keeps its own bottom padding.
+
+### `ProductBreadcrumb`
+
+File: `src/features/products/components/detail/ProductBreadcrumb.tsx`
+
+- `nav` with label type `text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-muted`.
+- Links are `Trang chủ` and `Sản phẩm`, hover `text-landing-oxblood`.
+- Category is plain text, not a dead link. The current product uses `aria-current="page"` and `text-landing-obsidian`.
+- Chevron separators use Lucide `ChevronRight` at `14px`.
+
+### `ProductImageViewer`
+
+File: `src/features/products/components/ProductImageViewer.tsx`
+
+```ts
+interface ProductImageViewerProps {
+  images: string[];
+  productName: string;
+  brand?: string;
+  activeThumb: number;
+  onSelectThumb: (index: number) => void;
+  fallbackImage?: string;
+}
+```
+
+Contract:
+
+- Main plate: `aspect-[3/4]`, `bg-landing-ivory`, `border border-landing-line`, `rounded-[2px]`, no shadow.
+- Main plate has a full-area `button` that opens the lightbox. The magnifier, lightbox, zoom, pan and keyboard shortcuts stay functional.
+- Chrome uses `bg-landing-obsidian/80` or `bg-landing-paper/95`, paper text, mono counters and square corners. No gold, amber, glassmorphism or pill chrome.
+- Thumbnails are `82x110` square buttons with `aria-pressed`; active state is a `2px` oxblood border.
+- Lightbox: Radix Dialog or an equivalent focus-trapped dialog, `bg-landing-obsidian/95`, paper text, brass labels, oxblood active thumbnail. Esc closes and focus returns to the opener.
+- Failed images use `LANDING_MEDIA.productFallback` and a failed-image state, not DOM `src` mutation.
+
+### `ProductPurchasePanel`
+
+File: `src/features/products/components/detail/ProductPurchasePanel.tsx`
+
+- Brand: `text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink`.
+- Category: square hairline label, not a pill.
+- Title: `product-name-title text-landing-obsidian`.
+- Rating: `StarRating tone="landing"` and mono value. Render only when `reviewCount > 0`; no `5.0` fallback.
+- Price: `font-mono text-landing-oxblood`. Original price: `font-mono text-landing-muted line-through`. Sale badge: `bg-landing-oxblood text-landing-paper` with square corners.
+- Combo options: `rounded-[2px] border border-landing-line`, selected `border-landing-oxblood` plus `aria-pressed`, mono price.
+- Colour swatches: 44px buttons with `aria-label` and `aria-pressed`; inner swatch is round; light colours add `border-landing-taupe`. No dead placeholders.
+- Quantity: square stepper, mono count, `44px` buttons, `Tạm tính` label.
+- Primary CTA: `h-12 rounded-[2px] bg-landing-oxblood text-landing-paper hover:bg-landing-obsidian`.
+- Try-on CTA: oxblood with visible Lucide `Sparkles`; link to `/try-on?productId=...`.
+- AI Stylist: outline button. Rack pin: outline button with `aria-pressed` and Lucide icon.
+- Measurement block: ivory with hairline; complete uses `landing-sage-ink` and `Check`; missing uses destructive or brass. Link to `/profile/measurements`.
+- Assurances: made to saved measurements, measurement advice, 7-day defect window. No delivery-time guarantee.
+
+### `ProductDetailTabs`
+
+File: `src/features/products/components/detail/ProductDetailTabs.tsx`
+
+- Tabs: `role="tablist"`, `aria-selected`, active oxblood text and `1px` oxblood underline.
+- Headings: `font-display text-landing-h3 text-landing-obsidian`.
+- Body: `text-landing-body text-landing-muted`.
+- Content blocks: ivory with `border-landing-line`, square corners, no shadows.
+- Step numbers: `font-mono`.
+- Missing material reads `Đang cập nhật`. The closing note links to `/return-policy` and states the real 7-day window.
+- AI Stylist CTA is an outline button, not a brass gradient.
+
+### `ReviewSection`, `RatingOverview` and `ReviewCard`
+
+Files: `src/features/reviews/components/ReviewSection.tsx`, `RatingOverview.tsx`, `ReviewCard.tsx`
+
+- Section: `bg-landing-ivory` with `border-t border-landing-line`.
+- Heading: Playfair. Write-review action: square oxblood button.
+- Overview: ivory hairline block, mono average, `StarRating tone="landing"`, oxblood and taupe distribution bars.
+- Filters: underline text tabs with `aria-pressed`, not pills.
+- Cards: square paper blocks with hairlines and no shadows. Verified purchase uses `text-landing-sage-ink`, not a green pill.
+- Reply blocks: ivory with hairline.
+- Delete review and delete reply use `AccountConfirmDialog` from `account-ui.tsx`.
+- Avatar and review images use `next/image`; data URLs pass `unoptimized`.
+
+### `ProductDetailStates` and `RelatedProducts`
+
+Files: `src/features/products/components/detail/ProductDetailStates.tsx`, `RelatedProducts.tsx`
+
+- Skeleton: paper and taupe blocks in the same two-column layout, square corners, `motion-safe:animate-pulse`.
+- Not found: ivory block, Playfair title, one muted sentence, square oxblood CTA.
+- Related products: paper section with top hairline and the shared `ProductCard` grid.
+
+### State Matrix
+
+| Element | Default | Hover | Focus-visible | Active / selected | Disabled |
+| --- | --- | --- | --- | --- | --- |
+| Thumbnail | Hairline frame | Opacity 100 | Oxblood outline | `2px` oxblood border, `aria-pressed` | Not used |
+| Combo option | Hairline, ivory | Brass border | Oxblood outline | Oxblood border, `aria-pressed` | Not used |
+| Colour swatch | Taupe or transparent ring | Brass ring | Oxblood outline | Oxblood ring, `aria-pressed` | Not used |
+| Primary CTA | Oxblood fill | Obsidian fill | Oxblood outline | `scale(0.99)` | 50% opacity |
+| Outline CTA | Transparent, hairline | Oxblood border and text | Oxblood outline | `scale(0.99)` | 50% opacity |
+| Tab | Muted text | Ink | Oxblood outline | Oxblood text and underline | Not used |
+| Review filter | Muted text | Ink | Oxblood outline | Oxblood text and underline | Not used |
 
 ## Account Pages
 
@@ -581,6 +705,14 @@ Rules:
 | Cart line, slide-over and page | `cart-line.tsx`, `CartSlideOver.tsx`, `cart-page.tsx` |
 | Rack | `rack-page.tsx`, `MannequinDressForm.tsx`, `services/rack-images.ts` |
 | Plans | `subscription-page.tsx`, `subscription-plans.tsx`, `current-subscription.tsx`, `subscription-history.tsx` |
+| Product detail page | `products-id-page.tsx` |
+| Product detail breadcrumb | `detail/ProductBreadcrumb.tsx` |
+| Product gallery | `ProductImageViewer.tsx` |
+| Product purchase panel | `detail/ProductPurchasePanel.tsx` |
+| Product detail tabs | `detail/ProductDetailTabs.tsx` |
+| Product detail states | `detail/ProductDetailStates.tsx` |
+| Related products | `detail/RelatedProducts.tsx` |
+| Product reviews | `ReviewSection.tsx`, `RatingOverview.tsx`, `ReviewCard.tsx` |
 
 ## Do Not
 
@@ -633,3 +765,5 @@ Manual checks:
 | 2026-10-26 | `AccountShell` contract for the five account pages, account primitives, order status tones and the landing tone of `StarRating` |
 | 2026-10-26 | Try-on contract: header mode switch, shared garment slot and colour picker, live stage and session dock, photo frame, catalog dialog |
 | 2026-10-26 | Cart line and slide-over, rack and mannequin chrome, notification `tone`, plans from `/payments/plans` |
+| 2026-10-28 | Product detail contract: gallery lightbox, purchase panel, detail tabs, review states and related products on Atelier Paper |
+| 2026-10-30 | Mobile bottom tab bar contract: 64px paper bar, five Vietnamese tabs, oxblood active rule, `z-[90]` under sheets |

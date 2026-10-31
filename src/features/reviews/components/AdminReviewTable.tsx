@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { queryKeys as reviewsQueryKeys } from '@/features/reviews/services/query-keys';
 import { fetchAdminReviewsResponse, fetchProductReviewsResponse, toReviewList } from '@/features/reviews/services/queries';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
@@ -17,6 +18,7 @@ import {
   ShieldAlert,
   Trash2
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -263,8 +265,7 @@ export function AdminReviewTable() {
             {isReviewsLoading ? (
               <div className="py-16 text-center text-neutral-400">
                 <div className="flex flex-col items-center justify-center gap-2">
-                  <Loader2 className="w-6 h-6 animate-spin text-brand-navy" />
-                  <span>Đang tải danh sách đánh giá...</span>
+                  <AtelierLoader size="sm" label="Đang may đánh giá" />
                 </div>
               </div>
             ) : paginatedReviews.length === 0 ? (
@@ -292,10 +293,13 @@ export function AdminReviewTable() {
                     <div className="py-4 px-6 min-w-0">
                       <div className="flex items-center gap-3">
                         {r.user?.avatarUrl ? (
-                          <img
+                          <Image
                             src={r.user.avatarUrl}
                             alt={userName}
-                            className="w-8 h-8 rounded-full object-cover border border-neutral-200 shrink-0"
+                            width={32}
+                            height={32}
+                            unoptimized
+                            className="h-8 w-8 shrink-0 rounded-full border border-neutral-200 object-cover"
                           />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-brand-navy/10 text-brand-navy flex items-center justify-center font-bold text-[13px] shrink-0">
@@ -317,11 +321,14 @@ export function AdminReviewTable() {
                     <div className="py-4 px-6 min-w-0">
                       <div className="flex items-center gap-3">
                         {(r.product?.image || r.product?.garmentUrl) && (
-                          <div className="w-9 h-9 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
-                            <img
+                          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100">
+                            <Image
                               src={r.product.image || r.product.garmentUrl || ''}
                               alt={r.product.name}
-                              className="w-full h-full object-cover"
+                              fill
+                              unoptimized
+                              sizes="36px"
+                              className="object-cover"
                             />
                           </div>
                         )}
@@ -362,9 +369,16 @@ export function AdminReviewTable() {
                                 href={imgUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="w-7 h-7 rounded-md overflow-hidden border border-neutral-200 bg-neutral-100 hover:opacity-80"
+                                className="relative block h-7 w-7 overflow-hidden rounded-md border border-neutral-200 bg-neutral-100 hover:opacity-80"
                               >
-                                <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                                <Image
+                                  src={imgUrl}
+                                  alt=""
+                                  fill
+                                  unoptimized
+                                  sizes="28px"
+                                  className="object-cover"
+                                />
                               </a>
                             ))}
                             <span className="text-[11px] text-neutral-400 font-medium ml-1">

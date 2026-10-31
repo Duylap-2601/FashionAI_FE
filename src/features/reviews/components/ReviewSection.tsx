@@ -1,15 +1,20 @@
 'use client';
 
-import type { ReviewSectionProps } from '@/features/reviews/types/review-section';
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { AccountConfirmDialog } from '@/features/profile/components/account-ui';
 import { RatingOverview } from '@/features/reviews/components/RatingOverview';
 import { ReviewCard } from '@/features/reviews/components/ReviewCard';
 import { WriteReviewModal } from '@/features/reviews/components/WriteReviewModal';
 import { useAdminDeleteReview, useCanReview, useDeleteReview, useReviews, useReviewStats } from '@/features/reviews/hooks/useReviews';
 import type { Review } from '@/features/reviews/types/reviews';
-import { Loader2, MessageSquarePlus, ShieldAlert, Star } from 'lucide-react';
+import type { ReviewSectionProps } from '@/features/reviews/types/review-section';
+import { cn } from '@/lib/utils';
+import { Loader2, MessageSquarePlus, Star } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood';
 
 export function ReviewSection({
   productId,
@@ -28,7 +33,6 @@ export function ReviewSection({
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
 
-  // Modal xác nhận xóa
   const [deletingReview, setDeletingReview] = useState<Review | null>(null);
   const [adminDeletingReview, setAdminDeletingReview] = useState<Review | null>(null);
 
@@ -43,14 +47,12 @@ export function ReviewSection({
   const deleteMutation = useDeleteReview();
   const adminDeleteMutation = useAdminDeleteReview();
 
-  // Reset filter rating
   const handleSelectRating = (rating?: number) => {
     setSelectedRating(rating);
     setPage(1);
     setAccumulatedReviews([]);
   };
 
-  // Cập nhật reviews tích lũy khi đổi trang hoặc load dữ liệu
   React.useEffect(() => {
     if (page === 1) {
       setAccumulatedReviews(reviews);
@@ -115,30 +117,34 @@ export function ReviewSection({
   const hasMore = meta ? meta.page < meta.totalPages : false;
 
   return (
-    <section id="product-reviews" className="py-12 border-t border-neutral-200">
-      <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8 flex flex-col gap-8">
-        {/* Tiêu đề Section & Nút Viết Đánh Giá */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <section id="product-reviews" className="border-t border-landing-line bg-landing-ivory py-16 md:py-24">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-4 md:px-8">
+        <div className="flex flex-col gap-5 border-b border-landing-line pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-[26px] md:text-[30px] font-bold text-brand-navy tracking-tight">
-              Đánh giá & Nhận xét
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-landing-brass-ink">
+              Đánh giá
+            </p>
+            <h2 className="mt-2 font-display text-landing-h2 text-landing-obsidian">
+              Đánh giá và nhận xét
             </h2>
-            <p className="text-body-sm text-neutral-500 mt-1">
-              Phản hồi thực tế từ khách hàng đã trải nghiệm sản phẩm và công nghệ may đo Made-to-Measure.
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-landing-muted">
+              Phản hồi thực tế từ khách hàng đã trải nghiệm sản phẩm và may đo.
             </p>
           </div>
 
           <button
             type="button"
             onClick={handleOpenWriteReview}
-            className="self-start sm:self-auto px-6 py-3 bg-[#5D1C34] hover:bg-[#4D172B] text-white rounded-xl font-semibold text-body-sm transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer shrink-0"
+            className={cn(
+              'inline-flex h-11 shrink-0 items-center justify-center gap-2 self-start rounded-[2px] bg-landing-oxblood px-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-paper transition-colors hover:bg-landing-obsidian sm:self-auto',
+              focusRing,
+            )}
           >
-            <MessageSquarePlus className="w-4 h-4" />
+            <MessageSquarePlus className="h-4 w-4" strokeWidth={1.75} />
             Viết đánh giá
           </button>
         </div>
 
-        {/* Khối Tổng quan Rating + Phân bố Sao + Bộ lọc */}
         <RatingOverview
           stats={stats}
           selectedRating={selectedRating}
@@ -146,31 +152,38 @@ export function ReviewSection({
           isLoading={isStatsLoading}
         />
 
-        {/* Danh sách các Review */}
-        <div className="flex flex-col gap-4 mt-2">
+        <div className="mt-2 flex flex-col gap-4">
           {isReviewsLoading && accumulatedReviews.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-neutral-400">
-              <Loader2 className="w-7 h-7 animate-spin text-brand-navy" />
-              <span className="text-body-sm">Đang tải các đánh giá...</span>
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-landing-muted">
+              <AtelierLoader size="md" label="Đang may đánh giá" />
             </div>
           ) : accumulatedReviews.length === 0 ? (
-            <div className="p-12 text-center bg-white border border-neutral-200/70 rounded-2xl flex flex-col items-center justify-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
-                <Star className="w-6 h-6" />
-              </div>
-              <h4 className="font-semibold text-brand-navy text-body-md">
+            <div className="flex flex-col items-center justify-center gap-3 border border-landing-line bg-landing-ivory px-6 py-14 text-center">
+              <Star className="h-7 w-7 text-landing-oxblood" strokeWidth={1.5} aria-hidden="true" />
+              <h4 className="font-display text-xl text-landing-obsidian">
                 {selectedRating
                   ? `Chưa có đánh giá ${selectedRating} sao nào`
                   : 'Chưa có đánh giá nào cho sản phẩm này'}
               </h4>
-              <p className="text-body-sm text-neutral-500 max-w-md">
+              <p className="max-w-md text-sm leading-relaxed text-landing-muted">
                 {selectedRating
                   ? 'Hãy thử chọn mức sao khác hoặc xem tất cả đánh giá.'
-                  : 'Nếu bạn đã mua và nhận sản phẩm này, hãy là người đầu tiên chia sẻ cảm nhận nhé!'}
+                  : 'Nếu bạn đã mua và nhận sản phẩm này, hãy là người đầu tiên chia sẻ cảm nhận.'}
               </p>
+              <button
+                type="button"
+                onClick={handleOpenWriteReview}
+                className={cn(
+                  'mt-2 inline-flex h-10 items-center justify-center gap-2 rounded-[2px] border border-landing-line px-4 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood',
+                  focusRing,
+                )}
+              >
+                <MessageSquarePlus className="h-3.5 w-3.5" strokeWidth={1.75} />
+                Viết đánh giá
+              </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {accumulatedReviews.map((item) => (
                 <ReviewCard
                   key={item.id}
@@ -185,16 +198,18 @@ export function ReviewSection({
             </div>
           )}
 
-          {/* Nút Xem thêm đánh giá (Load More) */}
           {hasMore && (
-            <div className="flex justify-center mt-6">
+            <div className="mt-6 flex justify-center">
               <button
                 type="button"
                 onClick={() => setPage((prev) => prev + 1)}
                 disabled={isReviewsLoading}
-                className="px-6 py-2.5 bg-white border border-neutral-300 rounded-xl text-body-sm font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors shadow-2xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                className={cn(
+                  'inline-flex h-11 items-center justify-center gap-2 rounded-[2px] border border-landing-line bg-landing-paper px-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood disabled:opacity-50',
+                  focusRing,
+                )}
               >
-                {isReviewsLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isReviewsLoading && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />}
                 Xem thêm đánh giá ({totalReviews - accumulatedReviews.length})
               </button>
             </div>
@@ -202,7 +217,6 @@ export function ReviewSection({
         </div>
       </div>
 
-      {/* Modal Viết / Sửa Review */}
       <WriteReviewModal
         isOpen={isWriteModalOpen}
         onClose={() => {
@@ -216,70 +230,29 @@ export function ReviewSection({
         editingReview={editingReview}
       />
 
-      {/* Modal xác nhận xóa của User */}
-      {deletingReview && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl border border-neutral-200">
-            <h4 className="font-bold text-brand-navy text-[18px] mb-2">Xác nhận xóa đánh giá</h4>
-            <p className="text-body-sm text-neutral-600 mb-6">
-              Bạn có chắc chắn muốn xóa đánh giá này không? Sau khi xóa, bạn có thể đánh giá lại sản phẩm này.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setDeletingReview(null)}
-                className="px-4 py-2 rounded-xl text-body-sm font-semibold text-neutral-600 hover:bg-neutral-100 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={deleteMutation.isPending}
-                className="px-4 py-2 rounded-xl text-body-sm font-semibold bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 cursor-pointer"
-              >
-                {deleteMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Xóa đánh giá
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AccountConfirmDialog
+        open={Boolean(deletingReview)}
+        onOpenChange={(open) => { if (!open) setDeletingReview(null); }}
+        title="Xóa đánh giá"
+        description="Bạn có chắc chắn muốn xóa đánh giá này? Sau khi xóa, bạn có thể đánh giá lại sản phẩm này."
+        confirmLabel="Xóa đánh giá"
+        isPending={deleteMutation.isPending}
+        onConfirm={confirmDelete}
+      />
 
-      {/* Modal xác nhận xóa của Admin */}
-      {adminDeletingReview && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl border border-neutral-200">
-            <div className="flex items-center gap-2 text-red-600 mb-2">
-              <ShieldAlert className="w-5 h-5" />
-              <h4 className="font-bold text-[18px]">Xóa đánh giá (Quyền Admin)</h4>
-            </div>
-            <p className="text-body-sm text-neutral-600 mb-6 leading-relaxed">
-              Hành động này sẽ gỡ bỏ vĩnh viễn đánh giá của người dùng{' '}
-              <strong className="text-neutral-800">{adminDeletingReview.user?.name || 'này'}</strong> khỏi hệ thống.
-              Điểm trung bình và số lượng review của sản phẩm sẽ được tự động cập nhật lại.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setAdminDeletingReview(null)}
-                className="px-4 py-2 rounded-xl text-body-sm font-semibold text-neutral-600 hover:bg-neutral-100 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={confirmAdminDelete}
-                disabled={adminDeleteMutation.isPending}
-                className="px-4 py-2 rounded-xl text-body-sm font-semibold bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 cursor-pointer"
-              >
-                {adminDeleteMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Xác nhận xóa vi phạm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AccountConfirmDialog
+        open={Boolean(adminDeletingReview)}
+        onOpenChange={(open) => { if (!open) setAdminDeletingReview(null); }}
+        title="Xóa đánh giá (quyền Admin)"
+        description={
+          adminDeletingReview
+            ? `Đánh giá của ${adminDeletingReview.user?.name || 'khách hàng này'} sẽ bị gỡ vĩnh viễn khỏi hệ thống. Điểm trung bình và số lượng đánh giá của sản phẩm sẽ được cập nhật lại.`
+            : ''
+        }
+        confirmLabel="Xóa vi phạm"
+        isPending={adminDeleteMutation.isPending}
+        onConfirm={confirmAdminDelete}
+      />
     </section>
   );
 }

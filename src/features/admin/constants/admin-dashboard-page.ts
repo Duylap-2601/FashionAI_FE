@@ -8,6 +8,7 @@ import type { BackendOrderStatus, OrderDisplayStatus } from '@/features/orders/t
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
+  BadgePercent,
   BarChart3,
   CheckCircle2,
   Clock,
@@ -27,7 +28,7 @@ import {
   XCircle
 } from 'lucide-react';
 
-export const ADMIN_PAGES: AdminPage[] = ['dashboard', 'analytics', 'platforms', 'products', 'collections', 'users', 'orders', 'shipments', 'order-issues', 'coupons', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
+export const ADMIN_PAGES: AdminPage[] = ['dashboard', 'analytics', 'platforms', 'products', 'collections', 'users', 'orders', 'shipments', 'order-issues', 'coupons', 'sale-campaigns', 'reviews', 'shipping-settings', 'live-try-on-settings', 'webhook-failures', 'reconciliation'];
 
 export function isAdminPage(value: string | null | undefined): value is AdminPage {
   return Boolean(value && ADMIN_PAGES.includes(value as AdminPage));
@@ -45,6 +46,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'shipments', label: 'Vận đơn', icon: Truck },
   { id: 'order-issues', label: 'Báo lỗi & Đổi trả', icon: ShieldAlert },
   { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
+  { id: 'sale-campaigns', label: 'Chiến dịch sale', icon: BadgePercent },
   { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
   { id: 'reviews', label: 'Đánh giá', icon: MessageSquare },
   { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
@@ -99,6 +101,7 @@ export const ADMIN_NAV_ENTRIES: AdminSidebarItem[] = [
   // 3. Các tab đơn lẻ không có tab con (ở dưới)
   { id: 'order-issues', label: 'Báo lỗi & Đổi trả', icon: ShieldAlert },
   { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
+  { id: 'sale-campaigns', label: 'Chiến dịch sale', icon: BadgePercent },
   { id: 'reconciliation', label: 'Đối soát giao dịch lạ', icon: AlertTriangle },
   { id: 'shipping-settings', label: 'Cài đặt GHN', icon: Truck },
   { id: 'live-try-on-settings', label: 'Live Try-On', icon: Radio },
@@ -115,6 +118,7 @@ export const ADMIN_PAGE_TITLES: Record<AdminPage, string> = {
   shipments: 'Quản lý vận đơn',
   'order-issues': 'Quản lý Báo lỗi & Đổi trả',
   coupons: 'Quản lý mã giảm giá',
+  'sale-campaigns': 'Quản lý chiến dịch sale',
   'webhook-failures': 'Đối soát giao dịch lạ',
   reconciliation: 'Đối soát giao dịch lạ',
   reviews: 'Quản lý đánh giá sản phẩm',

@@ -88,17 +88,22 @@ export function mapProduct(product: BackendProduct): Product {
   const gallery = imageItems.map(i => i.url);
   const mainImage = gallery[0];
   const priceNumber = Number(product.price);
-  const origPriceNumber = product.originalPrice ? Number(product.originalPrice) : undefined;
+  const listPrice = Number.isFinite(priceNumber) ? priceNumber : 0;
+  const sale = product.sale && Number.isFinite(Number(product.sale.salePrice))
+    ? { percent: Number(product.sale.percent), salePrice: Number(product.sale.salePrice) }
+    : null;
+  const effectivePrice = sale?.salePrice ?? listPrice;
   const colors = parseColors(product);
 
   return {
     id: product.id,
     name: product.name,
     brand: product.brand || 'StAie. SIGNATURE',
-    price: Number.isFinite(priceNumber) ? `${priceNumber.toLocaleString('vi-VN')} ₫` : `${product.price}`,
-    numericPrice: Number.isFinite(priceNumber) ? priceNumber : 0,
-    originalPrice: origPriceNumber,
-    originalPriceFormatted: origPriceNumber ? `${origPriceNumber.toLocaleString('vi-VN')} ₫` : undefined,
+    price: `${effectivePrice.toLocaleString('vi-VN')} ₫`,
+    numericPrice: effectivePrice,
+    listPrice,
+    listPriceFormatted: `${listPrice.toLocaleString('vi-VN')} ₫`,
+    sale,
     category: mapCategory(product.category),
     garmentCategory: toBackendCategory(product.category, product.garmentType as string),
     garmentType: (product.garmentType as import('@/features/products/types/products').GarmentType) || undefined,

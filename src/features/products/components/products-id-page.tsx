@@ -2,7 +2,6 @@
 
 import { productToGaItem } from '@/features/analytics/services/ga-items';
 import { useCartPanel } from '@/features/cart/hooks/use-cart-panel';
-import { HangerIcon } from '@/components/ui/HangerIcon';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
@@ -23,7 +22,7 @@ import { usePinToRack, useRackItems, useUnpinFromRack } from '@/features/rack/ho
 import { ReviewSection } from '@/features/reviews/components/ReviewSection';
 import { useReviewStats } from '@/features/reviews/hooks/useReviews';
 import { toCommerceParams, trackEvent } from '@/lib/analytics';
-import { X } from 'lucide-react';
+import { Shirt, X } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -172,6 +171,8 @@ export default function ProductDetail() {
       productId: product.id,
       name,
       price,
+      listPrice: !isComboSuit && product.sale ? product.listPrice : undefined,
+      salePercent: !isComboSuit ? product.sale?.percent : undefined,
       quantity,
       image: thumbs[activeThumb] || product.image,
       // Sản phẩm không khai báo màu: selectedColor chỉ là nhãn hiển thị ("Trắng"), không gửi lên giỏ.
@@ -182,8 +183,14 @@ export default function ProductDetail() {
 
     toast.custom((t) => (
       <div className="flex w-[min(360px,calc(100vw-56px))] items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-[13px] font-semibold text-brand-navy">Đã thêm {name} vào giỏ</p>
-        <button type="button" onClick={() => { setIsCartOpen(true); toast.dismiss(t); }} className="shrink-0 text-[12px] font-bold text-[#5D1C34] hover:underline">Xem giỏ</button>
+        <p className="min-w-0 truncate text-[13px] font-semibold text-landing-obsidian">Đã thêm {name} vào giỏ</p>
+        <button
+          type="button"
+          onClick={() => { setIsCartOpen(true); toast.dismiss(t); }}
+          className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.14em] text-landing-oxblood underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
+        >
+          Xem giỏ
+        </button>
       </div>
     ), { duration: 2500 });
   };
@@ -194,6 +201,8 @@ export default function ProductDetail() {
       productId: relatedProduct.id,
       name: relatedProduct.name,
       price: relatedProduct.numericPrice,
+      listPrice: relatedProduct.sale ? relatedProduct.listPrice : undefined,
+      salePercent: relatedProduct.sale?.percent,
       quantity: 1,
       image: relatedProduct.image,
       color,
@@ -221,16 +230,31 @@ export default function ProductDetail() {
     pinProduct(product.id, {
       onSuccess: () => {
         toast.custom((t) => (
-          <div className="bg-[#FDFBF7] border-l-4 border-[#5D1C34] border-y border-r border-[#E5DFD5] p-4 rounded-xl shadow-lg flex items-start gap-3.5 max-w-[380px] w-full relative">
-            <div className="p-2 bg-[#5D1C34]/10 text-[#5D1C34] rounded-lg shrink-0 mt-0.5"><HangerIcon className="w-4 h-4" /></div>
-            <div className="flex-1 min-w-0 pr-4">
-              <h4 className="text-[14px] font-bold text-brand-navy leading-snug">Đã ghim vào Giá treo đồ!</h4>
-              <p className="text-[12px] text-neutral-700 font-semibold mt-1 truncate">{product.name}</p>
-              <p className="text-[11px] text-neutral-500 mt-0.5">Sẵn sàng để phối đồ và thử đồ ảo</p>
+          <div className="flex w-full max-w-[380px] items-start gap-3 border border-landing-line border-l-2 border-l-landing-oxblood bg-landing-ivory p-4">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center border border-landing-line text-landing-oxblood">
+              <Shirt className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold leading-snug text-landing-obsidian">Đã ghim vào Giá treo đồ</p>
+              <p className="mt-1 truncate text-xs font-medium text-landing-muted">{product.name}</p>
+              <p className="mt-0.5 text-[11px] text-landing-muted">Sẵn sàng để phối đồ và thử đồ AI</p>
             </div>
-            <div className="flex flex-col items-end justify-between self-stretch shrink-0 min-h-[56px]">
-              <button type="button" onClick={() => toast.dismiss(t)} className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-neutral-600 transition-colors"><X className="w-3.5 h-3.5" /></button>
-              <button type="button" onClick={() => { router.push('/rack'); toast.dismiss(t); }} className="text-[12px] font-bold text-[#5D1C34] hover:underline underline-offset-2 transition-all mt-auto">Xem giá treo</button>
+            <div className="flex min-h-[56px] shrink-0 flex-col items-end justify-between gap-3 self-stretch">
+              <button
+                type="button"
+                onClick={() => toast.dismiss(t)}
+                aria-label="Đóng thông báo"
+                className="flex h-8 w-8 items-center justify-center text-landing-muted transition-colors hover:text-landing-oxblood focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
+              >
+                <X className="h-3.5 w-3.5" strokeWidth={1.75} />
+              </button>
+              <button
+                type="button"
+                onClick={() => { router.push('/rack'); toast.dismiss(t); }}
+                className="text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-oxblood underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
+              >
+                Xem giá treo
+              </button>
             </div>
           </div>
         ), { duration: 4000 });
@@ -240,10 +264,10 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex min-h-screen flex-col bg-landing-paper landing-paper-texture">
       <ProductBreadcrumb product={product} />
 
-      <div className="max-w-[1280px] w-full mx-auto px-4 md:px-8 pb-16 grid grid-cols-1 md:grid-cols-[55%_1fr] gap-12">
+      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-8 px-4 pb-16 md:grid-cols-[55%_1fr] md:px-8 lg:gap-16 lg:pb-20">
         <ProductImageViewer images={thumbs} productName={product.name} brand={product.brand} activeThumb={activeThumb} onSelectThumb={handleSelectThumb} />
         <ProductPurchasePanel
           product={product}

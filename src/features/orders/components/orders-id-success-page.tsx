@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import { Check, Star } from 'lucide-react';
@@ -36,7 +37,7 @@ export default function OrderSuccessPage() {
         <div className="w-full bg-white border border-neutral-200 rounded-2xl overflow-hidden mb-10">
           {isLoading ? (
             <div className="p-6 flex justify-center items-center">
-              <div className="w-6 h-6 border-2 border-brand-navy border-t-transparent rounded-full animate-spin" />
+              <AtelierLoader size="sm" />
             </div>
           ) : (
             <div className="p-6 flex flex-col gap-3 text-left">

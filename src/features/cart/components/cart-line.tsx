@@ -92,8 +92,13 @@ export function CartLine({
         <div className="mt-auto flex items-end justify-between gap-3 pt-3">
           <QuantityStepper item={item} disabled={!isAvailable} onChange={(delta) => onUpdateQuantity(item.id, delta)} />
           <div className="text-right">
+            {item.listPrice && item.listPrice > item.price ? (
+              <p className="font-mono text-[11px] text-landing-muted line-through">
+                {formatCartPrice(item.listPrice * item.quantity)}
+              </p>
+            ) : null}
             <p className="font-mono text-sm text-landing-oxblood">{formatCartPrice(item.price * item.quantity)}</p>
-            {item.quantity > 1 ? <p className="font-mono text-[11px] text-landing-muted">{formatCartPrice(item.price)} / món</p> : null}
+            {item.quantity > 1 ? <p className="font-mono text-[11px] text-landing-muted">{formatCartPrice(item.price)} / mA3n</p> : null}
           </div>
         </div>
       </div>

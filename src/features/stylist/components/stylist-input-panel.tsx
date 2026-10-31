@@ -118,8 +118,14 @@ export function StylistInputPanel({ photoUrl, fileInputRef, handleRemovePhoto, c
           >
             {photoUrl ? (
               <>
-                {/* blob: URL của ảnh vừa chọn, next/image không tối ưu được nên dùng thẻ img. */}
-                <img src={photoUrl} alt="Ảnh của bạn" className="h-full w-full object-cover" />
+                <Image
+                  src={photoUrl}
+                  alt="Ảnh của bạn"
+                  fill
+                  unoptimized
+                  sizes="(min-width: 768px) 188px, 84px"
+                  className="object-cover"
+                />
                 <button
                   onClick={handleRemovePhoto}
                   type="button"

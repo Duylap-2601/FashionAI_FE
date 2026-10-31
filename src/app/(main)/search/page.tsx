@@ -1,3 +1,4 @@
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import SearchPage from '@/features/products/components/search/search-page';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
@@ -12,7 +13,7 @@ export default function Page() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-brand-cream/30 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+          <AtelierLoader size="md" label="Đang tìm trong xưởng" />
         </div>
       }
     >

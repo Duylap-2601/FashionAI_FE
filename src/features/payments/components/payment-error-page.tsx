@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { AlertCircle, ChevronLeft, Info, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -79,7 +80,7 @@ export default function PaymentErrorPage() {
     <React.Suspense
       fallback={
         <div className="bg-white min-h-screen flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+          <AtelierLoader size="md" />
         </div>
       }
     >

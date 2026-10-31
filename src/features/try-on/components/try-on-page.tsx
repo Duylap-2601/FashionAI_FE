@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { fetchTryOnImage } from '@/features/try-on/services/queries';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useMeasurements } from '@/features/measurements/hooks/useMeasurements';
@@ -636,8 +637,8 @@ export default function VirtualTryOn() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="Đang mở phòng thử">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-landing-taupe border-t-landing-oxblood motion-reduce:animate-none" />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <AtelierLoader size="md" label="Đang mở phòng thử" />
         </div>
       }
     >

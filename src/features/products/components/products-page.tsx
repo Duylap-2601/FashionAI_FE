@@ -240,6 +240,8 @@ export default function ProductListing() {
       productId: product.id,
       name: product.name,
       price: product.numericPrice,
+      listPrice: product.sale ? product.listPrice : undefined,
+      salePercent: product.sale?.percent,
       quantity: 1,
       image: product.image,
       color,

@@ -5,7 +5,8 @@ import { CartLine, cartFocusRing, formatCartPrice } from '@/features/cart/compon
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { AccountConfirmDialog } from '@/features/profile/components/account-ui';
 import { cn } from '@/lib/utils';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import type React from 'react';
 import { useState } from 'react';
@@ -55,8 +56,8 @@ export default function CartPage() {
   if (isLoading) {
     return (
       <CartFrame>
-        <div className="flex min-h-[50vh] items-center justify-center" role="status">
-          <Loader2 className="h-7 w-7 animate-spin text-landing-oxblood" strokeWidth={1.5} aria-label="Đang tải giỏ hàng" />
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <AtelierLoader size="md" label="Đang may giỏ hàng" />
         </div>
       </CartFrame>
     );

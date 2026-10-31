@@ -15,7 +15,7 @@ function serverItem(overrides = {}) {
     quantity: 2,
     available: true,
     product: {
-      id: PRODUCT_ID, name: 'Suit', price: 1290000, originalPrice: null, status: 'ACTIVE',
+      id: PRODUCT_ID, name: 'Suit', price: 1290000, sale: null, status: 'ACTIVE',
       category: 'FULL_BODY', garmentType: null, colors: null, imageUrl: '/black.png',
     },
     createdAt: '2026-10-14T00:00:00.000Z',

@@ -1,5 +1,6 @@
 'use client';
 
+import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { toBackendCategory } from '@/features/products/services/products-utils';
 import { AccountConfirmDialog } from '@/features/profile/components/account-ui';
@@ -9,7 +10,7 @@ import { formatRackPrice, getRackProductImage, RACK_IMAGE_FALLBACK } from '@/fea
 import type { CanvasPlacedItem, RackItem } from '@/features/rack/types/rack';
 import type { TabType } from '@/features/rack/types/rack-page';
 import { cn } from '@/lib/utils';
-import { Check, Loader2, Search, X } from 'lucide-react';
+import { Check, Search, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -357,8 +358,8 @@ export default function RackPage() {
 
   if (status === 'loading') {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center" role="status">
-        <Loader2 className="h-7 w-7 animate-spin text-landing-oxblood" strokeWidth={1.5} aria-label="Đang tải" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <AtelierLoader size="md" label="Đang may giá treo" />
       </div>
     );
   }
@@ -404,8 +405,8 @@ export default function RackPage() {
         </header>
 
         {isLoading ? (
-          <div className="flex justify-center py-24" role="status">
-            <Loader2 className="h-7 w-7 animate-spin text-landing-oxblood" strokeWidth={1.5} aria-label="Đang tải giá treo" />
+          <div className="flex justify-center py-24">
+            <AtelierLoader size="sm" label="Đang may giá treo" />
           </div>
         ) : items.length === 0 ? (
           <div className="mx-auto flex max-w-[560px] flex-col items-center border border-landing-line bg-landing-ivory/60 px-6 py-14 text-center">

@@ -6,14 +6,17 @@ test('product mapping keeps primary image ordering, numeric pricing, and categor
   const load = createSourceLoader();
   const { mapProduct } = load('@/features/products/services/products-utils');
   const product = mapProduct({
-    id: 'p1', name: 'Suit', category: 'FULL_BODY', price: '1290000', originalPrice: '1650000',
+    id: 'p1', name: 'Suit', category: 'FULL_BODY', price: '1290000',
+    sale: { percent: 20, salePrice: 1032000 },
     images: [{ imageUrl: '/secondary.png' }, { imageUrl: '/primary.png', isMain: true }],
     colors: ['black'], avgRating: '4.5',
   });
   assert.equal(product.image, '/primary.png');
   assert.equal(product.gallery[1], '/secondary.png');
-  assert.equal(product.numericPrice, 1290000);
-  assert.equal(product.originalPrice, 1650000);
+  assert.equal(product.numericPrice, 1032000);
+  assert.equal(product.listPrice, 1290000);
+  assert.equal(product.sale.percent, 20);
+  assert.equal(product.sale.salePrice, 1032000);
   assert.equal(product.garmentCategory, 'FULL_BODY');
   assert.equal(product.rating, 4.5);
 });

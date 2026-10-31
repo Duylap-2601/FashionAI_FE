@@ -235,8 +235,14 @@ export function LiveTryOnWorkspace({
                         aria-label={`Xem ảnh chụp ${idx + 1}, lúc ${new Date(cap.capturedAt).toLocaleTimeString('vi-VN')}`}
                         className={cn('relative shrink-0 overflow-hidden border border-landing-paper/20 transition-colors hover:border-landing-paper/60', tryOnFocusRing)}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element -- ảnh chụp là data URL tạo trong trình duyệt */}
-                        <img src={cap.dataUrl} alt="" className="h-14 w-11 object-cover sm:h-16 sm:w-12" />
+                        <Image
+                          src={cap.dataUrl}
+                          alt=""
+                          width={44}
+                          height={56}
+                          unoptimized
+                          className="h-14 w-11 object-cover sm:h-16 sm:w-12"
+                        />
                         <span className="absolute inset-x-0 bottom-0 bg-landing-obsidian/70 py-0.5 text-center font-mono text-[8px] text-landing-paper">
                           {new Date(cap.capturedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </span>
@@ -490,8 +496,14 @@ function CaptureViewer({
                 </div>
               </div>
               <div className="relative overflow-hidden border border-landing-paper/15">
-                {/* eslint-disable-next-line @next/next/no-img-element -- ảnh chụp là data URL tạo trong trình duyệt */}
-                <img src={capture.dataUrl} alt={`Ảnh chụp thử đồ ${idx + 1}`} className="max-h-[72svh] max-w-[90vw] object-contain" />
+                <Image
+                  src={capture.dataUrl}
+                  alt={`Ảnh chụp thử đồ ${idx + 1}`}
+                  width={720}
+                  height={960}
+                  unoptimized
+                  className="h-auto max-h-[72svh] w-auto max-w-[90vw] object-contain"
+                />
               </div>
               <div className="mt-3 flex max-w-[90vw] items-center gap-3">
                 <button type="button" disabled={!hasPrev} onClick={() => hasPrev && onNavigate(captures[idx - 1])} aria-label="Ảnh trước" className={stageButton}>
@@ -507,8 +519,14 @@ function CaptureViewer({
                       aria-current={c.id === capture.id ? 'true' : undefined}
                       className={cn('shrink-0 overflow-hidden border-2 transition-opacity', c.id === capture.id ? 'border-landing-oxblood' : 'border-landing-paper/20 opacity-60 hover:opacity-100', tryOnFocusRing)}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element -- ảnh chụp là data URL tạo trong trình duyệt */}
-                      <img src={c.dataUrl} alt="" className="h-10 w-8 object-cover" />
+                      <Image
+                        src={c.dataUrl}
+                        alt=""
+                        width={32}
+                        height={40}
+                        unoptimized
+                        className="h-10 w-8 object-cover"
+                      />
                     </button>
                   ))}
                 </div>
