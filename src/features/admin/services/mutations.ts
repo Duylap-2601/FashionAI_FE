@@ -1,6 +1,11 @@
 import type { UpdateLiveTryOnSettingsInput } from '@/features/admin/types/admin-dashboard-page';
 import type { PatchOrdersStatusInput, PatchUsersInput, PutProductsInput } from '@/features/admin/types/requests';
 import type { AdminCoupon, CreateCouponPayload, UpdateCouponPayload } from '@/features/admin/types/admin-coupons';
+import type {
+  AdminSaleCampaign,
+  CreateSaleCampaignPayload,
+  UpdateSaleCampaignPayload,
+} from '@/features/admin/types/admin-sale-campaigns';
 import type { OrderIssue } from '@/features/orders/types/orders';
 import { api } from '@/lib/api';
 import { http, type HttpOptions } from '@/lib/http';
@@ -86,6 +91,18 @@ export function updateAdminCoupon(id: string, payload: UpdateCouponPayload, conf
 
 export function deleteAdminCoupon(id: string, config?: HttpOptions) {
   return http.delete<{ success?: boolean }>(`/coupons/${id}`, config);
+}
+
+export function createAdminSaleCampaign(payload: CreateSaleCampaignPayload, config?: HttpOptions) {
+  return http.post<AdminSaleCampaign>('/sale-campaigns', payload, config);
+}
+
+export function updateAdminSaleCampaign(id: string, payload: UpdateSaleCampaignPayload, config?: HttpOptions) {
+  return http.patch<AdminSaleCampaign>(`/sale-campaigns/${id}`, payload, config);
+}
+
+export function deleteAdminSaleCampaign(id: string, config?: HttpOptions) {
+  return http.delete<{ id?: string }>(`/sale-campaigns/${id}`, config);
 }
 
 export type ReviewOrderIssueInput =

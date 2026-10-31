@@ -27,10 +27,8 @@ export function ProductCard({
   const fallbackSrc = LANDING_MEDIA.productFallback;
   const imageSrc = imageFailed || !product.image ? fallbackSrc : product.image;
 
-  const hasDiscount = Boolean(product.originalPrice && product.numericPrice < product.originalPrice);
-  const discountPercent = hasDiscount && product.originalPrice
-    ? Math.round(((product.originalPrice - product.numericPrice) / product.originalPrice) * 100)
-    : 0;
+  const hasDiscount = Boolean(product.sale && product.sale.salePrice < (product.listPrice ?? Number.POSITIVE_INFINITY));
+  const discountPercent = hasDiscount && product.sale ? product.sale.percent : 0;
 
   const hasRating = Boolean(
     (product.rating && product.rating > 0) || (product.reviewCount && product.reviewCount > 0),
@@ -51,6 +49,8 @@ export function ProductCard({
       name: product.name,
       variant: defaultVariant || 'Tiêu chuẩn',
       price: product.numericPrice,
+      listPrice: product.sale ? product.listPrice : undefined,
+      salePercent: product.sale?.percent,
       quantity: 1,
       image: product.image,
       color: defaultVariant,
@@ -177,9 +177,9 @@ export function ProductCard({
             <span className="font-mono text-base font-medium tracking-[0.02em] text-landing-oxblood">
               {product.price}
             </span>
-            {hasDiscount && (product.originalPriceFormatted || product.originalPrice) ? (
+            {hasDiscount ? (
               <span className="font-mono text-[10px] text-landing-muted line-through">
-                {product.originalPriceFormatted || `${product.originalPrice?.toLocaleString('vi-VN')}₫`}
+                {product.listPriceFormatted}
               </span>
             ) : null}
           </div>

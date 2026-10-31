@@ -114,6 +114,7 @@ Rules:
 - Lookbook: one featured portrait plate per view on desktop, with look details and thumbnail navigation beside it. The plate uses the full `3/4` image and never extends past the viewport.
 - Editorial sections use hairline rules, not cards with shadows.
 - Corners are square or `2px`. Pills are reserved for status and filters, not every control.
+- Mobile bottom tab bar: a `64px` paper bar with a top hairline and an oxblood active rule. Five tabs: `Trang chủ`, `Sản phẩm`, `Thử đồ`, `AI Stylist`, `Tài khoản`.
 
 ## Page Narrative
 
@@ -532,4 +533,5 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | 2026-10-26 | Try-on page (live and photo modes) on Atelier Paper, with shared garment slots, a real-price upgrade dialog and no sample-photo control |
 | 2026-10-26 | Rack, cart, header notifications, address book, try-on and AI Stylist history, and plans on Atelier Paper |
 | 2026-10-28 | Added the product detail spec: paper and ivory surfaces, gallery lightbox, purchase panel, detail tabs, honest review states, and related products |
+| 2026-10-30 | Added the mobile bottom tab bar: 64px paper bar, five Vietnamese tabs, oxblood active rule |
 

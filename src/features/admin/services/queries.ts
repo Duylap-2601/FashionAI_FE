@@ -3,6 +3,7 @@ import type { LiveTryOnSettings } from '@/features/admin/types/admin-dashboard-p
 import type { AnalyticsRange, AnalyticsRealtimeResult, AnalyticsReportResult } from '@/features/admin/types/admin-analytics';
 import type { UnmatchedTransaction, UnmatchedTransactionsResponse } from '@/features/admin/types/admin-reconciliation';
 import type { AdminCoupon, AdminCouponsResponse } from '@/features/admin/types/admin-coupons';
+import type { AdminSaleCampaign, AdminSaleCampaignDetail } from '@/features/admin/types/admin-sale-campaigns';
 import type { OrderIssue, OrderIssueListMeta, OrderIssueListParams } from '@/features/orders/types/orders';
 
 export function fetchAdminProducts(config: HttpOptions) {
@@ -73,6 +74,20 @@ export function fetchAdminCoupons(config?: HttpOptions) {
 
 export function fetchAdminCouponDetail(id: string, config?: HttpOptions) {
   return http.get<AdminCoupon>(`/coupons/${id}`, config);
+}
+
+export function fetchAdminSaleCampaigns(
+  params?: { page?: number; limit?: number; isActive?: boolean; search?: string },
+  config?: HttpOptions,
+) {
+  return http.get<AdminSaleCampaign[] | { items: AdminSaleCampaign[] }>('/sale-campaigns', {
+    ...config,
+    params,
+  });
+}
+
+export function fetchAdminSaleCampaignDetail(id: string, config?: HttpOptions) {
+  return http.get<AdminSaleCampaignDetail>(`/sale-campaigns/${id}`, config);
 }
 
 export function fetchAdminOrderIssues(params?: OrderIssueListParams, config?: HttpOptions<OrderIssueListParams>) {

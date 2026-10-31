@@ -491,6 +491,7 @@ export default function CheckoutPage() {
           <CheckoutSummary
             items={items}
             totalPrice={orderQuote?.itemsTotal ?? totalPrice}
+            saleDiscount={Math.max(0, (orderQuote?.listItemsTotal ?? orderQuote?.itemsTotal ?? totalPrice) - (orderQuote?.itemsTotal ?? totalPrice))}
             shippingFee={shippingFee}
             discount={discount}
             total={total}

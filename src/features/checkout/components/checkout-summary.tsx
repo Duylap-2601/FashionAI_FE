@@ -8,6 +8,7 @@ import Link from 'next/link';
 export function CheckoutSummary({
   items,
   totalPrice,
+  saleDiscount = 0,
   shippingFee,
   discount,
   total,
@@ -70,6 +71,12 @@ export function CheckoutSummary({
         <div className="w-full h-px bg-neutral-200 mb-4"></div>
 
         <div className="flex flex-col gap-3 mb-4">
+          {saleDiscount > 0 && (
+            <div className="flex justify-between text-body-sm text-semantic-error">
+              <span>Giảm giá sale</span>
+              <span>-{saleDiscount.toLocaleString('vi-VN')}đ</span>
+            </div>
+          )}
           <div className="flex justify-between text-body-sm text-neutral-600">
             <span>Tạm tính</span>
             <span>{totalPrice.toLocaleString('vi-VN')}đ</span>

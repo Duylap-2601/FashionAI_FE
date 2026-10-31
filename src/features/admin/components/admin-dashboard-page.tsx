@@ -11,6 +11,7 @@ import { AdminPlatformsPanel } from '@/features/admin/components/admin-platforms
 import { AdminProductModal } from '@/features/admin/components/admin-product-modal';
 import { AdminProductsPanel } from '@/features/admin/components/admin-products-panel';
 import { AdminReconciliationPanel } from '@/features/admin/components/admin-reconciliation-panel';
+import { AdminSaleCampaignsPanel } from '@/features/admin/components/admin-sale-campaigns-panel';
 import { AdminShipmentModal } from '@/features/admin/components/admin-shipment-modal';
 import { AdminShipmentsPanel } from '@/features/admin/components/admin-shipments-panel';
 import { AdminShippingSettingsPanel } from '@/features/admin/components/admin-shipping-settings-panel';
@@ -151,6 +152,7 @@ function AdminDashboardContent() {
           {activeTab === 'collections' && <AdminCollectionManager />}
           {activeTab === 'reviews' && <AdminReviewTable />}
           {activeTab === 'coupons' && <AdminCouponsPanel />}
+          {activeTab === 'sale-campaigns' && <AdminSaleCampaignsPanel />}
         </main>
 
         {/* ─── DRAWER: USER DETAIL ────────────────────────────────────────────── */}

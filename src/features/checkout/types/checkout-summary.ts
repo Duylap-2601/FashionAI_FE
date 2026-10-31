@@ -3,6 +3,7 @@ import React from 'react';
 export interface CheckoutSummaryProps {
   items: import("@/features/cart/types/cart-store").CartItem[];
   totalPrice: number;
+  saleDiscount?: number;
   shippingFee: number;
   discount: number;
   total: number;

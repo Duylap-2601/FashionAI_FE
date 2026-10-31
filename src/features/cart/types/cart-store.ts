@@ -4,6 +4,8 @@ export interface CartItem {
   name: string;
   variant: string;
   price: number;
+  listPrice?: number;
+  salePercent?: number;
   quantity: number;
   image: string;
   hasTryOn?: boolean;

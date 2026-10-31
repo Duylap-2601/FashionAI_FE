@@ -12,7 +12,7 @@ export interface BackendProduct {
   color?: string | null;
   colors?: ({ name: string; hex?: string } | string)[] | null;
   price: string | number;
-  originalPrice?: string | number | null;
+  sale?: { percent: number; salePrice: number } | null;
   soldCount?: number | null;
   garmentUrl?: string | null;
   images?: ({ id?: string; imageUrl?: string; url?: string; isMain?: boolean; colorName?: string | null } | string)[] | null;
