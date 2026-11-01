@@ -5,7 +5,7 @@ import { useAdminPaginatedList } from '@/features/admin/hooks/use-admin-paginate
 import { useLatestRef } from '@/features/admin/hooks/use-latest-ref';
 import { loadAdminOrders } from '@/features/admin/services/admin-list-loaders';
 import { mergeOrderUpdate, readUpdatedOrder } from '@/features/admin/services/admin-mappers';
-import { confirmManualPayment, updateOrderRefund, updateOrderStatus } from '@/features/admin/services/mutations';
+import { confirmManualPayment, finalizeRefund, updateOrderRefund, updateOrderStatus } from '@/features/admin/services/mutations';
 import type { AdminOrder } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminOrderFilters } from '@/features/admin/types/admin-orders-panel';
 import type { AdminOrderDto } from '@/features/admin/types/api';
@@ -83,17 +83,53 @@ export function useAdminOrders() {
     }
   }, [applyOrderUpdate, ordersRef]);
 
-  const handleUpdateRefund = useCallback(async (id: string, reference: string, note: string) => {
+  const handleUpdateRefund = useCallback(async (id: string, reference: string, note: string, amountVnd?: number) => {
     try {
-      await updateOrderRefund(id, { refundStatus: 'COMPLETED', evidence: { reference }, internalNote: note });
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, refundStatus: 'COMPLETED' } : o));
-      setSelectedOrder(prev => prev?.id === id ? { ...prev, refundStatus: 'COMPLETED' } : prev);
+      const res = await updateOrderRefund(id, {
+        refundStatus: 'COMPLETED',
+        amountVnd,
+        evidence: { reference },
+        internalNote: note,
+      });
+      const updated = readUpdatedOrder(res);
+      if (updated) {
+        applyOrderUpdate({ match: o => o.id === id, updated, status: updated.status || 'RETURNED' });
+      } else {
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, refundStatus: 'COMPLETED' } : o));
+        setSelectedOrder(prev => prev?.id === id ? { ...prev, refundStatus: 'COMPLETED' } : prev);
+      }
       toast.success('Đã ghi nhận hoàn tiền thành công');
+      return true;
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể ghi nhận hoàn tiền.'));
       console.error(e);
+      return false;
     }
-  }, [setOrders]);
+  }, [applyOrderUpdate, setOrders]);
+
+  const handleFinalizeRefund = useCallback(async (refundId: string, outcome: 'COMPLETED' | 'FAILED', note?: string) => {
+    try {
+      const res = await finalizeRefund(refundId, { outcome, note });
+      const updated = readUpdatedOrder(res);
+      if (updated && selectedOrder?.id) {
+        applyOrderUpdate({ match: o => o.id === selectedOrder.id, updated, status: updated.status || selectedOrder.status });
+      } else {
+        setSelectedOrder(prev => {
+          if (!prev || !prev.refunds) return prev;
+          const updatedRefunds = prev.refunds.map(r =>
+            r.id === refundId ? { ...r, status: outcome, processedAt: new Date().toISOString() } : r
+          );
+          return { ...prev, refunds: updatedRefunds };
+        });
+      }
+      toast.success(`Đã cập nhật trạng thái hoàn tiền: ${outcome === 'COMPLETED' ? 'Thành công' : 'Thất bại'}`);
+      return true;
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể chốt trạng thái hoàn tiền.'));
+      console.error(e);
+      return false;
+    }
+  }, [applyOrderUpdate, selectedOrder]);
 
   return {
     ...list,
@@ -104,5 +140,6 @@ export function useAdminOrders() {
     handleUpdateOrderStatus,
     handleConfirmManualPayment,
     handleUpdateRefund,
+    handleFinalizeRefund,
   };
 }

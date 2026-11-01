@@ -72,6 +72,7 @@ export function AdminOrdersPanel({
                 <option value="COMPLETED">Hoàn tất</option>
                 <option value="CANCELLED">Đã hủy</option>
                 <option value="RETURN_REQUESTED">Yêu cầu hoàn trả</option>
+                <option value="RETURN_APPROVED">Duyệt hoàn trả</option>
                 <option value="RETURNING">Đang hoàn trả</option>
                 <option value="RETURNED">Đã hoàn trả</option>
                 <option value="EXPIRED">Hết hạn</option>
@@ -92,7 +93,10 @@ export function AdminOrdersPanel({
                 <option value="PENDING">Chờ thanh toán (PENDING)</option>
                 <option value="FAILED">Thất bại (FAILED)</option>
                 <option value="REFUNDED">Đã hoàn tiền (REFUNDED)</option>
-                <option value="PARTIALLY_REFUNDED">Hoàn tiền 1 phần</option>
+                <option value="PARTIALLY_REFUNDED">Hoàn tiền 1 phần (PARTIALLY_REFUNDED)</option>
+                <option value="REFUND_PENDING">Đang hoàn tiền (REFUND_PENDING)</option>
+                <option value="REFUND_REQUIRED">Cần hoàn tiền (REFUND_REQUIRED)</option>
+                <option value="EXPIRED">Hết hạn (EXPIRED)</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -184,28 +188,40 @@ export function AdminOrdersPanel({
 
                     {/* Trạng thái - Minimalist Atelier (Micro-dot + Refined Typography) */}
                     <div className="px-4 py-3.5">
-                      <div className="inline-flex items-center gap-2 py-0.5">
-                        {o.status === 'PENDING' ? (
-                          <span className="relative flex h-2 w-2 shrink-0">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-40" />
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.35)]" />
+                      <div className="flex flex-col gap-1 items-start">
+                        <div className="inline-flex items-center gap-2 py-0.5">
+                          {o.status === 'PENDING' ? (
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-40" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.35)]" />
+                            </span>
+                          ) : o.status === 'CREATED' ? (
+                            <span className="inline-flex rounded-full h-2 w-2 bg-slate-400 shrink-0" />
+                          ) : o.status === 'PAID' || o.status === 'CONFIRMED' || o.status === 'COMPLETED' || o.status === 'DELIVERED' ? (
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.35)] shrink-0" />
+                          ) : o.status === 'SHIPPING' || o.status === 'READY_TO_SHIP' ? (
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.35)] shrink-0" />
+                          ) : o.status === 'TAILORING' || o.status === 'MEASUREMENT_REVIEW' || o.status === 'MEASUREMENT_CONFIRMED' ? (
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#5D1C34] shadow-[0_0_6px_rgba(93,28,52,0.35)] shrink-0" />
+                          ) : o.status === 'CANCELLED' || o.status === 'FAILED' ? (
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 shrink-0" />
+                          ) : (
+                            <span className="inline-flex rounded-full h-2 w-2 bg-neutral-300 shrink-0" />
+                          )}
+                          <span className="text-xs font-medium text-neutral-800 tracking-tight">
+                            {cfg.label}
                           </span>
-                        ) : o.status === 'CREATED' ? (
-                          <span className="inline-flex rounded-full h-2 w-2 bg-slate-400 shrink-0" />
-                        ) : o.status === 'PAID' || o.status === 'CONFIRMED' || o.status === 'COMPLETED' || o.status === 'DELIVERED' ? (
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.35)] shrink-0" />
-                        ) : o.status === 'SHIPPING' || o.status === 'READY_TO_SHIP' ? (
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.35)] shrink-0" />
-                        ) : o.status === 'TAILORING' || o.status === 'MEASUREMENT_REVIEW' || o.status === 'MEASUREMENT_CONFIRMED' ? (
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-[#5D1C34] shadow-[0_0_6px_rgba(93,28,52,0.35)] shrink-0" />
-                        ) : o.status === 'CANCELLED' || o.status === 'FAILED' ? (
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 shrink-0" />
-                        ) : (
-                          <span className="inline-flex rounded-full h-2 w-2 bg-neutral-300 shrink-0" />
+                        </div>
+                        {(o.refundStatus === 'REQUIRED' || o.refundStatus === 'PROCESSING' || (o.status === 'RETURNED' && o.refundStatus !== 'COMPLETED')) && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrder?.(o)}
+                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 cursor-pointer hover:bg-rose-100 transition-colors"
+                            title="Đơn cần xử lý hoàn tiền — Nhấn để mở chi tiết"
+                          >
+                            Cần hoàn tiền
+                          </button>
                         )}
-                        <span className="text-xs font-medium text-neutral-800 tracking-tight">
-                          {cfg.label}
-                        </span>
                       </div>
                     </div>
                     <div className="px-6 py-3.5 text-right flex items-center justify-end">

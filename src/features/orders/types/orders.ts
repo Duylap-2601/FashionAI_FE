@@ -89,7 +89,17 @@ export interface ConfirmDeliveryResponse {
   data: BackendOrder;
 }
 
-export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | null;
+export type PaymentStatus =
+  | 'PENDING'
+  | 'PAID'
+  | 'FAILED'
+  | 'EXPIRED'
+  | 'REFUNDED'
+  | 'PARTIALLY_REFUNDED'
+  | 'REFUND_PENDING'
+  | 'REFUND_REQUIRED'
+  | 'COD_COLLECTED'
+  | null;
 export type RefundStatus = 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
 export type ShipmentStatus = 'PENDING' | 'UNKNOWN' | 'READY_TO_PICK' | 'CREATED' | 'PICKING' | 'PICKED' | 'SHIPPING' | 'IN_TRANSIT' | 'DELIVERING' | 'DELIVERED' | 'DELIVERY_FAILED' | 'RETURNING' | 'RETURNED' | 'CANCELLED' | 'FAILED';
 

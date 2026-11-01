@@ -2,6 +2,7 @@
 
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { STATUS_MAP, TAILORING_STEPS } from '@/features/orders/constants/orders-id-page';
+import { PAYMENT_STATUS_LABELS } from '@/features/orders/constants/profile-orders-page';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
 import { OrderIssuesList } from '@/features/orders/components/order-issues-list';
@@ -174,13 +175,21 @@ export default function OrderDetailPage() {
   const orderCode = `ORD-${order.orderCode}`;
   const steps = order.fulfillmentFlowVersion === 1 ? TAILORING_STEPS : ['Đặt hàng', 'Xác nhận', 'Đang giao', 'Đã nhận'];
   const maxStep = Math.max(1, steps.length - 1);
-  const paymentLabel = order.paymentStatus === 'PAID'
-    ? 'Đã thanh toán'
-    : order.paymentStatus === 'FAILED'
-      ? 'Thanh toán thất bại'
-      : order.paymentStatus === 'REFUNDED'
-        ? 'Đã hoàn tiền'
-        : 'Chờ thanh toán';
+  const paymentLabel = (order.paymentStatus && PAYMENT_STATUS_LABELS[order.paymentStatus])
+    ? PAYMENT_STATUS_LABELS[order.paymentStatus]
+    : order.paymentStatus === 'PAID'
+      ? 'Đã thanh toán'
+      : order.paymentStatus === 'FAILED'
+        ? 'Thanh toán thất bại'
+        : order.paymentStatus === 'REFUNDED'
+          ? 'Đã hoàn tiền'
+          : order.paymentStatus === 'PARTIALLY_REFUNDED'
+            ? 'Đã hoàn một phần'
+            : order.paymentStatus === 'REFUND_PENDING'
+              ? 'Đang hoàn tiền'
+              : order.paymentStatus === 'EXPIRED'
+                ? 'Hết hạn thanh toán'
+                : 'Chờ thanh toán';
 
   return (
     <div className="bg-brand-cream min-h-screen py-8 pb-24">
@@ -265,6 +274,20 @@ export default function OrderDetailPage() {
               </button>
             </div>
           </div>
+
+          {order.status === 'RETURNED' && (
+            <div className="mt-6 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-start gap-3">
+              <Check className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-body-sm font-bold text-amber-950">Đơn hàng đã được hoàn trả thành công</p>
+                <p className="text-xs text-amber-800 mt-0.5">
+                  {order.refundStatus === 'COMPLETED'
+                    ? 'Cửa hàng đã hoàn tất chuyển khoản hoàn tiền cho bạn.'
+                    : 'Cửa hàng đang tiến hành xử lý hoàn tiền cho đơn hàng này. Vui lòng kiểm tra tài khoản hoặc liên hệ hỗ trợ nếu cần.'}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Tracking Step Progress (Zero horizontal scrollbar, bounded connecting rail) */}
           {statusInfo.step >= 0 && (
@@ -594,9 +617,15 @@ export default function OrderDetailPage() {
 
               {order.amountRefundedVnd !== undefined && order.amountRefundedVnd > 0 && (
                 <div className="flex items-center justify-between text-body-sm pt-2.5">
-                  <span className="text-neutral-500">Đã hoàn tiền</span>
+                  <span className="text-neutral-500">
+                    {order.amountPaidVnd && order.amountRefundedVnd < order.amountPaidVnd
+                      ? 'Đã hoàn một phần'
+                      : 'Đã hoàn tiền'}
+                  </span>
                   <span className="font-bold text-red-600">
-                    -{order.amountRefundedVnd.toLocaleString('vi-VN')}đ
+                    {order.amountPaidVnd && order.amountRefundedVnd < order.amountPaidVnd
+                      ? `Đã hoàn ${order.amountRefundedVnd.toLocaleString('vi-VN')}đ / ${order.amountPaidVnd.toLocaleString('vi-VN')}đ`
+                      : `-${order.amountRefundedVnd.toLocaleString('vi-VN')}đ`}
                   </span>
                 </div>
               )}
@@ -611,7 +640,25 @@ export default function OrderDetailPage() {
                     <div key={r.id} className="p-3 bg-amber-50/50 rounded-xl border border-amber-100 text-xs">
                       <div className="flex justify-between items-center font-bold">
                         <span className="text-red-600">-{r.amountVnd.toLocaleString('vi-VN')}đ</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800">{r.status}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          r.status === 'COMPLETED'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : r.status === 'FAILED' || r.status === 'CANCELLED'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {r.status === 'COMPLETED'
+                            ? 'Thành công'
+                            : r.status === 'PROCESSING'
+                              ? 'Đang xử lý'
+                              : r.status === 'PENDING'
+                                ? 'Chờ xử lý'
+                                : r.status === 'FAILED'
+                                  ? 'Thất bại'
+                                  : r.status === 'CANCELLED'
+                                    ? 'Đã hủy'
+                                    : r.status}
+                        </span>
                       </div>
                       {r.reason && <p className="text-neutral-600 mt-1">Lý do: {r.reason}</p>}
                       <p className="text-[11px] text-neutral-400 mt-1">

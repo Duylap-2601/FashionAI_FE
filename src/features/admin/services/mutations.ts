@@ -54,8 +54,23 @@ export function confirmManualPayment(orderCode: number, payload: { reference: st
   return http.post(`/payments/admin/orders/${orderCode}/confirm-manual`, payload);
 }
 
-export function updateOrderRefund(id: string, payload: { refundStatus: string; evidence?: Record<string, unknown>; internalNote?: string }) {
+export function updateOrderRefund(
+  id: string,
+  payload: {
+    refundStatus: string;
+    amountVnd?: number;
+    evidence?: Record<string, unknown>;
+    internalNote?: string;
+  }
+) {
   return http.patch(`/orders/${id}/refund`, payload);
+}
+
+export function finalizeRefund(
+  refundId: string,
+  payload: { outcome: 'COMPLETED' | 'FAILED'; note?: string }
+) {
+  return http.post(`/payments/admin/refunds/${refundId}/finalize`, payload);
 }
 
 export function resolveWebhookFailure(id: string) {

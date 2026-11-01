@@ -1,5 +1,6 @@
 'use client';
 
+import { getAdminOrderStatusOptions, ORDER_STATUS_OPTIONS } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import type { AdminOrderModalProps } from '@/features/admin/types/admin-order-modal';
 import { useOrder } from '@/features/orders/hooks/useOrders';
@@ -16,57 +17,47 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
-  CREATED: 'Đã tạo',
-  PENDING_PAYMENT: 'Chờ thanh toán',
-  PENDING: 'Chờ xác nhận',
-  PAID: 'Đã thanh toán',
-  CONFIRMED: 'Đã xác nhận',
-  PROCESSING: 'Đang xử lý',
-  MEASUREMENT_REVIEW: 'Kiểm tra số đo',
-  MEASUREMENT_CONFIRMED: 'Chốt số đo',
-  TAILORING: 'Đang may',
-  QUALITY_CHECK: 'Kiểm tra chất lượng',
-  READY_TO_SHIP: 'Sẵn sàng giao',
-  SHIPPING: 'Đang giao hàng',
-  DELIVERED: 'Đã giao hàng',
-  COMPLETED: 'Hoàn tất',
-  CANCELLED: 'Hủy đơn',
-  RETURN_REQUESTED: 'Yêu cầu hoàn trả',
-  RETURN_APPROVED: 'Duyệt hoàn trả',
-  RETURNING: 'Đang hoàn trả',
-  RETURNED: 'Hoàn trả',
-  EXPIRED: 'Hết hạn',
-  FAILED: 'Thất bại',
-};
-
-const ADMIN_ORDER_STATUS_OPTIONS: BackendOrderStatus[] = [
-  'CREATED',
-  'MEASUREMENT_REVIEW',
-  'MEASUREMENT_CONFIRMED',
-  'TAILORING',
-  'READY_TO_SHIP',
-  'CANCELLED',
-];
-
-export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateOrderStatus, handleConfirmManualPayment, handleUpdateRefund, handleCreateShipment }: AdminOrderModalProps) {
+export function AdminOrderModal({
+  setSelectedOrder,
+  selectedOrder,
+  handleUpdateOrderStatus,
+  handleConfirmManualPayment,
+  handleUpdateRefund,
+  handleFinalizeRefund,
+  handleCreateShipment,
+}: AdminOrderModalProps) {
   const { order: orderDetail, isLoading: isLoadingDetail } = useOrder(selectedOrder.id);
 
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const [refundNote, setRefundNote] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
   const [refundSubmitting, setRefundSubmitting] = useState(false);
+
+  const [finalizingRefundId, setFinalizingRefundId] = useState<string | null>(null);
+  const [finalizeOutcome, setFinalizeOutcome] = useState<'COMPLETED' | 'FAILED'>('COMPLETED');
+  const [finalizeNote, setFinalizeNote] = useState('');
+  const [finalizeSubmitting, setFinalizeSubmitting] = useState(false);
+
   const [creatingShipment, setCreatingShipment] = useState(false);
   const createShipmentAbortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
 
   const isPending = selectedOrder.status === 'PENDING' || selectedOrder.paymentStatus === 'PENDING' || selectedOrder.status === 'CREATED';
-  const refundRequired = selectedOrder.refundStatus === 'REQUIRED' || selectedOrder.refundStatus === 'PROCESSING';
-  const refundCompleted = selectedOrder.refundStatus === 'COMPLETED';
-  const statusOptions = ADMIN_ORDER_STATUS_OPTIONS.includes(selectedOrder.status)
-    ? ADMIN_ORDER_STATUS_OPTIONS
-    : [selectedOrder.status, ...ADMIN_ORDER_STATUS_OPTIONS];
+  const refundRequired =
+    selectedOrder.refundStatus === 'REQUIRED' ||
+    selectedOrder.refundStatus === 'PROCESSING' ||
+    orderDetail?.refundStatus === 'REQUIRED' ||
+    orderDetail?.refundStatus === 'PROCESSING' ||
+    (selectedOrder.status === 'RETURNED' && selectedOrder.refundStatus !== 'COMPLETED');
+  const refundCompleted = selectedOrder.refundStatus === 'COMPLETED' || orderDetail?.refundStatus === 'COMPLETED';
+
+  const paidVnd = orderDetail?.amountPaidVnd ?? selectedOrder.amountPaidVnd ?? 0;
+  const refundedVnd = orderDetail?.amountRefundedVnd ?? selectedOrder.amountRefundedVnd ?? 0;
+  const remainingRefundable = Math.max(0, paidVnd - refundedVnd);
+
+  const statusOptions = getAdminOrderStatusOptions(selectedOrder.status);
   const canCreateShipment = selectedOrder.status === 'READY_TO_SHIP' && selectedOrder.paymentStatus === 'PAID' && !selectedOrder.shipment;
 
   useEffect(() => {
@@ -92,12 +83,34 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
       toast.error('Vui lòng nhập ghi chú xác nhận hoàn tiền.');
       return;
     }
+    const parsedAmount = refundAmount.trim() ? parseInt(refundAmount.trim(), 10) : undefined;
+    if (parsedAmount !== undefined && (isNaN(parsedAmount) || parsedAmount < 1)) {
+      toast.error('Số tiền hoàn phải là số nguyên ≥ 1 VNĐ.');
+      return;
+    }
     setRefundSubmitting(true);
     try {
-      await handleUpdateRefund(selectedOrder.id, refundNote.trim(), refundNote.trim());
-      setRefundNote('');
+      const ok = await handleUpdateRefund(selectedOrder.id, refundNote.trim(), refundNote.trim(), parsedAmount);
+      if (ok !== false) {
+        setRefundNote('');
+        setRefundAmount('');
+      }
     } finally {
       setRefundSubmitting(false);
+    }
+  };
+
+  const onFinalizeRefund = async () => {
+    if (!finalizingRefundId || !handleFinalizeRefund) return;
+    setFinalizeSubmitting(true);
+    try {
+      const ok = await handleFinalizeRefund(finalizingRefundId, finalizeOutcome, finalizeNote.trim() || undefined);
+      if (ok !== false) {
+        setFinalizingRefundId(null);
+        setFinalizeNote('');
+      }
+    } finally {
+      setFinalizeSubmitting(false);
     }
   };
 
@@ -199,16 +212,22 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
                 <span>Tổng tiền đơn:</span>
                 <span>{fmt(orderDetail?.totalVnd ?? selectedOrder.totalVnd ?? selectedOrder.total)}</span>
               </div>
-              {orderDetail?.amountPaidVnd !== undefined && (
+              {paidVnd > 0 && (
                 <div className="flex justify-between text-xs text-neutral-600 pt-1">
                   <span>Đã thu khách:</span>
-                  <span className="font-semibold text-emerald-700">{fmt(orderDetail.amountPaidVnd)}</span>
+                  <span className="font-semibold text-emerald-700">{fmt(paidVnd)}</span>
                 </div>
               )}
-              {orderDetail?.amountRefundedVnd !== undefined && orderDetail.amountRefundedVnd > 0 && (
+              {refundedVnd > 0 && (
                 <div className="flex justify-between text-xs text-neutral-600">
-                  <span>Đã hoàn lại:</span>
-                  <span className="font-semibold text-red-600">-{fmt(orderDetail.amountRefundedVnd)}</span>
+                  <span>
+                    {paidVnd > 0 && refundedVnd < paidVnd ? 'Đã hoàn một phần:' : 'Đã hoàn lại:'}
+                  </span>
+                  <span className="font-semibold text-red-600">
+                    {paidVnd > 0 && refundedVnd < paidVnd
+                      ? `Đã hoàn ${fmt(refundedVnd)} / ${fmt(paidVnd)}`
+                      : `-${fmt(refundedVnd)}`}
+                  </span>
                 </div>
               )}
             </div>
@@ -240,11 +259,17 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
                         )}
                       </div>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        p.status === 'PAID'
+                        p.status === 'PAID' || p.status === 'COD_COLLECTED'
                           ? 'bg-emerald-100 text-emerald-800'
                           : p.status === 'FAILED'
                             ? 'bg-red-100 text-red-800'
-                            : 'bg-amber-100 text-amber-800'
+                            : p.status === 'REFUNDED'
+                              ? 'bg-blue-100 text-blue-800'
+                              : p.status === 'PARTIALLY_REFUNDED'
+                                ? 'bg-sky-100 text-sky-800'
+                                : p.status === 'EXPIRED'
+                                  ? 'bg-neutral-100 text-neutral-600'
+                                  : 'bg-amber-100 text-amber-800'
                       }`}>
                         {p.status || 'PENDING'}
                       </span>
@@ -284,11 +309,21 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         r.status === 'COMPLETED'
                           ? 'bg-emerald-100 text-emerald-800'
-                          : r.status === 'FAILED'
+                          : r.status === 'FAILED' || r.status === 'CANCELLED'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-amber-100 text-amber-800'
                       }`}>
-                        {r.status}
+                        {r.status === 'COMPLETED'
+                          ? 'Thành công'
+                          : r.status === 'PROCESSING'
+                            ? 'Đang xử lý'
+                            : r.status === 'PENDING'
+                              ? 'Chờ xử lý'
+                              : r.status === 'FAILED'
+                                ? 'Thất bại'
+                                : r.status === 'CANCELLED'
+                                  ? 'Đã hủy'
+                                  : r.status}
                       </span>
                     </div>
                     {r.reason && (
@@ -307,6 +342,75 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
                       <p className="text-[11px] text-red-600 font-medium">
                         Lỗi: {r.failedReason}
                       </p>
+                    )}
+
+                    {/* Nút Chốt hoàn tiền cho refund đang PROCESSING (MoMo kẹt) */}
+                    {r.status === 'PROCESSING' && handleFinalizeRefund && (
+                      <div className="pt-2 border-t border-amber-100 mt-2 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-medium text-amber-900">
+                            Xử lý refund MoMo kẹt:
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFinalizingRefundId(r.id);
+                                setFinalizeOutcome('COMPLETED');
+                                setFinalizeNote('');
+                              }}
+                              className="px-2.5 py-1 bg-emerald-600 text-white rounded text-[11px] font-semibold hover:bg-emerald-700 cursor-pointer border-0"
+                            >
+                              Chốt thành công
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFinalizingRefundId(r.id);
+                                setFinalizeOutcome('FAILED');
+                                setFinalizeNote('');
+                              }}
+                              className="px-2.5 py-1 bg-rose-600 text-white rounded text-[11px] font-semibold hover:bg-rose-700 cursor-pointer border-0"
+                            >
+                              Chốt thất bại
+                            </button>
+                          </div>
+                        </div>
+
+                        {finalizingRefundId === r.id && (
+                          <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 space-y-2 animate-fadeInUp">
+                            <p className="text-[11px] font-bold text-amber-950">
+                              Chốt kết quả: {finalizeOutcome === 'COMPLETED' ? 'Thành công (COMPLETED)' : 'Thất bại (FAILED)'}
+                            </p>
+                            <input
+                              type="text"
+                              placeholder="Ghi chú nội bộ (tùy chọn)..."
+                              value={finalizeNote}
+                              onChange={(e) => setFinalizeNote(e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-amber-300 rounded focus:outline-none focus:border-amber-500"
+                            />
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setFinalizingRefundId(null)}
+                                className="px-2 py-1 text-[11px] text-neutral-600 hover:text-neutral-900 bg-transparent border-0 cursor-pointer"
+                              >
+                                Hủy
+                              </button>
+                              <button
+                                type="button"
+                                onClick={onFinalizeRefund}
+                                disabled={finalizeSubmitting}
+                                className={`px-3 py-1 text-white rounded text-[11px] font-bold border-0 cursor-pointer disabled:opacity-50 ${
+                                  finalizeOutcome === 'COMPLETED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
+                                }`}
+                              >
+                                {finalizeSubmitting ? 'Đang lưu...' : 'Xác nhận chốt'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -447,22 +551,61 @@ export function AdminOrderModal({ setSelectedOrder, selectedOrder, handleUpdateO
 
           {refundRequired && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <p className="text-body-sm font-semibold text-amber-800 mb-2">Cần hoàn tiền cho khách</p>
-              <p className="text-label-sm text-amber-700 mb-3">
-                Đơn đã bị hủy sau khi khách đã thanh toán. Sau khi admin chuyển khoản hoàn lại tiền, ghi chú lại để lưu vết.
+              <p className="text-body-sm font-semibold text-amber-800 mb-1">
+                {selectedOrder.status === 'RETURNED'
+                  ? 'Đơn đã hoàn trả — Cần hoàn tiền cho khách'
+                  : 'Cần hoàn tiền cho khách'}
               </p>
-              <div className="flex flex-col gap-2">
+              <p className="text-label-sm text-amber-700 mb-3">
+                {selectedOrder.status === 'RETURNED'
+                  ? 'Đơn hàng đã được hoàn trả về kho. Vui lòng chuyển khoản hoàn lại tiền cho khách và ghi chú lưu vết.'
+                  : 'Đơn đã bị hủy sau khi khách đã thanh toán. Sau khi admin chuyển khoản hoàn lại tiền, ghi chú lại để lưu vết.'}
+              </p>
+              <div className="flex flex-col gap-2.5">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-amber-900">
+                      Số tiền hoàn (VNĐ)
+                    </label>
+                    <span className="text-[11px] text-amber-700 font-normal">
+                      Để trống = hoàn toàn bộ phần còn lại
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1000}
+                    placeholder={
+                      remainingRefundable > 0
+                        ? `Gợi ý: ${fmt(remainingRefundable)} (hoàn toàn bộ còn lại)`
+                        : 'Nhập số tiền hoàn (VNĐ)...'
+                    }
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm bg-white focus:outline-none focus:border-amber-500"
+                  />
+                  {remainingRefundable > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setRefundAmount(String(remainingRefundable))}
+                      className="text-[11px] text-amber-800 hover:text-amber-950 underline mt-1 cursor-pointer bg-transparent border-0 p-0 text-left font-medium"
+                    >
+                      Điền số tiền còn lại: {fmt(remainingRefundable)}
+                    </button>
+                  )}
+                </div>
                 <textarea
                   placeholder="Ghi chú xác nhận đã hoàn tiền (ví dụ: đã chuyển khoản ngày ... qua ...)"
                   value={refundNote}
-                  onChange={e => setRefundNote(e.target.value)}
+                  onChange={(e) => setRefundNote(e.target.value)}
                   rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm resize-none"
+                  className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm resize-none bg-white focus:outline-none focus:border-amber-500"
                 />
                 <button
+                  type="button"
                   onClick={onConfirmRefund}
                   disabled={refundSubmitting}
-                  className="h-9 rounded-lg bg-amber-600 text-white text-body-sm font-semibold hover:bg-amber-700 disabled:opacity-50 border-0 cursor-pointer"
+                  className="h-9 rounded-lg bg-amber-600 text-white text-body-sm font-semibold hover:bg-amber-700 disabled:opacity-50 border-0 cursor-pointer transition-colors"
                 >
                   {refundSubmitting ? 'Đang xác nhận...' : 'Xác nhận đã hoàn tiền'}
                 </button>
