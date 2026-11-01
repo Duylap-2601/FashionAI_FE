@@ -3,8 +3,10 @@
 import { getAdminOrderStatusOptions, ORDER_STATUS_OPTIONS } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
 import type { AdminOrderModalProps } from '@/features/admin/types/admin-order-modal';
+import { RefundReceiptImages } from '@/features/orders/components/refund-receipt-images';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
+import { formatRefundEvidence } from '@/lib/utils';
 import {
   Loader2,
   Package,
@@ -33,6 +35,7 @@ export function AdminOrderModal({
 
   const [refundNote, setRefundNote] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
+  const [refundReceipts, setRefundReceipts] = useState<File[]>([]);
   const [refundSubmitting, setRefundSubmitting] = useState(false);
 
   const [finalizingRefundId, setFinalizingRefundId] = useState<string | null>(null);
@@ -96,10 +99,17 @@ export function AdminOrderModal({
     }
     setRefundSubmitting(true);
     try {
-      const ok = await handleUpdateRefund(selectedOrder.id, refundNote.trim(), refundNote.trim(), parsedAmount);
+      const ok = await handleUpdateRefund(
+        selectedOrder.id,
+        refundNote.trim(),
+        refundNote.trim(),
+        parsedAmount,
+        refundReceipts,
+      );
       if (ok !== false) {
         setRefundNote('');
         setRefundAmount('');
+        setRefundReceipts([]);
       }
     } finally {
       setRefundSubmitting(false);
@@ -147,6 +157,8 @@ export function AdminOrderModal({
       }
     }
   };
+
+  const refundEvidenceText = formatRefundEvidence(orderDetail?.refundEvidence);
 
   return (
     <div className="fixed inset-0 z-50 flex">
@@ -425,11 +437,12 @@ export function AdminOrderModal({
                   </div>
                 ))}
               </div>
-              {orderDetail?.refundEvidence && (
+              {refundEvidenceText && (
                 <div className="mt-2 text-xs text-amber-800 bg-amber-100/60 p-2 rounded-lg">
-                  <strong>Bằng chứng hoàn tiền:</strong> {orderDetail.refundEvidence}
+                  <strong>Bằng chứng hoàn tiền:</strong> {refundEvidenceText}
                 </div>
               )}
+              <RefundReceiptImages evidence={orderDetail?.refundEvidence} />
             </div>
           )}
 
@@ -661,6 +674,22 @@ export function AdminOrderModal({
                   rows={2}
                   className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm resize-none bg-white focus:outline-none focus:border-amber-500"
                 />
+                <label className="inline-flex w-fit items-center gap-1.5 text-[11px] font-semibold text-amber-800 cursor-pointer">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) =>
+                      setRefundReceipts(Array.from(e.target.files ?? []).slice(0, 5))
+                    }
+                  />
+                  <span className="underline">
+                    {refundReceipts.length > 0
+                      ? `Đã chọn ${refundReceipts.length} ảnh chứng từ`
+                      : 'Đính kèm ảnh chuyển khoản (tối đa 5)'}
+                  </span>
+                </label>
                 <button
                   type="button"
                   onClick={onConfirmRefund}

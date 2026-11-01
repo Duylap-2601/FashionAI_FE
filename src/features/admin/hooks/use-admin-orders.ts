@@ -89,13 +89,14 @@ export function useAdminOrders(options: UseAdminOrdersOptions = {}) {
     }
   }, [applyOrderUpdate, ordersRef]);
 
-  const handleUpdateRefund = useCallback(async (id: string, reference: string, note: string, amountVnd?: number) => {
+  const handleUpdateRefund = useCallback(async (id: string, reference: string, note: string, amountVnd?: number, receiptImages?: File[]) => {
     try {
       const res = await updateOrderRefund(id, {
         refundStatus: 'COMPLETED',
         amountVnd,
-        evidence: { reference },
+        evidenceReference: reference,
         internalNote: note,
+        receiptImages,
       });
       const updated = readUpdatedOrder(res);
       if (updated) {

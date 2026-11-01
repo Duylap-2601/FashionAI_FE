@@ -167,6 +167,8 @@ export interface OrderItem {
   };
 }
 
+export type RefundEvidence = string | Record<string, unknown> | null;
+
 export interface Order {
   id: string;
   orderCode: number;
@@ -186,7 +188,7 @@ export interface Order {
   amountRefundedVnd?: number;
   shippingAddressSnapshot?: Record<string, unknown> | null;
   shippingQuoteSnapshot?: Record<string, unknown> | null;
-  refundEvidence?: string | null;
+  refundEvidence?: RefundEvidence;
   refundBankName?: string | null;
   refundAccountNumber?: string | null;
   refundAccountHolder?: string | null;
@@ -310,7 +312,7 @@ export interface BackendOrder {
   amountRefundedVnd?: number | string | null;
   shippingAddressSnapshot?: Record<string, unknown> | null;
   shippingQuoteSnapshot?: Record<string, unknown> | null;
-  refundEvidence?: string | null;
+  refundEvidence?: RefundEvidence;
   refundBankName?: string | null;
   refundAccountNumber?: string | null;
   refundAccountHolder?: string | null;
@@ -361,7 +363,8 @@ export type OrderIssueReason =
   | 'WRONG_SIZE'
   | 'WRONG_COLOR'
   | 'QUALITY_MISMATCH'
-  | 'OTHER';
+  | 'OTHER'
+  | 'REFUND_NOT_RECEIVED';
 
 export type OrderIssueDesiredResolution = 'REFUND';
 

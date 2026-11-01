@@ -14,6 +14,12 @@ interface ReportIssueModalProps {
   orderId: string;
   orderItem: OrderItem | null;
   onSuccess?: () => void;
+  mode?: 'PRODUCT' | 'REFUND_NOT_RECEIVED';
+  defaultBank?: {
+    bankName?: string | null;
+    accountNumber?: string | null;
+    accountHolder?: string | null;
+  };
 }
 
 const REASONS: { value: OrderIssueReason; label: string; desc: string }[] = [
@@ -45,7 +51,14 @@ export function ReportIssueModal({
   orderId,
   orderItem,
   onSuccess,
+  mode = 'PRODUCT',
+  defaultBank,
 }: ReportIssueModalProps) {
+  const isRefundMode = mode === 'REFUND_NOT_RECEIVED';
+  const defaultBankName = defaultBank?.bankName ?? '';
+  const defaultAccountNumber = defaultBank?.accountNumber ?? '';
+  const defaultAccountHolder = defaultBank?.accountHolder ?? '';
+
   const [reason, setReason] = useState<OrderIssueReason>('WRONG_SIZE');
   const [description, setDescription] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -61,16 +74,22 @@ export function ReportIssueModal({
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setReason('WRONG_SIZE');
+      setReason(isRefundMode ? 'REFUND_NOT_RECEIVED' : 'WRONG_SIZE');
       setDescription('');
       setFiles([]);
       setPreviewUrls([]);
-      setBankName('');
-      setAccountNumber('');
-      setAccountHolder('');
+      setBankName(defaultBankName);
+      setAccountNumber(defaultAccountNumber);
+      setAccountHolder(defaultAccountHolder);
       setSubmitError(null);
     }
-  }, [isOpen]);
+  }, [
+    isOpen,
+    isRefundMode,
+    defaultBankName,
+    defaultAccountNumber,
+    defaultAccountHolder,
+  ]);
 
   // Handle ESC key
   useEffect(() => {
@@ -178,7 +197,11 @@ export function ReportIssueModal({
         accountHolder: trimmedAccountHolder,
       });
 
-      toast.success('Gửi yêu cầu báo lỗi sản phẩm thành công. Đội ngũ FashionAI sẽ xem xét sớm nhất!');
+      toast.success(
+        isRefundMode
+          ? 'Đã gửi báo cáo chưa nhận được tiền hoàn. Shop sẽ kiểm tra và phản hồi sớm nhất!'
+          : 'Gửi yêu cầu báo lỗi sản phẩm thành công. Đội ngũ FashionAI sẽ xem xét sớm nhất!'
+      );
       onSuccess?.();
       onClose();
     } catch (err: unknown) {
@@ -223,10 +246,12 @@ export function ReportIssueModal({
           </div>
           <div className="pr-6">
             <h3 id="report-issue-modal-title" className="text-[18px] font-bold text-brand-navy">
-              Báo lỗi sản phẩm &amp; Yêu cầu xử lý
+              {isRefundMode ? 'Báo chưa nhận được tiền hoàn' : 'Báo lỗi sản phẩm & Yêu cầu xử lý'}
             </h3>
             <p className="text-[13px] text-neutral-500 mt-0.5">
-              Áp dụng cho đơn hàng đã hoàn tất trong vòng 7 ngày
+              {isRefundMode
+                ? 'Áp dụng khi shop đã ghi nhận hoàn tiền trong vòng 7 ngày mà bạn chưa nhận được.'
+                : 'Áp dụng cho đơn hàng đã hoàn tất trong vòng 7 ngày'}
             </p>
           </div>
         </div>
@@ -264,6 +289,15 @@ export function ReportIssueModal({
           )}
 
           {/* 1. Reason Selection */}
+          {isRefundMode ? (
+            <div className="p-3.5 rounded-xl border border-amber-200/70 bg-amber-50/50">
+              <p className="text-[13px] font-bold text-brand-navy">Lý do: Chưa nhận được tiền hoàn</p>
+              <p className="text-[11px] text-neutral-600 mt-1 leading-relaxed">
+                Vui lòng kiểm tra sao kê ngân hàng trước khi gửi. Shop sẽ đối chiếu lại giao dịch và chuyển lại nếu
+                tiền chưa tới tài khoản của bạn.
+              </p>
+            </div>
+          ) : (
           <div>
             <label className="block text-[13px] font-bold text-brand-navy mb-2">
               Lý do báo lỗi <span className="text-red-500">*</span>
@@ -302,6 +336,7 @@ export function ReportIssueModal({
               </p>
             )}
           </div>
+          )}
 
           {/* 2. Desired Resolution */}
           <div>
@@ -314,7 +349,9 @@ export function ReportIssueModal({
                 <CheckCircle2 className="w-4 h-4 text-brand-navy" />
               </div>
               <p className="text-[11px] text-neutral-600 mt-1">
-                Shop hoàn tiền về tài khoản ngân hàng của bạn sau khi nhận lại và kiểm tra hàng hoàn.
+                {isRefundMode
+                  ? 'Shop sẽ đối chiếu lại giao dịch và chuyển lại tiền vào tài khoản của bạn nếu chưa nhận được.'
+                  : 'Shop hoàn tiền về tài khoản ngân hàng của bạn sau khi nhận lại và kiểm tra hàng hoàn.'}
               </p>
             </div>
           </div>
@@ -322,7 +359,8 @@ export function ReportIssueModal({
           {/* 2.1. Refund bank account */}
           <div className="p-3.5 rounded-xl border border-amber-200/70 bg-amber-50/40">
               <label className="block text-[13px] font-bold text-brand-navy mb-2">
-                Tài khoản ngân hàng nhận hoàn tiền <span className="text-red-500">*</span>
+                {isRefundMode ? 'Tài khoản bạn muốn nhận lại tiền hoàn' : 'Tài khoản ngân hàng nhận hoàn tiền'}{' '}
+                <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <input
@@ -349,7 +387,9 @@ export function ReportIssueModal({
                 className="mt-2.5 w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all text-neutral-800 placeholder:text-neutral-400 bg-white uppercase"
               />
               <p className="text-[11px] text-neutral-500 mt-2 leading-relaxed">
-                Shop sẽ chuyển khoản hoàn tiền vào tài khoản này sau khi nhận và kiểm tra hàng hoàn.
+                {isRefundMode
+                  ? 'Kiểm tra kỹ số tài khoản — shop sẽ chuyển lại tiền vào đúng tài khoản này.'
+                  : 'Shop sẽ chuyển khoản hoàn tiền vào tài khoản này sau khi nhận và kiểm tra hàng hoàn.'}
               </p>
             </div>
 
@@ -368,7 +408,11 @@ export function ReportIssueModal({
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Vui lòng mô tả cụ thể: ví dụ Áo bị lệch vai trái khoảng 4cm so với số đo đã đặt, đường chỉ tay áo bị tuột..."
+              placeholder={
+                isRefundMode
+                  ? 'Ví dụ: đã kiểm tra sao kê Vietcombank từ 01/11 đến 03/11 nhưng chưa thấy khoản hoàn nào...'
+                  : 'Vui lòng mô tả cụ thể: ví dụ Áo bị lệch vai trái khoảng 4cm so với số đo đã đặt, đường chỉ tay áo bị tuột...'
+              }
               className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all resize-y text-neutral-800 placeholder:text-neutral-400"
             />
           </div>
@@ -376,7 +420,8 @@ export function ReportIssueModal({
           {/* 4. Evidence Images */}
           <div>
             <label className="block text-[13px] font-bold text-brand-navy mb-1.5">
-              Ảnh minh chứng <span className="text-neutral-400 font-normal">(tối đa 10 ảnh, mỗi ảnh &lt; 10MB)</span>
+              {isRefundMode ? 'Ảnh sao kê / chứng từ' : 'Ảnh minh chứng'}{' '}
+              <span className="text-neutral-400 font-normal">(tối đa 10 ảnh, mỗi ảnh &lt; 10MB)</span>
             </label>
             <input
               ref={fileInputRef}
@@ -434,7 +479,9 @@ export function ReportIssueModal({
                   <ImagePlus className="w-5 h-5" />
                 </div>
                 <div className="text-center">
-                  <span className="text-[13px] font-semibold">Tải lên hình ảnh chụp lỗi thực tế</span>
+                  <span className="text-[13px] font-semibold">
+                    {isRefundMode ? 'Tải lên ảnh sao kê (nếu có)' : 'Tải lên hình ảnh chụp lỗi thực tế'}
+                  </span>
                   <p className="text-[11px] text-neutral-400 mt-0.5">JPG, PNG hoặc WEBP (tối đa 10MB/ảnh)</p>
                 </div>
               </button>
@@ -462,7 +509,7 @@ export function ReportIssueModal({
                   Đang gửi yêu cầu...
                 </>
               ) : (
-                'Gửi yêu cầu báo lỗi'
+                isRefundMode ? 'Gửi báo cáo' : 'Gửi yêu cầu báo lỗi'
               )}
             </button>
           </div>

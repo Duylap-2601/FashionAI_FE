@@ -12,10 +12,12 @@ import {
 } from '@/features/admin/services/mutations';
 import { allMeasurementFields } from '@/features/measurements/constants/profile-measurements-page';
 import { useUserMeasurements } from '@/features/measurements/hooks/useMeasurements';
+import { RefundReceiptImages } from '@/features/orders/components/refund-receipt-images';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { getErrorMessage } from '@/lib/errors';
+import { formatRefundEvidence } from '@/lib/utils';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -82,6 +84,7 @@ export default function AdminOrderMeasurementsPage() {
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [refundNote, setRefundNote] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
+  const [refundReceipts, setRefundReceipts] = useState<File[]>([]);
   const [submittingRefund, setSubmittingRefund] = useState(false);
 
   const [finalizingRefundId, setFinalizingRefundId] = useState<string | null>(null);
@@ -179,12 +182,14 @@ export default function AdminOrderMeasurementsPage() {
       await updateOrderRefund(order.id, {
         refundStatus: 'COMPLETED',
         amountVnd: parsedAmount,
-        evidence: { reference: refundNote.trim() },
+        evidenceReference: refundNote.trim(),
         internalNote: refundNote.trim(),
+        receiptImages: refundReceipts,
       });
       toast.success('Đã ghi nhận hoàn tiền thành công');
       setRefundNote('');
       setRefundAmount('');
+      setRefundReceipts([]);
       await refetch();
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể ghi nhận hoàn tiền.'));
@@ -280,6 +285,7 @@ export default function AdminOrderMeasurementsPage() {
     order.refundStatus === 'PROCESSING' ||
     (order.status === 'RETURNED' && order.refundStatus !== 'COMPLETED');
   const refundCompleted = order.refundStatus === 'COMPLETED';
+  const refundEvidenceText = formatRefundEvidence(order.refundEvidence);
   // Trả hàng: chỉ chốt hoàn tiền sau khi admin đã nhận lại hàng (RETURNED).
   const returnInTransit = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING'].includes(order.status);
   const isReturnReceived = order.status === 'RETURNED';
@@ -507,6 +513,24 @@ export default function AdminOrderMeasurementsPage() {
                       </button>
                     )}
                   </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="inline-flex w-fit items-center gap-1.5 text-[11px] font-semibold text-destructive cursor-pointer">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={(e) =>
+                          setRefundReceipts(Array.from(e.target.files ?? []).slice(0, 5))
+                        }
+                      />
+                      <span className="underline">
+                        {refundReceipts.length > 0
+                          ? `Đã chọn ${refundReceipts.length} ảnh chứng từ`
+                          : 'Đính kèm ảnh chuyển khoản (tối đa 5)'}
+                      </span>
+                    </label>
+                  </div>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <input
                       type="text"
@@ -530,10 +554,11 @@ export default function AdminOrderMeasurementsPage() {
 
             {/* Refund Completed Notification */}
             {refundCompleted && (
-              <div className="bg-metric-products/10 border border-metric-products/30 rounded-[2px] sm:rounded-[2px] p-4 flex items-center gap-3 text-metric-products text-xs">
+              <div className="bg-metric-products/10 border border-metric-products/30 rounded-[2px] sm:rounded-[2px] p-4 flex flex-wrap items-center gap-3 text-metric-products text-xs">
                 <CheckCircle2 className="w-5 h-5 text-metric-products shrink-0" />
                 <span className="font-semibold">Đã hoàn tiền cho khách thành công cho đơn hàng này.</span>
-                {order.refundEvidence && <span className="text-metric-products italic">({order.refundEvidence})</span>}
+                {refundEvidenceText && <span className="text-metric-products italic">({refundEvidenceText})</span>}
+                <RefundReceiptImages evidence={order.refundEvidence} />
               </div>
             )}
           </div>

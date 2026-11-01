@@ -27,6 +27,7 @@ const REASON_OPTIONS: { value: OrderIssueReason | ''; label: string }[] = [
   { value: 'WRONG_COLOR', label: 'Sai màu sắc' },
   { value: 'QUALITY_MISMATCH', label: 'Chất lượng / Đường may' },
   { value: 'OTHER', label: 'Lý do khác' },
+  { value: 'REFUND_NOT_RECEIVED', label: 'Chưa nhận được tiền hoàn' },
 ];
 
 function StatusBadge({ status }: { status: OrderIssueStatus }) {
@@ -238,6 +239,8 @@ export function AdminOrderIssuesPanel({
                             ? 'Sai màu'
                             : issue.reason === 'QUALITY_MISMATCH'
                             ? 'Lỗi may đo'
+                            : issue.reason === 'REFUND_NOT_RECEIVED'
+                            ? 'Chưa nhận tiền'
                             : 'Khác'}
                         </span>
                         <p className="text-[12px] text-landing-obsidian">
