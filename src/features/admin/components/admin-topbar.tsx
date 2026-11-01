@@ -18,17 +18,24 @@ export const AdminTopbar = React.memo(function AdminTopbar({
   const adminInitial = adminName.charAt(0).toUpperCase() || 'A';
 
   return (
-    <header className="h-16 px-4 md:px-8 bg-white border-b border-neutral-200 flex items-center justify-between shrink-0 z-30 sticky top-0 shadow-2xs">
-      <div className="flex items-center gap-2 md:gap-3">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-landing-line bg-landing-paper/95 px-4 backdrop-blur-md md:px-8">
+      <div className="flex min-w-0 items-center gap-3">
         {/* Hamburger - chỉ hiện trên mobile */}
         <button
           onClick={onOpenSidebar}
-          className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 border-0 bg-transparent cursor-pointer"
+          className="border border-landing-line p-2 text-landing-obsidian transition-colors hover:border-landing-oxblood hover:text-landing-oxblood lg:hidden"
           aria-label="Mở menu"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="h-5 w-5" strokeWidth={1.75} />
         </button>
-        <span className="text-body-sm font-bold text-brand-navy">{ADMIN_PAGE_TITLES[activeTab]}</span>
+        <div className="min-w-0">
+          <p className="text-[8px] font-semibold uppercase leading-none tracking-[0.22em] text-landing-brass-ink">
+            Bảng quản trị
+          </p>
+          <p className="mt-1 truncate font-display text-[1.05rem] leading-tight text-landing-obsidian">
+            {ADMIN_PAGE_TITLES[activeTab]}
+          </p>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 md:gap-4">
@@ -36,9 +43,10 @@ export const AdminTopbar = React.memo(function AdminTopbar({
           onClick={onRefresh}
           disabled={isRefreshing}
           title="Làm mới dữ liệu"
-          className="p-2 rounded-full hover:bg-neutral-100 text-neutral-600 transition-colors cursor-pointer border-0 bg-transparent"
+          aria-label="Làm mới dữ liệu"
+          className="border border-landing-line p-2 text-landing-muted transition-colors hover:border-landing-oxblood hover:text-landing-oxblood disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} strokeWidth={1.75} />
         </button>
 
         {/* Chuông thông báo Realtime Notification Bell */}
@@ -46,20 +54,22 @@ export const AdminTopbar = React.memo(function AdminTopbar({
           <NotificationBell tone="admin" />
         </div>
 
-        <div className="h-5 w-px bg-neutral-200" />
+        <div className="h-5 w-px bg-landing-line" />
 
         {/* Admin User Info */}
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-xs shadow-xs overflow-hidden">
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-landing-line bg-landing-obsidian text-xs font-semibold text-landing-paper">
             {avatarUrl ? (
-              <Image src={avatarUrl} alt={adminName} width={32} height={32} unoptimized className="w-full h-full object-cover" />
+              <Image src={avatarUrl} alt={adminName} width={32} height={32} unoptimized className="h-full w-full object-cover" />
             ) : (
               adminInitial
             )}
           </div>
-          <div className="hidden md:flex flex-col text-left">
-            <span className="text-[13px] font-bold text-neutral-800 leading-tight">{adminName}</span>
-            <span className="text-[10px] font-bold text-brand-navy uppercase tracking-wider">Quản trị viên</span>
+          <div className="hidden flex-col text-left md:flex">
+            <span className="text-[13px] font-semibold leading-tight text-landing-obsidian">{adminName}</span>
+            <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-landing-brass-ink">
+              Quản trị viên
+            </span>
           </div>
         </div>
       </div>

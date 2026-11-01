@@ -22,7 +22,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
 
   if (status === 'loading' || !isLoggedIn) {
     return (
-      <div className="flex h-screen items-center justify-center bg-neutral-100">
+      <div className="flex min-h-dvh items-center justify-center bg-landing-paper">
         <AtelierLoader size="md" label="Đang mở xưởng" />
       </div>
     );

@@ -167,15 +167,15 @@ export function AdminReviewTable() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-xs overflow-hidden flex flex-col flex-1 min-h-0">
+    <div className="bg-landing-ivory rounded-[2px] border border-landing-line/80 overflow-hidden">
       {/* Header & Controls */}
-      <div className="p-6 border-b border-neutral-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+      <div className="p-6 border-b border-landing-line flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
-          <h3 className="text-[20px] font-bold text-brand-navy flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-brand-navy" />
+          <h3 className="flex items-center gap-2 font-display text-[1.4rem] leading-tight text-landing-obsidian">
+            <MessageSquare className="w-5 h-5 text-landing-brass-ink" />
             Quản lý Đánh giá sản phẩm
           </h3>
-          <p className="text-body-sm text-neutral-500 mt-1">
+          <p className="text-body-sm text-landing-muted mt-1">
             Kiểm duyệt phản hồi của khách hàng, theo dõi mức độ hài lòng và xóa đánh giá vi phạm.
           </p>
         </div>
@@ -184,7 +184,7 @@ export function AdminReviewTable() {
         <div className="flex items-center gap-3 flex-wrap">
           {/* Ô tìm kiếm */}
           <div className="relative min-w-[220px]">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-landing-muted" />
             <input
               type="text"
               value={searchKeyword}
@@ -193,7 +193,7 @@ export function AdminReviewTable() {
                 setCurrentPage(1);
               }}
               placeholder="Tìm khách hàng, nội dung..."
-              className="w-full pl-9 pr-4 py-2 border border-neutral-300 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy"
+              className="w-full pl-9 pr-4 py-2 border border-landing-taupe rounded-[2px] text-body-sm focus:outline-none focus:border-landing-oxblood"
             />
           </div>
 
@@ -204,7 +204,7 @@ export function AdminReviewTable() {
               setSelectedProductId(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2 border border-neutral-300 rounded-xl text-body-sm bg-white focus:outline-none focus:border-brand-navy cursor-pointer max-w-[200px] truncate"
+            className="px-3 py-2 border border-landing-taupe rounded-[2px] text-body-sm bg-landing-ivory focus:outline-none focus:border-landing-oxblood cursor-pointer max-w-[200px] truncate"
           >
             <option value="all">Tất cả sản phẩm</option>
             {products.map((p) => (
@@ -221,7 +221,7 @@ export function AdminReviewTable() {
               setSelectedRating(e.target.value === 'all' ? 'all' : Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="px-3 py-2 border border-neutral-300 rounded-xl text-body-sm bg-white focus:outline-none focus:border-brand-navy cursor-pointer"
+            className="px-3 py-2 border border-landing-taupe rounded-[2px] text-body-sm bg-landing-ivory focus:outline-none focus:border-landing-oxblood cursor-pointer"
           >
             <option value="all">Tất cả sao</option>
             <option value="5">5 sao ⭐⭐⭐⭐⭐</option>
@@ -236,7 +236,7 @@ export function AdminReviewTable() {
             <button
               type="button"
               onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-neutral-200 hover:border-red-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-landing-obsidian hover:text-destructive hover:bg-destructive/10 rounded-[2px] border border-landing-line hover:border-destructive/30 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Đặt lại
@@ -246,10 +246,10 @@ export function AdminReviewTable() {
       </div>
 
       {/* Bảng danh sách Reviews: Fixed Header + Scrollable Data Body */}
-      <div className="overflow-x-auto flex-1 min-h-0 flex flex-col">
-        <div className="min-w-[1020px] flex-1 flex flex-col min-h-0">
+      <div className="overflow-x-auto">
+        <div className="min-w-[1020px]">
           {/* Fixed Header */}
-          <div className="bg-neutral-50 border-b border-neutral-200 text-[12px] font-bold text-neutral-500 uppercase tracking-wider shrink-0 select-none shadow-2xs">
+          <div className="bg-landing-paper/60 border-b border-landing-line text-[12px] font-bold text-landing-muted uppercase tracking-wider shrink-0 select-none">
             <div className="grid grid-cols-[200px_220px_130px_minmax(240px,1fr)_130px_100px] items-center">
               <div className="py-3.5 px-6">Khách hàng</div>
               <div className="py-3.5 px-6">Sản phẩm</div>
@@ -261,15 +261,15 @@ export function AdminReviewTable() {
           </div>
 
           {/* Scrollable Data Body */}
-          <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar divide-y divide-neutral-100 text-body-sm">
+          <div className="divide-y divide-landing-line text-body-sm">
             {isReviewsLoading ? (
-              <div className="py-16 text-center text-neutral-400">
+              <div className="py-16 text-center text-landing-muted">
                 <div className="flex flex-col items-center justify-center gap-2">
                   <AtelierLoader size="sm" label="Đang may đánh giá" />
                 </div>
               </div>
             ) : paginatedReviews.length === 0 ? (
-              <div className="py-16 text-center text-neutral-400">
+              <div className="py-16 text-center text-landing-muted">
                 {isFiltered ? 'Không tìm thấy đánh giá nào phù hợp với bộ lọc' : 'Chưa có đánh giá nào'}
               </div>
             ) : (
@@ -287,7 +287,7 @@ export function AdminReviewTable() {
                 return (
                   <div
                     key={r.id}
-                    className="grid grid-cols-[200px_220px_130px_minmax(240px,1fr)_130px_100px] items-center hover:bg-neutral-50/70 transition-colors"
+                    className="grid grid-cols-[200px_220px_130px_minmax(240px,1fr)_130px_100px] items-center hover:bg-landing-paper/70 transition-colors"
                   >
                     {/* Cột Khách hàng */}
                     <div className="py-4 px-6 min-w-0">
@@ -299,18 +299,18 @@ export function AdminReviewTable() {
                             width={32}
                             height={32}
                             unoptimized
-                            className="h-8 w-8 shrink-0 rounded-full border border-neutral-200 object-cover"
+                            className="h-8 w-8 shrink-0 rounded-full border border-landing-line object-cover"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-brand-navy/10 text-brand-navy flex items-center justify-center font-bold text-[13px] shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-landing-oxblood/10 text-landing-oxblood flex items-center justify-center font-bold text-[13px] shrink-0">
                             {initial}
                           </div>
                         )}
                         <div className="flex flex-col min-w-0">
-                          <span className="font-semibold text-neutral-900 text-[13px] truncate">
+                          <span className="font-semibold text-landing-obsidian text-[13px] truncate">
                             {userName}
                           </span>
-                          <span className="text-[11px] text-neutral-400 font-mono truncate">
+                          <span className="text-[11px] text-landing-muted font-mono truncate">
                             ID: {r.userId.substring(0, 8)}
                           </span>
                         </div>
@@ -321,7 +321,7 @@ export function AdminReviewTable() {
                     <div className="py-4 px-6 min-w-0">
                       <div className="flex items-center gap-3">
                         {(r.product?.image || r.product?.garmentUrl) && (
-                          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100">
+                          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-[2px] border border-landing-line bg-landing-paper">
                             <Image
                               src={r.product.image || r.product.garmentUrl || ''}
                               alt={r.product.name}
@@ -333,10 +333,10 @@ export function AdminReviewTable() {
                           </div>
                         )}
                         <div className="flex flex-col min-w-0">
-                          <span className="font-medium text-neutral-900 text-[13px] truncate">
+                          <span className="font-medium text-landing-obsidian text-[13px] truncate">
                             {r.product?.name || 'Sản phẩm #' + r.productId}
                           </span>
-                          <span className="text-[11px] text-neutral-400 font-mono truncate">
+                          <span className="text-[11px] text-landing-muted font-mono truncate">
                             ID: {r.productId}
                           </span>
                         </div>
@@ -352,11 +352,11 @@ export function AdminReviewTable() {
                     <div className="py-4 px-6 min-w-0">
                       <div className="flex flex-col gap-1.5">
                         {r.comment ? (
-                          <p className="text-neutral-700 line-clamp-2 leading-relaxed">
+                          <p className="text-landing-obsidian line-clamp-2 leading-relaxed">
                             {r.comment}
                           </p>
                         ) : (
-                          <span className="text-neutral-400 italic text-[12px]">
+                          <span className="text-landing-muted italic text-[12px]">
                             Không có nhận xét bằng chữ
                           </span>
                         )}
@@ -369,7 +369,7 @@ export function AdminReviewTable() {
                                 href={imgUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="relative block h-7 w-7 overflow-hidden rounded-md border border-neutral-200 bg-neutral-100 hover:opacity-80"
+                                className="relative block h-7 w-7 overflow-hidden rounded-[2px] border border-landing-line bg-landing-paper hover:opacity-80"
                               >
                                 <Image
                                   src={imgUrl}
@@ -381,7 +381,7 @@ export function AdminReviewTable() {
                                 />
                               </a>
                             ))}
-                            <span className="text-[11px] text-neutral-400 font-medium ml-1">
+                            <span className="text-[11px] text-landing-muted font-medium ml-1">
                               ({r.images.length} ảnh)
                             </span>
                           </div>
@@ -390,7 +390,7 @@ export function AdminReviewTable() {
                     </div>
 
                     {/* Cột Ngày */}
-                    <div className="py-4 px-6 text-neutral-500 text-[13px] truncate">
+                    <div className="py-4 px-6 text-landing-muted text-[13px] truncate">
                       {formattedDate}
                     </div>
 
@@ -400,7 +400,7 @@ export function AdminReviewTable() {
                         <Link
                           href={`/products/${r.productId}#product-reviews`}
                           target="_blank"
-                          className="p-2 text-neutral-500 hover:text-brand-navy hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer inline-flex items-center"
+                          className="p-2 text-landing-muted hover:text-landing-oxblood hover:bg-landing-paper rounded-[2px] transition-colors cursor-pointer inline-flex items-center"
                           title="Xem chi tiết & Phản hồi đánh giá này"
                         >
                           <CornerDownRight className="w-4 h-4" />
@@ -408,7 +408,7 @@ export function AdminReviewTable() {
                         <button
                           type="button"
                           onClick={() => setDeletingReview(r)}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                          className="p-2 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-[2px] transition-colors cursor-pointer"
                           title="Xóa đánh giá này (Quyền Admin)"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -425,7 +425,7 @@ export function AdminReviewTable() {
 
       {/* Pagination */}
       {totalItems > 0 && (
-        <div className="shrink-0 border-t border-neutral-100">
+        <div className="shrink-0 border-t border-landing-line">
           <AdminPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -443,17 +443,17 @@ export function AdminReviewTable() {
 
       {/* Modal xác nhận xóa của Admin */}
       {deletingReview && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl border border-neutral-200">
-            <div className="flex items-center gap-2 text-red-600 mb-2">
+        <div className="fixed inset-0 z-50 bg-landing-obsidian/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-landing-ivory rounded-[2px] p-6 max-w-md w-full border border-landing-line">
+            <div className="flex items-center gap-2 text-destructive mb-2">
               <ShieldAlert className="w-5 h-5" />
-              <h4 className="font-bold text-[18px]">Xác nhận xóa đánh giá</h4>
+              <h4 className="font-display text-[1.15rem] leading-tight text-landing-obsidian">Xác nhận xóa đánh giá</h4>
             </div>
-            <p className="text-body-sm text-neutral-600 mb-6 leading-relaxed">
+            <p className="text-body-sm text-landing-obsidian mb-6 leading-relaxed">
               Bạn có chắc chắn muốn xóa đánh giá của{' '}
-              <strong className="text-neutral-800">{deletingReview.user?.name || 'khách hàng'}</strong>{' '}
+              <strong className="text-landing-obsidian">{deletingReview.user?.name || 'khách hàng'}</strong>{' '}
               cho sản phẩm{' '}
-              <strong className="text-neutral-800">
+              <strong className="text-landing-obsidian">
                 {deletingReview.product?.name || deletingReview.productId}
               </strong>
               ? Hành động này sẽ gỡ bỏ đánh giá vĩnh viễn và cập nhật lại điểm trung bình của sản phẩm.
@@ -462,7 +462,7 @@ export function AdminReviewTable() {
               <button
                 type="button"
                 onClick={() => setDeletingReview(null)}
-                className="px-4 py-2 rounded-xl text-body-sm font-semibold text-neutral-600 hover:bg-neutral-100 cursor-pointer"
+                className="px-4 py-2 rounded-[2px] text-body-sm font-semibold text-landing-obsidian hover:bg-landing-paper cursor-pointer"
               >
                 Hủy
               </button>
@@ -470,7 +470,7 @@ export function AdminReviewTable() {
                 type="button"
                 onClick={handleDeleteConfirm}
                 disabled={adminDeleteMutation.isPending}
-                className="px-4 py-2 rounded-xl text-body-sm font-semibold bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 cursor-pointer"
+                className="px-4 py-2 rounded-[2px] text-body-sm font-semibold bg-destructive hover:bg-destructive text-landing-paper flex items-center gap-2 cursor-pointer"
               >
                 {adminDeleteMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Xác nhận xóa

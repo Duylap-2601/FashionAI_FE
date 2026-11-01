@@ -122,6 +122,14 @@
   --color-landing-muted: #6B625A;
   --color-landing-line: rgba(166, 125, 68, 0.38);
 
+  /* Admin metric accents — vivid and high contrast on paper/ivory surfaces */
+  --color-metric-revenue: #C2185B;
+  --color-metric-orders: #1D4ED8;
+  --color-metric-products: #15803D;
+  --color-metric-users: #B45309;
+  --color-metric-reviews: #A16207;
+  --color-metric-ai: #6D28D9;
+
   /* Neutral scale — sourced from landing page */
   --color-neutral-900: #1A1917;
   --color-neutral-700: #4A4845;

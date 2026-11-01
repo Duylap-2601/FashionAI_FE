@@ -57,19 +57,19 @@ export function AdminPagination({
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div className="p-4 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white shrink-0">
+    <div className="p-4 border-t border-landing-line flex flex-col sm:flex-row items-center justify-between gap-4 bg-landing-ivory shrink-0">
       {/* Left: Item range summary */}
-      <div className="flex items-center gap-2 text-body-sm text-neutral-500">
+      <div className="flex items-center gap-2 text-body-sm text-landing-muted">
         <span>
-          Hiển thị <strong className="font-semibold text-neutral-900">{startItem}</strong> -{' '}
-          <strong className="font-semibold text-neutral-900">{endItem}</strong> trong{' '}
-          <strong className="font-semibold text-neutral-900">{totalItems}</strong> {itemLabel}
+          Hiển thị <strong className="font-semibold text-landing-obsidian">{startItem}</strong> -{' '}
+          <strong className="font-semibold text-landing-obsidian">{endItem}</strong> trong{' '}
+          <strong className="font-semibold text-landing-obsidian">{totalItems}</strong> {itemLabel}
         </span>
 
         {/* Page size selector */}
         {onPageSizeChange && (
-          <div className="ml-3 flex items-center gap-1.5 border-l border-neutral-200 pl-3">
-            <span className="text-xs text-neutral-400">Số lượng:</span>
+          <div className="ml-3 flex items-center gap-1.5 border-l border-landing-line pl-3">
+            <span className="text-xs text-landing-muted">Số lượng:</span>
             <select
               value={pageSize}
               onChange={(e) => {
@@ -77,7 +77,7 @@ export function AdminPagination({
                 onPageChange(1);
               }}
               disabled={isBusy}
-              className="text-xs font-semibold text-neutral-700 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 focus:outline-none focus:border-brand-navy cursor-pointer"
+              className="text-xs font-semibold text-landing-obsidian bg-landing-paper/60 border border-landing-line rounded-[2px] px-2 py-1 focus:outline-none focus:border-landing-oxblood cursor-pointer"
             >
               {pageSizeOptions.map((opt) => (
                 <option key={opt} value={opt}>
@@ -97,7 +97,7 @@ export function AdminPagination({
             type="button"
             disabled={currentPage <= 1 || isBusy}
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-[2px] border border-landing-line text-landing-obsidian hover:bg-landing-paper/60 hover:text-landing-obsidian disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title="Trang trước"
             aria-label="Trang trước"
           >
@@ -109,7 +109,7 @@ export function AdminPagination({
             item === 'ellipsis' ? (
               <span
                 key={`ellipsis-${index}`}
-                className="w-8 h-8 inline-flex items-center justify-center text-neutral-400 text-xs"
+                className="w-8 h-8 inline-flex items-center justify-center text-landing-muted text-xs"
               >
                 <MoreHorizontal className="w-3.5 h-3.5" />
               </span>
@@ -119,10 +119,10 @@ export function AdminPagination({
                 type="button"
                 disabled={isBusy}
                 onClick={() => onPageChange(item)}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-colors ${
+                className={`w-8 h-8 flex items-center justify-center rounded-[2px] text-xs font-semibold transition-colors ${
                   item === currentPage
-                    ? 'bg-brand-navy text-white shadow-xs'
-                    : 'border border-neutral-200 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300'
+                    ? 'bg-landing-oxblood text-landing-paper'
+                    : 'border border-landing-line text-landing-obsidian hover:bg-landing-paper/60 hover:border-landing-taupe'
                 } disabled:cursor-wait`}
               >
                 {item}
@@ -135,7 +135,7 @@ export function AdminPagination({
             type="button"
             disabled={currentPage >= totalPages || isBusy}
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-[2px] border border-landing-line text-landing-obsidian hover:bg-landing-paper/60 hover:text-landing-obsidian disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title="Trang sau"
             aria-label="Trang sau"
           >

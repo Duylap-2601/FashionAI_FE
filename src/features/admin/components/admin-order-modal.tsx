@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { getAdminOrderStatusOptions, ORDER_STATUS_OPTIONS } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
@@ -68,7 +68,7 @@ export function AdminOrderModal({
   }, []);
 
   const onConfirmManualPayment = async () => {
-    const confirmNote = note.trim() || 'Xác nhận thanh toán thủ công';
+    const confirmNote = note.trim() || 'XÃ¡c nháº­n thanh toÃ¡n thá»§ cÃ´ng';
     setSubmitting(true);
     try {
       await handleConfirmManualPayment(selectedOrder.orderCode, confirmNote, confirmNote);
@@ -80,12 +80,12 @@ export function AdminOrderModal({
 
   const onConfirmRefund = async () => {
     if (!refundNote.trim()) {
-      toast.error('Vui lòng nhập ghi chú xác nhận hoàn tiền.');
+      toast.error('Vui lÃ²ng nháº­p ghi chÃº xÃ¡c nháº­n hoÃ n tiá»n.');
       return;
     }
     const parsedAmount = refundAmount.trim() ? parseInt(refundAmount.trim(), 10) : undefined;
     if (parsedAmount !== undefined && (isNaN(parsedAmount) || parsedAmount < 1)) {
-      toast.error('Số tiền hoàn phải là số nguyên ≥ 1 VNĐ.');
+      toast.error('Sá»‘ tiá»n hoÃ n pháº£i lÃ  sá»‘ nguyÃªn â‰¥ 1 VNÄ.');
       return;
     }
     setRefundSubmitting(true);
@@ -141,91 +141,91 @@ export function AdminOrderModal({
   return (
     <div className="fixed inset-0 z-50 flex">
       <motion.div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-landing-obsidian/50 backdrop-blur-sm"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={() => setSelectedOrder(null)}
       />
       <motion.div
-        className="absolute right-0 top-0 bottom-0 w-full max-w-[480px] bg-white shadow-2xl flex flex-col z-10"
+        className="absolute right-0 top-0 bottom-0 w-full max-w-[480px] bg-landing-ivory flex flex-col z-10"
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ duration: 0.28, ease: 'easeInOut' }}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-landing-line">
           <div>
-            <h2 className="text-body-lg font-bold text-neutral-900">Chi tiết đơn hàng</h2>
-            <p className="text-label-sm text-neutral-500 font-mono">{selectedOrder.code}</p>
+            <h2 className="font-display text-[1.15rem] leading-tight text-landing-obsidian">Chi tiáº¿t Ä‘Æ¡n hÃ ng</h2>
+            <p className="text-label-sm text-landing-muted font-mono">{selectedOrder.code}</p>
           </div>
-          <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 border-0 bg-transparent cursor-pointer">
+          <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-landing-paper border-0 bg-transparent cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
           <div>
-            <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Thông tin giao nhận</p>
-            <p className="text-body-sm font-medium text-neutral-800">Khách hàng: {selectedOrder.customer}</p>
-            <p className="text-body-sm text-neutral-600 mt-1">Điện thoại: {selectedOrder.phone || '—'}</p>
-            <p className="text-body-sm text-neutral-600 mt-1">Địa chỉ: {selectedOrder.address || '—'}</p>
-            <p className="text-body-sm text-neutral-600 mt-1">Email: {selectedOrder.email || '—'}</p>
+            <p className="text-label-sm font-semibold text-landing-muted uppercase tracking-wide mb-2">ThÃ´ng tin giao nháº­n</p>
+            <p className="text-body-sm font-medium text-landing-obsidian">KhÃ¡ch hÃ ng: {selectedOrder.customer}</p>
+            <p className="text-body-sm text-landing-obsidian mt-1">Äiá»‡n thoáº¡i: {selectedOrder.phone || 'â€”'}</p>
+            <p className="text-body-sm text-landing-obsidian mt-1">Äá»‹a chá»‰: {selectedOrder.address || 'â€”'}</p>
+            <p className="text-body-sm text-landing-obsidian mt-1">Email: {selectedOrder.email || 'â€”'}</p>
           </div>
 
-          <div className="rounded-xl border border-neutral-200 p-4 bg-neutral-50/30">
-            <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">Thanh toán & Chi phí</p>
+          <div className="rounded-[2px] border border-landing-line p-4 bg-landing-paper/30">
+            <p className="text-label-sm font-semibold text-landing-muted uppercase tracking-wide mb-3">Thanh toÃ¡n & Chi phÃ­</p>
             <div className="space-y-1.5 text-body-sm">
-              <div className="flex justify-between text-neutral-600">
-                <span>Phương thức:</span>
-                <span className="font-semibold text-neutral-800">{orderDetail?.paymentMethod || selectedOrder.payment || '—'}</span>
+              <div className="flex justify-between text-landing-obsidian">
+                <span>PhÆ°Æ¡ng thá»©c:</span>
+                <span className="font-semibold text-landing-obsidian">{orderDetail?.paymentMethod || selectedOrder.payment || 'â€”'}</span>
               </div>
-              <div className="flex justify-between text-neutral-600">
-                <span>Trạng thái:</span>
-                <span className="font-semibold text-neutral-800">{orderDetail?.paymentStatus || selectedOrder.paymentStatus || '—'}</span>
+              <div className="flex justify-between text-landing-obsidian">
+                <span>Tráº¡ng thÃ¡i:</span>
+                <span className="font-semibold text-landing-obsidian">{orderDetail?.paymentStatus || selectedOrder.paymentStatus || 'â€”'}</span>
               </div>
               {orderDetail?.itemsSubtotalVnd !== undefined ? (
-                <div className="flex justify-between text-neutral-600">
-                  <span>Tiền hàng:</span>
-                  <span className="text-neutral-800">{fmt(orderDetail.itemsSubtotalVnd)}</span>
+                <div className="flex justify-between text-landing-obsidian">
+                  <span>Tiá»n hÃ ng:</span>
+                  <span className="text-landing-obsidian">{fmt(orderDetail.itemsSubtotalVnd)}</span>
                 </div>
               ) : orderDetail?.itemsTotal ? (
-                <div className="flex justify-between text-neutral-600">
-                  <span>Tiền hàng:</span>
-                  <span className="text-neutral-800">{fmt(orderDetail.itemsTotal)}</span>
+                <div className="flex justify-between text-landing-obsidian">
+                  <span>Tiá»n hÃ ng:</span>
+                  <span className="text-landing-obsidian">{fmt(orderDetail.itemsTotal)}</span>
                 </div>
               ) : null}
               {orderDetail?.shippingFeeVnd !== undefined ? (
-                <div className="flex justify-between text-neutral-600">
-                  <span>Phí vận chuyển:</span>
-                  <span className="text-neutral-800">{fmt(orderDetail.shippingFeeVnd)}</span>
+                <div className="flex justify-between text-landing-obsidian">
+                  <span>PhÃ­ váº­n chuyá»ƒn:</span>
+                  <span className="text-landing-obsidian">{fmt(orderDetail.shippingFeeVnd)}</span>
                 </div>
               ) : orderDetail?.shippingFee ? (
-                <div className="flex justify-between text-neutral-600">
-                  <span>Phí vận chuyển:</span>
-                  <span className="text-neutral-800">{fmt(orderDetail.shippingFee)}</span>
+                <div className="flex justify-between text-landing-obsidian">
+                  <span>PhÃ­ váº­n chuyá»ƒn:</span>
+                  <span className="text-landing-obsidian">{fmt(orderDetail.shippingFee)}</span>
                 </div>
               ) : null}
               {((orderDetail?.discountVnd && orderDetail.discountVnd > 0) || (orderDetail?.discountAmount && orderDetail.discountAmount > 0)) && (
-                <div className="flex justify-between text-emerald-600 font-medium">
-                  <span>Giảm giá:</span>
+                <div className="flex justify-between text-metric-products font-medium">
+                  <span>Giáº£m giÃ¡:</span>
                   <span>-{fmt(orderDetail.discountVnd ?? orderDetail.discountAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-body-md font-bold text-brand-navy pt-2 border-t border-neutral-200">
-                <span>Tổng tiền đơn:</span>
+              <div className="flex justify-between font-display text-[1.05rem] leading-tight text-landing-oxblood pt-2 border-t border-landing-line">
+                <span>Tá»•ng tiá»n Ä‘Æ¡n:</span>
                 <span>{fmt(orderDetail?.totalVnd ?? selectedOrder.totalVnd ?? selectedOrder.total)}</span>
               </div>
               {paidVnd > 0 && (
-                <div className="flex justify-between text-xs text-neutral-600 pt-1">
-                  <span>Đã thu khách:</span>
-                  <span className="font-semibold text-emerald-700">{fmt(paidVnd)}</span>
+                <div className="flex justify-between text-xs text-landing-obsidian pt-1">
+                  <span>ÄÃ£ thu khÃ¡ch:</span>
+                  <span className="font-semibold text-metric-products">{fmt(paidVnd)}</span>
                 </div>
               )}
               {refundedVnd > 0 && (
-                <div className="flex justify-between text-xs text-neutral-600">
+                <div className="flex justify-between text-xs text-landing-obsidian">
                   <span>
-                    {paidVnd > 0 && refundedVnd < paidVnd ? 'Đã hoàn một phần:' : 'Đã hoàn lại:'}
+                    {paidVnd > 0 && refundedVnd < paidVnd ? 'ÄÃ£ hoÃ n má»™t pháº§n:' : 'ÄÃ£ hoÃ n láº¡i:'}
                   </span>
-                  <span className="font-semibold text-red-600">
+                  <span className="font-semibold text-destructive">
                     {paidVnd > 0 && refundedVnd < paidVnd
-                      ? `Đã hoàn ${fmt(refundedVnd)} / ${fmt(paidVnd)}`
+                      ? `ÄÃ£ hoÃ n ${fmt(refundedVnd)} / ${fmt(paidVnd)}`
                       : `-${fmt(refundedVnd)}`}
                   </span>
                 </div>
@@ -235,51 +235,51 @@ export function AdminOrderModal({
 
           {/* Payment Transactions Card */}
           {((orderDetail?.payments && orderDetail.payments.length > 0) || (selectedOrder.payments && selectedOrder.payments.length > 0)) && (
-            <div className="rounded-xl border border-neutral-200 p-4 bg-white shadow-2xs">
+            <div className="rounded-[2px] border border-landing-line p-4 bg-landing-ivory">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide">
-                  Chi tiết giao dịch thanh toán
+                <p className="text-label-sm font-semibold text-landing-muted uppercase tracking-wide">
+                  Chi tiáº¿t giao dá»‹ch thanh toÃ¡n
                 </p>
-                <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-xs bg-landing-paper text-landing-obsidian px-2 py-0.5 rounded-full font-medium">
                   {(orderDetail?.payments || selectedOrder.payments || []).length} GD
                 </span>
               </div>
               <div className="space-y-2.5">
                 {(orderDetail?.payments || selectedOrder.payments || []).map((p, idx) => (
-                  <div key={p.id || idx} className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 text-xs space-y-1">
+                  <div key={p.id || idx} className="p-3 bg-landing-paper/60 rounded-[2px] border border-landing-line text-xs space-y-1">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-neutral-900 uppercase px-2 py-0.5 bg-neutral-200 rounded text-[11px]">
+                        <span className="font-bold text-landing-obsidian uppercase px-2 py-0.5 bg-landing-taupe rounded text-[11px]">
                           {p.provider || 'SEPAY'}
                         </span>
                         {p.transactionId && (
-                          <span className="font-mono text-neutral-500 text-[11px]">
-                            Mã GD: {p.transactionId}
+                          <span className="font-mono text-landing-muted text-[11px]">
+                            MÃ£ GD: {p.transactionId}
                           </span>
                         )}
                       </div>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         p.status === 'PAID' || p.status === 'COD_COLLECTED'
-                          ? 'bg-emerald-100 text-emerald-800'
+                          ? 'bg-metric-products/10 text-metric-products'
                           : p.status === 'FAILED'
-                            ? 'bg-red-100 text-red-800'
+                            ? 'bg-destructive/10 text-destructive'
                             : p.status === 'REFUNDED'
-                              ? 'bg-blue-100 text-blue-800'
+                              ? 'bg-metric-orders/10 text-metric-orders'
                               : p.status === 'PARTIALLY_REFUNDED'
-                                ? 'bg-sky-100 text-sky-800'
+                                ? 'bg-metric-ai/10 text-metric-ai'
                                 : p.status === 'EXPIRED'
-                                  ? 'bg-neutral-100 text-neutral-600'
-                                  : 'bg-amber-100 text-amber-800'
+                                  ? 'bg-landing-paper text-landing-muted'
+                                  : 'bg-metric-users/10 text-metric-users'
                       }`}>
                         {p.status || 'PENDING'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-neutral-500">
-                        {p.createdAt ? new Date(p.createdAt).toLocaleString('vi-VN') : '—'}
+                      <span className="text-landing-muted">
+                        {p.createdAt ? new Date(p.createdAt).toLocaleString('vi-VN') : 'â€”'}
                       </span>
-                      <span className="font-bold text-brand-navy text-body-sm">
-                        {p.amountVnd !== undefined ? fmt(p.amountVnd) : '—'}
+                      <span className="font-bold text-landing-oxblood text-body-sm">
+                        {p.amountVnd !== undefined ? fmt(p.amountVnd) : 'â€”'}
                       </span>
                     </div>
                   </div>
@@ -290,66 +290,66 @@ export function AdminOrderModal({
 
           {/* Refund History Card */}
           {((orderDetail?.refunds && orderDetail.refunds.length > 0) || (selectedOrder.refunds && selectedOrder.refunds.length > 0)) && (
-            <div className="rounded-xl border border-amber-200 p-4 bg-amber-50/40">
+            <div className="rounded-[2px] border border-metric-users/30 p-4 bg-metric-users/10">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-label-sm font-semibold text-amber-800 uppercase tracking-wide">
-                  Lịch sử hoàn tiền
+                <p className="text-label-sm font-semibold text-metric-users uppercase tracking-wide">
+                  Lá»‹ch sá»­ hoÃ n tiá»n
                 </p>
-                <span className="text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-bold">
-                  {(orderDetail?.refunds || selectedOrder.refunds || []).length} lượt
+                <span className="text-xs bg-metric-users/10 text-metric-users px-2 py-0.5 rounded-full font-bold">
+                  {(orderDetail?.refunds || selectedOrder.refunds || []).length} lÆ°á»£t
                 </span>
               </div>
               <div className="space-y-2.5">
                 {(orderDetail?.refunds || selectedOrder.refunds || []).map((r, idx) => (
-                  <div key={r.id || idx} className="p-3 bg-white rounded-xl border border-amber-200 text-xs space-y-1.5 shadow-2xs">
+                  <div key={r.id || idx} className="p-3 bg-landing-ivory rounded-[2px] border border-metric-users/30 text-xs space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-red-600 text-body-sm">
+                      <span className="font-bold text-destructive text-body-sm">
                         -{fmt(r.amountVnd)}
                       </span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         r.status === 'COMPLETED'
-                          ? 'bg-emerald-100 text-emerald-800'
+                          ? 'bg-metric-products/10 text-metric-products'
                           : r.status === 'FAILED' || r.status === 'CANCELLED'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-amber-100 text-amber-800'
+                            ? 'bg-destructive/10 text-destructive'
+                            : 'bg-metric-users/10 text-metric-users'
                       }`}>
                         {r.status === 'COMPLETED'
-                          ? 'Thành công'
+                          ? 'ThÃ nh cÃ´ng'
                           : r.status === 'PROCESSING'
-                            ? 'Đang xử lý'
+                            ? 'Äang xá»­ lÃ½'
                             : r.status === 'PENDING'
-                              ? 'Chờ xử lý'
+                              ? 'Chá» xá»­ lÃ½'
                               : r.status === 'FAILED'
-                                ? 'Thất bại'
+                                ? 'Tháº¥t báº¡i'
                                 : r.status === 'CANCELLED'
-                                  ? 'Đã hủy'
+                                  ? 'ÄÃ£ há»§y'
                                   : r.status}
                       </span>
                     </div>
                     {r.reason && (
-                      <p className="text-neutral-700"><strong>Lý do:</strong> {r.reason}</p>
+                      <p className="text-landing-obsidian"><strong>LÃ½ do:</strong> {r.reason}</p>
                     )}
-                    <div className="flex items-center justify-between text-[11px] text-neutral-500">
-                      <span>Cổng: {r.provider}</span>
-                      <span>Yêu cầu: {new Date(r.requestedAt).toLocaleString('vi-VN')}</span>
+                    <div className="flex items-center justify-between text-[11px] text-landing-muted">
+                      <span>Cá»•ng: {r.provider}</span>
+                      <span>YÃªu cáº§u: {new Date(r.requestedAt).toLocaleString('vi-VN')}</span>
                     </div>
                     {r.processedAt && (
-                      <p className="text-[11px] text-neutral-500">
-                        Xử lý lúc: {new Date(r.processedAt).toLocaleString('vi-VN')}
+                      <p className="text-[11px] text-landing-muted">
+                        Xá»­ lÃ½ lÃºc: {new Date(r.processedAt).toLocaleString('vi-VN')}
                       </p>
                     )}
                     {r.failedReason && (
-                      <p className="text-[11px] text-red-600 font-medium">
-                        Lỗi: {r.failedReason}
+                      <p className="text-[11px] text-destructive font-medium">
+                        Lá»—i: {r.failedReason}
                       </p>
                     )}
 
-                    {/* Nút Chốt hoàn tiền cho refund đang PROCESSING (MoMo kẹt) */}
+                    {/* NÃºt Chá»‘t hoÃ n tiá»n cho refund Ä‘ang PROCESSING (MoMo káº¹t) */}
                     {r.status === 'PROCESSING' && handleFinalizeRefund && (
                       <div className="pt-2 border-t border-amber-100 mt-2 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[11px] font-medium text-amber-900">
-                            Xử lý refund MoMo kẹt:
+                            Xá»­ lÃ½ refund MoMo káº¹t:
                           </span>
                           <div className="flex items-center gap-1.5">
                             <button
@@ -361,7 +361,7 @@ export function AdminOrderModal({
                               }}
                               className="px-2.5 py-1 bg-emerald-600 text-white rounded text-[11px] font-semibold hover:bg-emerald-700 cursor-pointer border-0"
                             >
-                              Chốt thành công
+                              Chá»‘t thÃ nh cÃ´ng
                             </button>
                             <button
                               type="button"
@@ -372,7 +372,7 @@ export function AdminOrderModal({
                               }}
                               className="px-2.5 py-1 bg-rose-600 text-white rounded text-[11px] font-semibold hover:bg-rose-700 cursor-pointer border-0"
                             >
-                              Chốt thất bại
+                              Chá»‘t tháº¥t báº¡i
                             </button>
                           </div>
                         </div>
@@ -380,11 +380,11 @@ export function AdminOrderModal({
                         {finalizingRefundId === r.id && (
                           <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 space-y-2 animate-fadeInUp">
                             <p className="text-[11px] font-bold text-amber-950">
-                              Chốt kết quả: {finalizeOutcome === 'COMPLETED' ? 'Thành công (COMPLETED)' : 'Thất bại (FAILED)'}
+                              Chá»‘t káº¿t quáº£: {finalizeOutcome === 'COMPLETED' ? 'ThÃ nh cÃ´ng (COMPLETED)' : 'Tháº¥t báº¡i (FAILED)'}
                             </p>
                             <input
                               type="text"
-                              placeholder="Ghi chú nội bộ (tùy chọn)..."
+                              placeholder="Ghi chÃº ná»™i bá»™ (tÃ¹y chá»n)..."
                               value={finalizeNote}
                               onChange={(e) => setFinalizeNote(e.target.value)}
                               className="w-full px-2.5 py-1.5 text-xs bg-white border border-amber-300 rounded focus:outline-none focus:border-amber-500"
@@ -395,7 +395,7 @@ export function AdminOrderModal({
                                 onClick={() => setFinalizingRefundId(null)}
                                 className="px-2 py-1 text-[11px] text-neutral-600 hover:text-neutral-900 bg-transparent border-0 cursor-pointer"
                               >
-                                Hủy
+                                Há»§y
                               </button>
                               <button
                                 type="button"
@@ -405,7 +405,7 @@ export function AdminOrderModal({
                                   finalizeOutcome === 'COMPLETED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
                                 }`}
                               >
-                                {finalizeSubmitting ? 'Đang lưu...' : 'Xác nhận chốt'}
+                                {finalizeSubmitting ? 'Äang lÆ°u...' : 'XÃ¡c nháº­n chá»‘t'}
                               </button>
                             </div>
                           </div>
@@ -416,43 +416,43 @@ export function AdminOrderModal({
                 ))}
               </div>
               {orderDetail?.refundEvidence && (
-                <div className="mt-2 text-xs text-amber-800 bg-amber-100/60 p-2 rounded-lg">
-                  <strong>Bằng chứng hoàn tiền:</strong> {orderDetail.refundEvidence}
+                <div className="mt-2 text-xs text-metric-users bg-metric-users/10 p-2 rounded-[2px]">
+                  <strong>Báº±ng chá»©ng hoÃ n tiá»n:</strong> {orderDetail.refundEvidence}
                 </div>
               )}
             </div>
           )}
 
           {/* Dedicated Measurements Sheet Link */}
-          <div className="rounded-xl border border-purple-200 bg-purple-50/70 p-4">
+          <div className="rounded-[2px] border border-metric-ai/30 bg-metric-ai/10 p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Scissors className="w-4 h-4 text-purple-700" />
-                <span className="text-body-sm font-bold text-purple-950">Phiếu số đo may đo cho thợ may</span>
+                <Scissors className="w-4 h-4 text-metric-ai" />
+                <span className="text-body-sm font-bold text-metric-ai">Phiáº¿u sá»‘ Ä‘o may Ä‘o cho thá»£ may</span>
               </div>
-              <span className="text-[11px] bg-purple-200/70 text-purple-900 font-bold px-2 py-0.5 rounded-full">
-                {orderDetail?.items?.length ?? selectedOrder.items} món
+              <span className="text-[11px] bg-metric-ai/20 text-metric-ai font-bold px-2 py-0.5 rounded-full">
+                {orderDetail?.items?.length ?? selectedOrder.items} mÃ³n
               </span>
             </div>
-            <p className="text-xs text-purple-800 mb-3 leading-relaxed">
-              Bảng thông số may đo theo loại trang phục, đối chiếu 16 số đo thô ban đầu và hồ sơ cá nhân của khách được hiển thị đầy đủ trên trang riêng.
+            <p className="text-xs text-metric-ai mb-3 leading-relaxed">
+              Báº£ng thÃ´ng sá»‘ may Ä‘o theo loáº¡i trang phá»¥c, Ä‘á»‘i chiáº¿u 16 sá»‘ Ä‘o thÃ´ ban Ä‘áº§u vÃ  há»“ sÆ¡ cÃ¡ nhÃ¢n cá»§a khÃ¡ch Ä‘Æ°á»£c hiá»ƒn thá»‹ Ä‘áº§y Ä‘á»§ trÃªn trang riÃªng.
             </p>
             <Link
               href={`/admin/orders/${selectedOrder.id}/measurements`}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition-colors no-underline shadow-xs cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-metric-ai hover:bg-landing-obsidian text-landing-paper rounded-[2px] text-xs font-bold transition-colors no-underline cursor-pointer"
             >
               <Scissors className="w-4 h-4" />
-              <span>Mở phiếu xem số đo chi tiết (Trang riêng)</span>
+              <span>Má»Ÿ phiáº¿u xem sá»‘ Ä‘o chi tiáº¿t (Trang riÃªng)</span>
             </Link>
           </div>
 
           {/* Compact Order Items Summary */}
-          <div className="rounded-xl border border-neutral-200 p-4 bg-neutral-50/50">
+          <div className="rounded-[2px] border border-landing-line p-4 bg-landing-paper/50">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide">
-                Sản phẩm trong đơn ({orderDetail?.items?.length ?? selectedOrder.items} món)
+              <p className="text-label-sm font-semibold text-landing-muted uppercase tracking-wide">
+                Sáº£n pháº©m trong Ä‘Æ¡n ({orderDetail?.items?.length ?? selectedOrder.items} mÃ³n)
               </p>
-              {isLoadingDetail && <Loader2 className="w-3.5 h-3.5 animate-spin text-neutral-400" />}
+              {isLoadingDetail && <Loader2 className="w-3.5 h-3.5 animate-spin text-landing-muted" />}
             </div>
 
             {orderDetail?.items && orderDetail.items.length > 0 ? (
@@ -462,39 +462,39 @@ export function AdminOrderModal({
                   const itemUnitPrice = item.unitPriceVnd ?? item.price;
                   const itemLineTotal = item.lineTotalVnd ?? (item.price * item.quantity);
                   return (
-                    <div key={item.id || idx} className="bg-white rounded-xl border border-neutral-200 p-3 shadow-2xs flex items-center gap-3">
+                    <div key={item.id || idx} className="bg-landing-ivory rounded-[2px] border border-landing-line p-3 flex items-center gap-3">
                       {displayImage ? (
                         <Image
                           src={displayImage}
-                          alt={item.productNameSnapshot || item.product?.name || 'Sản phẩm'}
+                          alt={item.productNameSnapshot || item.product?.name || 'Sáº£n pháº©m'}
                           width={44}
                           height={52}
                           unoptimized
-                          className="h-13 w-11 shrink-0 rounded-lg border border-neutral-200 bg-neutral-100 object-cover"
+                          className="h-13 w-11 shrink-0 rounded-[2px] border border-landing-line bg-landing-paper object-cover"
                         />
                       ) : (
-                        <div className="w-11 h-13 bg-neutral-100 rounded-lg flex items-center justify-center shrink-0 border border-neutral-200">
-                          <Package className="w-4 h-4 text-neutral-400" />
+                        <div className="w-11 h-13 bg-landing-paper rounded-[2px] flex items-center justify-center shrink-0 border border-landing-line">
+                          <Package className="w-4 h-4 text-landing-muted" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-body-sm font-bold text-brand-navy truncate">
-                          {item.productNameSnapshot || item.product?.name || `Sản phẩm #${item.productId}`}
+                        <p className="text-body-sm font-bold text-landing-oxblood truncate">
+                          {item.productNameSnapshot || item.product?.name || `Sáº£n pháº©m #${item.productId}`}
                         </p>
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500 mt-0.5">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-landing-muted mt-0.5">
                           {item.productSkuSnapshot && (
-                            <span className="font-mono text-[11px] text-neutral-400">SKU: {item.productSkuSnapshot}</span>
+                            <span className="font-mono text-[11px] text-landing-muted">SKU: {item.productSkuSnapshot}</span>
                           )}
-                          <span>Màu: <strong className="text-neutral-700">{item.color || 'Mặc định'}</strong></span>
-                          <span>•</span>
-                          <span>SL: <strong className="text-brand-navy font-bold">{item.quantity}</strong></span>
+                          <span>MÃ u: <strong className="text-landing-obsidian">{item.color || 'Máº·c Ä‘á»‹nh'}</strong></span>
+                          <span>â€¢</span>
+                          <span>SL: <strong className="text-landing-oxblood font-bold">{item.quantity}</strong></span>
                         </div>
-                        <div className="text-[11px] text-neutral-400 mt-0.5">
-                          Đơn giá: {fmt(itemUnitPrice)}
+                        <div className="text-[11px] text-landing-muted mt-0.5">
+                          ÄÆ¡n giÃ¡: {fmt(itemUnitPrice)}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-xs font-bold text-brand-navy">
+                        <p className="text-xs font-bold text-landing-oxblood">
                           {fmt(itemLineTotal)}
                         </p>
                       </div>
@@ -503,72 +503,72 @@ export function AdminOrderModal({
                 })}
               </div>
             ) : (
-              <div className="text-xs text-neutral-500 py-2 text-center">
-                {isLoadingDetail ? 'Đang tải dữ liệu sản phẩm...' : 'Không có chi tiết sản phẩm.'}
+              <div className="text-xs text-landing-muted py-2 text-center">
+                {isLoadingDetail ? 'Äang táº£i dá»¯ liá»‡u sáº£n pháº©m...' : 'KhÃ´ng cÃ³ chi tiáº¿t sáº£n pháº©m.'}
               </div>
             )}
           </div>
 
-          <div className="rounded-xl border border-neutral-200 p-4">
-            <p className="text-label-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Vận chuyển</p>
+          <div className="rounded-[2px] border border-landing-line p-4">
+            <p className="text-label-sm font-semibold text-landing-muted uppercase tracking-wide mb-2">Váº­n chuyá»ƒn</p>
             {selectedOrder.shipment ? (
-              <div className="text-body-sm text-neutral-700 space-y-1">
+              <div className="text-body-sm text-landing-obsidian space-y-1">
                 <p>Provider: <span className="font-semibold">{selectedOrder.shipment.provider}</span></p>
-                <p>Mã GHN: <span className="font-mono font-semibold">{selectedOrder.shipment.providerOrderCode || '—'}</span></p>
-                <p>Trạng thái: {shipmentStatusLabel(selectedOrder.shipment.status, selectedOrder.shipment.rawStatus)}</p>
-                <p>Dự kiến giao: {selectedOrder.shipment.expectedDeliveryTime?.substring(0, 16).replace('T', ' ') || '—'}</p>
-                <p>Sync cuối: {selectedOrder.shipment.lastSyncedAt?.substring(0, 16).replace('T', ' ') || '—'}</p>
+                <p>MÃ£ GHN: <span className="font-mono font-semibold">{selectedOrder.shipment.providerOrderCode || 'â€”'}</span></p>
+                <p>Tráº¡ng thÃ¡i: {shipmentStatusLabel(selectedOrder.shipment.status, selectedOrder.shipment.rawStatus)}</p>
+                <p>Dá»± kiáº¿n giao: {selectedOrder.shipment.expectedDeliveryTime?.substring(0, 16).replace('T', ' ') || 'â€”'}</p>
+                <p>Sync cuá»‘i: {selectedOrder.shipment.lastSyncedAt?.substring(0, 16).replace('T', ' ') || 'â€”'}</p>
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('admin:navigate', { detail: { tab: 'shipments', shipmentCode: selectedOrder.shipment?.providerOrderCode, orderCode: selectedOrder.orderCode } }))}
-                  className="mt-2 text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
+                  className="mt-2 text-landing-oxblood font-semibold hover:underline bg-transparent border-0 cursor-pointer"
                 >
-                  Xem trong tab Vận đơn
+                  Xem trong tab Váº­n Ä‘Æ¡n
                 </button>
               </div>
             ) : (
-              <div className="text-body-sm text-neutral-600">
-                <p>Đơn chưa có vận đơn.</p>
+              <div className="text-body-sm text-landing-obsidian">
+                <p>ÄÆ¡n chÆ°a cÃ³ váº­n Ä‘Æ¡n.</p>
                 {canCreateShipment ? (
                   <button
                     onClick={onCreateShipment}
                     disabled={creatingShipment}
-                    className="mt-3 h-9 px-4 rounded-lg bg-brand-navy text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed border-0 cursor-pointer"
+                    className="mt-3 h-9 px-4 rounded-[2px] bg-landing-oxblood text-landing-paper font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed border-0 cursor-pointer"
                   >
-                    {creatingShipment ? 'Đang tạo...' : 'Tạo vận đơn GHN'}
+                    {creatingShipment ? 'Äang táº¡o...' : 'Táº¡o váº­n Ä‘Æ¡n GHN'}
                   </button>
                 ) : (
-                  <p className="mt-2 text-label-sm text-neutral-500">Chỉ tạo vận đơn khi đơn sẵn sàng giao và đã thanh toán.</p>
+                  <p className="mt-2 text-label-sm text-landing-muted">Chá»‰ táº¡o váº­n Ä‘Æ¡n khi Ä‘Æ¡n sáºµn sÃ ng giao vÃ  Ä‘Ã£ thanh toÃ¡n.</p>
                 )}
               </div>
             )}
           </div>
 
           {refundCompleted && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-              <p className="text-body-sm font-semibold text-emerald-800">Đã hoàn tiền cho khách</p>
+            <div className="rounded-[2px] border border-metric-products/30 bg-metric-products/10 p-4">
+              <p className="text-body-sm font-semibold text-metric-products">ÄÃ£ hoÃ n tiá»n cho khÃ¡ch</p>
             </div>
           )}
 
           {refundRequired && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <p className="text-body-sm font-semibold text-amber-800 mb-1">
+            <div className="rounded-[2px] border border-metric-users/30 bg-metric-users/10 p-4">
+              <p className="text-body-sm font-semibold text-metric-users mb-1">
                 {selectedOrder.status === 'RETURNED'
-                  ? 'Đơn đã hoàn trả — Cần hoàn tiền cho khách'
-                  : 'Cần hoàn tiền cho khách'}
+                  ? 'ÄÆ¡n Ä‘Ã£ hoÃ n tráº£ â€” Cáº§n hoÃ n tiá»n cho khÃ¡ch'
+                  : 'Cáº§n hoÃ n tiá»n cho khÃ¡ch'}
               </p>
-              <p className="text-label-sm text-amber-700 mb-3">
+              <p className="text-label-sm text-metric-users mb-3">
                 {selectedOrder.status === 'RETURNED'
-                  ? 'Đơn hàng đã được hoàn trả về kho. Vui lòng chuyển khoản hoàn lại tiền cho khách và ghi chú lưu vết.'
-                  : 'Đơn đã bị hủy sau khi khách đã thanh toán. Sau khi admin chuyển khoản hoàn lại tiền, ghi chú lại để lưu vết.'}
+                  ? 'ÄÆ¡n hÃ ng Ä‘Ã£ Ä‘Æ°á»£c hoÃ n tráº£ vá» kho. Vui lÃ²ng chuyá»ƒn khoáº£n hoÃ n láº¡i tiá»n cho khÃ¡ch vÃ  ghi chÃº lÆ°u váº¿t.'
+                  : 'ÄÆ¡n Ä‘Ã£ bá»‹ há»§y sau khi khÃ¡ch Ä‘Ã£ thanh toÃ¡n. Sau khi admin chuyá»ƒn khoáº£n hoÃ n láº¡i tiá»n, ghi chÃº láº¡i Ä‘á»ƒ lÆ°u váº¿t.'}
               </p>
               <div className="flex flex-col gap-2.5">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-amber-900">
-                      Số tiền hoàn (VNĐ)
+                    <label className="text-xs font-semibold text-metric-users">
+                      Sá»‘ tiá»n hoÃ n (VNÄ)
                     </label>
-                    <span className="text-[11px] text-amber-700 font-normal">
-                      Để trống = hoàn toàn bộ phần còn lại
+                    <span className="text-[11px] text-metric-users/80 font-normal">
+                      Äá»ƒ trá»‘ng = hoÃ n toÃ n bá»™ pháº§n cÃ²n láº¡i
                     </span>
                   </div>
                   <input
@@ -577,81 +577,81 @@ export function AdminOrderModal({
                     step={1000}
                     placeholder={
                       remainingRefundable > 0
-                        ? `Gợi ý: ${fmt(remainingRefundable)} (hoàn toàn bộ còn lại)`
-                        : 'Nhập số tiền hoàn (VNĐ)...'
+                        ? `Gá»£i Ã½: ${fmt(remainingRefundable)} (hoÃ n toÃ n bá»™ cÃ²n láº¡i)`
+                        : 'Nháº­p sá»‘ tiá»n hoÃ n (VNÄ)...'
                     }
                     value={refundAmount}
                     onChange={(e) => setRefundAmount(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm bg-white focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2 rounded-[2px] border border-metric-users text-body-sm bg-landing-ivory focus:outline-none focus:border-metric-users"
                   />
                   {remainingRefundable > 0 && (
                     <button
                       type="button"
                       onClick={() => setRefundAmount(String(remainingRefundable))}
-                      className="text-[11px] text-amber-800 hover:text-amber-950 underline mt-1 cursor-pointer bg-transparent border-0 p-0 text-left font-medium"
+                      className="text-[11px] text-metric-users hover:text-landing-obsidian underline mt-1 cursor-pointer bg-transparent border-0 p-0 text-left font-medium"
                     >
-                      Điền số tiền còn lại: {fmt(remainingRefundable)}
+                      Äiá»n sá»‘ tiá»n cÃ²n láº¡i: {fmt(remainingRefundable)}
                     </button>
                   )}
                 </div>
                 <textarea
-                  placeholder="Ghi chú xác nhận đã hoàn tiền (ví dụ: đã chuyển khoản ngày ... qua ...)"
+                  placeholder="Ghi chÃº xÃ¡c nháº­n Ä‘Ã£ hoÃ n tiá»n (vÃ­ dá»¥: Ä‘Ã£ chuyá»ƒn khoáº£n ngÃ y ... qua ...)"
                   value={refundNote}
                   onChange={(e) => setRefundNote(e.target.value)}
                   rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm resize-none bg-white focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2 rounded-[2px] border border-metric-users text-body-sm resize-none bg-landing-ivory focus:outline-none focus:border-metric-users"
                 />
                 <button
                   type="button"
                   onClick={onConfirmRefund}
                   disabled={refundSubmitting}
-                  className="h-9 rounded-lg bg-amber-600 text-white text-body-sm font-semibold hover:bg-amber-700 disabled:opacity-50 border-0 cursor-pointer transition-colors"
+                  className="h-9 rounded-[2px] bg-metric-users text-landing-paper text-body-sm font-semibold hover:bg-landing-obsidian disabled:opacity-50 border-0 cursor-pointer transition-colors"
                 >
-                  {refundSubmitting ? 'Đang xác nhận...' : 'Xác nhận đã hoàn tiền'}
+                  {refundSubmitting ? 'Äang xÃ¡c nháº­n...' : 'XÃ¡c nháº­n Ä‘Ã£ hoÃ n tiá»n'}
                 </button>
               </div>
             </div>
           )}
 
           {isPending && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <p className="text-body-sm font-semibold text-amber-800 mb-2">Xác nhận thanh toán thủ công</p>
-              <p className="text-label-sm text-amber-700 mb-3">
-                Dùng khi khách đã chuyển khoản và đã nhận được tiền nhưng hệ thống chưa tự cập nhật trạng thái.
+            <div className="rounded-[2px] border border-metric-users/30 bg-metric-users/10 p-4">
+              <p className="text-body-sm font-semibold text-metric-users mb-2">XÃ¡c nháº­n thanh toÃ¡n thá»§ cÃ´ng</p>
+              <p className="text-label-sm text-metric-users mb-3">
+                DÃ¹ng khi khÃ¡ch Ä‘Ã£ chuyá»ƒn khoáº£n vÃ  Ä‘Ã£ nháº­n Ä‘Æ°á»£c tiá»n nhÆ°ng há»‡ thá»‘ng chÆ°a tá»± cáº­p nháº­t tráº¡ng thÃ¡i.
               </p>
               <div className="flex flex-col gap-2">
                 <textarea
-                  placeholder="Ghi chú xác nhận (ví dụ: đã nhận tiền qua sao kê ngày ...)"
+                  placeholder="Ghi chÃº xÃ¡c nháº­n (vÃ­ dá»¥: Ä‘Ã£ nháº­n tiá»n qua sao kÃª ngÃ y ...)"
                   value={note}
                   onChange={e => setNote(e.target.value)}
                   rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm resize-none"
+                  className="w-full px-3 py-2 rounded-[2px] border border-metric-users text-body-sm resize-none"
                 />
                 <button
                   onClick={onConfirmManualPayment}
                   disabled={submitting}
-                  className="h-9 rounded-lg bg-amber-600 text-white text-body-sm font-semibold hover:bg-amber-700 disabled:opacity-50 border-0 cursor-pointer"
+                  className="h-9 rounded-[2px] bg-metric-users text-landing-paper text-body-sm font-semibold hover:bg-landing-obsidian disabled:opacity-50 border-0 cursor-pointer"
                 >
-                  {submitting ? 'Đang xác nhận...' : 'Xác nhận đã nhận tiền'}
+                  {submitting ? 'Äang xÃ¡c nháº­n...' : 'XÃ¡c nháº­n Ä‘Ã£ nháº­n tiá»n'}
                 </button>
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-body-sm font-semibold text-neutral-700 mb-2">Trạng thái đơn hàng</label>
+            <label className="block text-body-sm font-semibold text-landing-obsidian mb-2">Tráº¡ng thÃ¡i Ä‘Æ¡n hÃ ng</label>
             <select
               value={selectedOrder.status}
               onChange={e => handleStatusChange(e.target.value as BackendOrderStatus)}
-              className="w-full h-10 px-3 rounded-lg border border-neutral-300"
+              className="w-full h-10 px-3 rounded-[2px] border border-landing-taupe"
             >
               {statusOptions.map(status => (
                 <option key={status} value={status}>{ORDER_STATUS_OPTIONS[status]}</option>
               ))}
             </select>
             {isPending && (
-              <p className="text-label-sm text-neutral-500 mt-1">
-                Đơn đang chờ thanh toán chỉ có thể hủy, hoặc xác nhận thanh toán thủ công ở trên khi đã nhận được tiền.
+              <p className="text-label-sm text-landing-muted mt-1">
+                ÄÆ¡n Ä‘ang chá» thanh toÃ¡n chá»‰ cÃ³ thá»ƒ há»§y, hoáº·c xÃ¡c nháº­n thanh toÃ¡n thá»§ cÃ´ng á»Ÿ trÃªn khi Ä‘Ã£ nháº­n Ä‘Æ°á»£c tiá»n.
               </p>
             )}
           </div>
