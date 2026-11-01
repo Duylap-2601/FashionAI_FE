@@ -21,12 +21,10 @@ export interface LiveTryOnTierPolicySettings {
 export interface LiveTryOnSettings {
   enabled: boolean;
   version: number;
-  globalDailyCredits: number;
+  globalDailySeconds: number;
   maxConcurrentSessions: number;
   pauseTimeoutSeconds: number;
   allowedCategories: GarmentCategory[];
-  betaUserIds: string[];
-  betaProductIds: string[];
   tiers: Record<UserTier, LiveTryOnTierPolicySettings>;
   source: 'database' | 'env';
 }
