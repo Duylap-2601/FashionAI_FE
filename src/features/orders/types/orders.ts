@@ -187,6 +187,9 @@ export interface Order {
   shippingAddressSnapshot?: Record<string, unknown> | null;
   shippingQuoteSnapshot?: Record<string, unknown> | null;
   refundEvidence?: string | null;
+  refundBankName?: string | null;
+  refundAccountNumber?: string | null;
+  refundAccountHolder?: string | null;
   totalAmount: number;
   itemsTotal: number;
   listItemsTotal?: number;
@@ -308,6 +311,9 @@ export interface BackendOrder {
   shippingAddressSnapshot?: Record<string, unknown> | null;
   shippingQuoteSnapshot?: Record<string, unknown> | null;
   refundEvidence?: string | null;
+  refundBankName?: string | null;
+  refundAccountNumber?: string | null;
+  refundAccountHolder?: string | null;
   amount: number | string;
   itemsTotal?: number | string;
   listItemsTotal?: number | string | null;
@@ -357,7 +363,7 @@ export type OrderIssueReason =
   | 'QUALITY_MISMATCH'
   | 'OTHER';
 
-export type OrderIssueDesiredResolution = 'REFUND' | 'EXCHANGE';
+export type OrderIssueDesiredResolution = 'REFUND';
 
 export type OrderIssueStatus =
   | 'PENDING'
@@ -390,6 +396,9 @@ export interface OrderIssue {
   desiredResolution: OrderIssueDesiredResolution;
   approvedResolution: OrderIssueDesiredResolution | null;
   evidenceImages: string[];
+  bankName?: string | null;
+  accountNumber?: string | null;
+  accountHolder?: string | null;
   status: OrderIssueStatus;
   adminNote: string | null;
   adminId: string | null;
@@ -421,6 +430,9 @@ export interface CreateOrderIssuePayload {
   description: string;
   desiredResolution: OrderIssueDesiredResolution;
   evidenceImages?: File[];
+  bankName?: string;
+  accountNumber?: string;
+  accountHolder?: string;
 }
 
 export interface OrderIssuesResponse {

@@ -66,7 +66,7 @@ export const WARRANTY_POLICY: PolicyDocument = {
         {
           type: 'note',
           tone: 'info',
-          text: 'Trong 7 ngày đầu sau khi đơn hoàn tất, nếu sản phẩm may sai số đo, sai màu hoặc lỗi chất lượng, hãy gửi yêu cầu đổi trả để được đổi hàng hoặc hoàn tiền.',
+          text: 'Trong 7 ngày đầu sau khi đơn hoàn tất, nếu sản phẩm may sai số đo, sai màu hoặc lỗi chất lượng, hãy gửi yêu cầu hoàn tiền.',
           link: { label: 'Xem Chính sách đổi trả', href: '/return-policy' },
         },
       ],

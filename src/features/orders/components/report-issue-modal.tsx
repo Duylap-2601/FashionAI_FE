@@ -1,7 +1,7 @@
 'use client';
 
 import { useCreateOrderIssue } from '@/features/orders/hooks/useOrderIssues';
-import type { OrderItem, OrderIssueDesiredResolution, OrderIssueReason } from '@/features/orders/types/orders';
+import type { OrderItem, OrderIssueReason } from '@/features/orders/types/orders';
 import { getErrorMessage } from '@/lib/errors';
 import { AlertCircle, AlertTriangle, CheckCircle2, ImagePlus, Loader2, ShieldAlert, Trash2, X } from 'lucide-react';
 import Image from 'next/image';
@@ -48,9 +48,11 @@ export function ReportIssueModal({
 }: ReportIssueModalProps) {
   const [reason, setReason] = useState<OrderIssueReason>('WRONG_SIZE');
   const [description, setDescription] = useState('');
-  const [desiredResolution, setDesiredResolution] = useState<OrderIssueDesiredResolution>('REFUND');
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountHolder, setAccountHolder] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,9 +63,11 @@ export function ReportIssueModal({
     if (isOpen) {
       setReason('WRONG_SIZE');
       setDescription('');
-      setDesiredResolution('REFUND');
       setFiles([]);
       setPreviewUrls([]);
+      setBankName('');
+      setAccountNumber('');
+      setAccountHolder('');
       setSubmitError(null);
     }
   }, [isOpen]);
@@ -145,14 +149,33 @@ export function ReportIssueModal({
       return;
     }
 
+    const trimmedBankName = bankName.trim();
+    const trimmedAccountNumber = accountNumber.trim();
+    const trimmedAccountHolder = accountHolder.trim();
+    if (!trimmedBankName) {
+      setSubmitError('Vui lòng nhập tên ngân hàng nhận hoàn tiền.');
+      return;
+    }
+    if (!/^[0-9]{6,20}$/.test(trimmedAccountNumber)) {
+      setSubmitError('Số tài khoản phải gồm 6-20 chữ số.');
+      return;
+    }
+    if (!trimmedAccountHolder) {
+      setSubmitError('Vui lòng nhập tên chủ tài khoản.');
+      return;
+    }
+
     try {
       await createOrderIssueAsync({
         orderId,
         orderItemId: orderItem.id,
         reason,
         description: trimmedDesc,
-        desiredResolution,
+        desiredResolution: 'REFUND',
         evidenceImages: files,
+        bankName: trimmedBankName,
+        accountNumber: trimmedAccountNumber,
+        accountHolder: trimmedAccountHolder,
       });
 
       toast.success('Gửi yêu cầu báo lỗi sản phẩm thành công. Đội ngũ FashionAI sẽ xem xét sớm nhất!');
@@ -283,45 +306,52 @@ export function ReportIssueModal({
           {/* 2. Desired Resolution */}
           <div>
             <label className="block text-[13px] font-bold text-brand-navy mb-2">
-              Mong muốn xử lý <span className="text-red-500">*</span>
+              Hướng xử lý
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setDesiredResolution('REFUND')}
-                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                  desiredResolution === 'REFUND'
-                    ? 'border-brand-navy bg-brand-navy/5 ring-1 ring-brand-navy'
-                    : 'border-neutral-200 hover:border-neutral-300 bg-white'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[14px] font-bold text-brand-navy">Hoàn tiền</span>
-                  {desiredResolution === 'REFUND' && <CheckCircle2 className="w-4 h-4 text-brand-navy" />}
-                </div>
-                <p className="text-[11px] text-neutral-500 mt-1">Hoàn lại số tiền sản phẩm theo phương thức thanh toán ban đầu.</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDesiredResolution('EXCHANGE')}
-                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                  desiredResolution === 'EXCHANGE'
-                    ? 'border-brand-navy bg-brand-navy/5 ring-1 ring-brand-navy'
-                    : 'border-neutral-200 hover:border-neutral-300 bg-white'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[14px] font-bold text-brand-navy">Đổi hàng 1-1</span>
-                  {desiredResolution === 'EXCHANGE' && <CheckCircle2 className="w-4 h-4 text-brand-navy" />}
-                </div>
-                <p className="text-[11px] text-neutral-500 mt-1">Shop gửi lại sản phẩm chuẩn may đo mới cho bạn.</p>
-              </button>
+            <div className="p-3.5 rounded-xl border border-brand-navy/20 bg-brand-navy/5">
+              <div className="flex items-center justify-between">
+                <span className="text-[14px] font-bold text-brand-navy">Hoàn tiền</span>
+                <CheckCircle2 className="w-4 h-4 text-brand-navy" />
+              </div>
+              <p className="text-[11px] text-neutral-600 mt-1">
+                Shop hoàn tiền về tài khoản ngân hàng của bạn sau khi nhận lại và kiểm tra hàng hoàn.
+              </p>
             </div>
-            <p className="text-[11px] text-neutral-400 mt-1.5 italic">
-              * Admin có thể duyệt đúng mong muốn hoặc trao đổi chuyển hướng khác tuỳ vào tình trạng đơn hàng.
-            </p>
           </div>
+
+          {/* 2.1. Refund bank account */}
+          <div className="p-3.5 rounded-xl border border-amber-200/70 bg-amber-50/40">
+              <label className="block text-[13px] font-bold text-brand-navy mb-2">
+                Tài khoản ngân hàng nhận hoàn tiền <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <input
+                  type="text"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="Tên ngân hàng (VD: Vietcombank)"
+                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all text-neutral-800 placeholder:text-neutral-400 bg-white"
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value.replace(/\s/g, ''))}
+                  placeholder="Số tài khoản"
+                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all text-neutral-800 placeholder:text-neutral-400 bg-white font-mono"
+                />
+              </div>
+              <input
+                type="text"
+                value={accountHolder}
+                onChange={(e) => setAccountHolder(e.target.value)}
+                placeholder="Tên chủ tài khoản (không dấu)"
+                className="mt-2.5 w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all text-neutral-800 placeholder:text-neutral-400 bg-white uppercase"
+              />
+              <p className="text-[11px] text-neutral-500 mt-2 leading-relaxed">
+                Shop sẽ chuyển khoản hoàn tiền vào tài khoản này sau khi nhận và kiểm tra hàng hoàn.
+              </p>
+            </div>
 
           {/* 3. Description */}
           <div>

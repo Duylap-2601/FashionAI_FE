@@ -19,7 +19,6 @@ const REASON_LABELS: Record<OrderIssueReason, string> = {
 
 const RESOLUTION_LABELS: Record<OrderIssueDesiredResolution, string> = {
   REFUND: 'Hoàn tiền',
-  EXCHANGE: 'Đổi hàng 1-1',
 };
 
 function StatusBadge({ status }: { status: OrderIssueStatus }) {
@@ -33,7 +32,7 @@ function StatusBadge({ status }: { status: OrderIssueStatus }) {
     case 'APPROVED':
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-semibold bg-blue-50 text-blue-800 border border-blue-200">
-          <RefreshCw className="w-3.5 h-3.5" /> Đã duyệt (Đang đổi hàng)
+          <RefreshCw className="w-3.5 h-3.5" /> Đã duyệt
         </span>
       );
     case 'RESOLVED':
@@ -166,6 +165,17 @@ export function OrderIssuesList({ orderId }: OrderIssuesListProps) {
                 <p className="whitespace-pre-wrap leading-relaxed">{issue.description}</p>
               </div>
 
+              {/* Refund bank destination */}
+              {issue.accountNumber && (
+                <div className="p-3 bg-white rounded-lg border border-neutral-100 text-[12px]">
+                  <p className="text-[11px] font-semibold text-neutral-400 mb-1">Tài khoản nhận hoàn tiền:</p>
+                  <p className="text-neutral-700">
+                    {issue.bankName || 'Ngân hàng'} ·{' '}
+                    <span className="font-mono">{issue.accountNumber}</span> · {issue.accountHolder}
+                  </p>
+                </div>
+              )}
+
               {/* Evidence Images */}
               {issue.evidenceImages && issue.evidenceImages.length > 0 && (
                 <div>
@@ -222,18 +232,6 @@ export function OrderIssuesList({ orderId }: OrderIssuesListProps) {
                 </div>
               )}
 
-              {/* Exchange resolution guidance */}
-              {issue.status === 'APPROVED' && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-[12px] flex items-start gap-2">
-                  <RefreshCw className="w-4 h-4 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold">Đơn đổi hàng đang được shop chuẩn bị</p>
-                    <p className="mt-0.5 text-blue-700">
-                      Bộ phận vận chuyển của shop sẽ liên hệ trao đổi và gửi sản phẩm đổi 1-1 đến bạn. Vui lòng giữ sản phẩm lỗi nguyên vẹn.
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}

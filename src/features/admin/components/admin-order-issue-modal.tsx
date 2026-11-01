@@ -1,14 +1,12 @@
 'use client';
 
-import { resolveOrderIssue, reviewOrderIssue } from '@/features/admin/services/mutations';
-import type { OrderIssue, OrderIssueDesiredResolution } from '@/features/orders/types/orders';
+import { reviewOrderIssue } from '@/features/admin/services/mutations';
+import type { OrderIssue } from '@/features/orders/types/orders';
 import { getErrorMessage } from '@/lib/errors';
 import {
   CheckCircle2,
   Clock,
   Loader2,
-  PackageCheck,
-  RefreshCw,
   ShieldCheck,
   X,
   XCircle,
@@ -37,9 +35,8 @@ export function AdminOrderIssueModal({
   onClose,
   onSuccess,
 }: AdminOrderIssueModalProps) {
-  const [activeAction, setActiveAction] = useState<'APPROVE_REFUND' | 'APPROVE_EXCHANGE' | 'REJECT' | null>(null);
+  const [activeAction, setActiveAction] = useState<'APPROVE_REFUND' | 'REJECT' | null>(null);
   const [adminNote, setAdminNote] = useState('');
-  const [resolveNote, setResolveNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
@@ -67,39 +64,17 @@ export function AdminOrderIssueModal({
         });
         toast.success('Đã từ chối khiếu nại báo lỗi.');
       } else {
-        const approvedRes: OrderIssueDesiredResolution =
-          activeAction === 'APPROVE_REFUND' ? 'REFUND' : 'EXCHANGE';
         await reviewOrderIssue(issue.id, {
           decision: 'APPROVE',
-          approvedResolution: approvedRes,
+          approvedResolution: 'REFUND',
           adminNote: adminNote.trim() || undefined,
         });
-        toast.success(
-          approvedRes === 'REFUND'
-            ? 'Đã duyệt hoàn tiền. Đơn hàng chuyển sang tiến trình hoàn tiền!'
-            : 'Đã duyệt đổi hàng 1-1.'
-        );
+        toast.success('Đã duyệt hoàn tiền. Đơn hàng chuyển sang tiến trình hoàn trả!');
       }
       onSuccess();
       onClose();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Không thể xử lý yêu cầu lúc này.'));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleResolveExchange = async () => {
-    setIsSubmitting(true);
-    try {
-      await resolveOrderIssue(issue.id, {
-        note: resolveNote.trim() || undefined,
-      });
-      toast.success('Đã đánh dấu hoàn tất đổi hàng 1-1 cho khách.');
-      onSuccess();
-      onClose();
-    } catch (err) {
-      toast.error(getErrorMessage(err, 'Không thể đánh dấu hoàn tất đổi hàng.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -206,11 +181,11 @@ export function AdminOrderIssueModal({
               <div>
                 <span className="text-[11px] font-semibold text-neutral-400 block">Khách mong muốn:</span>
                 <span className="text-[13px] font-bold text-brand-navy">
-                  {issue.desiredResolution === 'REFUND' ? 'Hoàn tiền' : 'Đổi hàng 1-1'}
+                  Hoàn tiền
                 </span>
                 {issue.approvedResolution && (
                   <span className="text-emerald-700 text-[12px] block font-medium">
-                    (Admin đã duyệt: {issue.approvedResolution === 'REFUND' ? 'Hoàn tiền' : 'Đổi hàng'})
+                    (Admin đã duyệt: Hoàn tiền)
                   </span>
                 )}
               </div>
@@ -222,6 +197,20 @@ export function AdminOrderIssueModal({
                 {issue.description}
               </p>
             </div>
+
+            {/* Refund bank destination */}
+            {issue.accountNumber && (
+              <div className="p-3 bg-sky-50 rounded-lg border border-sky-200">
+                <span className="text-[11px] font-semibold text-sky-700 block mb-1">
+                  Tài khoản nhận hoàn tiền:
+                </span>
+                <p className="text-[13px] text-sky-900">
+                  {issue.bankName || 'Ngân hàng'} ·{' '}
+                  <span className="font-mono font-semibold">{issue.accountNumber}</span>
+                  {issue.accountHolder ? ` · ${issue.accountHolder}` : ''}
+                </p>
+              </div>
+            )}
 
             {/* Evidence Images */}
             {issue.evidenceImages && issue.evidenceImages.length > 0 && (
@@ -278,7 +267,7 @@ export function AdminOrderIssueModal({
               </div>
 
               {/* Action Selector Buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setActiveAction('APPROVE_REFUND')}
@@ -289,18 +278,6 @@ export function AdminOrderIssueModal({
                   }`}
                 >
                   ✓ Duyệt hoàn tiền
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveAction('APPROVE_EXCHANGE')}
-                  className={`py-2.5 px-3 rounded-xl border text-[12px] font-bold text-center transition-all cursor-pointer ${
-                    activeAction === 'APPROVE_EXCHANGE'
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                      : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'
-                  }`}
-                >
-                  ✓ Duyệt đổi hàng 1-1
                 </button>
 
                 <button
@@ -341,13 +318,7 @@ export function AdminOrderIssueModal({
 
                   {activeAction === 'APPROVE_REFUND' && (
                     <p className="text-[11px] text-emerald-800 bg-emerald-50 p-2 rounded-md">
-                      ℹ Khi duyệt hoàn tiền, trạng thái yêu cầu sẽ hoàn tất và đơn hàng được chuyển sang luồng hoàn tiền có sẵn của hệ thống.
-                    </p>
-                  )}
-
-                  {activeAction === 'APPROVE_EXCHANGE' && (
-                    <p className="text-[11px] text-blue-800 bg-blue-50 p-2 rounded-md">
-                      ℹ Khi duyệt đổi hàng, yêu cầu sẽ chuyển sang trạng thái APPROVED. Shop chủ động liên hệ gửi hàng đổi ngoài hệ thống và sau đó bấm hoàn tất.
+                      ℹ Khi duyệt hoàn tiền, đơn hàng chuyển sang trạng thái &ldquo;Duyệt hoàn trả&rdquo;. Sau khi nhận và kiểm tra hàng hoàn, bạn xác nhận đã nhận hàng rồi mới chốt hoàn tiền về STK của khách.
                     </p>
                   )}
 
@@ -380,57 +351,6 @@ export function AdminOrderIssueModal({
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Case 2: APPROVED (Waiting for exchange resolution) */}
-          {issue.status === 'APPROVED' && (
-            <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 flex flex-col gap-3">
-              <div className="flex items-start gap-2.5">
-                <RefreshCw className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-blue-900 text-[14px]">
-                    Đang trong tiến trình đổi hàng 1-1
-                  </h4>
-                  <p className="text-[12px] text-blue-700 mt-0.5 leading-relaxed">
-                    Sau khi shop đã hoàn tất giao sản phẩm đổi mới cho khách hàng ngoài hệ thống, hãy xác nhận hoàn tất bên dưới để đóng khiếu nại.
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="resolve-exchange-note" className="text-[12px] font-semibold text-neutral-700 block mb-1">
-                  Ghi chú hoàn tất (Tuỳ chọn)
-                </label>
-                <input
-                  id="resolve-exchange-note"
-                  value={resolveNote}
-                  onChange={(e) => setResolveNote(e.target.value)}
-                  placeholder="Ví dụ: Đã giao thành công sản phẩm đổi ngày 10/10..."
-                  className="w-full h-9 px-3 bg-white border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:border-brand-navy"
-                />
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleResolveExchange}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Đang cập nhật...
-                    </>
-                  ) : (
-                    <>
-                      <PackageCheck className="w-4 h-4" />
-                      Đánh dấu đổi hàng hoàn tất
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
           )}
 

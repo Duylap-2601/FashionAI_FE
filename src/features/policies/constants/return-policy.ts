@@ -7,12 +7,12 @@ export const RETURN_POLICY: PolicyDocument = {
   slug: 'return-policy',
   title: 'Chính sách đổi trả',
   summary:
-    'Mỗi sản phẩm StAie. được may riêng theo số đo của bạn. Nếu sản phẩm nhận được may sai số đo, sai màu hoặc có lỗi, bạn có 7 ngày để gửi yêu cầu đổi hàng hoặc hoàn tiền ngay trong trang đơn hàng.',
+    'Mỗi sản phẩm StAie. được may riêng theo số đo của bạn. Nếu sản phẩm nhận được may sai số đo, sai màu hoặc có lỗi, bạn có 7 ngày để gửi yêu cầu hoàn tiền ngay trong trang đơn hàng.',
   updatedAt: '19/10/2026',
   highlights: [
     { label: 'Thời hạn gửi yêu cầu', value: '7 ngày' },
     { label: 'Tính từ', value: 'Khi đơn hoàn tất' },
-    { label: 'Hướng xử lý', value: 'Đổi hàng hoặc hoàn tiền' },
+    { label: 'Hướng xử lý', value: 'Hoàn tiền' },
   ],
   sections: [
     {
@@ -86,7 +86,7 @@ export const RETURN_POLICY: PolicyDocument = {
           items: [
             'Đăng nhập, vào Hồ sơ → Đơn hàng của tôi và mở đơn hàng đã hoàn tất.',
             'Bấm "Báo lỗi sản phẩm này" ở sản phẩm cần xử lý.',
-            'Chọn lý do, hướng xử lý mong muốn (đổi hàng hoặc hoàn tiền) và mô tả vấn đề trong 10 - 2.000 ký tự.',
+            'Chọn lý do, nhập tài khoản ngân hàng nhận hoàn tiền và mô tả vấn đề trong 10 - 2.000 ký tự.',
             'Đính kèm tối đa 10 ảnh minh chứng, mỗi ảnh không quá 10MB. Nên chụp toàn bộ sản phẩm, cận cảnh vị trí lỗi và nhãn mác.',
             'Theo dõi trạng thái trong trang chi tiết đơn hàng. Bạn sẽ nhận thông báo khi yêu cầu được duyệt hoặc từ chối.',
           ],
@@ -100,15 +100,15 @@ export const RETURN_POLICY: PolicyDocument = {
       blocks: [
         {
           type: 'paragraph',
-          text: 'Bộ phận chăm sóc khách hàng thẩm định yêu cầu trong 1 - 3 ngày làm việc dựa trên mô tả, ảnh minh chứng và bản số đo đã lưu trong đơn. StAie. có thể chọn hướng xử lý khác với hướng bạn đề xuất nếu phù hợp hơn với tình trạng sản phẩm, và luôn ghi rõ lý do khi từ chối.',
+          text: 'Bộ phận chăm sóc khách hàng thẩm định yêu cầu trong 1 - 3 ngày làm việc dựa trên mô tả, ảnh minh chứng và bản số đo đã lưu trong đơn, và luôn ghi rõ lý do khi từ chối.',
         },
         {
           type: 'list',
           items: [
             { term: 'Chờ xử lý', text: 'Yêu cầu đã được gửi và đang thẩm định.' },
-            { term: 'Đã duyệt', text: 'Yêu cầu đổi hàng được chấp thuận; StAie. liên hệ hướng dẫn gửi trả sản phẩm.' },
+            { term: 'Đã duyệt', text: 'Yêu cầu hoàn tiền được chấp thuận; StAie. hướng dẫn gửi trả sản phẩm để kiểm tra.' },
             { term: 'Từ chối', text: 'Yêu cầu không được chấp thuận, kèm lý do cụ thể.' },
-            { term: 'Đã giải quyết', text: 'Đã hoàn tiền hoặc đã giao sản phẩm thay thế.' },
+            { term: 'Đã giải quyết', text: 'Đã hoàn tất chuyển khoản hoàn tiền cho bạn.' },
           ],
         },
       ],
@@ -122,18 +122,8 @@ export const RETURN_POLICY: PolicyDocument = {
           items: [
             'Số tiền hoàn bằng giá bạn thực trả cho sản phẩm đó (sau khi trừ mã giảm giá).',
             'Với lỗi từ phía StAie., phí vận chuyển của sản phẩm cũng được hoàn.',
-            'Tiền được hoàn qua chuyển khoản ngân hàng hoặc kênh thanh toán ban đầu trong 5 - 7 ngày làm việc kể từ khi yêu cầu được duyệt.',
+            'Tiền được hoàn qua chuyển khoản ngân hàng tới tài khoản bạn cung cấp khi gửi yêu cầu, trong 5 - 7 ngày làm việc sau khi StAie nhận lại và kiểm tra hàng hoàn.',
           ],
-        },
-      ],
-    },
-    {
-      id: 'doi-hang',
-      title: 'Đổi hàng',
-      blocks: [
-        {
-          type: 'paragraph',
-          text: 'Sản phẩm thay thế được may lại theo số đo đã chốt, hoặc theo số đo điều chỉnh sau khi trao đổi với bạn, và giao miễn phí. Thời gian may lại tương đương một đơn hàng mới; StAie. sẽ báo ngày giao dự kiến khi duyệt yêu cầu.',
         },
       ],
     },

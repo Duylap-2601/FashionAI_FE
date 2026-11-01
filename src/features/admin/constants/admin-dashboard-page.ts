@@ -161,7 +161,7 @@ export const ADMIN_REALTIME_EVENTS = [
 ] as const;
 
 /** Trạng thái đơn không tính vào doanh thu khi backend không trả số liệu. */
-export const NON_REVENUE_STATUSES: BackendOrderStatus[] = ['CANCELLED', 'FAILED', 'EXPIRED', 'PENDING', 'RETURNED'];
+export const NON_REVENUE_STATUSES: BackendOrderStatus[] = ['CANCELLED', 'FAILED', 'EXPIRED', 'PENDING'];
 
 export const ADMIN_PRODUCT_FALLBACK_IMAGE = '/images/731163514_999523332788054_1114320478812927640_n.png';
 export const DEFAULT_PRODUCT_COLOR_HEX = '#5D1C34';
@@ -250,6 +250,11 @@ export function getAdminOrderStatusOptions(currentStatus: BackendOrderStatus): B
   // RETURN_APPROVED đi từ SHIPPING / DELIVERED / COMPLETED / RETURN_REQUESTED
   if (['SHIPPING', 'DELIVERED', 'COMPLETED', 'RETURN_REQUESTED'].includes(currentStatus) || currentStatus === 'RETURN_APPROVED') {
     options.push('RETURN_APPROVED');
+  }
+
+  // Hàng hoàn đang trên đường về -> admin chốt đã nhận hàng hoàn (RETURNED)
+  if (['RETURN_APPROVED', 'RETURNING'].includes(currentStatus)) {
+    options.push('RETURNING', 'RETURNED');
   }
 
   options.push('CANCELLED');

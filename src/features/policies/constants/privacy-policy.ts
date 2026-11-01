@@ -116,7 +116,7 @@ export const PRIVACY_POLICY: PolicyDocument = {
           type: 'table',
           columns: ['Đối tác', 'Mục đích', 'Dữ liệu chia sẻ'],
           rows: [
-            ['ZaloPay, SePay', 'Thanh toán trực tuyến', 'Mã đơn hàng, số tiền. Thông tin thẻ và tài khoản ngân hàng do cổng thanh toán xử lý, StAie không lưu.'],
+            ['ZaloPay, SePay', 'Thanh toán trực tuyến', 'Mã đơn hàng, số tiền. Thông tin thẻ và tài khoản ngân hàng do cổng thanh toán xử lý, StAie không lưu. Riêng khi bạn yêu cầu hoàn tiền, StAie lưu tên ngân hàng, số tài khoản và tên chủ tài khoản do bạn cung cấp để chuyển khoản hoàn tiền.'],
             ['Giao Hàng Nhanh (GHN)', 'Vận chuyển', 'Tên, số điện thoại và địa chỉ người nhận'],
             ['Cloudinary', 'Lưu trữ hình ảnh', 'Ảnh bạn tải lên và ảnh kết quả thử đồ'],
             ['FASHN, Google Gemini, Decart', 'Thử đồ ảo và thử đồ trực tiếp', 'Ảnh thử đồ, hình ảnh camera trong phiên trực tiếp, ảnh sản phẩm. Dữ liệu chỉ dùng để tạo kết quả, không lưu trữ lâu dài bởi đối tác.'],

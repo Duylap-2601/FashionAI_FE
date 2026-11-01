@@ -38,14 +38,6 @@ const ISSUE_HISTORY_CONFIG: Record<string, { label: string; badgeClass: string }
     label: 'Admin duyệt hoàn tiền cho báo lỗi',
     badgeClass: 'text-emerald-700 font-semibold',
   },
-  ORDER_ISSUE_EXCHANGE_APPROVED: {
-    label: 'Admin duyệt đổi hàng 1-1 (Đang xử lý)',
-    badgeClass: 'text-blue-700 font-semibold',
-  },
-  ORDER_ISSUE_EXCHANGE_RESOLVED: {
-    label: 'Đổi hàng 1-1 đã hoàn tất',
-    badgeClass: 'text-emerald-700 font-semibold',
-  },
 };
 
 function getStatusBadgeStyle(status?: string) {
@@ -90,6 +82,7 @@ export default function OrderDetailPage() {
   const statusInfo = STATUS_MAP[order?.status || 'CREATED'] || STATUS_MAP.CREATED;
 
   const isCompleted = order?.status?.toUpperCase() === 'COMPLETED';
+  const isInReturnFlow = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING'].includes(order?.status?.toUpperCase() || '');
   const completedEvent = order?.history
     ?.filter((e) => e.toStatus === 'COMPLETED' || e.type === 'COMPLETED' || e.type?.includes('COMPLETED'))
     .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())[0];
@@ -97,7 +90,7 @@ export default function OrderDetailPage() {
   const isExpired = completedAt
     ? (Date.now() - new Date(completedAt).getTime()) > 7 * 24 * 60 * 60 * 1000
     : false;
-  const canReportIssue = isCompleted && !isExpired;
+  const canReportIssue = (isCompleted || isInReturnFlow) && !isExpired;
 
   const handleCancel = () => {
     if (!order?.id) return;
@@ -285,6 +278,44 @@ export default function OrderDetailPage() {
                     ? 'Cửa hàng đã hoàn tất chuyển khoản hoàn tiền cho bạn.'
                     : 'Cửa hàng đang tiến hành xử lý hoàn tiền cho đơn hàng này. Vui lòng kiểm tra tài khoản hoặc liên hệ hỗ trợ nếu cần.'}
                 </p>
+                {order.refundAccountNumber && (
+                  <div className="mt-2 text-xs text-amber-900 bg-white/70 rounded-lg border border-amber-200/70 px-3 py-2">
+                    <p className="font-semibold">Tài khoản nhận hoàn tiền</p>
+                    <p className="mt-0.5">
+                      {order.refundBankName || 'Ngân hàng'} ·{' '}
+                      <span className="font-mono">{order.refundAccountNumber}</span> ·{' '}
+                      {order.refundAccountHolder}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING'].includes(order.status) && (
+            <div className="mt-6 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-start gap-3">
+              <Package className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-body-sm font-bold text-amber-950">
+                  {order.status === 'RETURN_REQUESTED'
+                    ? 'Yêu cầu hoàn trả đã được ghi nhận'
+                    : order.status === 'RETURN_APPROVED'
+                      ? 'Yêu cầu hoàn trả đã được duyệt'
+                      : 'Hàng đang trên đường gửi về cửa hàng'}
+                </p>
+                <p className="text-xs text-amber-800 mt-0.5">
+                  Vui lòng gửi hàng về cửa hàng. Sau khi nhận và kiểm tra, shop sẽ chuyển khoản hoàn tiền vào tài khoản bạn đã cung cấp.
+                </p>
+                {order.refundAccountNumber && (
+                  <div className="mt-2 text-xs text-amber-900 bg-white/70 rounded-lg border border-amber-200/70 px-3 py-2">
+                    <p className="font-semibold">Tài khoản nhận hoàn tiền</p>
+                    <p className="mt-0.5">
+                      {order.refundBankName || 'Ngân hàng'} ·{' '}
+                      <span className="font-mono">{order.refundAccountNumber}</span> ·{' '}
+                      {order.refundAccountHolder}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}

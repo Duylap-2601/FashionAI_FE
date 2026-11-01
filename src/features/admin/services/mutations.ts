@@ -122,7 +122,7 @@ export function deleteAdminSaleCampaign(id: string, config?: HttpOptions) {
 
 export type ReviewOrderIssueInput =
   | { decision: 'REJECT'; adminNote: string }
-  | { decision: 'APPROVE'; approvedResolution: 'REFUND' | 'EXCHANGE'; adminNote?: string };
+  | { decision: 'APPROVE'; approvedResolution: 'REFUND'; adminNote?: string };
 
 export function reviewOrderIssue(
   issueId: string,
@@ -130,14 +130,6 @@ export function reviewOrderIssue(
   config?: HttpOptions,
 ) {
   return http.patch<OrderIssue>(`/order-issues/${issueId}/review`, payload, config);
-}
-
-export function resolveOrderIssue(
-  issueId: string,
-  payload?: { note?: string },
-  config?: HttpOptions,
-) {
-  return http.patch<OrderIssue>(`/order-issues/${issueId}/resolve`, payload ?? {}, config);
 }
 
 

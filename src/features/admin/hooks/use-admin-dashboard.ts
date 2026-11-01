@@ -26,7 +26,8 @@ export function useAdminDashboard() {
   const { activeTab, setActiveTab, navigateAdminTab } = useAdminTabs();
   const products = useAdminProducts();
   const productEditor = useAdminProductEditor({ setProducts: products.setItems, onSaved: products.fetchList });
-  const orders = useAdminOrders();
+  const overview = useAdminOverviewData({ products: products.items });
+  const orders = useAdminOrders({ onStatsRefresh: overview.fetchStats });
   const shipments = useAdminShipments({
     isActive: activeTab === 'shipments',
     refreshOrders: orders.fetchList,
@@ -34,7 +35,6 @@ export function useAdminDashboard() {
   });
   const issues = useAdminOrderIssues({ isActive: activeTab === 'order-issues' });
   const users = useAdminUsers();
-  const overview = useAdminOverviewData({ products: products.items });
 
   const { fetchList: fetchProducts } = products;
   const { fetchList: fetchOrders, ordersRef, setSelectedOrder } = orders;

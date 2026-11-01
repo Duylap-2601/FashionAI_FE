@@ -279,6 +279,10 @@ export default function AdminOrderMeasurementsPage() {
     order.refundStatus === 'PROCESSING' ||
     (order.status === 'RETURNED' && order.refundStatus !== 'COMPLETED');
   const refundCompleted = order.refundStatus === 'COMPLETED';
+  // Trả hàng: chỉ chốt hoàn tiền sau khi admin đã nhận lại hàng (RETURNED).
+  const returnInTransit = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING'].includes(order.status);
+  const isReturnReceived = order.status === 'RETURNED';
+  const canConfirmRefund = refundRequired && (isReturnReceived || !returnInTransit);
   const canCreateShipment = order.status === 'READY_TO_SHIP' && order.paymentStatus === 'PAID' && !order.shipment;
   const isTerminalStatus = order.status === 'CANCELLED' || order.status === 'RETURNED' || order.status === 'FAILED';
   const statusOptions = getAdminOrderStatusOptions(order.status);
@@ -424,8 +428,43 @@ export default function AdminOrderMeasurementsPage() {
               </div>
             )}
 
+            {/* Refund Bank Destination */}
+            {order.refundAccountNumber && (
+              <div className="bg-sky-50/80 border border-sky-200 rounded-2xl sm:rounded-3xl p-4 flex items-start gap-3 text-sky-900 text-xs shadow-2xs">
+                <CreditCard className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Tài khoản nhận hoàn tiền của khách</p>
+                  <p className="mt-0.5">
+                    {order.refundBankName || 'Ngân hàng'} ·{' '}
+                    <span className="font-mono font-semibold">{order.refundAccountNumber}</span>
+                    {order.refundAccountHolder ? ` · ${order.refundAccountHolder}` : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Return In Transit */}
+            {refundRequired && returnInTransit && (
+              <div className="bg-amber-50/80 border border-amber-300/80 rounded-2xl sm:rounded-3xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+                <div>
+                  <h3 className="text-body-md font-bold text-amber-950">Chờ nhận hàng hoàn</h3>
+                  <p className="text-xs text-amber-800/90 mt-0.5 leading-relaxed">
+                    Đơn đang trên đường hoàn trả. Sau khi nhận và kiểm tra hàng xong, xác nhận đã nhận hàng để mở bước hoàn tiền.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleStatusChange('RETURNED')}
+                  disabled={updatingStatus}
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-50 border-0 cursor-pointer shadow-xs whitespace-nowrap active:scale-[0.98]"
+                >
+                  Đã nhận hàng hoàn
+                </button>
+              </div>
+            )}
+
             {/* Refund Required Banner */}
-            {refundRequired && (
+            {canConfirmRefund && (
               <div className="bg-rose-50/70 border border-rose-300/80 rounded-2xl sm:rounded-3xl p-5 md:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-3.5">
                   <div className="w-11 h-11 rounded-2xl bg-rose-100/80 border border-rose-300/50 flex items-center justify-center shrink-0 text-rose-800 shadow-2xs">
@@ -433,11 +472,11 @@ export default function AdminOrderMeasurementsPage() {
                   </div>
                   <div>
                     <h3 className="text-body-md font-bold text-rose-950">
-                      {order.status === 'RETURNED' ? 'Đơn đã hoàn trả — Cần hoàn tiền cho khách' : 'Cần hoàn tiền cho khách'}
+                      {isReturnReceived ? 'Đã nhận hàng hoàn — Cần hoàn tiền cho khách' : 'Cần hoàn tiền cho khách'}
                     </h3>
                     <p className="text-xs text-rose-800/90 mt-0.5 leading-relaxed">
-                      {order.status === 'RETURNED'
-                        ? 'Đơn hàng đã được hoàn trả về kho. Vui lòng kiểm tra và chuyển khoản hoàn tiền cho khách.'
+                      {isReturnReceived
+                        ? 'Hàng hoàn đã về kho và được kiểm tra. Vui lòng chuyển khoản hoàn tiền cho khách theo STK bên trên.'
                         : 'Đơn đã bị hủy sau khi khách thanh toán. Sau khi chuyển khoản hoàn lại tiền, vui lòng nhập thông tin xác nhận.'}
                     </p>
                   </div>
@@ -470,7 +509,7 @@ export default function AdminOrderMeasurementsPage() {
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <input
                       type="text"
-                      placeholder="Ghi chú / Bằng chứng hoàn tiền..."
+                      placeholder="Ghi chú / Bằng chứng hoàn tiền (mã giao dịch, STK nhận...)"
                       value={refundNote}
                       onChange={(e) => setRefundNote(e.target.value)}
                       className="px-4 py-2 text-xs bg-white border border-rose-300/80 rounded-xl focus:outline-none focus:border-rose-600 flex-1 shadow-2xs"

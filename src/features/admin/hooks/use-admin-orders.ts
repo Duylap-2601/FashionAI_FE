@@ -28,7 +28,13 @@ export interface ApplyOrderUpdateOptions {
 
 export type ApplyOrderUpdate = (options: ApplyOrderUpdateOptions) => void;
 
-export function useAdminOrders() {
+export interface UseAdminOrdersOptions {
+  /** Gọi lại để cập nhật doanh thu ngay sau khi hoàn tiền. */
+  onStatsRefresh?: () => void;
+}
+
+export function useAdminOrders(options: UseAdminOrdersOptions = {}) {
+  const { onStatsRefresh } = options;
   const list = useAdminPaginatedList<AdminOrder, AdminOrderFilters>({
     initialFilters: EMPTY_ORDER_FILTERS,
     load: loadAdminOrders,
@@ -99,13 +105,14 @@ export function useAdminOrders() {
         setSelectedOrder(prev => prev?.id === id ? { ...prev, refundStatus: 'COMPLETED' } : prev);
       }
       toast.success('Đã ghi nhận hoàn tiền thành công');
+      onStatsRefresh?.();
       return true;
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể ghi nhận hoàn tiền.'));
       console.error(e);
       return false;
     }
-  }, [applyOrderUpdate, setOrders]);
+  }, [applyOrderUpdate, setOrders, onStatsRefresh]);
 
   const handleFinalizeRefund = useCallback(async (refundId: string, outcome: 'COMPLETED' | 'FAILED', note?: string) => {
     try {
@@ -123,13 +130,14 @@ export function useAdminOrders() {
         });
       }
       toast.success(`Đã cập nhật trạng thái hoàn tiền: ${outcome === 'COMPLETED' ? 'Thành công' : 'Thất bại'}`);
+      if (outcome === 'COMPLETED') onStatsRefresh?.();
       return true;
     } catch (e) {
       toast.error(getErrorMessage(e, 'Không thể chốt trạng thái hoàn tiền.'));
       console.error(e);
       return false;
     }
-  }, [applyOrderUpdate, selectedOrder]);
+  }, [applyOrderUpdate, selectedOrder, onStatsRefresh]);
 
   return {
     ...list,

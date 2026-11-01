@@ -54,6 +54,11 @@ export async function createOrderIssue(payload: CreateOrderIssuePayload): Promis
   fd.append('reason', payload.reason);
   fd.append('description', payload.description);
   fd.append('desiredResolution', payload.desiredResolution);
+  if (payload.desiredResolution === 'REFUND') {
+    if (payload.bankName) fd.append('bankName', payload.bankName);
+    if (payload.accountNumber) fd.append('accountNumber', payload.accountNumber);
+    if (payload.accountHolder) fd.append('accountHolder', payload.accountHolder);
+  }
   if (payload.evidenceImages) {
     for (const file of payload.evidenceImages) {
       fd.append('evidenceImages', file);

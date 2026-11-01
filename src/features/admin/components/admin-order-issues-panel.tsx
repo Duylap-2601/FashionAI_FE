@@ -17,7 +17,6 @@ import Image from 'next/image';
 const STATUS_OPTIONS: { value: OrderIssueStatus | ''; label: string }[] = [
   { value: '', label: 'Tất cả trạng thái' },
   { value: 'PENDING', label: 'Chờ xem xét (PENDING)' },
-  { value: 'APPROVED', label: 'Đã duyệt đổi hàng (APPROVED)' },
   { value: 'RESOLVED', label: 'Đã hoàn tất (RESOLVED)' },
   { value: 'REJECTED', label: 'Đã từ chối (REJECTED)' },
 ];
@@ -46,7 +45,7 @@ function StatusBadge({ status }: { status: OrderIssueStatus }) {
       return (
         <span className="inline-flex items-center gap-1.5 py-0.5 text-xs font-medium text-neutral-800">
           <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.35)] shrink-0" />
-          Đang đổi hàng
+          Đã duyệt
         </span>
       );
     case 'RESOLVED':
@@ -242,10 +241,10 @@ export function AdminOrderIssuesPanel({
                             : 'Khác'}
                         </span>
                         <p className="text-[12px] text-neutral-600">
-                          Muốn: <strong className="text-brand-navy">{issue.desiredResolution === 'REFUND' ? 'Hoàn tiền' : 'Đổi 1-1'}</strong>
+                          Muốn: <strong className="text-brand-navy">Hoàn tiền</strong>
                           {issue.approvedResolution && (
                             <span className="text-emerald-700 block text-[11px]">
-                              → Duyệt: {issue.approvedResolution === 'REFUND' ? 'Hoàn tiền' : 'Đổi 1-1'}
+                              → Duyệt: Hoàn tiền
                             </span>
                           )}
                         </p>

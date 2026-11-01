@@ -57,6 +57,12 @@ export function AdminOrderModal({
   const refundedVnd = orderDetail?.amountRefundedVnd ?? selectedOrder.amountRefundedVnd ?? 0;
   const remainingRefundable = Math.max(0, paidVnd - refundedVnd);
 
+  // Trả hàng: chỉ chốt hoàn tiền sau khi admin đã nhận lại hàng (RETURNED).
+  const effectiveStatus = orderDetail?.status ?? selectedOrder.status;
+  const returnInTransit = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING'].includes(effectiveStatus);
+  const isReturnReceived = effectiveStatus === 'RETURNED';
+  const canConfirmRefund = refundRequired && (isReturnReceived || !returnInTransit);
+
   const statusOptions = getAdminOrderStatusOptions(selectedOrder.status);
   const canCreateShipment = selectedOrder.status === 'READY_TO_SHIP' && selectedOrder.paymentStatus === 'PAID' && !selectedOrder.shipment;
 
@@ -116,6 +122,10 @@ export function AdminOrderModal({
 
   const handleStatusChange = (newStatus: BackendOrderStatus) => {
     handleUpdateOrderStatus(selectedOrder.id, newStatus);
+  };
+
+  const onReceiveReturnedGoods = () => {
+    handleUpdateOrderStatus(selectedOrder.id, 'RETURNED');
   };
 
   const onCreateShipment = async () => {
@@ -549,16 +559,66 @@ export function AdminOrderModal({
             </div>
           )}
 
-          {refundRequired && (
+          {orderDetail?.refundAccountNumber && (
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-body-sm font-semibold text-sky-900">Tài khoản nhận hoàn tiền của khách</p>
+                  <p className="text-label-sm text-sky-800 mt-1">
+                    {orderDetail.refundBankName || 'Ngân hàng'} ·{' '}
+                    <span className="font-mono font-semibold">{orderDetail.refundAccountNumber}</span>
+                    {orderDetail.refundAccountHolder ? ` · ${orderDetail.refundAccountHolder}` : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = [orderDetail?.refundBankName, orderDetail?.refundAccountNumber, orderDetail?.refundAccountHolder]
+                      .filter(Boolean)
+                      .join(' · ');
+                    if (!navigator.clipboard) {
+                      toast.error('Trình duyệt không hỗ trợ sao chép, vui lòng copy thủ công.');
+                      return;
+                    }
+                    navigator.clipboard
+                      .writeText(text)
+                      .then(() => toast.success('Đã sao chép thông tin tài khoản'))
+                      .catch(() => toast.error('Không thể sao chép, vui lòng copy thủ công.'));
+                  }}
+                  className="shrink-0 text-[11px] font-semibold text-sky-800 underline hover:text-sky-950 cursor-pointer bg-transparent border-0"
+                >
+                  Sao chép
+                </button>
+              </div>
+            </div>
+          )}
+
+          {refundRequired && returnInTransit && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <p className="text-body-sm font-semibold text-amber-800 mb-1">Chờ nhận hàng hoàn</p>
+              <p className="text-label-sm text-amber-700 mb-3">
+                Đơn đang trên đường hoàn trả. Sau khi nhận và kiểm tra hàng xong, xác nhận đã nhận hàng để mở bước hoàn tiền.
+              </p>
+              <button
+                type="button"
+                onClick={onReceiveReturnedGoods}
+                className="h-9 px-4 rounded-lg bg-amber-600 text-white text-body-sm font-semibold hover:bg-amber-700 border-0 cursor-pointer transition-colors"
+              >
+                Đã nhận hàng hoàn
+              </button>
+            </div>
+          )}
+
+          {canConfirmRefund && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
               <p className="text-body-sm font-semibold text-amber-800 mb-1">
-                {selectedOrder.status === 'RETURNED'
-                  ? 'Đơn đã hoàn trả — Cần hoàn tiền cho khách'
+                {isReturnReceived
+                  ? 'Đã nhận hàng hoàn — Cần hoàn tiền cho khách'
                   : 'Cần hoàn tiền cho khách'}
               </p>
               <p className="text-label-sm text-amber-700 mb-3">
-                {selectedOrder.status === 'RETURNED'
-                  ? 'Đơn hàng đã được hoàn trả về kho. Vui lòng chuyển khoản hoàn lại tiền cho khách và ghi chú lưu vết.'
+                {isReturnReceived
+                  ? 'Hàng hoàn đã về kho và được kiểm tra. Vui lòng chuyển khoản hoàn lại tiền cho khách theo STK bên trên và ghi chú lưu vết.'
                   : 'Đơn đã bị hủy sau khi khách đã thanh toán. Sau khi admin chuyển khoản hoàn lại tiền, ghi chú lại để lưu vết.'}
               </p>
               <div className="flex flex-col gap-2.5">
@@ -595,7 +655,7 @@ export function AdminOrderModal({
                   )}
                 </div>
                 <textarea
-                  placeholder="Ghi chú xác nhận đã hoàn tiền (ví dụ: đã chuyển khoản ngày ... qua ...)"
+                  placeholder="Ghi chú xác nhận đã hoàn tiền (ví dụ: đã chuyển khoản ngày ... tới STK ...)"
                   value={refundNote}
                   onChange={(e) => setRefundNote(e.target.value)}
                   rows={2}
