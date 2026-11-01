@@ -165,9 +165,6 @@ export function AdminShippingSettingsPanel() {
           <div className="flex items-center gap-2">
             <Truck className="w-4 h-4 text-landing-oxblood" />
             <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-brass-ink">Địa chỉ lấy hàng</h2>
-            <span className="ml-2 text-label-xs text-landing-muted">
-              Nguồn: {settings?.source === 'database' ? 'Admin setting' : 'Chưa cấu hình'}
-            </span>
           </div>
 
           <button

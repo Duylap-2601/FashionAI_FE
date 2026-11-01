@@ -137,7 +137,9 @@ function VirtualTryOnContent() {
     }
   }, [rawExpiresAt, userTier]);
   const isBlocked = userTier === 'FREE' || isSubscriptionExpired;
-  const quotaCost = garmentMode === 'combo' ? 2 : 1;
+  // Backend trừ đúng số món mỗi lần gọi provider, nên bộ phối 3 món tốn 3 lượt.
+  const comboGarmentCount = [outerProduct, upperProduct, lowerProduct].filter(Boolean).length;
+  const quotaCost = garmentMode === 'combo' ? Math.max(1, comboGarmentCount) : 1;
 
   const clearResult = () => {
     setResultPhotoUrl(null);
