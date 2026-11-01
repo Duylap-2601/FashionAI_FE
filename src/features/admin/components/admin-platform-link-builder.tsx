@@ -6,7 +6,7 @@ import { Check, Copy } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const FIELD_CLASS =
-  'w-full rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[12px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brand-navy/20';
+  'w-full rounded-[2px] border border-landing-line bg-landing-ivory px-3 py-1.5 text-[12px] text-landing-obsidian focus:outline-none focus:ring-2 focus:ring-landing-oxblood/20';
 
 export function AdminPlatformLinkBuilder() {
   const [baseUrl, setBaseUrl] = useState('');
@@ -49,7 +49,7 @@ export function AdminPlatformLinkBuilder() {
       description="Gắn UTM để GA4 ghi nhận đúng nền tảng khách đến từ. Dán link vào bio, caption hoặc quảng cáo."
     >
       <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-        <label className="flex flex-col gap-1 text-[12px] font-medium text-neutral-600">
+        <label className="flex flex-col gap-1 text-[12px] font-medium text-landing-obsidian">
           Trang đích
           <input
             value={baseUrl}
@@ -59,7 +59,7 @@ export function AdminPlatformLinkBuilder() {
             placeholder="https://fashion-ai-fe.vercel.app/"
           />
         </label>
-        <label className="flex flex-col gap-1 text-[12px] font-medium text-neutral-600">
+        <label className="flex flex-col gap-1 text-[12px] font-medium text-landing-obsidian">
           Chiến dịch (utm_campaign)
           <input
             value={campaign}
@@ -75,11 +75,11 @@ export function AdminPlatformLinkBuilder() {
         {links.map((link) => (
           <li
             key={link.value}
-            className="flex items-center gap-2 rounded-lg border border-neutral-100 bg-neutral-50/60 px-3 py-2"
+            className="flex items-center gap-2 rounded-[2px] border border-landing-line bg-landing-paper/60 px-3 py-2"
           >
-            <span className="w-16 shrink-0 text-[12px] font-semibold text-neutral-700">{link.label}</span>
+            <span className="w-16 shrink-0 text-[12px] font-semibold text-landing-obsidian">{link.label}</span>
             <span
-              className="min-w-0 flex-1 truncate font-mono text-[11px] text-neutral-500"
+              className="min-w-0 flex-1 truncate font-mono text-[11px] text-landing-muted"
               title={link.url || 'Nhập trang đích hợp lệ'}
             >
               {link.url || '—'}
@@ -88,7 +88,7 @@ export function AdminPlatformLinkBuilder() {
               type="button"
               onClick={() => copy(link.url)}
               disabled={!link.url}
-              className="flex shrink-0 items-center gap-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex shrink-0 items-center gap-1 rounded-[2px] border border-landing-line bg-landing-ivory px-2 py-1 text-[11px] font-semibold text-landing-obsidian hover:text-landing-obsidian disabled:cursor-not-allowed disabled:opacity-40"
             >
               {copied === link.url ? <Check className="h-3 w-3" aria-hidden /> : <Copy className="h-3 w-3" aria-hidden />}
               {copied === link.url ? 'Đã copy' : 'Copy'}

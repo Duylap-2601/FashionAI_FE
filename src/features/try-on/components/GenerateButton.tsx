@@ -10,7 +10,7 @@ export function GenerateButton({ canGenerate, isSubmitting, isBlocked, quotaCost
         {isSubmitting ? 'Đang thử trang phục' : isBlocked ? 'Nâng cấp gói để thử' : 'Thử trang phục'}
       </button>
       <p className="text-xs text-landing-muted">
-        Dùng <span className="font-mono text-landing-obsidian">{quotaCost}</span> lượt. Kết quả tự lưu vào lịch sử thử đồ.
+        Dùng <span className="font-mono text-landing-obsidian">{quotaCost}</span> lượt (mỗi món 1 lượt). Kết quả tự lưu vào lịch sử thử đồ.
       </p>
     </div>
   );
