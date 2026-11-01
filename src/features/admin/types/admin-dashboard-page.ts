@@ -110,6 +110,7 @@ export interface AdminOrder {
   paymentStatus?: string;
   refundStatus?: 'NONE' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED';
   date: string;
+  createdAt?: string;
   payment: string;
   address?: string;
   phone?: string;
