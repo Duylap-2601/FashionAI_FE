@@ -17,7 +17,7 @@ import { useOrder } from '@/features/orders/hooks/useOrders';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { getErrorMessage } from '@/lib/errors';
-import { formatRefundEvidence } from '@/lib/utils';
+import { formatRefundEvidence, getRefundEvidenceImages } from '@/lib/utils';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -450,6 +450,16 @@ export default function AdminOrderMeasurementsPage() {
               </div>
             )}
 
+            {/* Ảnh chứng từ chuyển khoản: hiện ngay sau khi duyệt, không cần chờ chốt hoàn tiền */}
+            {getRefundEvidenceImages(order.refundEvidence).length > 0 && (
+              <div className="bg-metric-products/10 border border-metric-products/30 rounded-[2px] p-4">
+                <RefundReceiptImages
+                  evidence={order.refundEvidence}
+                  label="Ảnh chứng từ chuyển khoản đã đính kèm"
+                />
+              </div>
+            )}
+
             {/* Return In Transit */}
             {refundRequired && returnInTransit && (
               <div className="bg-amber-50/80 border border-amber-300/80 rounded-2xl sm:rounded-3xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
@@ -558,7 +568,6 @@ export default function AdminOrderMeasurementsPage() {
                 <CheckCircle2 className="w-5 h-5 text-metric-products shrink-0" />
                 <span className="font-semibold">Đã hoàn tiền cho khách thành công cho đơn hàng này.</span>
                 {refundEvidenceText && <span className="text-metric-products italic">({refundEvidenceText})</span>}
-                <RefundReceiptImages evidence={order.refundEvidence} />
               </div>
             )}
           </div>
