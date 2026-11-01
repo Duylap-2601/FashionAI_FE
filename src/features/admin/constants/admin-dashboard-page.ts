@@ -220,10 +220,59 @@ export const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon
   DELIVERED: { label: 'Đã giao hàng', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30', icon: CheckCircle2 },
   COMPLETED: { label: 'Hoàn thành', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30', icon: CheckCircle2 },
   CANCELLED: { label: 'Đã hủy', cls: 'bg-destructive/10 text-destructive border border-destructive/30', icon: XCircle },
+  RETURN_REQUESTED: { label: 'Yêu cầu hoàn trả', cls: 'bg-metric-users/10 text-metric-users border border-metric-users/30', icon: RotateCcw },
+  RETURN_APPROVED: { label: 'Duyệt hoàn trả', cls: 'bg-metric-orders/10 text-metric-orders border border-metric-orders/30', icon: CheckCircle2 },
+  RETURNING: { label: 'Đang hoàn trả', cls: 'bg-metric-users/10 text-metric-users border border-metric-users/30', icon: RotateCcw },
   RETURNED: { label: 'Hoàn trả', cls: 'bg-landing-paper text-landing-muted border border-landing-line', icon: RotateCcw },
   EXPIRED: { label: 'Hết hạn', cls: 'bg-landing-paper text-landing-muted border border-landing-line', icon: XCircle },
   FAILED: { label: 'Thất bại', cls: 'bg-destructive/10 text-destructive border border-destructive/30', icon: XCircle },
 };
+
+export const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
+  CREATED: 'Đã tạo',
+  PENDING_PAYMENT: 'Chờ thanh toán',
+  PENDING: 'Chờ xác nhận',
+  PAID: 'Đã thanh toán',
+  CONFIRMED: 'Đã xác nhận',
+  PROCESSING: 'Đang xử lý',
+  MEASUREMENT_REVIEW: 'Kiểm tra số đo',
+  MEASUREMENT_CONFIRMED: 'Chốt số đo',
+  TAILORING: 'Đang may',
+  QUALITY_CHECK: 'Kiểm tra chất lượng',
+  READY_TO_SHIP: 'Sẵn sàng giao',
+  SHIPPING: 'Đang giao hàng',
+  DELIVERED: 'Đã giao hàng',
+  COMPLETED: 'Hoàn tất',
+  CANCELLED: 'Hủy đơn',
+  RETURN_REQUESTED: 'Yêu cầu hoàn trả',
+  RETURN_APPROVED: 'Duyệt hoàn trả',
+  RETURNING: 'Đang hoàn trả',
+  RETURNED: 'Hoàn trả',
+  EXPIRED: 'Hết hạn',
+  FAILED: 'Thất bại',
+};
+
+export function getAdminOrderStatusOptions(currentStatus: BackendOrderStatus): BackendOrderStatus[] {
+  const options: BackendOrderStatus[] = [
+    'CREATED',
+    'MEASUREMENT_REVIEW',
+    'MEASUREMENT_CONFIRMED',
+    'TAILORING',
+    'READY_TO_SHIP',
+  ];
+
+  // RETURN_APPROVED đi từ SHIPPING / DELIVERED / COMPLETED / RETURN_REQUESTED
+  if (['SHIPPING', 'DELIVERED', 'COMPLETED', 'RETURN_REQUESTED'].includes(currentStatus) || currentStatus === 'RETURN_APPROVED') {
+    options.push('RETURN_APPROVED');
+  }
+
+  options.push('CANCELLED');
+
+  if (!options.includes(currentStatus)) {
+    options.unshift(currentStatus);
+  }
+  return options;
+}
 
 export function resolveOrderStatusCfg(
   status: string,

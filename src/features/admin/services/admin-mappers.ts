@@ -104,6 +104,7 @@ export function toAdminOrder(o: AdminOrderDto): AdminOrder {
     paymentStatus: o.paymentStatus,
     refundStatus: o.refundStatus,
     date: o.createdAt?.substring(0, 10) || '',
+    createdAt: o.createdAt,
     payment: o.payments?.[0]?.provider || 'COD',
     address: ship?.address,
     phone: ship?.phone,
@@ -132,6 +133,7 @@ export function mergeOrderUpdate(
     address: ship?.address || order.address,
     phone: ship?.phone || order.phone,
     shipment: updated?.shipment || order.shipment,
+    createdAt: updated?.createdAt || order.createdAt,
   };
 }
 

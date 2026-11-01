@@ -80,8 +80,17 @@ export const AdminRevenueChart = React.memo(function AdminRevenueChart({ orders,
           <path d={pathD} className="stroke-metric-revenue" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
           {/* Points & Labels */}
-          {points.map(p => {
+          {points.map((p, idx) => {
             const isHovered = hoveredKey === p.dateKey;
+            const shouldShowLabel =
+              isHovered
+              || days <= 7
+              || (days === 14 && (idx % 2 === 0 || idx === points.length - 1))
+              || (days === 30 && (idx % 5 === 0 || idx === points.length - 1));
+
+            const radius = isHovered ? 6 : p.revenue > 0 ? 4 : days === 30 ? 2.5 : 3.5;
+            const strokeWidth = isHovered ? 3 : p.revenue > 0 ? 2 : 1.5;
+
             return (
               <g key={p.dateKey} className="cursor-pointer" onMouseEnter={() => setHoveredKey(p.dateKey)}>
                 {/* Invisible hit box for easy hovering */}
@@ -94,19 +103,21 @@ export const AdminRevenueChart = React.memo(function AdminRevenueChart({ orders,
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={isHovered ? 5 : 3.5}
-                  strokeWidth={isHovered ? 2.5 : 2}
-                  className={`stroke-metric-revenue transition-all ${isHovered ? 'fill-landing-ivory' : 'fill-metric-revenue'}`}
+                  r={radius}
+                  strokeWidth={strokeWidth}
+                  className={`stroke-metric-revenue transition-all ${isHovered ? 'fill-landing-ivory' : p.revenue > 0 ? 'fill-metric-revenue' : 'fill-metric-revenue/60'}`}
                 />
                 {/* X-axis date label */}
-                <text
-                  x={p.x}
-                  y={198}
-                  textAnchor="middle"
-                  className={`font-mono text-[9px] ${isHovered ? 'fill-landing-obsidian font-semibold' : 'fill-landing-muted'}`}
-                >
-                  {p.label}
-                </text>
+                {shouldShowLabel && (
+                  <text
+                    x={p.x}
+                    y={198}
+                    textAnchor="middle"
+                    className={`font-mono text-[9px] ${isHovered ? 'fill-landing-obsidian font-semibold' : 'fill-landing-muted'}`}
+                  >
+                    {p.label}
+                  </text>
+                )}
               </g>
             );
           })}

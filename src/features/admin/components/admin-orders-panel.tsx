@@ -73,6 +73,7 @@ export function AdminOrdersPanel({
                 <option value="COMPLETED">Hoàn tất</option>
                 <option value="CANCELLED">Đã hủy</option>
                 <option value="RETURN_REQUESTED">Yêu cầu hoàn trả</option>
+                <option value="RETURN_APPROVED">Duyệt hoàn trả</option>
                 <option value="RETURNING">Đang hoàn trả</option>
                 <option value="RETURNED">Đã hoàn trả</option>
                 <option value="EXPIRED">Hết hạn</option>
@@ -93,7 +94,10 @@ export function AdminOrdersPanel({
                 <option value="PENDING">Chờ thanh toán (PENDING)</option>
                 <option value="FAILED">Thất bại (FAILED)</option>
                 <option value="REFUNDED">Đã hoàn tiền (REFUNDED)</option>
-                <option value="PARTIALLY_REFUNDED">Hoàn tiền 1 phần</option>
+                <option value="PARTIALLY_REFUNDED">Hoàn tiền 1 phần (PARTIALLY_REFUNDED)</option>
+                <option value="REFUND_PENDING">Đang hoàn tiền (REFUND_PENDING)</option>
+                <option value="REFUND_REQUIRED">Cần hoàn tiền (REFUND_REQUIRED)</option>
+                <option value="EXPIRED">Hết hạn (EXPIRED)</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-landing-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -191,28 +195,40 @@ export function AdminOrdersPanel({
 
                     {/* Trạng thái - Minimalist Atelier (Micro-dot + Refined Typography) */}
                     <div className="px-4 py-3.5">
-                      <div className="inline-flex items-center gap-2 py-0.5">
-                        {o.status === 'PENDING' ? (
-                          <span className="relative flex h-2 w-2 shrink-0">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-metric-users opacity-40" />
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-metric-users" />
+                      <div className="flex flex-col gap-1 items-start">
+                        <div className="inline-flex items-center gap-2 py-0.5">
+                          {o.status === 'PENDING' ? (
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-metric-users opacity-40" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-metric-users" />
+                            </span>
+                          ) : o.status === 'CREATED' ? (
+                            <span className="inline-flex rounded-full h-2 w-2 bg-landing-taupe shrink-0" />
+                          ) : o.status === 'PAID' || o.status === 'CONFIRMED' || o.status === 'COMPLETED' || o.status === 'DELIVERED' ? (
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-metric-products shrink-0" />
+                          ) : o.status === 'SHIPPING' || o.status === 'READY_TO_SHIP' ? (
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-metric-orders shrink-0" />
+                          ) : o.status === 'TAILORING' || o.status === 'MEASUREMENT_REVIEW' || o.status === 'MEASUREMENT_CONFIRMED' ? (
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-landing-oxblood shrink-0" />
+                          ) : o.status === 'CANCELLED' || o.status === 'FAILED' ? (
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive shrink-0" />
+                          ) : (
+                            <span className="inline-flex rounded-full h-2 w-2 bg-landing-taupe shrink-0" />
+                          )}
+                          <span className="text-xs font-medium text-landing-obsidian tracking-tight">
+                            {cfg.label}
                           </span>
-                        ) : o.status === 'CREATED' ? (
-                          <span className="inline-flex rounded-full h-2 w-2 bg-landing-taupe shrink-0" />
-                        ) : o.status === 'PAID' || o.status === 'CONFIRMED' || o.status === 'COMPLETED' || o.status === 'DELIVERED' ? (
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-metric-products shrink-0" />
-                        ) : o.status === 'SHIPPING' || o.status === 'READY_TO_SHIP' ? (
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-metric-orders shrink-0" />
-                        ) : o.status === 'TAILORING' || o.status === 'MEASUREMENT_REVIEW' || o.status === 'MEASUREMENT_CONFIRMED' ? (
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-landing-oxblood shrink-0" />
-                        ) : o.status === 'CANCELLED' || o.status === 'FAILED' ? (
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive shrink-0" />
-                        ) : (
-                          <span className="inline-flex rounded-full h-2 w-2 bg-landing-taupe shrink-0" />
+                        </div>
+                        {(o.refundStatus === 'REQUIRED' || o.refundStatus === 'PROCESSING' || (o.status === 'RETURNED' && o.refundStatus !== 'COMPLETED')) && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrder?.(o)}
+                            className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/30 cursor-pointer hover:bg-destructive/20 transition-colors"
+                            title="Đơn cần xử lý hoàn tiền — Nhấn để mở chi tiết"
+                          >
+                            Cần hoàn tiền
+                          </button>
                         )}
-                        <span className="text-xs font-medium text-landing-obsidian tracking-tight">
-                          {cfg.label}
-                        </span>
                       </div>
                     </div>
                     <div className="px-6 py-3.5 text-right flex items-center justify-end">

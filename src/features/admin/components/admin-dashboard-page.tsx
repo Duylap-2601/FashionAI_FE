@@ -178,6 +178,7 @@ function AdminDashboardContent() {
               handleUpdateOrderStatus={orders.handleUpdateOrderStatus}
               handleConfirmManualPayment={orders.handleConfirmManualPayment}
               handleUpdateRefund={orders.handleUpdateRefund}
+              handleFinalizeRefund={orders.handleFinalizeRefund}
               handleCreateShipment={shipments.handleCreateShipment}
             />
           )}

@@ -141,19 +141,57 @@ const CHART_EMPTY_MAX_REVENUE = 500_000;
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 
+function parseDateKey(str: string | undefined): string | null {
+  if (!str) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(str);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
+}
+
+function isRevenueOrder(o: AdminOrder): boolean {
+  if (o.paymentStatus === 'PAID' || o.paymentStatus === 'COD_COLLECTED') return true;
+  if (
+    o.paymentStatus === 'FAILED'
+    || o.paymentStatus === 'PENDING'
+    || o.paymentStatus === 'EXPIRED'
+    || o.paymentStatus === 'REFUNDED'
+  ) {
+    return false;
+  }
+  return !NON_REVENUE_STATUSES.includes(o.status);
+}
+
+const getOrderRevenue = (o: AdminOrder): number =>
+  typeof o.totalVnd === 'number' && o.totalVnd > 0 ? o.totalVnd : o.total || 0;
+
 /** Doanh thu đơn đã thanh toán và số đơn theo từng ngày trong `days` ngày gần nhất. */
 export function buildRevenueChart(orders: AdminOrder[], days: RevenueChartDays, now: Date = new Date()): RevenueChart {
+  const localNowKey = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+  const utcNowKey = now.toISOString().substring(0, 10);
+  let maxKey = localNowKey > utcNowKey ? localNowKey : utcNowKey;
+  for (const o of orders) {
+    const k = parseDateKey(o.date) || parseDateKey(o.createdAt);
+    if (k && k > maxKey) {
+      maxKey = k;
+    }
+  }
+
+  const [ey, em, ed] = maxKey.split('-').map(Number);
+  const endDate = new Date(Date.UTC(ey, em - 1, ed, 12, 0, 0));
+
   const daily: Omit<RevenueChartPoint, 'x' | 'y'>[] = [];
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    const dateKey = d.toISOString().substring(0, 10);
-    const dayOrders = orders.filter(o => o.date === dateKey);
+    const cur = new Date(endDate);
+    cur.setUTCDate(endDate.getUTCDate() - i);
+    const cy = cur.getUTCFullYear();
+    const cm = cur.getUTCMonth() + 1;
+    const cd = cur.getUTCDate();
+    const dateKey = `${cy}-${pad2(cm)}-${pad2(cd)}`;
+    const dayOrders = orders.filter(o => o.date === dateKey || (o.createdAt && o.createdAt.startsWith(dateKey)));
     daily.push({
       dateKey,
-      label: `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}`,
-      fullDate: `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`,
-      revenue: dayOrders.filter(o => o.paymentStatus === 'PAID').reduce((sum, o) => sum + o.total, 0),
+      label: `${pad2(cd)}/${pad2(cm)}`,
+      fullDate: `${pad2(cd)}/${pad2(cm)}/${cy}`,
+      revenue: dayOrders.filter(isRevenueOrder).reduce((sum, o) => sum + getOrderRevenue(o), 0),
       ordersCount: dayOrders.length,
     });
   }

@@ -47,8 +47,9 @@ export function useOpenNotification() {
 
     // Smart routing for Customer
     if (notification.type === 'ORDER_STATUS' || notification.type === 'PAYMENT') {
-      const orderId = notification.data?.orderId as string | undefined;
-      router.push(orderId ? `/orders/${orderId}` : '/profile/orders');
+      // Refund event đi qua PAYMENT có thể chỉ có orderCode (cổng online) hoặc orderId (thủ công)
+      const orderRef = (notification.data?.orderId || notification.data?.orderCode) as string | number | undefined;
+      router.push(orderRef ? `/orders/${orderRef}` : '/profile/orders');
     } else if (notification.type === 'PROMOTION') {
       router.push('/products');
     } else if (notification.type === 'REVIEW') {
