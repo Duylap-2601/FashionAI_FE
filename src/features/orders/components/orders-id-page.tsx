@@ -16,6 +16,7 @@ import {
   type OrderStatusTone,
 } from '@/features/orders/constants/profile-orders-page';
 import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
+import { useOrderIssues } from '@/features/orders/hooks/useOrderIssues';
 import {
   formatOrderDateTime,
   formatVnd,
@@ -140,12 +141,31 @@ export default function OrderDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const { order, isLoading, isError } = useOrder(id);
+  const { issues } = useOrderIssues(id);
   const { cancelOrder, isCancelling } = useCancelOrder();
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [reportingItem, setReportingItem] = useState<OrderItem | null>(null);
   const [reportMode, setReportMode] = useState<'PRODUCT' | 'REFUND_NOT_RECEIVED'>('PRODUCT');
+
+  // Item đã có yêu cầu đang xử lý hoặc đã xử lý xong thì không cho báo lỗi lại
+  // (khớp điều kiện chặn ở BE). Báo "chưa nhận được tiền" có luồng riêng.
+  const blockedReportItemIds = new Set(
+    issues
+      .filter(
+        (issue) =>
+          issue.status === 'PENDING' ||
+          issue.status === 'APPROVED' ||
+          issue.status === 'RESOLVED',
+      )
+      .map((issue) => issue.orderItemId),
+  );
+  const hasPendingRefundNotReceived = issues.some(
+    (issue) =>
+      issue.reason === 'REFUND_NOT_RECEIVED' &&
+      (issue.status === 'PENDING' || issue.status === 'APPROVED'),
+  );
 
   if (isLoading) {
     return (
@@ -187,6 +207,7 @@ export default function OrderDetailPage() {
   const completedAt = completedEvent?.occurredAt || order.updatedAt || order.createdAt;
   const isIssueWindowOver = completedAt ? Date.now() - new Date(completedAt).getTime() > ISSUE_WINDOW_MS : false;
   const canReportIssue = (status === 'COMPLETED' || isInReturnFlow) && !isIssueWindowOver;
+  const allItemsBlocked = order.items.length > 0 && order.items.every((item) => blockedReportItemIds.has(item.id));
 
   // Báo "chưa nhận được tiền": chỉ khi shop đã chốt hoàn tiền và còn trong 7 ngày
   // kể từ lần hoàn gần nhất (khớp điều kiện BE).
@@ -212,6 +233,14 @@ export default function OrderDetailPage() {
 
   const openReport = (item: OrderItem | null, mode: 'PRODUCT' | 'REFUND_NOT_RECEIVED' = 'PRODUCT') => {
     if (!item) return;
+    if (mode === 'PRODUCT' && blockedReportItemIds.has(item.id)) {
+      toast.info('Sản phẩm này đã có yêu cầu xử lý, vui lòng chờ shop phản hồi.');
+      return;
+    }
+    if (mode === 'REFUND_NOT_RECEIVED' && hasPendingRefundNotReceived) {
+      toast.info('Bạn đã gửi báo cáo chưa nhận được tiền, vui lòng chờ shop xử lý.');
+      return;
+    }
     setReportMode(mode);
     setReportingItem(item);
   };
@@ -259,7 +288,7 @@ export default function OrderDetailPage() {
           {isConfirmingDelivery ? 'Đang xác nhận' : 'Tôi đã nhận hàng'}
         </button>
       ) : null}
-      {canReportIssue ? (
+      {canReportIssue && !allItemsBlocked ? (
         <button
           type="button"
           onClick={() => {
@@ -331,13 +360,19 @@ export default function OrderDetailPage() {
             </p>
             <RefundAccount order={order} />
             {canReportNotReceived ? (
-              <button
-                type="button"
-                onClick={() => openReport(order.items[0] ?? null, 'REFUND_NOT_RECEIVED')}
-                className={accountButtonClassName('outline', 'sm')}
-              >
-                Chưa nhận được tiền hoàn
-              </button>
+              hasPendingRefundNotReceived ? (
+                <button type="button" disabled className={accountButtonClassName('outline', 'sm')}>
+                  Đã báo chưa nhận tiền
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openReport(order.items[0] ?? null, 'REFUND_NOT_RECEIVED')}
+                  className={accountButtonClassName('outline', 'sm')}
+                >
+                  Chưa nhận được tiền hoàn
+                </button>
+              )
             ) : null}
           </OrderNotice>
         ) : null}
@@ -411,9 +446,15 @@ export default function OrderDetailPage() {
                     </div>
                     <ItemMeasurements item={item} />
                     {canReportIssue ? (
-                      <button type="button" onClick={() => openReport(item)} className={accountButtonClassName('outline', 'sm')}>
-                        Báo lỗi sản phẩm này
-                      </button>
+                      blockedReportItemIds.has(item.id) ? (
+                        <button type="button" disabled className={accountButtonClassName('outline', 'sm')}>
+                          Đã gửi yêu cầu
+                        </button>
+                      ) : (
+                        <button type="button" onClick={() => openReport(item)} className={accountButtonClassName('outline', 'sm')}>
+                          Báo lỗi sản phẩm này
+                        </button>
+                      )
                     ) : null}
                   </div>
                 </li>
