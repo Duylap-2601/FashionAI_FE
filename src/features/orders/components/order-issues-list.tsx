@@ -52,7 +52,7 @@ function IssueCard({ issue, onZoom }: { issue: OrderIssue; onZoom: (src: string,
   const isRefund = issue.approvedResolution === 'REFUND' || issue.desiredResolution === 'REFUND';
 
   return (
-    <article className="border border-landing-line bg-landing-ivory/50">
+    <article className="rounded-[2px] border border-landing-line bg-landing-ivory">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-landing-line/70 px-4 py-3 sm:px-5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <ToneLabel tone={status.tone} label={status.label} />
@@ -137,7 +137,7 @@ export function OrderIssuesList({ orderId }: OrderIssuesListProps) {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center border-t border-landing-line py-8">
+      <div className="flex justify-center py-6">
         <AtelierLoader size="sm" label="Đang tải yêu cầu báo lỗi" />
       </div>
     );
@@ -149,6 +149,7 @@ export function OrderIssuesList({ orderId }: OrderIssuesListProps) {
     <AccountSection
       title="Báo lỗi và hoàn trả"
       description={`${issues.length} yêu cầu cho sản phẩm trong đơn này.`}
+      className="border-t-0 pt-0"
     >
       <div id="order-issues" className="flex scroll-mt-28 flex-col gap-4">
         {issues.map((issue) => (

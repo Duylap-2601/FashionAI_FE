@@ -345,10 +345,10 @@ Route: `/products/[id]`. The page is the product chapter of the catalog: one gal
 
 Routes: `/profile`, `/profile/measurements`, `/profile/orders`, `/profile/reviews`, `/notifications` (the five links in the header account menu).
 
-Order detail (`/orders/[id]`) also sits in the shell with `Đơn hàng` active. It reads top to bottom: notices (payment pending, return in progress, returned), a status frame with the five-step progress and payment / shipping / last update, then hairline sections for items, issue reports, delivery and payment, refunds (with transfer receipts) and the order history.
+Order detail (`/orders/[id]`) also sits in the shell with `Đơn hàng` active. It reads top to bottom: notices (payment pending, return in progress, returned), a status frame with the five-step progress and payment / shipping / last update, then items, issue reports, delivery and payment, refunds (with transfer receipts) and the order history. Because the page is dense, each block sits on an ivory panel with a hairline border and `2px` corners (`AccountSection variant="panel"`) instead of a bare rule on paper, so it does not sink into the background. Measurements inside an item use a paper inset with a taupe left rule.
 
 - One shared `AccountShell`: a sticky left menu from `lg` (name, plan, the five pages, then addresses, try-on history, AI Stylist history, plan) and a scrolling underline tab row below `lg`. Each page opens with a brass `Tài khoản` label, a Playfair title and one sentence.
-- Sections are hairline-topped, with a Playfair heading and at most one text link on the right. No cards with shadows, no pills, no coloured badge fills.
+- Sections are hairline-topped (order detail uses ivory panels, see above), with a Playfair heading and at most one text link on the right. No cards with shadows, no pills, no coloured badge fills.
 - Status is a coloured dot plus an uppercase label: brass for waiting on payment or returns, oxblood dot for in progress, sage for delivered or complete, taupe for closed, destructive for failed.
 - Prices, order codes, dates in tables, counts and measurements use the mono face.
 - Only controls the backend stores are shown. Profile edits only the name (`PUT /users/me` accepts `name` and `avatarUrl`); phone and address live in the address book. Measurements save the 16 backend fields; there is no body-type, preferred-size, fit or style-note control. Notifications have no type filter because `GET /notifications` does not filter by type.
