@@ -1,7 +1,8 @@
 'use client';
 
 import { resolveOrderStatusCfg } from '@/features/admin/constants/admin-dashboard-page';
-import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
+import { fmt } from '@/features/admin/services/format';
+import { shipmentStatusLabel } from '@/features/orders/services/order-display';
 import type { AdminOrdersPanelProps } from '@/features/admin/types/admin-orders-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
 import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';

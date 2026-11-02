@@ -1,7 +1,9 @@
 'use client';
 
+import { ImageFilePreviews } from '@/components/ui/image-file-previews';
 import { reviewOrderIssue } from '@/features/admin/services/mutations';
 import type { OrderIssue } from '@/features/orders/types/orders';
+import { describeImageFileRejection, useImageFileSelection } from '@/hooks/use-image-file-selection';
 import { getErrorMessage } from '@/lib/errors';
 import {
   CheckCircle2,
@@ -12,7 +14,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import Image from 'next/image';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface AdminOrderIssueModalProps {
@@ -30,6 +32,8 @@ const REASON_LABELS: Record<string, string> = {
   REFUND_NOT_RECEIVED: 'Chưa nhận được tiền hoàn',
 };
 
+const MAX_RECEIPT_IMAGES = 5;
+
 export function AdminOrderIssueModal({
   issue,
   isOpen,
@@ -38,9 +42,22 @@ export function AdminOrderIssueModal({
 }: AdminOrderIssueModalProps) {
   const [activeAction, setActiveAction] = useState<'APPROVE_REFUND' | 'REJECT' | null>(null);
   const [adminNote, setAdminNote] = useState('');
-  const [receiptImages, setReceiptImages] = useState<File[]>([]);
+  const receipts = useImageFileSelection({
+    maxFiles: MAX_RECEIPT_IMAGES,
+    onReject: (rejection) => toast.error(describeImageFileRejection(rejection, 'ảnh chứng từ')),
+  });
+  const clearReceipts = receipts.clear;
+  const receiptInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
+
+  // The modal stays mounted between issues, so drop the decision and the picked
+  // bills when another issue opens; they must never be sent for the wrong one.
+  useEffect(() => {
+    setActiveAction(null);
+    setAdminNote('');
+    clearReceipts();
+  }, [issue?.id, clearReceipts]);
 
   if (!isOpen || !issue) return null;
 
@@ -56,7 +73,7 @@ export function AdminOrderIssueModal({
       toast.error('Vui lòng nhập lý do từ chối yêu cầu.');
       return;
     }
-    if (activeAction !== 'REJECT' && receiptImages.length === 0) {
+    if (activeAction !== 'REJECT' && receipts.items.length === 0) {
       toast.error('Vui lòng đính kèm ảnh chứng từ chuyển khoản hoàn tiền.');
       return;
     }
@@ -78,7 +95,7 @@ export function AdminOrderIssueModal({
             adminNote: adminNote.trim() || undefined,
           },
           undefined,
-          receiptImages,
+          receipts.files,
         );
         toast.success(
           issue.reason === 'REFUND_NOT_RECEIVED'
@@ -86,7 +103,7 @@ export function AdminOrderIssueModal({
             : 'Đã duyệt hoàn tiền. Đơn hàng chuyển sang tiến trình hoàn trả!'
         );
       }
-      setReceiptImages([]);
+      clearReceipts();
       onSuccess();
       onClose();
     } catch (err) {
@@ -333,26 +350,42 @@ export function AdminOrderIssueModal({
                   />
 
                   {activeAction === 'APPROVE_REFUND' && (
-                    <div className="flex flex-col gap-1">
-                      <label className="inline-flex w-fit items-center gap-1.5 text-[12px] font-semibold text-landing-oxblood cursor-pointer">
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/jpeg,image/png,image/webp"
-                          className="hidden"
+                    <div className="flex flex-col gap-1.5">
+                      <input
+                        ref={receiptInputRef}
+                        type="file"
+                        multiple
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        disabled={isSubmitting}
+                        onChange={(e) => {
+                          receipts.add(e.target.files);
+                          e.target.value = '';
+                        }}
+                      />
+                      {receipts.items.length === 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => receiptInputRef.current?.click()}
                           disabled={isSubmitting}
-                          onChange={(e) =>
-                            setReceiptImages(Array.from(e.target.files ?? []).slice(0, 5))
-                          }
-                        />
-                        <span className="underline">
-                          {receiptImages.length > 0
-                            ? `Đã chọn ${receiptImages.length} ảnh chứng từ`
-                            : 'Đính kèm ảnh chứng từ chuyển khoản *'}
+                          className="inline-flex w-fit items-center gap-1.5 text-[12px] font-semibold text-landing-oxblood underline cursor-pointer bg-transparent border-0 p-0"
+                        >
+                          Đính kèm ảnh chứng từ chuyển khoản *
+                        </button>
+                      ) : (
+                        <span className="text-[12px] font-semibold text-landing-oxblood">
+                          Ảnh chứng từ đã chọn ({receipts.items.length}/{MAX_RECEIPT_IMAGES}). Bấm ảnh để xem lớn.
                         </span>
-                      </label>
+                      )}
+                      <ImageFilePreviews
+                        items={receipts.items}
+                        onRemove={receipts.remove}
+                        onAdd={receipts.canAddMore ? () => receiptInputRef.current?.click() : undefined}
+                        disabled={isSubmitting}
+                        tileClassName="size-24 rounded-[2px] border-landing-line bg-landing-paper"
+                      />
                       <span className="text-[11px] text-landing-muted">
-                        Bắt buộc — khách sẽ thấy ảnh này trong mục Lịch sử hoàn tiền (tối đa 5 ảnh).
+                        Bắt buộc: khách sẽ thấy ảnh này trong mục Lịch sử hoàn tiền (tối đa {MAX_RECEIPT_IMAGES} ảnh).
                       </span>
                     </div>
                   )}
@@ -380,7 +413,7 @@ export function AdminOrderIssueModal({
                       disabled={
                         isSubmitting ||
                         (activeAction === 'REJECT' && !adminNote.trim()) ||
-                        (activeAction !== 'REJECT' && receiptImages.length === 0)
+                        (activeAction !== 'REJECT' && receipts.items.length === 0)
                       }
                       className={`px-4 py-1.5 rounded-[2px] text-xs font-bold text-landing-paper flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
                         activeAction === 'REJECT' ? 'bg-destructive hover:bg-destructive' : 'bg-landing-oxblood hover:bg-landing-oxblood/90'

@@ -4,7 +4,7 @@ import type { AdminOrderFilters } from '@/features/admin/types/admin-orders-pane
 import type { AdminProductFilters } from '@/features/admin/types/admin-products-panel';
 import type { AdminShipmentFilters } from '@/features/admin/types/admin-shipments-panel';
 import type { AdminUserFilters } from '@/features/admin/types/admin-users-panel';
-import type { BackendOrderStatus, OrderDisplayStatus } from '@/features/orders/types/orders';
+import type { BackendOrderStatus, OrderDisplayStatus, OrderRefundStatus } from '@/features/orders/types/orders';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
@@ -226,6 +226,15 @@ export const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon
   RETURNED: { label: 'Hoàn trả', cls: 'bg-landing-paper text-landing-muted border border-landing-line', icon: RotateCcw },
   EXPIRED: { label: 'Hết hạn', cls: 'bg-landing-paper text-landing-muted border border-landing-line', icon: XCircle },
   FAILED: { label: 'Thất bại', cls: 'bg-destructive/10 text-destructive border border-destructive/30', icon: XCircle },
+};
+
+export const REFUND_STATUS_CFG: Record<OrderRefundStatus, { label: string; cls: string }> = {
+  PENDING: { label: 'Chờ xử lý', cls: 'bg-metric-users/10 text-metric-users border border-metric-users/30' },
+  REQUIRED: { label: 'Chờ chuyển tiền', cls: 'bg-metric-users/10 text-metric-users border border-metric-users/30' },
+  PROCESSING: { label: 'Đang xử lý', cls: 'bg-metric-orders/10 text-metric-orders border border-metric-orders/30' },
+  COMPLETED: { label: 'Thành công', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30' },
+  FAILED: { label: 'Thất bại', cls: 'bg-destructive/10 text-destructive border border-destructive/30' },
+  CANCELLED: { label: 'Đã hủy', cls: 'bg-landing-paper text-landing-muted border border-landing-line' },
 };
 
 export const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {

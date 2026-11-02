@@ -1,7 +1,8 @@
 'use client';
 
 import { ORDER_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
-import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
+import { fmt, fmtDateTime } from '@/features/admin/services/format';
+import { shipmentStatusLabel } from '@/features/orders/services/order-display';
 import type { AdminShipmentModalProps } from '@/features/admin/types/admin-shipment-modal';
 import { ExternalLink, Loader2, RefreshCw, X } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -63,8 +64,8 @@ export function AdminShipmentModal({ shipment, onClose, onSync, onCancel, onSimu
           <section className="grid grid-cols-2 gap-3">
             <Info label="Phí quote" value={fmt(shipment.quotedShippingFee ?? 0)} />
             <Info label="Phí thực tế" value={fmt(shipment.actualShippingFee ?? shipment.shippingFeeVnd ?? 0)} />
-            <Info label="Dự kiến giao" value={shipment.expectedDeliveryTime?.substring(0, 16).replace('T', ' ') || '—'} />
-            <Info label="Sync cuối" value={shipment.lastSyncedAt?.substring(0, 16).replace('T', ' ') || '—'} />
+            <Info label="Dự kiến giao" value={fmtDateTime(shipment.expectedDeliveryTime)} />
+            <Info label="Sync cuối" value={fmtDateTime(shipment.lastSyncedAt)} />
           </section>
 
           <section>
@@ -84,7 +85,7 @@ export function AdminShipmentModal({ shipment, onClose, onSync, onCancel, onSimu
             <div className="flex flex-col gap-3">
               {shipment.events.map(event => (
                 <div key={event.id} className="rounded-[2px] bg-landing-paper/60 border border-landing-line p-3 text-body-sm">
-                  <div className="flex justify-between gap-3"><span className="font-semibold text-landing-obsidian">{event.type}</span><span className="text-landing-muted">{event.occurredAt.substring(0, 16).replace('T', ' ')}</span></div>
+                  <div className="flex justify-between gap-3"><span className="font-semibold text-landing-obsidian">{event.type}</span><span className="text-landing-muted">{fmtDateTime(event.occurredAt)}</span></div>
                   <p className="text-landing-obsidian mt-1">{event.publicMessage || event.internalNote || '—'}</p>
                   {(event.fromShipmentStatus || event.toShipmentStatus) && <p className="text-label-sm text-landing-muted mt-1">{event.fromShipmentStatus || '—'} → {event.toShipmentStatus || '—'}</p>}
                 </div>
@@ -98,7 +99,7 @@ export function AdminShipmentModal({ shipment, onClose, onSync, onCancel, onSimu
             <div className="flex flex-col gap-2">
               {shipment.webhooks.slice(0, 5).map(webhook => (
                 <div key={webhook.id} className="rounded-[2px] border border-landing-line px-3 py-2 text-label-sm text-landing-obsidian">
-                  <span className="font-mono text-landing-obsidian">{webhook.eventType || 'event'}</span> · {webhook.status} · {webhook.receivedAt.substring(0, 16).replace('T', ' ')}
+                  <span className="font-mono text-landing-obsidian">{webhook.eventType || 'event'}</span> · {webhook.status} · {fmtDateTime(webhook.receivedAt)}
                 </div>
               ))}
               {shipment.webhooks.length === 0 && <p className="text-body-sm text-landing-muted">Chưa có webhook audit.</p>}
