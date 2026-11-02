@@ -1,4 +1,4 @@
-import type { AdminNavItem, AdminPage, AdminPagination, AdminSidebarItem, GarmentCategory, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
+import type { AdminNavItem, AdminPage, AdminPagination, AdminSidebarItem, GarmentCategory, ProductGender, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminOrderIssueFilters } from '@/features/admin/types/admin-order-issues-panel';
 import type { AdminOrderFilters } from '@/features/admin/types/admin-orders-panel';
 import type { AdminProductFilters } from '@/features/admin/types/admin-products-panel';
@@ -147,7 +147,7 @@ export const DEFAULT_ADMIN_PAGINATION: AdminPagination = {
   totalPages: 1,
 };
 
-export const EMPTY_PRODUCT_FILTERS: AdminProductFilters = { category: '', status: '', search: '' };
+export const EMPTY_PRODUCT_FILTERS: AdminProductFilters = { category: '', status: '', gender: '', search: '' };
 export const EMPTY_ORDER_FILTERS: AdminOrderFilters = { search: '', status: '', paymentStatus: '', fromDate: '', toDate: '' };
 export const EMPTY_USER_FILTERS: AdminUserFilters = { search: '', tier: '', role: '', isVerified: '' };
 export const EMPTY_SHIPMENT_FILTERS: AdminShipmentFilters = {};
@@ -184,6 +184,12 @@ export const CATEGORY_LABEL: Record<GarmentCategory, string> = {
   UPPER: 'Áo',
   LOWER: 'Quần / Váy',
   FULL_BODY: 'Toàn thân',
+};
+
+export const PRODUCT_GENDER_LABEL: Record<ProductGender, string> = {
+  FEMALE: 'Nữ',
+  MALE: 'Nam',
+  UNISEX: 'Unisex',
 };
 
 export const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL', 'Free'];

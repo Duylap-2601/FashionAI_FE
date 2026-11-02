@@ -264,6 +264,27 @@ test('product form builders keep the multipart contract the backend expects', ()
   ]);
 });
 
+test('product gender: the create form sends it and the list loader filters by it', async () => {
+  const fields = (form) => [...form.entries()].map(([key, value]) => [key, typeof value === 'string' ? value : value.name]);
+  const products = [
+    { id: 'w', name: 'Áo nữ', price: '100', status: 'ACTIVE', category: 'UPPER', gender: 'FEMALE' },
+    { id: 'm', name: 'Áo nam', price: '100', status: 'ACTIVE', category: 'UPPER', gender: 'MALE' },
+    { id: 'old', name: 'Áo cũ', price: '100', status: 'ACTIVE', category: 'UPPER' },
+  ];
+  const { editor, loaders, calls } = loadAdminServices({ '/products': products });
+
+  assert.deepEqual(fields(editor.buildCreateProductForm({ name: 'Áo nam', price: 1, category: 'UPPER', gender: 'MALE', colors: [], files: [], imageColors: [] })), [
+    ['name', 'Áo nam'], ['price', '1'], ['category', 'UPPER'], ['status', 'ACTIVE'], ['gender', 'MALE'],
+  ]);
+
+  const men = await loaders.loadAdminProducts({ page: 1, pageSize: 10, filters: { gender: 'MALE' } });
+  assert.equal(calls[0].config.params.gender, 'MALE');
+  assert.deepEqual(men.items.map(p => [p.id, p.gender]), [['m', 'MALE']]);
+  // Backend chưa có cột gender thì sản phẩm cũ coi như đồ nữ (giá trị mặc định của backend).
+  const women = await loaders.loadAdminProducts({ page: 1, pageSize: 10, filters: { gender: 'FEMALE' } });
+  assert.deepEqual(women.items.map(p => p.id), ['w', 'old']);
+});
+
 /** Controller với load giả: mỗi request chờ test tự resolve/reject. */
 function createTestController(controllerModule, { enabled = true, initialQuery } = {}) {
   const log = { requests: [], queries: [], fetching: [], results: [], errors: [] };

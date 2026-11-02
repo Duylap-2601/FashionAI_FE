@@ -57,7 +57,7 @@ export function useAdminProductEditor({ setProducts, onSaved }: UseAdminProductE
       revokeLocalPreviews(prev);
       return product ? toEditorImages(product) : [];
     });
-    setEditingProduct(product ? product : { status: 'ACTIVE', category: 'UPPER' });
+    setEditingProduct(product ? product : { status: 'ACTIVE', category: 'UPPER', gender: 'FEMALE' });
   }, []);
 
   const closeProductEditor = useCallback(() => {
@@ -200,6 +200,7 @@ export function useAdminProductEditor({ setProducts, onSaved }: UseAdminProductE
           category: product.category,
           garmentType: product.garmentType ?? null,
           layerRole: product.layerRole ?? null,
+          gender: product.gender,
           color: colors[0]?.name || undefined,
           colors,
           material: product.material || undefined,
@@ -219,6 +220,7 @@ export function useAdminProductEditor({ setProducts, onSaved }: UseAdminProductE
           category: product.category,
           garmentType: product.garmentType ?? null,
           layerRole: product.layerRole ?? null,
+          gender: product.gender,
           status: product.status,
           material: product.material,
           description: product.description,
