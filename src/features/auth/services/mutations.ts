@@ -8,8 +8,16 @@ export async function loginWithPassword(email: string, password?: string) {
   });
 }
 
-export async function refreshWebSession() {
-  return authRequest<AuthPayload>('/auth/refresh', { method: 'POST' });
+// Refresh tokens are single-use on the backend. AuthBootstrap and the 401
+// interceptor both refresh right after a page load, so concurrent callers must
+// share one request or the loser gets 401 and the session is dropped.
+let refreshInFlight: Promise<AuthPayload> | null = null;
+
+export function refreshWebSession() {
+  refreshInFlight ??= authRequest<AuthPayload>('/auth/refresh', { method: 'POST' }).finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
 }
 
 export async function logoutWebSession(accessToken?: string | null) {

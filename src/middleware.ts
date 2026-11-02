@@ -6,7 +6,7 @@ export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const hasAuthMarker = Boolean(req.cookies.get(AUTH_MARKER_COOKIE_NAME)?.value);
 
-  const protectedRoutes = ['/try-on', '/profile', '/ai-stylist', '/chat', '/checkout', '/payment', '/admin'];
+  const protectedRoutes = ['/try-on', '/profile', '/ai-stylist', '/chat', '/checkout', '/payment', '/orders', '/admin'];
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
   if (isProtected && !hasAuthMarker) {
