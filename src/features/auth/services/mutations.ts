@@ -1,4 +1,4 @@
-import { API_BASE_URL, authRequest } from '@/features/auth/services/session';
+import { API_BASE_URL, AuthClientError, authRequest } from '@/features/auth/services/session';
 import type { AuthPayload, RegisterResponseData, VerifyEmailPayload } from '@/features/auth/types/session';
 
 export async function loginWithPassword(email: string, password?: string) {
@@ -8,8 +8,37 @@ export async function loginWithPassword(email: string, password?: string) {
   });
 }
 
-export async function refreshWebSession() {
-  return authRequest<AuthPayload>('/auth/refresh', { method: 'POST' });
+// Refresh tokens are single-use on the backend. AuthBootstrap and the 401
+// interceptor both refresh right after a page load, so concurrent callers must
+// share one request or the loser gets 401 and the session is dropped.
+let refreshInFlight: Promise<AuthPayload> | null = null;
+
+export function refreshWebSession() {
+  refreshInFlight ??= authRequest<AuthPayload>('/auth/refresh', { method: 'POST' }).finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
+}
+
+// BE từ chối refresh token (4xx): phiên đã hết thật. Lỗi mạng, 5xx, 408, 429 chỉ là
+// máy chủ chưa trả lời kịp, không được coi là đăng xuất.
+export function isSessionRejected(error: unknown) {
+  if (!(error instanceof AuthClientError) || error.status === undefined) return false;
+  return error.status >= 400 && error.status < 500 && error.status !== 408 && error.status !== 429;
+}
+
+const REFRESH_RETRY_DELAYS_MS = [1_500, 4_000];
+
+/** Refresh lúc tải trang: lỗi tạm thời thì thử lại vài lần trước khi bỏ cuộc. */
+export async function refreshWebSessionWithRetry(retryDelaysMs: readonly number[] = REFRESH_RETRY_DELAYS_MS) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await refreshWebSession();
+    } catch (error) {
+      if (isSessionRejected(error) || attempt >= retryDelaysMs.length) throw error;
+      await new Promise((resolve) => setTimeout(resolve, retryDelaysMs[attempt]));
+    }
+  }
 }
 
 export async function logoutWebSession(accessToken?: string | null) {

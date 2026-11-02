@@ -2,10 +2,9 @@
 
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { OrderStatusLabel } from '@/features/orders/components/order-status-label';
+import { OrderProgress, OrderThumb, SummaryRow } from '@/features/orders/components/order-ui';
 import {
   FILTER_TABS,
-  ORDER_IMAGE_FALLBACK,
-  ORDER_STEPS,
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
   STATUS_CONFIG,
@@ -13,6 +12,7 @@ import {
 import { useCancelOrder, useConfirmDelivery, useInfiniteOrders } from '@/features/orders/hooks/useOrders';
 import {
   formatOrderDate,
+  formatOrderDateTime,
   formatVnd,
   getOrderCode,
   getOrderItemImage,
@@ -32,53 +32,9 @@ import {
 import { WriteReviewModal } from '@/features/reviews/components/WriteReviewModal';
 import { cn } from '@/lib/utils';
 import { Check, ChevronDown, Copy, Search } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
-import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-
-function OrderThumb({ item, className }: { item: OrderItem; className?: string }) {
-  const [src, setSrc] = useState(() => getOrderItemImage(item));
-  return (
-    <span className={cn('relative block shrink-0 overflow-hidden rounded-[2px] bg-landing-paper', className)}>
-      <Image src={src} alt={getOrderItemName(item)} fill sizes="64px" className="object-cover" onError={() => setSrc(ORDER_IMAGE_FALLBACK)} />
-    </span>
-  );
-}
-
-function OrderProgress({ step }: { step: number }) {
-  return (
-    <ol className="grid grid-cols-5 gap-1.5" aria-label="Tiến độ đơn hàng">
-      {ORDER_STEPS.map((label, index) => {
-        const done = index <= step;
-        const current = index === step;
-        return (
-          <li key={label} aria-current={current ? 'step' : undefined}>
-            <span aria-hidden="true" className={cn('block h-0.5', done ? 'bg-landing-oxblood' : 'bg-landing-taupe/60')} />
-            <span
-              className={cn(
-                'mt-2 block text-[11px] leading-snug',
-                current ? 'font-medium text-landing-oxblood' : done ? 'text-landing-obsidian/80' : 'text-landing-muted',
-              )}
-            >
-              {label}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function SummaryRow({ label, children, strong = false }: { label: string; children: React.ReactNode; strong?: boolean }) {
-  return (
-    <div className={cn('flex items-baseline justify-between gap-4 py-1.5', strong && 'mt-1 border-t border-landing-line/70 pt-3')}>
-      <dt className={cn('text-sm', strong ? 'font-medium text-landing-obsidian' : 'text-landing-muted')}>{label}</dt>
-      <dd className={cn('text-right text-sm', strong ? 'font-mono text-base text-landing-oxblood' : 'text-landing-obsidian')}>{children}</dd>
-    </div>
-  );
-}
 
 function OrderCard({
   order,
@@ -186,6 +142,21 @@ function OrderCard({
         </div>
         <p className="font-mono text-base text-landing-oxblood">{formatVnd(getOrderTotal(order))}</p>
       </div>
+
+      {order.status === 'CREATED' && order.paymentStatus === 'PENDING' ? (
+        <p className="mx-4 mb-4 border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-sm text-landing-obsidian sm:mx-5">
+          Đơn đang chờ thanh toán
+          {order.paymentDueAt ? (
+            <>
+              , hạn <span className="font-mono">{formatOrderDateTime(order.paymentDueAt)}</span>
+            </>
+          ) : null}
+          .{' '}
+          <Link href={`/orders/${order.id}`} className={cn('text-landing-oxblood underline underline-offset-4', accountFocusRing)}>
+            Thanh toán
+          </Link>
+        </p>
+      ) : null}
 
       {order.allowedActions?.updateMeasurement ? (
         <p className="mx-4 mb-4 border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-sm text-landing-obsidian sm:mx-5">

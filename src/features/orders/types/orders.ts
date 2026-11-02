@@ -119,7 +119,7 @@ export interface MeasurementDisplayItem {
   unit: string;
 }
 
-export type OrderRefundStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+export type OrderRefundStatus = 'PENDING' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export interface OrderRefund {
   id: string;
@@ -176,6 +176,8 @@ export interface Order {
   status: BackendOrderStatus;
   displayStatus?: OrderDisplayStatus;
   paymentStatus?: PaymentStatus;
+  // Hạn thanh toán (chỉ có khi đơn đang chờ thanh toán); quá hạn BE tự hủy đơn.
+  paymentDueAt?: string | null;
   refundStatus?: RefundStatus;
   fulfillmentFlowVersion?: number | null;
   currency?: string;
@@ -300,6 +302,7 @@ export interface BackendOrder {
   status: BackendOrderStatus;
   displayStatus?: OrderDisplayStatus;
   paymentStatus?: PaymentStatus;
+  paymentDueAt?: string | null;
   refundStatus?: RefundStatus;
   fulfillmentFlowVersion?: number | null;
   currency?: string;

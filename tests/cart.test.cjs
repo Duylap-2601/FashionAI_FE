@@ -254,3 +254,76 @@ test('a remote cart change during a local mutation is deferred, then refetched i
   assert.equal(h.sync.cartFocusRefetchMode(h.queryClient), 'always');
   h.queryClient.clear();
 });
+
+test('removing lines is sent right away, never queued behind other cart writes, and the cart is refetched after an overlap', async () => {
+  const h = createCartMutationHarness();
+  const { removeServerItem } = createSourceLoader()('@/features/cart/services/cart-mapper');
+  const removeObserver = () => new MutationObserver(h.queryClient, h.sync.createServerCartMutationOptions(h.queryClient, {
+    userId: 'user-1',
+    mutationKey: ['cart', 'removeItem'],
+    mutationFn: () => new Promise((resolve) => {
+      h.pending.push(() => resolve({ items: [], totalItems: 0 }));
+    }),
+    optimistic: removeServerItem,
+    queued: false,
+    errorMessage: 'error',
+    notifyError: () => {},
+  }));
+  const { MutationObserver } = require('@tanstack/query-core');
+
+  const update = h.observer().mutate({ id: 'cart-1', quantity: 2 });
+  const first = removeObserver().mutate('cart-1');
+  const second = removeObserver().mutate('cart-2');
+  await h.flush();
+  assert.equal(h.pending.length, 3, 'both removals go out while the quantity update is still in flight');
+  assert.equal(h.queryClient.getQueryData(['cart', 'user-1']).items.length, 0, 'removed line disappears right away');
+
+  h.pending[1]();
+  h.pending[2]();
+  await Promise.all([first, second]);
+  await h.flush();
+  assert.equal(h.invalidated.length, 0, 'wait for the last pending write before syncing');
+
+  h.pending[0]();
+  await update;
+  await h.flush();
+  assert.equal(h.invalidated.length, 1, 'overlapping writes end with a refetch instead of trusting the last response');
+  h.queryClient.clear();
+});
+
+test('optimistic add shows a pending line at once, or adds to the matching line', () => {
+  const load = createSourceLoader();
+  const { addServerItemOptimistic, toCartItem, isPendingCartLine } = load('@/features/cart/services/cart-mapper');
+  const cart = { items: [serverItem()], totalItems: 2 };
+  const display = { productId: OTHER_PRODUCT_ID, name: 'Vest (Bán lẻ Áo Blazer)', variant: '', price: 750000, quantity: 1, image: '/vest.png' };
+
+  const merged = addServerItemOptimistic(cart, {
+    line: { productId: PRODUCT_ID, quantity: 3, color: 'black' },
+    item: { ...display, productId: PRODUCT_ID },
+  });
+  assert.equal(merged.items.length, 1);
+  assert.equal(merged.items[0].quantity, 5);
+  assert.equal(merged.totalItems, 5);
+
+  const added = addServerItemOptimistic(cart, {
+    line: { productId: OTHER_PRODUCT_ID, quantity: 1, comboType: 'blazer' },
+    item: display,
+  });
+  assert.equal(added.items.length, 2);
+  assert.equal(added.totalItems, 3);
+  const pending = toCartItem(added.items[1]);
+  assert.ok(isPendingCartLine(added.items[1].id));
+  assert.equal(pending.pending, true);
+  assert.equal(pending.name, 'Vest (Bán lẻ Áo Blazer)', 'combo label is not doubled');
+  assert.equal(pending.price, 750000);
+  assert.equal(pending.image, '/vest.png');
+  assert.equal(toCartItem(cart.items[0]).pending, undefined);
+
+  const sale = toCartItem(addServerItemOptimistic(cart, {
+    line: { productId: OTHER_PRODUCT_ID, quantity: 1 },
+    item: { ...display, name: 'Shirt', price: 450000, listPrice: 500000, salePercent: 10 },
+  }).items[1]);
+  assert.equal(sale.price, 450000);
+  assert.equal(sale.listPrice, 500000);
+  assert.equal(sale.salePercent, 10);
+});

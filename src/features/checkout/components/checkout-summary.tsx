@@ -1,9 +1,39 @@
 'use client';
 
-import type { CheckoutSummaryProps } from '@/features/checkout/types/checkout-summary';
+import { CART_IMAGE_FALLBACK, formatCartPrice } from '@/features/cart/components/cart-line';
 import { PaymentMethodSelector } from '@/features/checkout/components/payment-method-selector';
+import type { CheckoutSummaryProps } from '@/features/checkout/types/checkout-summary';
+import { accountButtonClassName } from '@/features/profile/components/account-ui';
+import { cn } from '@/lib/utils';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import type React from 'react';
+import { useState } from 'react';
+
+function SummaryThumb({ src, alt }: { src: string; alt: string }) {
+  const [imageSrc, setImageSrc] = useState(src || CART_IMAGE_FALLBACK);
+  return (
+    <span className="relative block h-[60px] w-12 shrink-0 overflow-hidden rounded-[2px] bg-landing-paper">
+      <Image src={imageSrc} alt={alt} fill sizes="48px" className="object-cover" onError={() => setImageSrc(CART_IMAGE_FALLBACK)} />
+    </span>
+  );
+}
+
+function Row({ label, children, tone }: { label: string; children: React.ReactNode; tone?: 'muted' | 'error' | 'success' }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <dt className="text-landing-muted">{label}</dt>
+      <dd
+        className={cn(
+          'text-right',
+          tone === 'error' ? 'text-destructive' : tone === 'success' ? 'text-landing-sage-ink' : tone === 'muted' ? 'text-landing-muted' : 'text-landing-obsidian',
+        )}
+      >
+        {children}
+      </dd>
+    </div>
+  );
+}
 
 export function CheckoutSummary({
   items,
@@ -16,123 +46,99 @@ export function CheckoutSummary({
   submitLabel,
   isPricingLoading,
   pricingError,
+  couponError,
   coupon,
   setCoupon,
   setDiscount,
   handleApplyCoupon,
 }: CheckoutSummaryProps) {
-  return (
-    <div className="lg:sticky lg:top-[100px]">
-      <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-[20px] font-bold text-brand-navy mb-6">Đơn hàng của bạn</h2>
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const isIdle = !isSubmitting && !pricingError;
 
-        <div className="flex flex-col gap-4 mb-6">
-          {items.map(item => (
-            <div key={item.id} className="flex gap-4 items-center">
-              <div className="relative">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  width={64}
-                  height={64}
-                  className="w-[64px] h-[64px] object-cover rounded-lg bg-neutral-100"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = '/images/731163514_999523332788054_1114320478812927640_n.png';
-                  }}
-                />
-                <div className="absolute -top-2 -right-2 w-5 h-5 bg-neutral-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-white">
-                  {item.quantity}
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="product-name-line text-landing-obsidian line-clamp-1">{item.name}</h3>
-                <p className="text-[12px] text-neutral-500">Màu: {item.color || 'Mặc định'} · May đo</p>
-              </div>
-              <div className="text-body-sm font-medium text-brand-navy">
-                {(item.price * item.quantity).toLocaleString('vi-VN')}đ
-              </div>
-            </div>
-          ))}
+  return (
+    <aside className="flex flex-col gap-8 lg:sticky lg:top-[97px]">
+      <div className="border border-landing-line bg-landing-ivory/60 p-5">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="font-display text-[1.375rem] leading-tight text-landing-obsidian">Đơn hàng</h2>
+          <span className="text-xs text-landing-muted">
+            <span className="font-mono text-landing-obsidian">{itemCount}</span> sản phẩm
+          </span>
         </div>
 
-        <div className="w-full h-px bg-neutral-200 mb-4"></div>
+        <ul className="mt-4 divide-y divide-landing-line/60 border-y border-landing-line/60">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-center gap-3 py-3">
+              <SummaryThumb src={item.image} alt={item.name} />
+              <div className="min-w-0 flex-1">
+                <p className="product-name-line line-clamp-1 text-landing-obsidian">{item.name}</p>
+                <p className="mt-0.5 text-xs text-landing-muted">
+                  Màu: {item.color || 'Mặc định'} · SL <span className="font-mono">{item.quantity}</span>
+                </p>
+              </div>
+              <span className="shrink-0 font-mono text-sm text-landing-obsidian">{formatCartPrice(item.price * item.quantity)}</span>
+            </li>
+          ))}
+        </ul>
 
-        <div className="mb-5">
+        <div className="border-b border-landing-line/70 py-4">
           <PaymentMethodSelector
             coupon={coupon}
             setCoupon={setCoupon}
             discount={discount}
             setDiscount={setDiscount}
             handleApplyCoupon={handleApplyCoupon}
-            couponError={pricingError}
+            couponError={couponError}
           />
         </div>
 
-        <div className="w-full h-px bg-neutral-200 mb-4"></div>
-
-        <div className="flex flex-col gap-3 mb-4">
-          {saleDiscount > 0 && (
-            <div className="flex justify-between text-body-sm text-semantic-error">
-              <span>Giảm giá sale</span>
-              <span>-{saleDiscount.toLocaleString('vi-VN')}đ</span>
-            </div>
-          )}
-          <div className="flex justify-between text-body-sm text-neutral-600">
-            <span>Tạm tính</span>
-            <span>{totalPrice.toLocaleString('vi-VN')}đ</span>
-          </div>
-          <div className="flex justify-between text-body-sm text-neutral-600">
-            <span>Vận chuyển</span>
-            {isPricingLoading ? (
-              <span className="text-neutral-500 font-medium">Đang tính...</span>
-            ) : pricingError ? (
-              <span className="text-semantic-error font-medium">Cần kiểm tra</span>
+        <dl className="space-y-2.5 border-b border-landing-line/70 py-4 text-sm">
+          <Row label="Tạm tính">
+            <span className="font-mono">{formatCartPrice(totalPrice)}</span>
+          </Row>
+          {saleDiscount > 0 ? (
+            <Row label="Giảm giá sale" tone="success">
+              <span className="font-mono">-{formatCartPrice(saleDiscount)}</span>
+            </Row>
+          ) : null}
+          <Row label="Phí giao hàng (GHN)" tone={shippingFee === null ? (pricingError ? 'error' : 'muted') : undefined}>
+            {shippingFee === null ? (
+              isPricingLoading ? 'Đang tính' : pricingError ? 'Cần kiểm tra' : 'Tính theo địa chỉ'
             ) : shippingFee === 0 ? (
-              <span className="text-semantic-success font-medium">Miễn phí</span>
+              'Miễn phí'
             ) : (
-              <span>{shippingFee.toLocaleString('vi-VN')}đ</span>
+              <span className="font-mono">{formatCartPrice(shippingFee)}</span>
             )}
-          </div>
-          {pricingError && (
-            <p className="text-[12px] text-semantic-error leading-relaxed">{pricingError}</p>
-          )}
-          {discount > 0 && (
-            <div className="flex justify-between text-body-sm text-semantic-error">
-              <span>Giảm giá</span>
-              <span>-{discount.toLocaleString('vi-VN')}đ</span>
-            </div>
-          )}
+          </Row>
+          {discount > 0 ? (
+            <Row label="Mã giảm giá" tone="success">
+              <span className="font-mono">-{formatCartPrice(discount)}</span>
+            </Row>
+          ) : null}
+        </dl>
+        {pricingError ? (
+          <p role="alert" className="mt-4 border-l-2 border-destructive pl-3 text-xs leading-relaxed text-destructive">
+            {pricingError}
+          </p>
+        ) : null}
+
+        <div className="flex items-baseline justify-between gap-4 py-4">
+          <span>
+            <span className="block font-medium text-landing-obsidian">Tổng cộng</span>
+            <span className="text-xs text-landing-muted">
+              {shippingFee === null ? 'Chưa gồm phí giao hàng' : 'Đã gồm VAT'}
+            </span>
+          </span>
+          <span aria-busy={isPricingLoading} className={cn('font-mono text-2xl text-landing-oxblood transition-opacity', isPricingLoading && 'opacity-50')}>
+            {formatCartPrice(total)}
+          </span>
         </div>
 
-        <div className="w-full h-px border-t border-dashed border-neutral-300 mb-4"></div>
-
-        <div className="flex justify-between items-end mb-8">
-          <span className="text-body-md font-medium text-brand-navy">Tổng cộng</span>
-          <div className="text-right">
-            <div className="text-[12px] text-neutral-500 mb-1">Đã bao gồm VAT</div>
-            <div className="text-[24px] font-bold text-brand-navy leading-none">
-              {total.toLocaleString('vi-VN')}đ
-            </div>
-          </div>
-        </div>
-
-        <button type="submit" disabled={isSubmitting} className="hidden lg:flex w-full h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl items-center justify-center hover:bg-brand-navy/90 transition-colors mb-6 shadow-sm disabled:opacity-50">
+        <button type="submit" disabled={isSubmitting} className={cn(accountButtonClassName('primary'), 'h-12 w-full')}>
+          {isSubmitting && !pricingError ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} /> : null}
           {submitLabel}
+          {isIdle ? <ArrowRight className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" /> : null}
         </button>
-
-        <div className="bg-[#EEF0FD] rounded-xl p-4 flex items-start gap-3 border border-[#AFA9EC]">
-          <div>
-            <h4 className="text-body-sm font-bold text-[#3C3489] mb-1">Thử đồ trước khi thanh toán</h4>
-            <p className="text-[12px] text-[#3C3489]/80 mb-2 leading-relaxed">
-              Xem trước form dáng trang phục công sở trên cơ thể hoặc mannequin để chọn đúng size!
-            </p>
-            <Link href="/try-on" className="text-[12px] font-semibold text-brand-navy hover:underline">
-              Dùng Try-On ngay &rarr;
-            </Link>
-          </div>
-        </div>
-
       </div>
-    </div>
+    </aside>
   );
 }

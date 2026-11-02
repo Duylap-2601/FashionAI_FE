@@ -79,6 +79,9 @@ src/
 │   │                        #             admin-sidebar, admin-topbar,
 │   │                        #             dashboard-overview, admin-revenue-chart,
 │   │                        #             admin-*-panel, admin-*-modal,
+│   │                        #             admin-refund-panel (return/refund state,
+│   │                        #             customer account, receipts, next step),
+│   │                        #             admin-refund-history,
 │   │                        #             admin-pagination,
 │   │                        #             admin-live-try-on-settings-panel,
 │   │                        #             admin-shipping-settings-panel,
@@ -180,9 +183,12 @@ src/
 │   │                        #   primitives). See docs/table-design.md.
 │   └── ui/                  # shadcn/Radix primitives + custom: AnimateIn,
 │                            # AtelierLoader, HangerIcon, Logo, PageTransition,
+│                            # ImageLightbox, ImageFilePreviews (upload thumbnails),
 │                            # chart.tsx, sidebar.tsx, and full Radix component set
 ├── hooks/
-│   └── usePWAInstall.ts
+│   ├── usePWAInstall.ts
+│   └── use-image-file-selection.ts  # picked upload images + object URLs
+│                            # (previews never break when more are added)
 ├── lib/
 │   ├── http.ts              # Axios wrapper (GET/POST/PATCH/DELETE)
 │   ├── api.ts               # Legacy Axios instance (PUT until migrated)
@@ -324,8 +330,11 @@ src/
   progress affordances.
 - Preserve URLs, API payloads, cookies, storage keys, query keys, socket events, and streaming behavior.
 - Protected routes (middleware): `/try-on`, `/profile`, `/ai-stylist`, `/chat`, `/checkout`,
-  `/admin` — all guarded by the `auth_marker` cookie. Do not add or remove routes here
-  without updating both `middleware.ts` and the relevant feature guard.
+  `/payment`, `/orders`, `/admin` — all guarded by the `auth_marker` cookie. Do not add or
+  remove routes here without updating both `middleware.ts` and `PROTECTED_ROUTES` in
+  `features/auth/constants/auth-bootstrap.ts`.
+- Refresh tokens are single-use. Every refresh goes through `refreshWebSession`, which
+  shares one in-flight request, so `AuthBootstrap` and the 401 interceptor never send two.
 - Preserve checkout/order pricing ownership. Checkout requests should send cart
   items, structured GHN address fields, coupon code, and an optional total for
   backend double-checking; do not send client-resolved `shippingFee` or
@@ -345,6 +354,21 @@ src/
   `DELETE /cart` (it would drop items added from another device). Checkout keeps
   its item list locked while a payment is pending, so the cart refresh cannot
   unmount the checkout page or hide the payment modal.
+- Creating an order and paying for it are separate. Checkout creates the order,
+  then opens `PaymentDialog` (`features/payments/components/payment-dialog.tsx`).
+  An unpaid order (`CREATED` + `PENDING`) is paid again from its order page through
+  `OrderPaymentAction`, which calls `POST /payments/checkout { orderId }`. Payment
+  result pages and gateway returns send the customer to the order
+  (`getPaymentReturnTarget`), never to `/checkout`, which would create a second
+  order. `/checkout?orderCode=…&status=cancel|error` redirects to
+  `/payment/cancel|error`. The order page, the orders list and checkout show the
+  backend `paymentDueAt` deadline; checkout lists unpaid orders
+  (`useUnpaidOrders`) so the customer pays one instead of ordering twice.
+- Adding to the server cart is optimistic: a `pending:` line shows at once and
+  cannot be edited or removed until the backend returns the real line.
+- `AuthBootstrap` only drops the session when the backend rejects the refresh
+  token (4xx). Network errors and 5xx are retried (`refreshWebSessionWithRetry`)
+  and keep the auth marker.
 - `/payment/result` should be able to poll by `paymentId` when the backend embeds
   it in the redirect URL. If a gateway redirect lacks `paymentId`, send the user
   to their order history/detail page instead of assuming success.

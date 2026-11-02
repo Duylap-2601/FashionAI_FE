@@ -10,6 +10,7 @@ export function mapOrder(order: BackendOrder): Order {
     status: order.status,
     displayStatus: order.displayStatus,
     paymentStatus: order.paymentStatus,
+    paymentDueAt: order.paymentDueAt ?? null,
     refundStatus: order.refundStatus,
     fulfillmentFlowVersion: order.fulfillmentFlowVersion,
     currency: order.currency || 'VND',

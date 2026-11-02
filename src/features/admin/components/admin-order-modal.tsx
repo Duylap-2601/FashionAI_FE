@@ -1,11 +1,15 @@
 'use client';
 
+import { ImageFilePreviews } from '@/components/ui/image-file-previews';
 import { getAdminOrderStatusOptions, ORDER_STATUS_OPTIONS } from '@/features/admin/constants/admin-dashboard-page';
-import { fmt, shipmentStatusLabel } from '@/features/admin/services/format';
+import { fmt, fmtDateTime } from '@/features/admin/services/format';
+import { shipmentStatusLabel } from '@/features/orders/services/order-display';
 import type { AdminOrderModalProps } from '@/features/admin/types/admin-order-modal';
+import { AdminRefundHistory } from '@/features/admin/components/admin-refund-history';
 import { RefundReceiptImages } from '@/features/orders/components/refund-receipt-images';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import type { BackendOrderStatus } from '@/features/orders/types/orders';
+import { describeImageFileRejection, useImageFileSelection } from '@/hooks/use-image-file-selection';
 import { formatRefundEvidence } from '@/lib/utils';
 import {
   Loader2,
@@ -18,6 +22,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
+const MAX_REFUND_RECEIPT_IMAGES = 5;
 
 export function AdminOrderModal({
   setSelectedOrder,
@@ -35,13 +41,13 @@ export function AdminOrderModal({
 
   const [refundNote, setRefundNote] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
-  const [refundReceipts, setRefundReceipts] = useState<File[]>([]);
+  const refundReceipts = useImageFileSelection({
+    maxFiles: MAX_REFUND_RECEIPT_IMAGES,
+    onReject: (rejection) => toast.error(describeImageFileRejection(rejection, 'ảnh chứng từ')),
+  });
+  const refundReceiptInputRef = useRef<HTMLInputElement>(null);
   const [refundSubmitting, setRefundSubmitting] = useState(false);
 
-  const [finalizingRefundId, setFinalizingRefundId] = useState<string | null>(null);
-  const [finalizeOutcome, setFinalizeOutcome] = useState<'COMPLETED' | 'FAILED'>('COMPLETED');
-  const [finalizeNote, setFinalizeNote] = useState('');
-  const [finalizeSubmitting, setFinalizeSubmitting] = useState(false);
 
   const [creatingShipment, setCreatingShipment] = useState(false);
   const createShipmentAbortRef = useRef<AbortController | null>(null);
@@ -104,29 +110,15 @@ export function AdminOrderModal({
         refundNote.trim(),
         refundNote.trim(),
         parsedAmount,
-        refundReceipts,
+        refundReceipts.files,
       );
       if (ok !== false) {
         setRefundNote('');
         setRefundAmount('');
-        setRefundReceipts([]);
+        refundReceipts.clear();
       }
     } finally {
       setRefundSubmitting(false);
-    }
-  };
-
-  const onFinalizeRefund = async () => {
-    if (!finalizingRefundId || !handleFinalizeRefund) return;
-    setFinalizeSubmitting(true);
-    try {
-      const ok = await handleFinalizeRefund(finalizingRefundId, finalizeOutcome, finalizeNote.trim() || undefined);
-      if (ok !== false) {
-        setFinalizingRefundId(null);
-        setFinalizeNote('');
-      }
-    } finally {
-      setFinalizeSubmitting(false);
     }
   };
 
@@ -311,140 +303,19 @@ export function AdminOrderModal({
           )}
 
           {/* Refund History Card */}
-          {((orderDetail?.refunds && orderDetail.refunds.length > 0) || (selectedOrder.refunds && selectedOrder.refunds.length > 0)) && (
-            <div className="rounded-xl border border-amber-200 p-4 bg-amber-50/40">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-label-sm font-semibold text-amber-800 uppercase tracking-wide">
-                  Lịch sử hoàn tiền
-                </p>
-                <span className="text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-bold">
-                  {(orderDetail?.refunds || selectedOrder.refunds || []).length} lượt
-                </span>
-              </div>
-              <div className="space-y-2.5">
-                {(orderDetail?.refunds || selectedOrder.refunds || []).map((r, idx) => (
-                  <div key={r.id || idx} className="p-3 bg-white rounded-xl border border-amber-200 text-xs space-y-1.5 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-red-600 text-body-sm">
-                        -{fmt(r.amountVnd)}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        r.status === 'COMPLETED'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : r.status === 'FAILED' || r.status === 'CANCELLED'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {r.status === 'COMPLETED'
-                          ? 'Thành công'
-                          : r.status === 'PROCESSING'
-                            ? 'Đang xử lý'
-                            : r.status === 'PENDING'
-                              ? 'Chờ xử lý'
-                              : r.status === 'FAILED'
-                                ? 'Thất bại'
-                                : r.status === 'CANCELLED'
-                                  ? 'Đã hủy'
-                                  : r.status}
-                      </span>
-                    </div>
-                    {r.reason && (
-                      <p className="text-neutral-700"><strong>Lý do:</strong> {r.reason}</p>
-                    )}
-                    <div className="flex items-center justify-between text-[11px] text-neutral-500">
-                      <span>Cổng: {r.provider}</span>
-                      <span>Yêu cầu: {new Date(r.requestedAt).toLocaleString('vi-VN')}</span>
-                    </div>
-                    {r.processedAt && (
-                      <p className="text-[11px] text-neutral-500">
-                        Xử lý lúc: {new Date(r.processedAt).toLocaleString('vi-VN')}
-                      </p>
-                    )}
-                    {r.failedReason && (
-                      <p className="text-[11px] text-red-600 font-medium">
-                        Lỗi: {r.failedReason}
-                      </p>
-                    )}
-
-                    {/* Nút Chốt hoàn tiền cho refund đang PROCESSING (MoMo kẹt) */}
-                    {r.status === 'PROCESSING' && handleFinalizeRefund && (
-                      <div className="pt-2 border-t border-amber-100 mt-2 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-medium text-amber-900">
-                            Xử lý refund MoMo kẹt:
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFinalizingRefundId(r.id);
-                                setFinalizeOutcome('COMPLETED');
-                                setFinalizeNote('');
-                              }}
-                              className="px-2.5 py-1 bg-emerald-600 text-white rounded text-[11px] font-semibold hover:bg-emerald-700 cursor-pointer border-0"
-                            >
-                              Chốt thành công
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFinalizingRefundId(r.id);
-                                setFinalizeOutcome('FAILED');
-                                setFinalizeNote('');
-                              }}
-                              className="px-2.5 py-1 bg-rose-600 text-white rounded text-[11px] font-semibold hover:bg-rose-700 cursor-pointer border-0"
-                            >
-                              Chốt thất bại
-                            </button>
-                          </div>
-                        </div>
-
-                        {finalizingRefundId === r.id && (
-                          <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 space-y-2 animate-fadeInUp">
-                            <p className="text-[11px] font-bold text-amber-950">
-                              Chốt kết quả: {finalizeOutcome === 'COMPLETED' ? 'Thành công (COMPLETED)' : 'Thất bại (FAILED)'}
-                            </p>
-                            <input
-                              type="text"
-                              placeholder="Ghi chú nội bộ (tùy chọn)..."
-                              value={finalizeNote}
-                              onChange={(e) => setFinalizeNote(e.target.value)}
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-amber-300 rounded focus:outline-none focus:border-amber-500"
-                            />
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setFinalizingRefundId(null)}
-                                className="px-2 py-1 text-[11px] text-neutral-600 hover:text-neutral-900 bg-transparent border-0 cursor-pointer"
-                              >
-                                Hủy
-                              </button>
-                              <button
-                                type="button"
-                                onClick={onFinalizeRefund}
-                                disabled={finalizeSubmitting}
-                                className={`px-3 py-1 text-white rounded text-[11px] font-bold border-0 cursor-pointer disabled:opacity-50 ${
-                                  finalizeOutcome === 'COMPLETED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
-                                }`}
-                              >
-                                {finalizeSubmitting ? 'Đang lưu...' : 'Xác nhận chốt'}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {refundEvidenceText && (
-                <div className="mt-2 text-xs text-amber-800 bg-amber-100/60 p-2 rounded-lg">
-                  <strong>Bằng chứng hoàn tiền:</strong> {refundEvidenceText}
-                </div>
-              )}
+          <AdminRefundHistory
+            refunds={orderDetail?.refunds || selectedOrder.refunds || []}
+            onFinalize={handleFinalizeRefund}
+          >
+            {refundEvidenceText && (
+              <p className="mt-3 border-t border-landing-line pt-3 text-xs text-landing-obsidian">
+                <span className="text-landing-muted">Bằng chứng hoàn tiền:</span> {refundEvidenceText}
+              </p>
+            )}
+            <div className="mt-3">
               <RefundReceiptImages evidence={orderDetail?.refundEvidence} />
             </div>
-          )}
+          </AdminRefundHistory>
 
           {/* Dedicated Measurements Sheet Link */}
           <div className="rounded-xl border border-purple-200 bg-purple-50/70 p-4">
@@ -539,8 +410,8 @@ export function AdminOrderModal({
                 <p>Provider: <span className="font-semibold">{selectedOrder.shipment.provider}</span></p>
                 <p>Mã GHN: <span className="font-mono font-semibold">{selectedOrder.shipment.providerOrderCode || '—'}</span></p>
                 <p>Trạng thái: {shipmentStatusLabel(selectedOrder.shipment.status, selectedOrder.shipment.rawStatus)}</p>
-                <p>Dự kiến giao: {selectedOrder.shipment.expectedDeliveryTime?.substring(0, 16).replace('T', ' ') || '—'}</p>
-                <p>Sync cuối: {selectedOrder.shipment.lastSyncedAt?.substring(0, 16).replace('T', ' ') || '—'}</p>
+                <p>Dự kiến giao: {fmtDateTime(selectedOrder.shipment.expectedDeliveryTime)}</p>
+                <p>Sync cuối: {fmtDateTime(selectedOrder.shipment.lastSyncedAt)}</p>
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('admin:navigate', { detail: { tab: 'shipments', shipmentCode: selectedOrder.shipment?.providerOrderCode, orderCode: selectedOrder.orderCode } }))}
                   className="mt-2 text-brand-navy font-semibold hover:underline bg-transparent border-0 cursor-pointer"
@@ -626,7 +497,7 @@ export function AdminOrderModal({
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
               <p className="text-body-sm font-semibold text-amber-800 mb-1">
                 {isReturnReceived
-                  ? 'Đã nhận hàng hoàn — Cần hoàn tiền cho khách'
+                  ? 'Đã nhận hàng hoàn, cần hoàn tiền cho khách'
                   : 'Cần hoàn tiền cho khách'}
               </p>
               <p className="text-label-sm text-amber-700 mb-3">
@@ -674,22 +545,38 @@ export function AdminOrderModal({
                   rows={2}
                   className="w-full px-3 py-2 rounded-lg border border-amber-300 text-body-sm resize-none bg-white focus:outline-none focus:border-amber-500"
                 />
-                <label className="inline-flex w-fit items-center gap-1.5 text-[11px] font-semibold text-amber-800 cursor-pointer">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={(e) =>
-                      setRefundReceipts(Array.from(e.target.files ?? []).slice(0, 5))
-                    }
-                  />
-                  <span className="underline">
-                    {refundReceipts.length > 0
-                      ? `Đã chọn ${refundReceipts.length} ảnh chứng từ`
-                      : 'Đính kèm ảnh chuyển khoản (tối đa 5)'}
+                <input
+                  ref={refundReceiptInputRef}
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    refundReceipts.add(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+                {refundReceipts.items.length === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => refundReceiptInputRef.current?.click()}
+                    disabled={refundSubmitting}
+                    className="w-fit text-[11px] font-semibold text-amber-800 underline cursor-pointer bg-transparent border-0 p-0 text-left"
+                  >
+                    Đính kèm ảnh chuyển khoản (tối đa {MAX_REFUND_RECEIPT_IMAGES})
+                  </button>
+                ) : (
+                  <span className="text-[11px] font-semibold text-amber-800">
+                    Ảnh chuyển khoản đã chọn ({refundReceipts.items.length}/{MAX_REFUND_RECEIPT_IMAGES}). Bấm ảnh để xem lớn.
                   </span>
-                </label>
+                )}
+                <ImageFilePreviews
+                  items={refundReceipts.items}
+                  onRemove={refundReceipts.remove}
+                  onAdd={refundReceipts.canAddMore ? () => refundReceiptInputRef.current?.click() : undefined}
+                  disabled={refundSubmitting}
+                  tileClassName="size-16 rounded-lg border-amber-300 bg-white"
+                />
                 <button
                   type="button"
                   onClick={onConfirmRefund}

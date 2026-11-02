@@ -2,12 +2,15 @@
 
 import { addressQueryKeys, createUserAddress, deleteUserAddress, getUserAddresses, setDefaultUserAddress, updateUserAddress } from '@/features/profile/services/addresses';
 import type { UserAddressInput } from '@/features/profile/types/addresses';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useUserAddresses() {
+  const status = useAuthStore((state) => state.status);
   return useQuery({
     queryKey: addressQueryKeys.all,
     queryFn: ({ signal }) => getUserAddresses(signal),
+    enabled: status === 'authenticated',
   });
 }
 

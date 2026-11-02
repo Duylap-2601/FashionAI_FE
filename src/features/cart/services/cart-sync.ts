@@ -9,8 +9,16 @@ import type { MutationOptions, QueryClient } from '@tanstack/react-query';
 // response của nó (response có thể chưa gồm thay đổi từ thiết bị khác).
 let remoteChangePending = false;
 
+// Một mutation không qua hàng đợi đã chạy chồng lên mutation khác: response của mutation
+// xong cuối có thể chưa gồm thay đổi kia, nên tải lại giỏ thay vì tin response đó.
+let overlappingWrite = false;
+
 function pendingCartMutations(queryClient: QueryClient) {
   return queryClient.isMutating({ mutationKey: mutationKeys.all() });
+}
+
+function pendingUnqueuedCartMutations(queryClient: QueryClient) {
+  return queryClient.isMutating({ mutationKey: mutationKeys.all(), predicate: (mutation) => !mutation.options.scope });
 }
 
 export function handleRemoteCartChange(queryClient: QueryClient) {
@@ -30,6 +38,7 @@ export function cartFocusRefetchMode(queryClient: QueryClient): boolean | 'alway
 /**
  * Options chung cho mọi mutation giỏ server: chạy tuần tự trong một scope (optimistic
  * update vẫn hiện ngay), và chỉ mutation cuối trong hàng đợi mới ghi response vào cache.
+ * `queued: false` gửi ngay; khi nó chồng lên mutation khác thì lần xong cuối tải lại giỏ.
  */
 export function createServerCartMutationOptions<TData extends ServerCart, TVariables>(
   queryClient: QueryClient,
@@ -37,13 +46,19 @@ export function createServerCartMutationOptions<TData extends ServerCart, TVaria
 ): MutationOptions<TData, unknown, TVariables> {
   const queryKey = queryKeys.cart(config.userId);
   const { optimistic } = config;
+  const queued = config.queued ?? true;
 
   return {
     mutationKey: config.mutationKey,
-    scope: CART_MUTATION_SCOPE,
+    ...(queued ? { scope: CART_MUTATION_SCOPE } : {}),
     retry: config.retry ?? 0,
     mutationFn: config.mutationFn,
     onMutate: async (variables) => {
+      // Lúc này mutation hiện tại đã được tính là đang chạy.
+      const overlaps = queued
+        ? pendingUnqueuedCartMutations(queryClient) > 0
+        : pendingCartMutations(queryClient) > 1;
+      if (overlaps) overlappingWrite = true;
       if (!optimistic) return;
       await queryClient.cancelQueries({ queryKey });
       queryClient.setQueryData<ServerCart>(queryKey, (current) => (current ? optimistic(current, variables) : current));
@@ -60,11 +75,12 @@ export function createServerCartMutationOptions<TData extends ServerCart, TVaria
       if (pendingCartMutations(queryClient) > 1) return;
       // Huỷ GET /cart đang bay (bắt đầu trước khi ghi xong) để nó không đè kết quả mới.
       await queryClient.cancelQueries({ queryKey });
-      if (data && !remoteChangePending) {
+      if (data && !remoteChangePending && !overlappingWrite) {
         queryClient.setQueryData(queryKey, data);
         return;
       }
       remoteChangePending = false;
+      overlappingWrite = false;
       await queryClient.invalidateQueries({ queryKey });
     },
   };

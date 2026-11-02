@@ -1,5 +1,12 @@
 import type { AuthStatus } from '@/features/auth/types/auth-store';
 import type { CartLineInput, ServerCart } from '@/features/cart/types/cart-api';
+import type { CartItem } from '@/features/cart/types/cart-store';
+
+export interface AddServerItemVariables {
+  line: CartLineInput;
+  // Thông tin hiển thị từ trang gọi, để dòng tạm có tên, giá, ảnh ngay.
+  item: Omit<CartItem, 'id'>;
+}
 
 export interface ServerCartMutationConfig<TData extends ServerCart, TVariables> {
   userId: string | null;
@@ -11,6 +18,9 @@ export interface ServerCartMutationConfig<TData extends ServerCart, TVariables> 
   notifyError: (error: unknown, fallbackMessage: string) => void;
   onSuccess?: (data: TData, variables: TVariables) => void;
   retry?: number;
+  // false: gửi ngay, không chờ các mutation giỏ trước đó (mặc định true: chạy tuần tự).
+  // Xoá dòng dùng false để lệnh xoá đã hiện trên UI không nằm chờ rồi mất khi tải lại trang.
+  queued?: boolean;
 }
 
 export interface GuestCartMergeVariables {

@@ -52,6 +52,7 @@ export function CartLine({
 }) {
   const [imageSrc, setImageSrc] = useState(item.image || CART_IMAGE_FALLBACK);
   const isAvailable = item.available !== false;
+  const isPending = item.pending === true;
   const href = `/products/${item.productId || item.id}`;
 
   return (
@@ -79,18 +80,24 @@ export function CartLine({
             {!isAvailable ? (
               <p className="mt-1 text-xs text-destructive">Đã ngừng bán, không tính vào đơn hàng.</p>
             ) : null}
+            {isPending ? <p className="mt-1 text-xs text-landing-muted">Đang lưu vào giỏ...</p> : null}
           </div>
           <button
             type="button"
             onClick={() => onRemove(item.id)}
+            disabled={isPending}
             aria-label={`Bỏ ${item.name} khỏi giỏ`}
-            className={cn('-mr-2 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center text-landing-muted transition-colors hover:text-destructive', cartFocusRing)}
+            className={cn(
+              '-mr-2 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center text-landing-muted transition-colors hover:text-destructive',
+              'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-landing-muted',
+              cartFocusRing,
+            )}
           >
             <X className="h-4 w-4" strokeWidth={1.75} />
           </button>
         </div>
         <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-          <QuantityStepper item={item} disabled={!isAvailable} onChange={(delta) => onUpdateQuantity(item.id, delta)} />
+          <QuantityStepper item={item} disabled={!isAvailable || isPending} onChange={(delta) => onUpdateQuantity(item.id, delta)} />
           <div className="text-right">
             {item.listPrice && item.listPrice > item.price ? (
               <p className="font-mono text-[11px] text-landing-muted line-through">

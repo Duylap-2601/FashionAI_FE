@@ -1,6 +1,7 @@
 'use client';
 
-import { shipmentStatusLabel, fmt } from '@/features/admin/services/format';
+import { fmt, fmtDateTime } from '@/features/admin/services/format';
+import { shipmentStatusLabel } from '@/features/orders/services/order-display';
 import type { AdminShipmentsPanelProps } from '@/features/admin/types/admin-shipments-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
 import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';
@@ -208,14 +209,14 @@ export function AdminShipmentsPanel({
                   <div className="px-4 py-3.5 min-w-0 text-[12px]">
                     <div className="text-landing-obsidian truncate">
                       {shipment.expectedDeliveryTime ? (
-                        <>Dự kiến: <span className="font-medium">{shipment.expectedDeliveryTime.substring(0, 10)}</span></>
+                        <>Dự kiến: <span className="font-medium">{fmtDateTime(shipment.expectedDeliveryTime, { withTime: false })}</span></>
                       ) : (
                         '—'
                       )}
                     </div>
                     {shipment.lastSyncedAt && (
                       <div className="text-[11px] text-landing-muted mt-0.5 truncate">
-                        Sync: {shipment.lastSyncedAt.substring(5, 16).replace('T', ' ')}
+                        Sync: {fmtDateTime(shipment.lastSyncedAt, { withYear: false })}
                       </div>
                     )}
                   </div>
