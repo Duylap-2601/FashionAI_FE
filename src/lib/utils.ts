@@ -31,8 +31,11 @@ export function formatRefundEvidence(evidence: unknown): string | null {
     if (text) return text;
   }
 
+  // receiptImages render as thumbnails, so never print them as text.
+  const rest = Object.fromEntries(Object.entries(record).filter(([key]) => key !== 'receiptImages'));
+  if (Object.keys(rest).length === 0) return null;
   try {
-    return JSON.stringify(record);
+    return JSON.stringify(rest);
   } catch {
     return null;
   }

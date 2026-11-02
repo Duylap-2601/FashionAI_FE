@@ -4,7 +4,7 @@ import { mutationKeys } from '@/features/orders/services/mutation-keys';
 import { queryKeys as ordersQueryKeys } from '@/features/orders/services/query-keys';
 import { cancelOrder, confirmDelivery, createOrder } from '@/features/orders/services/mutations';
 import { fetchOrder, fetchOrders, fetchOrdersPage } from '@/features/orders/services/queries';
-import { isTerminalOrderStatus } from '@/features/orders/services/orders-utils';
+import { isTerminalOrderStatus, mapOrder } from '@/features/orders/services/orders-utils';
 import type { Order, OrdersListParams, OrdersListResult } from '@/features/orders/types/orders';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -124,7 +124,9 @@ export function useConfirmDelivery() {
   const confirmMutation = useMutation({
     mutationKey: mutationKeys.confirmDelivery(),
     mutationFn: confirmDelivery,
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      // The response is the updated order: show it now instead of waiting ~2s for a refetch.
+      queryClient.setQueryData(ordersQueryKeys.order(variables.id), mapOrder(data));
       queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
       queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(variables.id) });
     },

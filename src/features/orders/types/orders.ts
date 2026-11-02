@@ -119,7 +119,7 @@ export interface MeasurementDisplayItem {
   unit: string;
 }
 
-export type OrderRefundStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+export type OrderRefundStatus = 'PENDING' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export interface OrderRefund {
   id: string;
