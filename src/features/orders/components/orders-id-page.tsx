@@ -3,6 +3,7 @@
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { OrderIssuesList } from '@/features/orders/components/order-issues-list';
+import { OrderPaymentAction } from '@/features/orders/components/order-payment-action';
 import { OrderStatusLabel, ToneLabel } from '@/features/orders/components/order-status-label';
 import { OrderProgress, OrderThumb, SummaryRow } from '@/features/orders/components/order-ui';
 import { RefundReceiptImages } from '@/features/orders/components/refund-receipt-images';
@@ -119,8 +120,8 @@ function ItemMeasurements({ item }: { item: OrderItem }) {
   if (rows.length === 0) return null;
 
   return (
-    <div className="bg-landing-paper/60 px-3 py-2.5">
-      <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-muted">
+    <div className="border-l-2 border-landing-taupe bg-landing-paper/70 px-3 py-2.5">
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-landing-brass-ink">
         {item.measurementDisplay?.length ? 'Số đo may riêng' : 'Số đo đã chốt'}
       </p>
       <dl className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
@@ -178,6 +179,7 @@ export default function OrderDetailPage() {
   const orderCode = getOrderCode(order);
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const isInReturnFlow = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING'].includes(status);
+  const isAwaitingPayment = status === 'CREATED' && order.paymentStatus === 'PENDING';
 
   const completedEvent = order.history
     ?.filter((e) => e.toStatus === 'COMPLETED' || e.type?.includes('COMPLETED'))
@@ -251,6 +253,7 @@ export default function OrderDetailPage() {
 
   const actions = (
     <>
+      {isAwaitingPayment ? <OrderPaymentAction order={order} /> : null}
       {order.allowedActions?.confirmDelivery ? (
         <button type="button" onClick={handleConfirmDelivery} disabled={isConfirmingDelivery} className={accountButtonClassName('primary')}>
           {isConfirmingDelivery ? 'Đang xác nhận' : 'Tôi đã nhận hàng'}
@@ -291,14 +294,20 @@ export default function OrderDetailPage() {
       }
       actions={actions}
     >
-      <div className="flex flex-col gap-10">
+      <div className="flex flex-col gap-6">
         <Link href="/profile/orders" className={cn(accountButtonClassName('quiet', 'sm'), 'h-auto w-fit')}>
           <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
           Tất cả đơn hàng
         </Link>
 
-        {status === 'CREATED' && order.paymentStatus === 'PENDING' ? (
+        {isAwaitingPayment ? (
           <OrderNotice title="Đơn đang chờ thanh toán">
+            <p>Shop bắt đầu may sau khi nhận được tiền. Bấm Thanh toán để mở lại QR ZaloPay hoặc cổng chuyển khoản.</p>
+            {order.paymentDueAt ? (
+              <p>
+                Thanh toán trước <span className="font-mono text-landing-obsidian">{formatOrderDateTime(order.paymentDueAt)}</span>, quá hạn đơn sẽ tự hủy.
+              </p>
+            ) : null}
             <p>
               Nội dung chuyển khoản: <span className="font-mono text-base text-landing-oxblood">FAI{order.orderCode}</span>
             </p>
@@ -333,7 +342,7 @@ export default function OrderDetailPage() {
           </OrderNotice>
         ) : null}
 
-        <section className="border border-landing-line bg-landing-ivory/50">
+        <section className="rounded-[2px] border border-landing-line bg-landing-ivory">
           <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-landing-line/70 px-4 py-3 sm:px-5">
             <OrderStatusLabel status={status} />
             {ORDER_STATUS_DESCRIPTIONS[status] ? <p className="text-xs text-landing-muted">{ORDER_STATUS_DESCRIPTIONS[status]}</p> : null}
@@ -364,14 +373,14 @@ export default function OrderDetailPage() {
           </div>
         </section>
 
-        <AccountSection title="Sản phẩm" description={`${itemCount} sản phẩm may đo theo số đo của bạn.`}>
+        <AccountSection variant="panel" title="Sản phẩm" description={`${itemCount} sản phẩm may đo theo số đo của bạn.`}>
           <ul id="order-items" className="scroll-mt-28 divide-y divide-landing-line/60">
             {order.items.map((item) => {
               const unitPrice = item.unitPriceVnd ?? item.price;
               const lineTotal = item.lineTotalVnd ?? item.price * item.quantity;
               const listUnitPrice = item.listUnitPriceVnd && item.listUnitPriceVnd > unitPrice ? item.listUnitPriceVnd : null;
               return (
-                <li key={item.id} className="flex gap-4 py-4 first:pt-0">
+                <li key={item.id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
                   <OrderThumb item={item} className="h-[88px] w-[68px]" />
                   <div className="min-w-0 flex-1 space-y-3">
                     <div className="flex items-start justify-between gap-4">
@@ -415,8 +424,8 @@ export default function OrderDetailPage() {
 
         <OrderIssuesList orderId={order.id} />
 
-        <div className="grid gap-10 md:grid-cols-2">
-          <AccountSection title="Giao đến">
+        <div className="grid gap-6 md:grid-cols-2">
+          <AccountSection variant="panel" title="Giao đến">
             <div className="space-y-1 text-sm text-landing-obsidian">
               <p className="font-medium">{order.shippingInfo?.name || 'Khách hàng'}</p>
               {order.shippingInfo?.phone ? <p className="font-mono text-xs">{order.shippingInfo.phone}</p> : null}
@@ -429,7 +438,7 @@ export default function OrderDetailPage() {
             ) : null}
           </AccountSection>
 
-          <AccountSection title="Thanh toán">
+          <AccountSection variant="panel" title="Thanh toán">
             <dl>
               <SummaryRow label="Phương thức">{paymentMethodLabel}</SummaryRow>
               <SummaryRow label="Trạng thái">{paymentLabel}</SummaryRow>
@@ -462,12 +471,12 @@ export default function OrderDetailPage() {
         </div>
 
         {order.refunds && order.refunds.length > 0 ? (
-          <AccountSection title="Hoàn tiền" description="Các lần shop chuyển khoản hoàn tiền cho đơn này.">
+          <AccountSection variant="panel" title="Hoàn tiền" description="Các lần shop chuyển khoản hoàn tiền cho đơn này.">
             <ol className="divide-y divide-landing-line/60">
               {order.refunds.map((refund) => {
                 const refundStatus = REFUND_STATUS[refund.status] ?? { label: refund.status, tone: 'closed' as const };
                 return (
-                  <li key={refund.id} className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-3 first:pt-0">
+                  <li key={refund.id} className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-3 first:pt-0 last:pb-0">
                     <div className="min-w-0 space-y-1">
                       <ToneLabel tone={refundStatus.tone} label={refundStatus.label} />
                       {refund.status === 'FAILED' ? (
@@ -511,7 +520,7 @@ export default function OrderDetailPage() {
           </AccountSection>
         ) : null}
 
-        <AccountSection title="Lịch sử đơn hàng">
+        <AccountSection variant="panel" title="Lịch sử đơn hàng">
           {order.history && order.history.length > 0 ? (
             <ol className="border-l border-landing-line pl-5">
               {order.history.map((event, index) => {

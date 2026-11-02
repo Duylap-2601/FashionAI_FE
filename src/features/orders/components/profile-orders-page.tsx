@@ -12,6 +12,7 @@ import {
 import { useCancelOrder, useConfirmDelivery, useInfiniteOrders } from '@/features/orders/hooks/useOrders';
 import {
   formatOrderDate,
+  formatOrderDateTime,
   formatVnd,
   getOrderCode,
   getOrderItemImage,
@@ -141,6 +142,21 @@ function OrderCard({
         </div>
         <p className="font-mono text-base text-landing-oxblood">{formatVnd(getOrderTotal(order))}</p>
       </div>
+
+      {order.status === 'CREATED' && order.paymentStatus === 'PENDING' ? (
+        <p className="mx-4 mb-4 border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-sm text-landing-obsidian sm:mx-5">
+          Đơn đang chờ thanh toán
+          {order.paymentDueAt ? (
+            <>
+              , hạn <span className="font-mono">{formatOrderDateTime(order.paymentDueAt)}</span>
+            </>
+          ) : null}
+          .{' '}
+          <Link href={`/orders/${order.id}`} className={cn('text-landing-oxblood underline underline-offset-4', accountFocusRing)}>
+            Thanh toán
+          </Link>
+        </p>
+      ) : null}
 
       {order.allowedActions?.updateMeasurement ? (
         <p className="mx-4 mb-4 border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-sm text-landing-obsidian sm:mx-5">

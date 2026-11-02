@@ -12,14 +12,15 @@ import { useCart } from '@/features/cart/hooks/use-cart';
 import { toCartLineInput } from '@/features/cart/services/cart-mapper';
 import type { CartItem } from '@/features/cart/types/cart-store';
 import { useMeasurementsCompleteness } from '@/features/measurements/hooks/useMeasurementsCompleteness';
-import { useCreateOrder } from '@/features/orders/hooks/useOrders';
+import { useCreateOrder, useUnpaidOrders } from '@/features/orders/hooks/useOrders';
+import { formatOrderDateTime, getOrderCode, getOrderTotal } from '@/features/orders/services/order-display';
 import { quoteOrder } from '@/features/orders/services/mutations';
 import type { OrderQuote } from '@/features/orders/types/orders';
-import { useCheckout, usePaymentStatus } from '@/features/payments/hooks/usePayments';
+import { PaymentDialog } from '@/features/payments/components/payment-dialog';
+import { useCheckout } from '@/features/payments/hooks/usePayments';
 import type { CheckoutResponse } from '@/features/payments/types/payments';
 import { AddressForm } from '@/features/profile/components/address-form';
 import {
-  AccountDialog,
   accountButtonClassName,
   accountFocusRing,
   accountInputClassName,
@@ -29,10 +30,9 @@ import { useAddressMutations, useUserAddresses } from '@/features/profile/hooks/
 import { toCommerceParams, trackEvent } from '@/lib/analytics';
 import { getErrorData, getErrorMessage, isRecord } from '@/lib/errors';
 import { cn } from '@/lib/utils';
-import { AlertCircle, ArrowRight, CheckCircle2, Copy, ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { QRCodeSVG } from 'qrcode.react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -73,6 +73,16 @@ export default function CheckoutPage() {
     ),
   ];
   const { createOrderAsync, isSubmitting } = useCreateOrder();
+  const unpaidOrders = useUnpaidOrders();
+
+  // Cổng thanh toán cấu hình cũ trả khách về /checkout?orderCode=..&status=cancel|error:
+  // chuyển sang trang kết quả (thanh toán lại ở trang đơn), không để khách đặt thêm đơn mới.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const gatewayStatus = params.get('status');
+    if (!params.get('orderCode') || (gatewayStatus !== 'cancel' && gatewayStatus !== 'error')) return;
+    router.replace(`/payment/${gatewayStatus}?${params.toString()}`);
+  }, [router]);
   const { checkout, isLoading: isCheckoutLoading } = useCheckout();
   const { data: addresses = [], isLoading: isLoadingAddresses, refetch: refetchAddresses } = useUserAddresses();
   const { createAddress } = useAddressMutations();
@@ -238,66 +248,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const proceedToGateway = (checkoutResult: CheckoutResponse) => {
-    if (!checkoutResult.checkoutUrl) {
-      toast.error('Không nhận được link thanh toán');
-      return;
-    }
-
-    if (checkoutResult.provider === 'SEPAY' && checkoutResult.extra?.formAction && checkoutResult.extra?.formFields) {
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = checkoutResult.extra.formAction;
-      Object.entries(checkoutResult.extra.formFields).forEach(([key, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = String(value);
-        form.appendChild(input);
-      });
-      document.body.appendChild(form);
-      form.submit();
-      return;
-    }
-
-    try {
-      const parsedUrl = new URL(checkoutResult.checkoutUrl, window.location.origin);
-      if (
-        checkoutResult.provider === 'SEPAY' &&
-        (parsedUrl.hostname.includes('sepay.vn') || parsedUrl.pathname.includes('/checkout/init')) &&
-        parsedUrl.searchParams.size > 0
-      ) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `${parsedUrl.origin}${parsedUrl.pathname}`;
-        parsedUrl.searchParams.forEach((value, key) => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = value;
-          form.appendChild(input);
-        });
-        document.body.appendChild(form);
-        form.submit();
-        return;
-      }
-    } catch (urlErr) {
-      console.warn('Could not parse checkoutUrl as URL object:', urlErr);
-    }
-
-    window.location.href = checkoutResult.checkoutUrl;
-  };
-
-  const copyTransferContent = async () => {
-    const transferContent = pendingCheckout?.extra?.invoiceNumber || `FAI${pendingCheckout?.orderCode ?? ''}`;
-    try {
-      await navigator.clipboard.writeText(transferContent);
-      toast.success('Đã sao chép nội dung chuyển khoản');
-    } catch {
-      toast.error('Không thể sao chép tự động');
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0 || isOrderBlocked) return;
@@ -432,7 +382,7 @@ export default function CheckoutPage() {
     );
   }
 
-  const closeBankTransfer = () => {
+  const closePayment = () => {
     setPendingCheckout(null);
     setPendingOrderId(null);
     setLockedItems(null);
@@ -469,6 +419,30 @@ export default function CheckoutPage() {
           {unavailableCount > 0 && !lockedItems ? (
             <CheckoutNotice title={`${unavailableCount} sản phẩm đã ngừng bán`}>
               <p>Những sản phẩm này vẫn nằm trong giỏ nhưng không được đưa vào đơn hàng này.</p>
+            </CheckoutNotice>
+          ) : null}
+
+          {unpaidOrders.length > 0 && !lockedItems && !pendingCheckout ? (
+            <CheckoutNotice title={`Bạn còn ${unpaidOrders.length} đơn chưa thanh toán`}>
+              <p>Nếu đây là các món bạn đã đặt, hãy thanh toán đơn cũ thay vì đặt thêm đơn mới. Đơn quá hạn thanh toán sẽ tự hủy.</p>
+              <ul className="divide-y divide-landing-line/60 border-y border-landing-line/60">
+                {unpaidOrders.map((order) => (
+                  <li key={order.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2.5">
+                    <span className="text-xs">
+                      <span className="font-mono text-landing-obsidian">{getOrderCode(order)}</span> ·{' '}
+                      <span className="font-mono text-landing-obsidian">{formatCartPrice(getOrderTotal(order))}</span>
+                      {order.paymentDueAt ? (
+                        <>
+                          {' '}· hạn <span className="font-mono">{formatOrderDateTime(order.paymentDueAt)}</span>
+                        </>
+                      ) : null}
+                    </span>
+                    <Link href={`/orders/${order.id}`} className={accountButtonClassName('outline', 'sm')}>
+                      Thanh toán đơn này
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </CheckoutNotice>
           ) : null}
 
@@ -582,72 +556,20 @@ export default function CheckoutPage() {
         />
       </form>
 
-      {pendingCheckout?.provider === 'ZALOPAY' ? (
-        <ZaloPayCheckoutDialog
+      {pendingCheckout ? (
+        <PaymentDialog
           checkoutResult={pendingCheckout}
-          orderId={pendingOrderId}
           total={total}
+          orderHref={pendingOrderId ? `/orders/${pendingOrderId}` : null}
           onClose={() => {
-            setPendingCheckout(null);
-            setPendingOrderId(null);
-            setLockedItems(null);
-            toast.info('Đơn hàng đã được tạo. Bạn có thể tiếp tục thanh toán trong trang chi tiết đơn hàng.');
+            if (pendingCheckout.provider === 'ZALOPAY') {
+              toast.info('Đơn hàng đã được tạo. Bạn có thể tiếp tục thanh toán trong trang chi tiết đơn hàng.');
+            }
+            closePayment();
           }}
           onPaid={refreshAfterPayment}
         />
       ) : null}
-
-      <AccountDialog
-        open={Boolean(pendingCheckout && pendingCheckout.provider !== 'ZALOPAY')}
-        onOpenChange={(open) => {
-          if (!open) closeBankTransfer();
-        }}
-        eyebrow="Thanh toán"
-        title="Chuyển khoản ngân hàng"
-        description="Ghi đúng nội dung dưới đây để hệ thống tự xác nhận thanh toán."
-      >
-        {pendingCheckout ? (
-          <div className="flex flex-col gap-5">
-            <dl className="border border-landing-line bg-landing-ivory/60">
-              <div className="border-b border-landing-line/70 px-4 py-3">
-                <dt className={accountLabelClassName}>Nội dung chuyển khoản</dt>
-                <dd className="mt-2 flex items-center justify-between gap-3">
-                  <span className="break-all font-mono text-xl text-landing-oxblood">
-                    {pendingCheckout.extra?.invoiceNumber || `FAI${pendingCheckout.orderCode ?? ''}`}
-                  </span>
-                  <button type="button" onClick={copyTransferContent} className={accountButtonClassName('outline', 'sm')}>
-                    <Copy className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" /> Sao chép
-                  </button>
-                </dd>
-              </div>
-              <div className="px-4 py-3">
-                <dt className={accountLabelClassName}>Số tiền</dt>
-                <dd className="mt-2 font-mono text-xl text-landing-obsidian">{formatCartPrice(total)}</dd>
-              </div>
-            </dl>
-            <button
-              type="button"
-              onClick={() => {
-                const result = pendingCheckout;
-                setPendingCheckout(null);
-                setPendingOrderId(null);
-                if (result) proceedToGateway(result);
-              }}
-              className={cn(accountButtonClassName('primary'), 'w-full')}
-            >
-              Mở cổng chuyển khoản <ExternalLink className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-            </button>
-            {pendingOrderId ? (
-              <Link
-                href={`/orders/${pendingOrderId}`}
-                className={cn('text-center text-sm text-landing-muted underline-offset-4 hover:text-landing-oxblood hover:underline', accountFocusRing)}
-              >
-                Để thanh toán sau, xem đơn hàng
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
-      </AccountDialog>
     </CheckoutFrame>
   );
 }
@@ -725,117 +647,5 @@ function CheckoutSection({
       </div>
       {children}
     </section>
-  );
-}
-
-function ZaloPayCheckoutDialog({
-  checkoutResult,
-  orderId,
-  total,
-  onClose,
-  onPaid,
-}: {
-  checkoutResult: CheckoutResponse;
-  orderId: string | null;
-  total: number;
-  onClose: () => void;
-  onPaid: () => void;
-}) {
-  const router = useRouter();
-  const paymentId = checkoutResult.paymentId ?? null;
-  const { data: payment, isLoading } = usePaymentStatus(paymentId);
-  const qrValue = checkoutResult.qrCode || checkoutResult.checkoutUrl || checkoutResult.payUrl || '';
-  const isPaid = payment?.status === 'PAID' || payment?.orderStatus === 'PAID';
-  const isFailed = payment?.status === 'FAILED';
-  const isRefundRequired = payment?.status === 'REFUND_REQUIRED';
-
-  useEffect(() => {
-    if (!isPaid || !paymentId) return;
-    onPaid();
-    toast.success('Thanh toán ZaloPay thành công');
-    router.push(`/payment/result?paymentId=${encodeURIComponent(paymentId)}`);
-  }, [isPaid, onPaid, paymentId, router]);
-
-  const openGateway = () => {
-    if (!checkoutResult.checkoutUrl) return;
-    window.open(checkoutResult.checkoutUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  return (
-    <AccountDialog
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-      eyebrow="Thanh toán"
-      title="ZaloPay"
-      description="Quét QR hoặc mở ZaloPay. Giữ trang này, đơn tự cập nhật khi thanh toán xong."
-      className="sm:max-w-[520px]"
-    >
-      <div className="flex flex-col gap-5">
-        <div className="grid items-center gap-5 sm:grid-cols-[172px_minmax(0,1fr)]">
-          <div className="flex items-center justify-center border border-landing-line bg-white p-3">
-            {qrValue ? (
-              <QRCodeSVG value={qrValue} size={148} level="M" includeMargin />
-            ) : (
-              <div className="flex h-[148px] w-[148px] items-center justify-center bg-landing-paper text-center text-xs text-landing-muted">
-                Không có dữ liệu QR
-              </div>
-            )}
-          </div>
-          <dl className="space-y-3">
-            <div>
-              <dt className={accountLabelClassName}>Mã đơn</dt>
-              <dd className="mt-1 font-mono text-lg text-landing-obsidian">ORD-{checkoutResult.orderCode}</dd>
-            </div>
-            <div>
-              <dt className={accountLabelClassName}>Số tiền</dt>
-              <dd className="mt-1 font-mono text-xl text-landing-oxblood">{formatCartPrice(total)}</dd>
-            </div>
-          </dl>
-        </div>
-
-        <button
-          type="button"
-          onClick={openGateway}
-          disabled={!checkoutResult.checkoutUrl}
-          className={cn(accountButtonClassName('primary'), 'w-full')}
-        >
-          Mở ZaloPay <ExternalLink className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-        </button>
-
-        <div role="status" className="border-t border-landing-line/70 pt-4 text-sm">
-          {isPaid ? (
-            <p className="flex items-center gap-2 text-landing-sage-ink">
-              <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} /> Thanh toán thành công, đang chuyển trang...
-            </p>
-          ) : isFailed ? (
-            <p className="flex items-start gap-2 text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
-              {payment?.failureReason || 'Thanh toán thất bại hoặc link đã hết hạn. Vui lòng tạo lại thanh toán.'}
-            </p>
-          ) : isRefundRequired ? (
-            <p className="flex items-start gap-2 text-landing-brass-ink">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
-              Đã nhận tiền nhưng đơn chưa ghi nhận được thanh toán. Khoản tiền sẽ được hoàn lại.
-            </p>
-          ) : (
-            <p className="flex items-center gap-2 text-landing-muted">
-              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
-              {isLoading ? 'Đang kiểm tra trạng thái thanh toán...' : 'Đang chờ ZaloPay xác nhận thanh toán...'}
-            </p>
-          )}
-        </div>
-
-        {orderId ? (
-          <Link
-            href={`/orders/${orderId}`}
-            className={cn('text-center text-sm text-landing-muted underline-offset-4 hover:text-landing-oxblood hover:underline', accountFocusRing)}
-          >
-            Xem chi tiết đơn hàng
-          </Link>
-        ) : null}
-      </div>
-    </AccountDialog>
   );
 }

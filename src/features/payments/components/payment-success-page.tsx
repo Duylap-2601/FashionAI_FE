@@ -8,8 +8,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
-/** Đơn ở các trạng thái này chắc chắn thất bại/hủy, không phải "đang chờ xác nhận". */
-const FAILED_ORDER_STATUSES = ['CANCELLED', 'EXPIRED', 'FAILED'];
+/** Thanh toán ở các trạng thái này chắc chắn thất bại/hủy, không phải "đang chờ xác nhận". */
+const FAILED_PAYMENT_STATUSES = ['EXPIRED', 'FAILED'];
 /** IPN webhook của SePay/PayOS gọi ngược vào server độc lập với redirect trình
  * duyệt và có thể đến sau vài giây; poll trong lúc chờ để không báo "thất bại"
  * nhầm khi đơn vẫn PENDING ngay lúc trang vừa mở. */
@@ -20,6 +20,8 @@ function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderCode = searchParams.get('orderCode') || searchParams.get('code');
+  // SePay trả kèm orderId (BE thêm vào URL trả về); link cũ chỉ có orderCode.
+  const orderIdParam = searchParams.get('orderId');
   const status = searchParams.get('status') || 'success';
   const [resolvedOrderId, setResolvedOrderId] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(true);
@@ -28,7 +30,10 @@ function PaymentSuccessContent() {
   const [confirmTimedOut, setConfirmTimedOut] = useState(false);
 
   useEffect(() => {
-    if (orderCode) {
+    if (orderIdParam) {
+      setResolvedOrderId(orderIdParam);
+      setIsResolving(false);
+    } else if (orderCode) {
       const findOrder = async () => {
         try {
           const res = await fetchPaymentOrderByCodeResponse(orderCode);
@@ -48,10 +53,12 @@ function PaymentSuccessContent() {
     } else {
       setIsResolving(false);
     }
-  }, [orderCode]);
+  }, [orderCode, orderIdParam]);
 
-  const isPaid = order?.status === 'PAID';
-  const isFailed = order ? FAILED_ORDER_STATUSES.includes(order.status) : false;
+  const isPaid = order?.paymentStatus === 'PAID';
+  const isFailed = order
+    ? order.status === 'CANCELLED' || FAILED_PAYMENT_STATUSES.includes(order.paymentStatus ?? '')
+    : false;
   const isAwaitingConfirmation = status !== 'cancel' && status !== 'error' && !!order && !isPaid && !isFailed;
 
   // IPN có thể đến sau khi trình duyệt vừa redirect về đây; poll nhanh trong
@@ -153,13 +160,8 @@ function PaymentSuccessContent() {
 
           {status === 'cancel' || status === 'error' ? (
             <button
-              onClick={() => {
-                if (resolvedOrderId) {
-                  router.push(`/checkout?reorder=${resolvedOrderId}`);
-                } else {
-                  router.push('/checkout');
-                }
-              }}
+              // Thanh toán lại ở trang đơn; /checkout sẽ tạo thêm một đơn mới.
+              onClick={() => router.push(resolvedOrderId ? `/orders/${resolvedOrderId}` : '/profile/orders')}
               className="mt-4 w-full sm:flex-1 h-[48px] bg-[#FDFBF7] border border-[#E5DFD5] text-[#5D1C34] text-body-sm font-semibold rounded-xl hover:bg-[#F5EAD4] transition-colors flex items-center justify-center gap-2"
             >
               <AlertCircle className="w-4 h-4" /> Thử thanh toán lại

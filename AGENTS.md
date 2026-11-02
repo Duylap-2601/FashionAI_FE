@@ -354,6 +354,21 @@ src/
   `DELETE /cart` (it would drop items added from another device). Checkout keeps
   its item list locked while a payment is pending, so the cart refresh cannot
   unmount the checkout page or hide the payment modal.
+- Creating an order and paying for it are separate. Checkout creates the order,
+  then opens `PaymentDialog` (`features/payments/components/payment-dialog.tsx`).
+  An unpaid order (`CREATED` + `PENDING`) is paid again from its order page through
+  `OrderPaymentAction`, which calls `POST /payments/checkout { orderId }`. Payment
+  result pages and gateway returns send the customer to the order
+  (`getPaymentReturnTarget`), never to `/checkout`, which would create a second
+  order. `/checkout?orderCode=…&status=cancel|error` redirects to
+  `/payment/cancel|error`. The order page, the orders list and checkout show the
+  backend `paymentDueAt` deadline; checkout lists unpaid orders
+  (`useUnpaidOrders`) so the customer pays one instead of ordering twice.
+- Adding to the server cart is optimistic: a `pending:` line shows at once and
+  cannot be edited or removed until the backend returns the real line.
+- `AuthBootstrap` only drops the session when the backend rejects the refresh
+  token (4xx). Network errors and 5xx are retried (`refreshWebSessionWithRetry`)
+  and keep the auth marker.
 - `/payment/result` should be able to poll by `paymentId` when the backend embeds
   it in the redirect URL. If a gateway redirect lacks `paymentId`, send the user
   to their order history/detail page instead of assuming success.

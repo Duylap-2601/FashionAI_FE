@@ -44,6 +44,20 @@ export function useOrders() {
   };
 }
 
+/** Đơn đã tạo nhưng chưa thanh toán, để checkout nhắc khách trả đơn cũ thay vì đặt thêm đơn trùng. */
+export function useUnpaidOrders() {
+  const status = useAuthStore((state) => state.status);
+  const query = useQuery({
+    queryKey: ordersQueryKeys.orders('unpaid'),
+    queryFn: async () => {
+      const { orders } = await fetchOrdersPage({ status: 'CREATED', limit: 5 });
+      return orders.filter((order) => order.paymentStatus === 'PENDING');
+    },
+    enabled: status === 'authenticated',
+  });
+  return query.data ?? [];
+}
+
 export function useInfiniteOrders(params: Omit<OrdersListParams, 'page'> = {}) {
   const status = useAuthStore((state) => state.status);
   const query = useInfiniteQuery<OrdersListResult>({
