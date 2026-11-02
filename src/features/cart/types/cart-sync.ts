@@ -1,5 +1,12 @@
 import type { AuthStatus } from '@/features/auth/types/auth-store';
 import type { CartLineInput, ServerCart } from '@/features/cart/types/cart-api';
+import type { CartItem } from '@/features/cart/types/cart-store';
+
+export interface AddServerItemVariables {
+  line: CartLineInput;
+  // Thông tin hiển thị từ trang gọi, để dòng tạm có tên, giá, ảnh ngay.
+  item: Omit<CartItem, 'id'>;
+}
 
 export interface ServerCartMutationConfig<TData extends ServerCart, TVariables> {
   userId: string | null;

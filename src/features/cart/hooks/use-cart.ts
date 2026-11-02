@@ -4,7 +4,9 @@ import { cartItemToGaItem } from '@/features/analytics/services/ga-items';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import {
   EMPTY_SERVER_CART,
+  addServerItemOptimistic,
   clampCartQuantity,
+  isPendingCartLine,
   removeServerItem,
   setServerItemQuantity,
   toCartItem,
@@ -16,7 +18,8 @@ import { addCartItem, clearServerCart, removeCartItem, updateCartItem } from '@/
 import { fetchCart } from '@/features/cart/services/queries';
 import { queryKeys } from '@/features/cart/services/query-keys';
 import { useCartStore } from '@/features/cart/store/cartStore';
-import type { CartLineInput, ServerCart } from '@/features/cart/types/cart-api';
+import type { ServerCart } from '@/features/cart/types/cart-api';
+import type { AddServerItemVariables } from '@/features/cart/types/cart-sync';
 import type { CartItem } from '@/features/cart/types/cart-store';
 import { toCommerceParams, trackEvent } from '@/lib/analytics';
 import type { GaItemListContext } from '@/lib/analytics';
@@ -65,10 +68,12 @@ export function useCart() {
   const purchasableItems = useMemo(() => cartItems.filter((item) => item.available !== false), [cartItems]);
 
   const { mutate: addServerItem } = useMutation(
-    createServerCartMutationOptions<ServerCart, CartLineInput>(queryClient, {
+    createServerCartMutationOptions<ServerCart, AddServerItemVariables>(queryClient, {
       userId,
       mutationKey: mutationKeys.addItem(),
-      mutationFn: addCartItem,
+      mutationFn: ({ line }) => addCartItem(line),
+      // BE chậm vài giây: món phải hiện trong giỏ ngay khi bấm thêm.
+      optimistic: addServerItemOptimistic,
       errorMessage: 'Không thể thêm sản phẩm vào giỏ hàng.',
       notifyError: notifyCartError,
     }),
@@ -119,7 +124,7 @@ export function useCart() {
         useCartStore.getState().addToCart(item);
         return;
       }
-      addServerItem(toCartLineInput(item));
+      addServerItem({ line: toCartLineInput(item), item });
     },
     [isServerCart, addServerItem],
   );
@@ -137,6 +142,7 @@ export function useCart() {
         useCartStore.getState().updateQuantity(id, delta);
         return;
       }
+      if (isPendingCartLine(id)) return;
       // Đọc từ cache (đã gồm optimistic update) để bấm liên tục vẫn cộng dồn đúng,
       // rồi gửi số lượng cuối cùng cho BE.
       const current = queryClient
@@ -153,8 +159,8 @@ export function useCart() {
     (id: string) => {
       const line = cartItems.find((item) => item.id === id);
       if (line) trackEvent('remove_from_cart', toCommerceParams([cartItemToGaItem(line)]));
-      if (isServerCart) removeServerCartItem(id);
-      else useCartStore.getState().removeFromCart(id);
+      if (!isServerCart) useCartStore.getState().removeFromCart(id);
+      else if (!isPendingCartLine(id)) removeServerCartItem(id);
     },
     [cartItems, isServerCart, removeServerCartItem],
   );

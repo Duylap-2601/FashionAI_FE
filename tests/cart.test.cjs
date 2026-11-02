@@ -290,3 +290,40 @@ test('removing lines is sent right away, never queued behind other cart writes, 
   assert.equal(h.invalidated.length, 1, 'overlapping writes end with a refetch instead of trusting the last response');
   h.queryClient.clear();
 });
+
+test('optimistic add shows a pending line at once, or adds to the matching line', () => {
+  const load = createSourceLoader();
+  const { addServerItemOptimistic, toCartItem, isPendingCartLine } = load('@/features/cart/services/cart-mapper');
+  const cart = { items: [serverItem()], totalItems: 2 };
+  const display = { productId: OTHER_PRODUCT_ID, name: 'Vest (Bán lẻ Áo Blazer)', variant: '', price: 750000, quantity: 1, image: '/vest.png' };
+
+  const merged = addServerItemOptimistic(cart, {
+    line: { productId: PRODUCT_ID, quantity: 3, color: 'black' },
+    item: { ...display, productId: PRODUCT_ID },
+  });
+  assert.equal(merged.items.length, 1);
+  assert.equal(merged.items[0].quantity, 5);
+  assert.equal(merged.totalItems, 5);
+
+  const added = addServerItemOptimistic(cart, {
+    line: { productId: OTHER_PRODUCT_ID, quantity: 1, comboType: 'blazer' },
+    item: display,
+  });
+  assert.equal(added.items.length, 2);
+  assert.equal(added.totalItems, 3);
+  const pending = toCartItem(added.items[1]);
+  assert.ok(isPendingCartLine(added.items[1].id));
+  assert.equal(pending.pending, true);
+  assert.equal(pending.name, 'Vest (Bán lẻ Áo Blazer)', 'combo label is not doubled');
+  assert.equal(pending.price, 750000);
+  assert.equal(pending.image, '/vest.png');
+  assert.equal(toCartItem(cart.items[0]).pending, undefined);
+
+  const sale = toCartItem(addServerItemOptimistic(cart, {
+    line: { productId: OTHER_PRODUCT_ID, quantity: 1 },
+    item: { ...display, name: 'Shirt', price: 450000, listPrice: 500000, salePercent: 10 },
+  }).items[1]);
+  assert.equal(sale.price, 450000);
+  assert.equal(sale.listPrice, 500000);
+  assert.equal(sale.salePercent, 10);
+});

@@ -13,6 +13,8 @@ export interface CartItem {
   type?: string;
   // Chỉ có ở giỏ server: false khi sản phẩm đã ngừng bán, không đưa vào checkout.
   available?: boolean;
+  // Dòng vừa thêm, server chưa trả id thật: hiện ngay nhưng chưa sửa / xoá được.
+  pending?: boolean;
 }
 
 // Giỏ khách (chưa đăng nhập) lưu trên thiết bị, cùng trạng thái mở/đóng panel giỏ.
