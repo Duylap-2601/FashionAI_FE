@@ -77,7 +77,12 @@ export function useCart() {
     createServerCartMutationOptions<ServerCart, { id: string; quantity: number }>(queryClient, {
       userId,
       mutationKey: mutationKeys.updateItem(),
-      mutationFn: updateCartItem,
+      mutationFn: (variables) => {
+        // Lệnh xoá gửi ngay, không chờ hàng đợi: dòng đã bị xoá thì bỏ qua lần đổi số lượng đang chờ.
+        const cart = queryClient.getQueryData<ServerCart>(queryKeys.cart(userId));
+        if (cart && !cart.items.some((item) => item.id === variables.id)) return Promise.resolve(cart);
+        return updateCartItem(variables);
+      },
       optimistic: (cart, { id, quantity }) => setServerItemQuantity(cart, id, quantity),
       errorMessage: 'Không thể cập nhật số lượng sản phẩm.',
       notifyError: notifyCartError,
@@ -89,6 +94,7 @@ export function useCart() {
       mutationKey: mutationKeys.removeItem(),
       mutationFn: removeCartItem,
       optimistic: removeServerItem,
+      queued: false,
       errorMessage: 'Không thể xoá sản phẩm khỏi giỏ hàng.',
       notifyError: notifyCartError,
     }),

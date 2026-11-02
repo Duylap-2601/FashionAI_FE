@@ -254,3 +254,39 @@ test('a remote cart change during a local mutation is deferred, then refetched i
   assert.equal(h.sync.cartFocusRefetchMode(h.queryClient), 'always');
   h.queryClient.clear();
 });
+
+test('removing lines is sent right away, never queued behind other cart writes, and the cart is refetched after an overlap', async () => {
+  const h = createCartMutationHarness();
+  const { removeServerItem } = createSourceLoader()('@/features/cart/services/cart-mapper');
+  const removeObserver = () => new MutationObserver(h.queryClient, h.sync.createServerCartMutationOptions(h.queryClient, {
+    userId: 'user-1',
+    mutationKey: ['cart', 'removeItem'],
+    mutationFn: () => new Promise((resolve) => {
+      h.pending.push(() => resolve({ items: [], totalItems: 0 }));
+    }),
+    optimistic: removeServerItem,
+    queued: false,
+    errorMessage: 'error',
+    notifyError: () => {},
+  }));
+  const { MutationObserver } = require('@tanstack/query-core');
+
+  const update = h.observer().mutate({ id: 'cart-1', quantity: 2 });
+  const first = removeObserver().mutate('cart-1');
+  const second = removeObserver().mutate('cart-2');
+  await h.flush();
+  assert.equal(h.pending.length, 3, 'both removals go out while the quantity update is still in flight');
+  assert.equal(h.queryClient.getQueryData(['cart', 'user-1']).items.length, 0, 'removed line disappears right away');
+
+  h.pending[1]();
+  h.pending[2]();
+  await Promise.all([first, second]);
+  await h.flush();
+  assert.equal(h.invalidated.length, 0, 'wait for the last pending write before syncing');
+
+  h.pending[0]();
+  await update;
+  await h.flush();
+  assert.equal(h.invalidated.length, 1, 'overlapping writes end with a refetch instead of trusting the last response');
+  h.queryClient.clear();
+});

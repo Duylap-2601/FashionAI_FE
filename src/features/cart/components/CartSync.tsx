@@ -8,7 +8,7 @@ import { mergeCart } from '@/features/cart/services/mutations';
 import { useCartStore } from '@/features/cart/store/cartStore';
 import type { MergeCartResponse } from '@/features/cart/types/cart-api';
 import type { GuestCartMergeVariables } from '@/features/cart/types/cart-sync';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useIsMutating, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
@@ -50,6 +50,19 @@ export function CartSync() {
       },
     }),
   );
+
+  // Thay đổi giỏ chưa lưu xong (đã hiện trên UI) sẽ mất nếu tải lại / đóng tab: hỏi trước.
+  // Chuyển trang trong app không unload nên không bị hỏi.
+  const hasPendingCartWrites = useIsMutating({ mutationKey: mutationKeys.all() }) > 0;
+  useEffect(() => {
+    if (!hasPendingCartWrites) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [hasPendingCartWrites]);
 
   useEffect(() => {
     const action = decideCartSyncAction({
