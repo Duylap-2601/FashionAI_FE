@@ -27,6 +27,7 @@ const REASON_LABELS: Record<string, string> = {
   WRONG_COLOR: 'Sai màu sắc',
   QUALITY_MISMATCH: 'Lỗi may đo / Chất lượng vải',
   OTHER: 'Lý do khác',
+  REFUND_NOT_RECEIVED: 'Chưa nhận được tiền hoàn',
 };
 
 export function AdminOrderIssueModal({
@@ -37,6 +38,7 @@ export function AdminOrderIssueModal({
 }: AdminOrderIssueModalProps) {
   const [activeAction, setActiveAction] = useState<'APPROVE_REFUND' | 'REJECT' | null>(null);
   const [adminNote, setAdminNote] = useState('');
+  const [receiptImages, setReceiptImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
@@ -54,6 +56,10 @@ export function AdminOrderIssueModal({
       toast.error('Vui lòng nhập lý do từ chối yêu cầu.');
       return;
     }
+    if (activeAction !== 'REJECT' && receiptImages.length === 0) {
+      toast.error('Vui lòng đính kèm ảnh chứng từ chuyển khoản hoàn tiền.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -64,13 +70,23 @@ export function AdminOrderIssueModal({
         });
         toast.success('Đã từ chối khiếu nại báo lỗi.');
       } else {
-        await reviewOrderIssue(issue.id, {
-          decision: 'APPROVE',
-          approvedResolution: 'REFUND',
-          adminNote: adminNote.trim() || undefined,
-        });
-        toast.success('Đã duyệt hoàn tiền. Đơn hàng chuyển sang tiến trình hoàn trả!');
+        await reviewOrderIssue(
+          issue.id,
+          {
+            decision: 'APPROVE',
+            approvedResolution: 'REFUND',
+            adminNote: adminNote.trim() || undefined,
+          },
+          undefined,
+          receiptImages,
+        );
+        toast.success(
+          issue.reason === 'REFUND_NOT_RECEIVED'
+            ? 'Đã duyệt. Khoản hoàn trước bị đánh dấu thất bại, cần chuyển lại cho khách.'
+            : 'Đã duyệt hoàn tiền. Đơn hàng chuyển sang tiến trình hoàn trả!'
+        );
       }
+      setReceiptImages([]);
       onSuccess();
       onClose();
     } catch (err) {
@@ -317,8 +333,35 @@ export function AdminOrderIssueModal({
                   />
 
                   {activeAction === 'APPROVE_REFUND' && (
+                    <div className="flex flex-col gap-1">
+                      <label className="inline-flex w-fit items-center gap-1.5 text-[12px] font-semibold text-landing-oxblood cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          disabled={isSubmitting}
+                          onChange={(e) =>
+                            setReceiptImages(Array.from(e.target.files ?? []).slice(0, 5))
+                          }
+                        />
+                        <span className="underline">
+                          {receiptImages.length > 0
+                            ? `Đã chọn ${receiptImages.length} ảnh chứng từ`
+                            : 'Đính kèm ảnh chứng từ chuyển khoản *'}
+                        </span>
+                      </label>
+                      <span className="text-[11px] text-landing-muted">
+                        Bắt buộc — khách sẽ thấy ảnh này trong mục Lịch sử hoàn tiền (tối đa 5 ảnh).
+                      </span>
+                    </div>
+                  )}
+
+                  {activeAction === 'APPROVE_REFUND' && (
                     <p className="text-[11px] text-metric-products bg-metric-products/10 p-2 rounded-[2px]">
-                      ℹ Khi duyệt hoàn tiền, đơn hàng chuyển sang trạng thái &ldquo;Duyệt hoàn trả&rdquo;. Sau khi nhận và kiểm tra hàng hoàn, bạn xác nhận đã nhận hàng rồi mới chốt hoàn tiền về STK của khách.
+                      {issue.reason === 'REFUND_NOT_RECEIVED'
+                        ? 'ℹ Duyệt sẽ đánh dấu khoản hoàn trước là thất bại và mở khoản hoàn mới. Sau đó vào trang đơn hàng để chuyển lại tiền cho khách.'
+                        : 'ℹ Khi duyệt hoàn tiền, đơn hàng chuyển sang trạng thái “Duyệt hoàn trả”. Sau khi nhận và kiểm tra hàng hoàn, bạn xác nhận đã nhận hàng rồi mới chốt hoàn tiền về STK của khách.'}
                     </p>
                   )}
 
@@ -334,7 +377,11 @@ export function AdminOrderIssueModal({
                     <button
                       type="button"
                       onClick={handleReview}
-                      disabled={isSubmitting || (activeAction === 'REJECT' && !adminNote.trim())}
+                      disabled={
+                        isSubmitting ||
+                        (activeAction === 'REJECT' && !adminNote.trim()) ||
+                        (activeAction !== 'REJECT' && receiptImages.length === 0)
+                      }
                       className={`px-4 py-1.5 rounded-[2px] text-xs font-bold text-landing-paper flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
                         activeAction === 'REJECT' ? 'bg-destructive hover:bg-destructive' : 'bg-landing-oxblood hover:bg-landing-oxblood/90'
                       }`}

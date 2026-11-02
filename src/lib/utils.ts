@@ -9,6 +9,45 @@ export function formatPrice(price: number): string {
   return price.toLocaleString('vi-VN') + 'đ';
 }
 
+const REFUND_EVIDENCE_KEYS = ['reference', 'note', 'transactionId', 'message', 'receiptUrl', 'imageUrl'];
+
+/**
+ * `Order.refundEvidence` là JSON tự do do admin gửi lên (mã giao dịch, ghi chú,
+ * URL chứng từ...). Chuẩn hoá về 1 chuỗi để render, tránh render object trực
+ * tiếp vào React.
+ */
+export function formatRefundEvidence(evidence: unknown): string | null {
+  if (evidence === null || evidence === undefined) return null;
+  if (typeof evidence === 'string') return evidence.trim() || null;
+  if (typeof evidence !== 'object') return String(evidence);
+  if (Array.isArray(evidence)) {
+    const parts = evidence.map(formatRefundEvidence).filter((part): part is string => Boolean(part));
+    return parts.length > 0 ? parts.join(' · ') : null;
+  }
+
+  const record = evidence as Record<string, unknown>;
+  for (const key of REFUND_EVIDENCE_KEYS) {
+    const text = formatRefundEvidence(record[key]);
+    if (text) return text;
+  }
+
+  try {
+    return JSON.stringify(record);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Lấy danh sách URL ảnh chứng từ chuyển khoản admin đã đính kèm khi chốt hoàn tiền.
+ */
+export function getRefundEvidenceImages(evidence: unknown): string[] {
+  if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) return [];
+  const value = (evidence as Record<string, unknown>).receiptImages;
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+}
+
 /**
  * Sửa lỗi mojibake: tên tiếng Việt bị encode sai (UTF-8 bytes đọc như Latin-1).
  * Ví dụ: "Tú Anh" → lưu thành "TÃº Anh" hoặc "Tấ° Anh" do double-encoding.

@@ -7,7 +7,13 @@ export interface AdminOrderModalProps {
   selectedOrder: AdminOrder;
   handleUpdateOrderStatus: (id: string, status: BackendOrderStatus) => Promise<void>;
   handleConfirmManualPayment: (orderCode: number, reference: string, note: string) => Promise<void>;
-  handleUpdateRefund: (id: string, reference: string, note: string, amountVnd?: number) => Promise<boolean | void>;
+  handleUpdateRefund: (
+    id: string,
+    reference: string,
+    note: string,
+    amountVnd?: number,
+    receiptImages?: File[],
+  ) => Promise<boolean | void>;
   handleFinalizeRefund?: (refundId: string, outcome: 'COMPLETED' | 'FAILED', note?: string) => Promise<boolean | void>;
   handleCreateShipment: (id: string, signal?: AbortSignal) => Promise<void>;
 }

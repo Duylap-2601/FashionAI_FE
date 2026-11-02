@@ -15,6 +15,7 @@ const REASON_LABELS: Record<OrderIssueReason, string> = {
   WRONG_COLOR: 'Sai màu sắc',
   QUALITY_MISMATCH: 'Lỗi may đo / Chất lượng vải',
   OTHER: 'Lý do khác',
+  REFUND_NOT_RECEIVED: 'Chưa nhận được tiền hoàn',
 };
 
 const RESOLUTION_LABELS: Record<OrderIssueDesiredResolution, string> = {

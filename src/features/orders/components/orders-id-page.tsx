@@ -6,8 +6,10 @@ import { PAYMENT_STATUS_LABELS } from '@/features/orders/constants/profile-order
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
 import { OrderIssuesList } from '@/features/orders/components/order-issues-list';
+import { RefundReceiptImages } from '@/features/orders/components/refund-receipt-images';
 import { ReportIssueModal } from '@/features/orders/components/report-issue-modal';
 import type { OrderItem } from '@/features/orders/types/orders';
+import { formatRefundEvidence } from '@/lib/utils';
 import {
   AlertTriangle,
   Calendar,
@@ -78,6 +80,7 @@ export default function OrderDetailPage() {
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [reportingItem, setReportingItem] = useState<OrderItem | null>(null);
+  const [reportMode, setReportMode] = useState<'PRODUCT' | 'REFUND_NOT_RECEIVED'>('PRODUCT');
 
   const statusInfo = STATUS_MAP[order?.status || 'CREATED'] || STATUS_MAP.CREATED;
 
@@ -91,6 +94,22 @@ export default function OrderDetailPage() {
     ? (Date.now() - new Date(completedAt).getTime()) > 7 * 24 * 60 * 60 * 1000
     : false;
   const canReportIssue = (isCompleted || isInReturnFlow) && !isExpired;
+
+  // Báo "chưa nhận được tiền": chỉ khi shop đã chốt hoàn tiền và còn trong 7 ngày
+  // kể từ lần hoàn gần nhất (khớp điều kiện BE).
+  const lastCompletedRefund = (order?.refunds ?? [])
+    .filter((r) => r.status === 'COMPLETED')
+    .sort(
+      (a, b) =>
+        new Date(b.processedAt ?? b.requestedAt).getTime() -
+        new Date(a.processedAt ?? a.requestedAt).getTime()
+    )[0];
+  const refundedAt = lastCompletedRefund?.processedAt ?? lastCompletedRefund?.requestedAt;
+  const canReportNotReceived =
+    order?.refundStatus === 'COMPLETED' &&
+    refundedAt != null &&
+    Date.now() - new Date(refundedAt).getTime() <= 7 * 24 * 60 * 60 * 1000;
+  const refundEvidenceText = formatRefundEvidence(order?.refundEvidence);
 
   const handleCancel = () => {
     if (!order?.id) return;
@@ -245,6 +264,7 @@ export default function OrderDetailPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    setReportMode('PRODUCT');
                     if (order.items && order.items.length === 1) {
                       setReportingItem(order.items[0]);
                     } else {
@@ -287,6 +307,21 @@ export default function OrderDetailPage() {
                       {order.refundAccountHolder}
                     </p>
                   </div>
+                )}
+                {canReportNotReceived && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const firstItem = order.items?.[0] ?? null;
+                      if (!firstItem) return;
+                      setReportMode('REFUND_NOT_RECEIVED');
+                      setReportingItem(firstItem);
+                    }}
+                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-600/30 bg-white/80 hover:bg-white text-amber-900 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>Chưa nhận được tiền hoàn</span>
+                  </button>
                 )}
               </div>
             </div>
@@ -692,11 +727,40 @@ export default function OrderDetailPage() {
                         </span>
                       </div>
                       {r.reason && <p className="text-neutral-600 mt-1">Lý do: {r.reason}</p>}
+                      {r.status === 'FAILED' && (
+                        <p className="text-[11px] text-red-600 mt-1 font-medium">
+                          Lần chuyển trước chưa thành công — shop đang chuyển lại.
+                        </p>
+                      )}
                       <p className="text-[11px] text-neutral-400 mt-1">
                         Ngày yêu cầu: {new Date(r.requestedAt).toLocaleString('vi-VN')}
                       </p>
                     </div>
                   ))}
+                </div>
+                {refundEvidenceText && (
+                  <div className="mt-3 pt-3 border-t border-amber-200/70 text-[11px] text-neutral-600">
+                    {/^https?:\/\//i.test(refundEvidenceText) ? (
+                      <a
+                        href={refundEvidenceText}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-brand-navy font-semibold underline"
+                      >
+                        Xem chứng từ hoàn tiền
+                      </a>
+                    ) : (
+                      <>
+                        Chứng từ: <span className="text-neutral-800">{refundEvidenceText}</span>
+                      </>
+                    )}
+                  </div>
+                )}
+                <div className="mt-2">
+                  <RefundReceiptImages
+                    evidence={order.refundEvidence}
+                    label="Ảnh chứng từ chuyển khoản"
+                  />
                 </div>
               </div>
             )}
@@ -775,9 +839,18 @@ export default function OrderDetailPage() {
       {/* Report Issue Modal */}
       <ReportIssueModal
         isOpen={Boolean(reportingItem)}
-        onClose={() => setReportingItem(null)}
+        onClose={() => {
+          setReportingItem(null);
+          setReportMode('PRODUCT');
+        }}
         orderId={order.id}
         orderItem={reportingItem}
+        mode={reportMode}
+        defaultBank={{
+          bankName: order.refundBankName,
+          accountNumber: order.refundAccountNumber,
+          accountHolder: order.refundAccountHolder,
+        }}
         onSuccess={() => refetch()}
       />
     </div>

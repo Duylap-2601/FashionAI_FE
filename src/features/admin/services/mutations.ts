@@ -59,11 +59,26 @@ export function updateOrderRefund(
   payload: {
     refundStatus: string;
     amountVnd?: number;
-    evidence?: Record<string, unknown>;
+    evidenceReference?: string;
     internalNote?: string;
+    receiptImages?: File[];
   }
 ) {
-  return http.patch(`/orders/${id}/refund`, payload);
+  const formData = new FormData();
+  formData.append('refundStatus', payload.refundStatus);
+  if (payload.amountVnd !== undefined) {
+    formData.append('amountVnd', String(payload.amountVnd));
+  }
+  if (payload.internalNote) {
+    formData.append('internalNote', payload.internalNote);
+  }
+  if (payload.evidenceReference) {
+    formData.append('evidenceReference', payload.evidenceReference);
+  }
+  for (const file of payload.receiptImages ?? []) {
+    formData.append('receiptImages', file);
+  }
+  return http.patch(`/orders/${id}/refund`, formData);
 }
 
 export function finalizeRefund(
@@ -128,8 +143,20 @@ export function reviewOrderIssue(
   issueId: string,
   payload: ReviewOrderIssueInput,
   config?: HttpOptions,
+  receiptImages?: File[],
 ) {
-  return http.patch<OrderIssue>(`/order-issues/${issueId}/review`, payload, config);
+  const formData = new FormData();
+  formData.append('decision', payload.decision);
+  if ('approvedResolution' in payload && payload.approvedResolution) {
+    formData.append('approvedResolution', payload.approvedResolution);
+  }
+  if (payload.adminNote) {
+    formData.append('adminNote', payload.adminNote);
+  }
+  for (const file of receiptImages ?? []) {
+    formData.append('receiptImages', file);
+  }
+  return http.patch<OrderIssue>(`/order-issues/${issueId}/review`, formData, config);
 }
 
 
