@@ -572,6 +572,10 @@ Contract:
 - Page header: brass label, `text-landing-h2` Playfair title, one muted sentence, optional actions on the right.
 - `account-ui.tsx` primitives: `AccountSection` (hairline top, Playfair `1.375rem` heading, optional right action), `AccountStatePanel` (empty and error), `AccountPagination` (square arrows, mono `page / total`), `AccountDialog` (Radix, `z-[100]`/`z-[101]`, bottom sheet below `sm`), `AccountConfirmDialog`, plus `accountButtonClassName` (`primary` oxblood fill, `outline` hairline, `danger` destructive outline, `quiet` text) and `accountInputClassName`.
 - `OrderStatusLabel` renders a dot and an uppercase label from `STATUS_CONFIG` in `src/features/orders/constants/profile-orders-page.ts`; tones map to brass, oxblood, sage, taupe and destructive.
+- `ToneLabel` (same file as `OrderStatusLabel`) renders the dot and label for any tone; issue reports and refunds on the order detail use it.
+- `AccountShell` takes `activeHref` to highlight a menu item on a nested page: `/orders/[id]` passes `/profile/orders`.
+- Order detail (`src/features/orders/components/orders-id-page.tsx`) shares `OrderThumb`, `OrderProgress` and `SummaryRow` with the orders list through `order-ui.tsx`. Notices are a `2px` left rule on ivory: brass while waiting, sage when done. Report an issue is an `AccountDialog` with real radio options; cancel uses `AccountConfirmDialog`.
+- `ImageLightbox` (`src/components/ui/image-lightbox.tsx`) is the one full-size image view: obsidian layer, Radix, stacks above other dialogs. `ImageFilePreviews` plus `useImageFileSelection` (`src/hooks/`) show picked upload images as `2px` thumbnails with remove and zoom; customer and admin uploads both use them.
 - `StarRating` takes `tone="landing"` for oxblood stars on paper; admin keeps the default amber.
 - Only backend-backed controls: profile edits the name only, measurements save the backend fields, notification tabs are not shown because the list endpoint does not filter by type.
 
@@ -767,3 +771,5 @@ Manual checks:
 | 2026-10-26 | Cart line and slide-over, rack and mannequin chrome, notification `tone`, plans from `/payments/plans` |
 | 2026-10-28 | Product detail contract: gallery lightbox, purchase panel, detail tabs, review states and related products on Atelier Paper |
 | 2026-10-30 | Mobile bottom tab bar contract: 64px paper bar, five Vietnamese tabs, oxblood active rule, `z-[90]` under sheets |
+| 2026-11-02 | Order detail on `AccountShell` (`activeHref`), `ToneLabel`, shared `order-ui`, `ImageLightbox` and upload previews |
+| 2026-11-02 | Checkout uses `CheckoutOption` (square radio), account primitives and `AccountDialog` for payment dialogs |

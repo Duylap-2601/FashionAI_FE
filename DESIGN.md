@@ -345,13 +345,15 @@ Route: `/products/[id]`. The page is the product chapter of the catalog: one gal
 
 Routes: `/profile`, `/profile/measurements`, `/profile/orders`, `/profile/reviews`, `/notifications` (the five links in the header account menu).
 
+Order detail (`/orders/[id]`) also sits in the shell with `Đơn hàng` active. It reads top to bottom: notices (payment pending, return in progress, returned), a status frame with the five-step progress and payment / shipping / last update, then hairline sections for items, issue reports, delivery and payment, refunds (with transfer receipts) and the order history.
+
 - One shared `AccountShell`: a sticky left menu from `lg` (name, plan, the five pages, then addresses, try-on history, AI Stylist history, plan) and a scrolling underline tab row below `lg`. Each page opens with a brass `Tài khoản` label, a Playfair title and one sentence.
 - Sections are hairline-topped, with a Playfair heading and at most one text link on the right. No cards with shadows, no pills, no coloured badge fills.
 - Status is a coloured dot plus an uppercase label: brass for waiting on payment or returns, oxblood dot for in progress, sage for delivered or complete, taupe for closed, destructive for failed.
 - Prices, order codes, dates in tables, counts and measurements use the mono face.
 - Only controls the backend stores are shown. Profile edits only the name (`PUT /users/me` accepts `name` and `avatarUrl`); phone and address live in the address book. Measurements save the 16 backend fields; there is no body-type, preferred-size, fit or style-note control. Notifications have no type filter because `GET /notifications` does not filter by type.
 - Order filters send exactly one backend status each, following the real flow `CREATED → MEASUREMENT_REVIEW → TAILORING → READY_TO_SHIP → SHIPPING → DELIVERED → COMPLETED`.
-- Dialogs (change password, cancel order, delete review, write review) use one paper Radix dialog that sits above the mobile bottom tab bar and becomes a bottom sheet below `sm`.
+- Dialogs (change password, cancel order, delete review, write review, report an issue) use one paper Radix dialog that sits above the mobile bottom tab bar and becomes a bottom sheet below `sm`. Images open in one obsidian lightbox that stacks above a dialog. Images picked for upload show as square thumbnails before sending.
 
 ## Try-On Page
 
@@ -367,6 +369,7 @@ Route: `/try-on`. Two modes share one page: `Trực tiếp` (camera, the default
 
 - `/rack`: saved pieces on the left (underline category tabs with mono counts, `3/4` ivory tiles that are real buttons with `aria-pressed`), the mannequin on the right in a hairline frame. The mannequin is an obsidian form on a brass pole, not a gradient. The canvas keeps drag, wheel-to-scale and layer order; the footer shows the mono outfit total and one oxblood action into Thử đồ AI.
 - Cart: the slide-over and `/cart` share one line component (ivory thumbnail, product name, square quantity stepper with mono count, mono line total). The summary says `Tạm tính` because shipping is quoted at checkout. Assurances only state what is true: made to the saved measurements, 7 days to report a defect after completion, payment by ZaloPay.
+- Checkout: the cart frame and header (brass `Đặt hàng` label, Playfair title, mono step row), numbered hairline sections for the address and the payment method with square radio options, and the summary aside like `/cart` (mono prices, coupon field, oxblood submit) with no assurance list under it. A wrong coupon is dropped and the quote reruns without it, so the error shows once under the field and never blocks the order. Payment dialogs (bank transfer, ZaloPay QR) use the paper account dialog.
 - Header notifications: a paper dropdown with a Playfair title, mono unread count, rows as real buttons and an uppercase link to `/notifications`. The admin topbar keeps its own look through `tone="admin"`.
 - `/subscription` and the account history pages (`/profile/addresses`, `/profile/history`, `/profile/stylist-history`) sit in the account shell. Plan prices, durations and daily limits come from `GET /payments/plans`; there are no "most popular" badges and no render-priority claim.
 
@@ -534,4 +537,5 @@ The real campaign images may be portrait or landscape. The hero keeps a full-ble
 | 2026-10-26 | Rack, cart, header notifications, address book, try-on and AI Stylist history, and plans on Atelier Paper |
 | 2026-10-28 | Added the product detail spec: paper and ivory surfaces, gallery lightbox, purchase panel, detail tabs, honest review states, and related products |
 | 2026-10-30 | Added the mobile bottom tab bar: 64px paper bar, five Vietnamese tabs, oxblood active rule |
-
+| 2026-11-02 | Order detail and its dialogs (report an issue, cancel) on the account shell; image lightbox and upload previews |
+| 2026-11-02 | Checkout on Atelier Paper: cart frame, numbered sections, square radio options, paper payment dialogs |
