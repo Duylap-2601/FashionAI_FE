@@ -128,3 +128,27 @@ test('bootstrap refresh and a 401 retry right after page load share one single-u
   assert.equal(payload.accessToken, 'boot-token');
   assert.equal(response.data.id, 'order');
 });
+
+test('page-load refresh retries transient failures but gives up at once when the token is rejected', async () => {
+  const responses = [
+    () => Response.json({ message: 'Hệ thống đang bận' }, { status: 503 }),
+    () => { throw new TypeError('Failed to fetch'); },
+    () => Response.json({ data: { accessToken: 'retry-token', accessTokenExpiresAt: later(), user } }),
+  ];
+  let calls = 0;
+  const load = createSourceLoader({ globals: { fetch: async () => responses[calls++]() } });
+  const { isSessionRejected, refreshWebSessionWithRetry } = load('@/features/auth/services/mutations');
+
+  const payload = await refreshWebSessionWithRetry([0, 0]);
+  assert.equal(payload.accessToken, 'retry-token');
+  assert.equal(calls, 3);
+
+  const rejected = createSourceLoader({ globals: {
+    fetch: async () => { calls++; return Response.json({ message: 'Refresh token không hợp lệ' }, { status: 401 }); },
+  } })('@/features/auth/services/mutations');
+  calls = 0;
+  await assert.rejects(rejected.refreshWebSessionWithRetry([0, 0]), (error) => rejected.isSessionRejected(error));
+  assert.equal(calls, 1);
+
+  assert.equal(isSessionRejected(new TypeError('Failed to fetch')), false);
+});

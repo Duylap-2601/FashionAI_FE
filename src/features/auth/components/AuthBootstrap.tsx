@@ -3,13 +3,14 @@
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { PROTECTED_ROUTES } from '@/features/auth/constants/auth-bootstrap';
 import { subscribeAuthInvalidated } from '@/features/auth/services/auth-events';
-import { refreshWebSession } from '@/features/auth/services/mutations';
+import { isSessionRejected, refreshWebSessionWithRetry } from '@/features/auth/services/mutations';
 import { fetchCurrentUser } from '@/features/auth/services/queries';
 import { toAuthSession } from '@/features/auth/services/session';
 import { clearAuthMarker, hasAuthMarker, useAuthStore } from '@/features/auth/store/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 export function AuthBootstrap() {
   const queryClient = useQueryClient();
@@ -42,7 +43,7 @@ export function AuthBootstrap() {
       if (isMounted) setIsRefreshing(true);
 
       try {
-        const payload = await refreshWebSession();
+        const payload = await refreshWebSessionWithRetry();
         let user = payload?.user;
         if (!user && payload?.accessToken) {
           user = await fetchCurrentUser(payload.accessToken);
@@ -56,9 +57,15 @@ export function AuthBootstrap() {
             router.replace('/admin/dashboard');
           }
         }
-      } catch {
+      } catch (error) {
         if (isMounted) {
-          clearInvalidSession(queryClient);
+          if (isSessionRejected(error)) {
+            clearInvalidSession(queryClient);
+          } else {
+            // Máy chủ chưa trả lời: phiên có thể vẫn còn, giữ marker để lần tải sau thử lại.
+            useAuthStore.getState().clearSession();
+            toast.error('Chưa kết nối được máy chủ. Tải lại trang để vào lại tài khoản.');
+          }
           redirectIfProtected(pathname, search, router);
         }
       } finally {
