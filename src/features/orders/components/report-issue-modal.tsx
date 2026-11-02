@@ -122,6 +122,14 @@ export function ReportIssueModal({
       setSubmitError('Mô tả không được vượt quá 2000 ký tự.');
       return;
     }
+    if (evidence.files.length === 0) {
+      setSubmitError(
+        isRefundMode
+          ? 'Vui lòng tải lên ít nhất 1 ảnh sao kê / chứng từ.'
+          : 'Vui lòng tải lên ít nhất 1 ảnh minh chứng lỗi.',
+      );
+      return;
+    }
 
     const trimmedBankName = bankName.trim();
     const trimmedAccountNumber = accountNumber.trim();
@@ -334,9 +342,9 @@ export function ReportIssueModal({
 
           <div>
             <p className={accountLabelClassName}>
-              {isRefundMode ? 'Ảnh sao kê / chứng từ' : 'Ảnh minh chứng'}{' '}
+              {isRefundMode ? 'Ảnh sao kê / chứng từ' : 'Ảnh minh chứng'} *{' '}
               <span className="font-normal normal-case tracking-normal text-landing-muted">
-                (tối đa {MAX_EVIDENCE_IMAGES} ảnh, mỗi ảnh dưới 10MB)
+                (tối đa {MAX_EVIDENCE_IMAGES} ảnh, mỗi ảnh dưới 10MB, bắt buộc ít nhất 1 ảnh)
               </span>
             </p>
             <input
@@ -373,9 +381,9 @@ export function ReportIssueModal({
               >
                 <ImagePlus className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
                 <span className="text-sm font-medium">
-                  {isRefundMode ? 'Tải lên ảnh sao kê (nếu có)' : 'Tải lên ảnh chụp lỗi thực tế'}
+                  {isRefundMode ? 'Tải lên ảnh sao kê' : 'Tải lên ảnh chụp lỗi thực tế'}
                 </span>
-                <span className="text-xs">JPG, PNG hoặc WEBP</span>
+                <span className="text-xs">Bắt buộc · JPG, PNG hoặc WEBP</span>
               </button>
             )}
           </div>
@@ -384,7 +392,11 @@ export function ReportIssueModal({
             <button type="button" onClick={onClose} disabled={isPending} className={accountButtonClassName('outline')}>
               Hủy
             </button>
-            <button type="submit" disabled={isPending || descriptionLength < 10} className={accountButtonClassName('primary')}>
+            <button
+              type="submit"
+              disabled={isPending || descriptionLength < 10 || evidence.items.length === 0}
+              className={accountButtonClassName('primary')}
+            >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} /> : null}
               {isPending ? 'Đang gửi' : isRefundMode ? 'Gửi báo cáo' : 'Gửi yêu cầu'}
             </button>

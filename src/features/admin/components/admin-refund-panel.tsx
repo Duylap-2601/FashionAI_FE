@@ -112,6 +112,10 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
       toast.error('Vui lòng nhập mã giao dịch hoặc ghi chú chuyển khoản.');
       return;
     }
+    if (receipts.files.length === 0 && !hasReceipts) {
+      toast.error('Vui lòng đính kèm ảnh chứng từ chuyển khoản hoàn tiền để khách đối chiếu.');
+      return;
+    }
     const parsedAmount = refundAmount.trim() ? parseInt(refundAmount.trim(), 10) : undefined;
     if (parsedAmount !== undefined && (Number.isNaN(parsedAmount) || parsedAmount < 1)) {
       toast.error('Số tiền hoàn phải là số nguyên từ 1 VNĐ.');
@@ -264,7 +268,10 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
 
               <div>
                 <span className={subLabelClassName}>
-                  2. Ảnh chuyển khoản <span className="normal-case tracking-normal">(tối đa {MAX_REFUND_RECEIPT_IMAGES}, bấm ảnh để xem lớn)</span>
+                  2. Ảnh chuyển khoản *{' '}
+                  <span className="normal-case tracking-normal">
+                    (tối đa {MAX_REFUND_RECEIPT_IMAGES}, bắt buộc — khách thấy trong đơn hàng và email hoàn tiền)
+                  </span>
                 </span>
                 <div className="mt-1.5">
                   {receipts.items.length > 0 ? (
