@@ -39,6 +39,9 @@ export type GarmentType = 'SHIRT' | 'VEST' | 'JACKET' | 'PANTS' | 'SKIRT' | 'DRE
 
 export type LayerRole = 'OUTER' | 'INNER' | 'BASE' | 'BOTTOM';
 
+/** Đối tượng của sản phẩm; AI Stylist lọc catalog theo giới tính khách chọn. Backend mặc định FEMALE. */
+export type ProductGender = 'FEMALE' | 'MALE' | 'UNISEX';
+
 export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 
 export type UserTier = 'FREE' | 'MEMBER' | 'VIP';
@@ -63,6 +66,7 @@ export interface AdminProduct {
   category: GarmentCategory;
   garmentType?: GarmentType;
   layerRole?: LayerRole | null;
+  gender?: ProductGender;
   price: number;
   status: ProductStatus;
   image: string;

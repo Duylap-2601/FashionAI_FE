@@ -5,6 +5,7 @@ export interface AdminProductFilters {
   search?: string;
   category?: string;
   status?: string;
+  gender?: string;
 }
 
 export interface AdminProductsPanelProps {

@@ -1,6 +1,7 @@
 'use client';
 
-import type { GarmentCategory, GarmentType, LayerRole, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
+import { PRODUCT_GENDER_LABEL } from '@/features/admin/constants/admin-dashboard-page';
+import type { GarmentCategory, GarmentType, LayerRole, ProductGender, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminProductModalProps } from '@/features/admin/types/admin-product-modal';
 import {
   Loader2,
@@ -27,6 +28,8 @@ const GARMENT_TYPES_BY_CATEGORY: Record<GarmentCategory, { value: GarmentType; l
     { value: 'JUMPSUIT', label: 'Jumpsuit (JUMPSUIT)' },
   ],
 };
+
+const PRODUCT_GENDERS = Object.keys(PRODUCT_GENDER_LABEL) as ProductGender[];
 
 const LAYER_ROLES: { value: LayerRole; label: string }[] = [
   { value: 'OUTER', label: 'OUTER — Áo khoác ngoài / Blazer' },
@@ -132,6 +135,24 @@ export function AdminProductModal({ closeProductEditor, editingProduct, setEditi
                 <option value="ARCHIVED">Ngừng bán</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-body-sm font-medium text-landing-obsidian mb-1.5">Giới tính *</label>
+            <select
+              value={editingProduct.gender || 'FEMALE'}
+              onChange={e => setEditingProduct(prev => ({ ...prev, gender: e.target.value as ProductGender }))}
+              className="w-full h-10 px-3 rounded-[2px] border border-landing-taupe"
+            >
+              {PRODUCT_GENDERS.map(gender => (
+                <option key={gender} value={gender}>
+                  {PRODUCT_GENDER_LABEL[gender]}
+                </option>
+              ))}
+            </select>
+            <p className="text-label-sm text-landing-muted mt-1.5">
+              • AI Stylist chỉ gợi ý món đúng giới tính khách chọn. Unisex được gợi ý cho cả nam và nữ.
+            </p>
           </div>
 
           <div>

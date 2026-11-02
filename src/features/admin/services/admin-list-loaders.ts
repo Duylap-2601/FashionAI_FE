@@ -31,6 +31,7 @@ export async function loadAdminProducts(
   }
   if (filters.category && filters.category !== 'ALL') params.category = filters.category;
   if (filters.status && filters.status !== 'ALL') params.status = filters.status;
+  if (filters.gender && filters.gender !== 'ALL') params.gender = filters.gender;
 
   const { items, serverTotal, serverTotalPages } = readAdminList<AdminProductDto>(await fetchAdminProducts({ params, signal }));
   const products = items.map(toAdminProduct);

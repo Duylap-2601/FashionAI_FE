@@ -1,6 +1,6 @@
 'use client';
 
-import { CATEGORY_LABEL, PRODUCT_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
+import { CATEGORY_LABEL, PRODUCT_GENDER_LABEL, PRODUCT_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt } from '@/features/admin/services/format';
 import type { AdminProductsPanelProps } from '@/features/admin/types/admin-products-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
@@ -34,7 +34,8 @@ export function AdminProductsPanel({
   const isFiltered = Boolean(
     (filters.search || searchQuery) ||
     (filters.category && filters.category !== 'ALL') ||
-    (filters.status && filters.status !== 'ALL')
+    (filters.status && filters.status !== 'ALL') ||
+    (filters.gender && filters.gender !== 'ALL')
   );
 
   return (
@@ -84,6 +85,21 @@ export function AdminProductsPanel({
                 <option value="UPPER">Áo (UPPER)</option>
                 <option value="LOWER">Quần & Váy (LOWER)</option>
                 <option value="FULL_BODY">Suit đầy đủ (FULL_BODY)</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-landing-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* Gender Filter */}
+            <div className="relative">
+              <select
+                value={filters.gender || 'ALL'}
+                onChange={(e) => onFilterChange?.({ gender: e.target.value === 'ALL' ? '' : e.target.value })}
+                className="appearance-none pl-3.5 pr-8 py-2 border border-landing-line/90 rounded-[2px] bg-landing-ivory text-xs font-medium text-landing-obsidian hover:border-landing-taupe focus:outline-none focus:border-landing-oxblood focus:ring-1 focus:ring-landing-oxblood/10 transition-colors cursor-pointer"
+              >
+                <option value="ALL">Tất cả giới tính</option>
+                <option value="FEMALE">Đồ nữ</option>
+                <option value="MALE">Đồ nam</option>
+                <option value="UNISEX">Unisex</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-landing-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -178,6 +194,11 @@ export function AdminProductsPanel({
                   <div className="px-4 py-3.5 text-landing-muted">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="truncate">{CATEGORY_LABEL[p.category] || p.category}</span>
+                      {p.gender && (
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-landing-paper text-landing-obsidian border border-landing-line">
+                          {PRODUCT_GENDER_LABEL[p.gender]}
+                        </span>
+                      )}
                       {p.layerRole && (
                         <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-landing-paper text-landing-obsidian border border-landing-line">
                           {p.layerRole}
