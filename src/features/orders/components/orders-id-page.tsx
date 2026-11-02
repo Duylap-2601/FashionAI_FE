@@ -361,9 +361,13 @@ export default function OrderDetailPage() {
             <RefundAccount order={order} />
             {canReportNotReceived ? (
               hasPendingRefundNotReceived ? (
-                <button type="button" disabled className={accountButtonClassName('outline', 'sm')}>
-                  Đã báo chưa nhận tiền
-                </button>
+                <p className="text-xs leading-relaxed text-landing-muted">
+                  Bạn đã báo chưa nhận được tiền.{' '}
+                  <a href="#order-issues" className="text-landing-oxblood underline underline-offset-2">
+                    Xem trạng thái xử lý
+                  </a>
+                  .
+                </p>
               ) : (
                 <button
                   type="button"
@@ -447,9 +451,12 @@ export default function OrderDetailPage() {
                     <ItemMeasurements item={item} />
                     {canReportIssue ? (
                       blockedReportItemIds.has(item.id) ? (
-                        <button type="button" disabled className={accountButtonClassName('outline', 'sm')}>
-                          Đã gửi yêu cầu
-                        </button>
+                        <a
+                          href="#order-issues"
+                          className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted underline-offset-4 hover:text-landing-oxblood hover:underline"
+                        >
+                          Đã gửi yêu cầu · xem trạng thái
+                        </a>
                       ) : (
                         <button type="button" onClick={() => openReport(item)} className={accountButtonClassName('outline', 'sm')}>
                           Báo lỗi sản phẩm này
