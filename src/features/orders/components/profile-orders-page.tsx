@@ -1,11 +1,11 @@
 'use client';
 
 import { useCart } from '@/features/cart/hooks/use-cart';
+import { ConfirmDeliveryDialog } from '@/features/orders/components/confirm-delivery-dialog';
 import { OrderStatusLabel } from '@/features/orders/components/order-status-label';
 import { OrderProgress, OrderThumb, SummaryRow } from '@/features/orders/components/order-ui';
 import {
   FILTER_TABS,
-  PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
   STATUS_CONFIG,
 } from '@/features/orders/constants/profile-orders-page';
@@ -18,6 +18,7 @@ import {
   getOrderItemImage,
   getOrderItemName,
   getOrderTotal,
+  getPaymentMethodLabel,
 } from '@/features/orders/services/order-display';
 import type { Order, OrderItem } from '@/features/orders/types/orders';
 import { AccountShell } from '@/features/profile/components/account-shell';
@@ -47,6 +48,7 @@ function OrderCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false);
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
 
@@ -73,7 +75,10 @@ function OrderCard({
 
   const handleConfirmDelivery = () => {
     confirmDelivery({ id: order.id }, {
-      onSuccess: () => toast.success('Cảm ơn bạn đã xác nhận nhận hàng'),
+      onSuccess: () => {
+        toast.success('Cảm ơn bạn đã xác nhận nhận hàng');
+        setShowDeliveryConfirm(false);
+      },
       onError: () => toast.error('Không thể xác nhận nhận hàng lúc này.'),
     });
   };
@@ -185,7 +190,7 @@ function OrderCard({
             </button>
           ) : null}
           {order.allowedActions?.confirmDelivery ? (
-            <button type="button" onClick={handleConfirmDelivery} disabled={isConfirmingDelivery} className={accountButtonClassName('primary', 'sm')}>
+            <button type="button" onClick={() => setShowDeliveryConfirm(true)} disabled={isConfirmingDelivery} className={accountButtonClassName('primary', 'sm')}>
               {isConfirmingDelivery ? 'Đang xác nhận' : 'Đã nhận hàng'}
             </button>
           ) : null}
@@ -249,7 +254,7 @@ function OrderCard({
             <div>
               <p className={accountLabelClassName}>Thanh toán</p>
               <dl className="mt-2">
-                <SummaryRow label="Phương thức">{PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod}</SummaryRow>
+                <SummaryRow label="Phương thức">{getPaymentMethodLabel(order)}</SummaryRow>
                 <SummaryRow label="Trạng thái">
                   {order.paymentStatus ? PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus : 'Chưa xác định'}
                 </SummaryRow>
@@ -269,6 +274,14 @@ function OrderCard({
           </div>
         </div>
       ) : null}
+
+      <ConfirmDeliveryDialog
+        open={showDeliveryConfirm}
+        onOpenChange={setShowDeliveryConfirm}
+        orderCode={orderCode}
+        isPending={isConfirmingDelivery}
+        onConfirm={handleConfirmDelivery}
+      />
     </article>
   );
 }

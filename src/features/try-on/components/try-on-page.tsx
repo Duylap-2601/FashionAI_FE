@@ -106,8 +106,9 @@ function VirtualTryOnContent() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialProduct);
   const [selectedColor, setSelectedColor] = useState<string | null>(() => resolveProductColor(initialProduct, initialColor));
   const [outerProduct, setOuterProduct] = useState<Product | null>(null);
-  const [upperProduct, setUpperProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null);
-  const [lowerProduct, setLowerProduct] = useState<Product | null>(catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || null);
+  // Đến từ một bộ phối (rackIds) thì chỉ thử đúng các món trong bộ, không tự thêm áo/quần mặc định.
+  const [upperProduct, setUpperProduct] = useState<Product | null>(rackIds ? null : catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER') || null);
+  const [lowerProduct, setLowerProduct] = useState<Product | null>(rackIds ? null : catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'LOWER') || null);
   const [outerColor, setOuterColor] = useState<string | null>(null);
   const [upperColor, setUpperColor] = useState<string | null>(() => {
     const p = catalogProducts.find(item => (item.garmentCategory || toBackendCategory(item.category)) === 'UPPER');
@@ -229,7 +230,7 @@ function VirtualTryOnContent() {
       });
     }
 
-    if (catalogProducts.length > 0) {
+    if (catalogProducts.length > 0 && !rackIds) {
       setUpperProduct(prev => {
         if (prev) return prev;
         const u = catalogProducts.find(p => (p.garmentCategory || toBackendCategory(p.category)) === 'UPPER' && p.layerRole !== 'OUTER') || null;

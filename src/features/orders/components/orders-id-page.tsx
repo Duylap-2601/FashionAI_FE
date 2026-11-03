@@ -2,6 +2,7 @@
 
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useCart } from '@/features/cart/hooks/use-cart';
+import { ConfirmDeliveryDialog } from '@/features/orders/components/confirm-delivery-dialog';
 import { OrderIssuesList } from '@/features/orders/components/order-issues-list';
 import { OrderPaymentAction } from '@/features/orders/components/order-payment-action';
 import { OrderStatusLabel, ToneLabel } from '@/features/orders/components/order-status-label';
@@ -10,7 +11,6 @@ import { RefundReceiptImages } from '@/features/orders/components/refund-receipt
 import { ReportIssueModal } from '@/features/orders/components/report-issue-modal';
 import { ORDER_STATUS_DESCRIPTIONS } from '@/features/orders/constants/orders-id-page';
 import {
-  PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
   STATUS_CONFIG,
   type OrderStatusTone,
@@ -24,6 +24,7 @@ import {
   getOrderItemImage,
   getOrderItemName,
   getOrderTotal,
+  getPaymentMethodLabel,
   shipmentStatusLabel,
 } from '@/features/orders/services/order-display';
 import type { Order, OrderItem, OrderRefundStatus } from '@/features/orders/types/orders';
@@ -146,6 +147,7 @@ export default function OrderDetailPage() {
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false);
   const [reportingItem, setReportingItem] = useState<OrderItem | null>(null);
   const [reportMode, setReportMode] = useState<'PRODUCT' | 'REFUND_NOT_RECEIVED'>('PRODUCT');
 
@@ -220,7 +222,7 @@ export default function OrderDetailPage() {
   const refundEvidenceText = formatRefundEvidence(order.refundEvidence);
 
   const paymentLabel = (order.paymentStatus && PAYMENT_STATUS_LABELS[order.paymentStatus]) || 'Chờ thanh toán';
-  const paymentMethodLabel = PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod ?? 'Chưa xác định';
+  const paymentMethodLabel = getPaymentMethodLabel(order);
   const shippingLabel =
     order.displayStatus && order.displayStatus.source !== 'ORDER'
       ? order.displayStatus.label
@@ -257,7 +259,10 @@ export default function OrderDetailPage() {
 
   const handleConfirmDelivery = () => {
     confirmDelivery({ id: order.id }, {
-      onSuccess: () => toast.success('Cảm ơn bạn đã xác nhận nhận hàng'),
+      onSuccess: () => {
+        toast.success('Cảm ơn bạn đã xác nhận nhận hàng');
+        setShowDeliveryConfirm(false);
+      },
       onError: () => toast.error('Không thể xác nhận nhận hàng lúc này.'),
     });
   };
@@ -284,7 +289,7 @@ export default function OrderDetailPage() {
     <>
       {isAwaitingPayment ? <OrderPaymentAction order={order} /> : null}
       {order.allowedActions?.confirmDelivery ? (
-        <button type="button" onClick={handleConfirmDelivery} disabled={isConfirmingDelivery} className={accountButtonClassName('primary')}>
+        <button type="button" onClick={() => setShowDeliveryConfirm(true)} disabled={isConfirmingDelivery} className={accountButtonClassName('primary')}>
           {isConfirmingDelivery ? 'Đang xác nhận' : 'Tôi đã nhận hàng'}
         </button>
       ) : null}
@@ -613,6 +618,14 @@ export default function OrderDetailPage() {
         confirmLabel="Hủy đơn"
         isPending={isCancelling}
         onConfirm={handleCancel}
+      />
+
+      <ConfirmDeliveryDialog
+        open={showDeliveryConfirm}
+        onOpenChange={setShowDeliveryConfirm}
+        orderCode={orderCode}
+        isPending={isConfirmingDelivery}
+        onConfirm={handleConfirmDelivery}
       />
 
       <ReportIssueModal

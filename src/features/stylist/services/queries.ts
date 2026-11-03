@@ -17,4 +17,10 @@ export async function fetchStylistHistory(page: number, pageSize: number) {
   return { items, meta };
 }
 
+/** Một kết quả tư vấn trong lịch sử (GET /stylist/history/:id). */
+export async function fetchStylistResult(id: string) {
+  const data = await http.get<StylistResultDto>(`/stylist/history/${encodeURIComponent(id)}`);
+  return normalizeStylistResult(data);
+}
+
 export { queryKeys } from './query-keys';

@@ -1,4 +1,4 @@
-import { ORDER_IMAGE_FALLBACK } from '@/features/orders/constants/profile-orders-page';
+import { ORDER_IMAGE_FALLBACK, PAYMENT_METHOD_LABELS } from '@/features/orders/constants/profile-orders-page';
 import type { Order, OrderItem } from '@/features/orders/types/orders';
 
 export function formatVnd(value: number) {
@@ -16,6 +16,17 @@ export function formatOrderDateTime(iso?: string | null) {
   if (Number.isNaN(date.getTime())) return '—';
   const pad = (value: number) => String(value).padStart(2, '0');
   return `${pad(date.getHours())}:${pad(date.getMinutes())} ${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+}
+
+/**
+ * Phương thức thanh toán hiển thị: cổng của lần thanh toán đã thành công, rồi cổng khách
+ * chọn ở bước thanh toán (`paymentProvider`). `paymentMethod` của đơn luôn là BANK_TRANSFER
+ * nên chỉ dùng khi chưa có hai thông tin trên.
+ */
+export function getPaymentMethodLabel(order: Pick<Order, 'paymentMethod' | 'paymentProvider' | 'payments'>): string {
+  const paidProvider = order.payments?.find(payment => payment.status === 'PAID')?.provider;
+  const code = paidProvider || order.paymentProvider || order.paymentMethod;
+  return (code && PAYMENT_METHOD_LABELS[code]) || code || 'Chưa xác định';
 }
 
 export function getOrderCode(order: Pick<Order, 'orderCode'>) {

@@ -5,7 +5,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { queryKeys as paymentsQueryKeys } from '@/features/payments/services/query-keys';
 import { checkout } from '@/features/payments/services/mutations';
 import { fetchPaymentOrders, fetchPaymentStatus } from '@/features/payments/services/queries';
-import { extractErrorMessage } from '@/features/payments/services/payments-utils';
+import { extractErrorMessage, isPaymentSettled } from '@/features/payments/services/payments-utils';
 import { getAnalyticsIds } from '@/lib/analytics';
 import type { CheckoutRequest, PaymentOrder, PaymentStatusResponse } from '@/features/payments/types/payments';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -38,8 +38,8 @@ export function usePaymentStatus(paymentId: string | null) {
     queryFn: () => fetchPaymentStatus(paymentId ?? ''),
     enabled: Boolean(paymentId) && authStatus === 'authenticated',
     refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      return status === 'PENDING' ? 2_000 : false;
+      const payment = query.state.data;
+      return payment?.status === 'PENDING' && !isPaymentSettled(payment) ? 2_000 : false;
     },
   });
 }
