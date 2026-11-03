@@ -10,13 +10,13 @@ import { PRODUCTS } from '@/features/products/constants/products';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { ProductPickerModal } from '@/features/stylist/components/ProductPickerModal';
 import { QuotaExhaustedModal } from '@/features/stylist/components/QuotaExhaustedModal';
-import { useAnalyzeStylist, useDeleteStylistHistory, useStylistHistory } from '@/features/stylist/hooks/useStylist';
+import { useAnalyzeStylist, useDeleteStylistHistory, useStylistHistory, useStylistResult } from '@/features/stylist/hooks/useStylist';
 import { validateStylistRequest } from '@/features/stylist/services/stylist-utils';
 import type { StylistAnalysisRequest, StylistProduct, StylistResult } from '@/features/stylist/types/stylist';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
 import { trackEvent } from '@/lib/analytics';
 import { History as HistoryIcon, Sparkles } from 'lucide-react';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function AIStylistPage() {
@@ -46,6 +46,31 @@ export default function AIStylistPage() {
   const [selectedResult, setSelectedResult] = useState<StylistResult | null>(null);
   // Đã có kết quả nhưng người dùng mở lại form để sửa yêu cầu.
   const [isEditing, setIsEditing] = useState(false);
+  // Kết quả đang xem được giữ trên URL (?result=<id>) để bấm Back từ trang thử đồ vẫn mở lại được.
+  const [restoreResultId, setRestoreResultId] = useState<string | null>(null);
+  const { result: restoredResult, isError: restoreFailed } = useStylistResult(restoreResultId);
+
+  const syncResultUrl = (id: string | null) => {
+    const nextUrl = id ? `/ai-stylist?result=${encodeURIComponent(id)}` : '/ai-stylist';
+    if (window.location.pathname + window.location.search !== nextUrl) {
+      window.history.replaceState(window.history.state, '', nextUrl);
+    }
+  };
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('result');
+    if (id) setRestoreResultId(id);
+  }, []);
+
+  useEffect(() => {
+    if (!restoredResult) return;
+    setSelectedResult(prev => prev ?? restoredResult);
+    setPageState(prev => (prev === 'idle' ? 'result' : prev));
+  }, [restoredResult]);
+
+  useEffect(() => {
+    if (restoreFailed) syncResultUrl(null);
+  }, [restoreFailed]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -113,6 +138,7 @@ export default function AIStylistPage() {
       const res = await analyzeAsync(payload);
       setSelectedResult(res);
       setPageState('result');
+      syncResultUrl(res.id);
       refetchQuota();
       trackEvent('stylist_analyze', {});
       toast.success('Đã có bộ phối cho bạn!');
@@ -131,6 +157,7 @@ export default function AIStylistPage() {
   const handleSelectHistoryItem = (item: StylistResult) => {
     setSelectedResult(item);
     setPageState('result');
+    syncResultUrl(item.id);
     setIsEditing(false);
     setHistoryOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -150,6 +177,7 @@ export default function AIStylistPage() {
         setSelectedResult(null);
         setPageState('idle');
         setIsEditing(false);
+        syncResultUrl(null);
       }
     } catch {
       toast.error('Không thể xóa kết quả. Vui lòng thử lại.');

@@ -205,6 +205,8 @@ export function AccountConfirmDialog({
   title,
   description,
   confirmLabel,
+  cancelLabel = 'Giữ lại',
+  tone = 'danger',
   isPending = false,
   onConfirm,
 }: {
@@ -213,6 +215,9 @@ export function AccountConfirmDialog({
   title: string;
   description: React.ReactNode;
   confirmLabel: string;
+  cancelLabel?: string;
+  /** `danger` cho thao tác xóa/hủy; `primary` cho xác nhận thường (vd. đã nhận hàng). */
+  tone?: 'danger' | 'primary';
   isPending?: boolean;
   onConfirm: () => void;
 }) {
@@ -220,9 +225,9 @@ export function AccountConfirmDialog({
     <AccountDialog open={open} onOpenChange={onOpenChange} title={title} description={description}>
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button type="button" onClick={() => onOpenChange(false)} disabled={isPending} className={accountButtonClassName('outline')}>
-          Giữ lại
+          {cancelLabel}
         </button>
-        <button type="button" onClick={onConfirm} disabled={isPending} className={accountButtonClassName('danger')}>
+        <button type="button" onClick={onConfirm} disabled={isPending} className={accountButtonClassName(tone)}>
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} /> : null}
           {confirmLabel}
         </button>

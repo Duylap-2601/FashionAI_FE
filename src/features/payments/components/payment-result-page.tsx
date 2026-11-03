@@ -3,6 +3,7 @@
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { usePaymentStatus } from '@/features/payments/hooks/usePayments';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { isPaymentSettled } from '@/features/payments/services/payments-utils';
 import { AlertCircle, CheckCircle2, Clock, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -36,6 +37,11 @@ function PaymentResultContent() {
 
   if (payment.status === 'REFUND_REQUIRED') {
     return <ResultShell icon="error" title="Thanh toán cần hoàn tiền" message="Hệ thống đã nhận tiền nhưng chưa thể ghi nhận cho đơn hàng này. Khoản tiền sẽ được xử lý hoàn lại." orderId={payment.orderId} />;
+  }
+
+  // Lần thanh toán này còn chờ nhưng đơn đã được xác nhận thanh toán bằng cách khác.
+  if (isPaymentSettled(payment)) {
+    return <ResultShell icon="success" title="Đơn hàng đã được thanh toán" message={`Đơn hàng #${payment.orderCode} đã được xác nhận thanh toán.`} orderId={payment.orderId} />;
   }
 
   return <ResultShell icon="pending" title="Đang xác nhận thanh toán" message="Hệ thống đang kiểm tra thanh toán. Bạn có thể xem đơn hàng để theo dõi trạng thái." orderId={payment.orderId} />;

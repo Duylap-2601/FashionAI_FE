@@ -3,7 +3,7 @@
 import { AdminGuard } from '@/features/auth/components/AdminGuard';
 import { getAdminOrderStatusOptions, ORDER_STATUS_OPTIONS, resolveOrderStatusCfg } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt, fmtDateTime } from '@/features/admin/services/format';
-import { shipmentStatusLabel } from '@/features/orders/services/order-display';
+import { getPaymentMethodLabel, shipmentStatusLabel } from '@/features/orders/services/order-display';
 import {
   confirmManualPayment,
   createShipment,
@@ -130,6 +130,7 @@ export default function AdminOrderMeasurementsPage() {
 
   const onConfirmManualPayment = async () => {
     if (!order?.orderCode || !order?.id) return;
+    if (!window.confirm(`Xác nhận đã nhận ${fmt(order.totalVnd ?? order.totalAmount)} cho đơn #${order.orderCode}? Đơn sẽ được ghi nhận là đã thanh toán.`)) return;
     const finalNote = manualPaymentNote.trim() || 'Xác nhận thanh toán chuyển khoản thủ công';
     const finalRef = manualPaymentNote.trim() || `SEPAY-${order.orderCode}-${Date.now()}`;
     setSubmittingPayment(true);
@@ -668,7 +669,7 @@ export default function AdminOrderMeasurementsPage() {
                   <div className="space-y-2.5 text-xs">
                     <div className="flex justify-between text-landing-obsidian">
                       <span>Phương thức:</span>
-                      <span className="font-semibold text-landing-oxblood">{order.paymentMethod || '—'}</span>
+                      <span className="font-semibold text-landing-oxblood">{getPaymentMethodLabel(order)}</span>
                     </div>
 
                     {order.paymentProvider && (

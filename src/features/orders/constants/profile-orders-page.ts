@@ -74,6 +74,7 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   BANK_TRANSFER: 'Chuyển khoản',
   BANK: 'Chuyển khoản',
   SEPAY: 'Chuyển khoản',
+  MANUAL_ADMIN: 'Chuyển khoản (shop xác nhận)',
   MOMO: 'MoMo',
 };
 

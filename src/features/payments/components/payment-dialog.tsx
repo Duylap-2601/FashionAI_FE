@@ -2,6 +2,7 @@
 
 import { usePaymentStatus } from '@/features/payments/hooks/usePayments';
 import { getTransferContent, openPaymentGateway } from '@/features/payments/services/payment-gateway';
+import { isPaymentSettled } from '@/features/payments/services/payments-utils';
 import type { PaymentDialogProps } from '@/features/payments/types/payment-dialog';
 import { AccountDialog, accountButtonClassName, accountFocusRing, accountLabelClassName } from '@/features/profile/components/account-ui';
 import { cn, formatPrice } from '@/lib/utils';
@@ -29,7 +30,7 @@ function ZaloPayPaymentDialog({ checkoutResult, total, orderHref, onClose, onPai
   const paymentId = checkoutResult.paymentId ?? null;
   const { data: payment, isLoading } = usePaymentStatus(paymentId);
   const qrValue = checkoutResult.qrCode || checkoutResult.checkoutUrl || checkoutResult.payUrl || '';
-  const isPaid = payment?.status === 'PAID' || payment?.orderStatus === 'PAID';
+  const isPaid = isPaymentSettled(payment);
   const isFailed = payment?.status === 'FAILED';
   const isRefundRequired = payment?.status === 'REFUND_REQUIRED';
 
