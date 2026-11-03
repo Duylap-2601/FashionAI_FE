@@ -29,7 +29,8 @@ export const STATUS_CONFIG: Record<BackendOrderStatus, { label: string; tone: Or
   QUALITY_CHECK: { label: 'Kiểm tra chất lượng', tone: 'active', step: 2 },
   READY_TO_SHIP: { label: 'Chờ giao', tone: 'active', step: 3 },
   SHIPPING: { label: 'Đang giao', tone: 'active', step: 3 },
-  DELIVERED: { label: 'Đã giao', tone: 'done', step: 4 },
+  // Đơn vị vận chuyển báo đã giao nhưng khách chưa xác nhận: chưa tới bước "Đã nhận".
+  DELIVERED: { label: 'Đã giao', tone: 'done', step: 3 },
   COMPLETED: { label: 'Hoàn tất', tone: 'done', step: 4 },
   CANCELLED: { label: 'Đã hủy', tone: 'closed', step: -1 },
   RETURN_REQUESTED: { label: 'Yêu cầu hoàn trả', tone: 'attention', step: -1 },

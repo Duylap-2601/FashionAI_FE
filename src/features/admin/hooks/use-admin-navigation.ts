@@ -40,8 +40,6 @@ interface UseAdminNavigationEventsOptions {
   onSearchOrder: (orderCode: string) => void;
   /** Lọc tab vận đơn theo mã GHN hoặc mã đơn. */
   onShipmentTarget: (filters: AdminShipmentFilters) => void;
-  /** Đóng drawer đơn hàng/vận đơn trước khi chuyển sang tab vận đơn. */
-  onCloseDetails: () => void;
 }
 
 /** Đọc tab/mã đơn trên URL khi mở trang và nghe event `admin:navigate` (bấm vào notification). */
@@ -72,7 +70,6 @@ export function useAdminNavigationEvents(options: UseAdminNavigationEventsOption
       current.navigateAdminTab(targetTab, { orderCode, shipmentCode });
       if (targetTab === 'orders' && orderCode) current.onSearchOrder(orderCode);
       if (targetTab === 'shipments') {
-        current.onCloseDetails();
         if (shipmentCode) current.onShipmentTarget({ providerOrderCode: shipmentCode });
         else if (orderCode) current.onShipmentTarget({ orderCode });
       }

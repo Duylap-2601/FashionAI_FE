@@ -492,11 +492,11 @@ export default function AdminOrderMeasurementsPage() {
                           </p>
                         )}
                         <Link
-                          href={`/admin/dashboard?tab=shipments&shipmentCode=${order.shipment.providerOrderCode || ''}`}
+                          href={`/admin/shipments/${order.shipment.id}`}
                           className="inline-flex items-center gap-1 text-[11px] text-landing-oxblood font-bold hover:underline no-underline mt-1"
                         >
                           <ExternalLink className="w-3 h-3" />
-                          <span>Xem trong tab Vận đơn</span>
+                          <span>Xem chi tiết vận đơn</span>
                         </Link>
                       </div>
                     ) : (

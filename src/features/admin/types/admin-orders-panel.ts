@@ -1,5 +1,4 @@
 import type { AdminOrder } from '@/features/admin/types/admin-dashboard-page';
-import React from 'react';
 
 export interface AdminOrderFilters {
   search?: string;
@@ -11,7 +10,6 @@ export interface AdminOrderFilters {
 
 export interface AdminOrdersPanelProps {
   orders: AdminOrder[];
-  setSelectedOrder: React.Dispatch<React.SetStateAction<AdminOrder | null>>;
   filters?: AdminOrderFilters;
   onFilterChange?: (filters: Partial<AdminOrderFilters>) => void;
   onResetFilters?: () => void;

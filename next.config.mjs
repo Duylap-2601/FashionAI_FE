@@ -45,6 +45,16 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      // Đường cũ của trang chi tiết đơn admin; giữ để link/bookmark cũ vẫn mở được.
+      {
+        source: '/admin/orders/:id/measurements',
+        destination: '/admin/orders/:id',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 const isDev = process.env.NODE_ENV === 'development';

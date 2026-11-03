@@ -28,7 +28,14 @@ src/
 ├── app/
 │   ├── (admin)/admin/
 │   │   ├── collections/     # Admin collection management page
-│   │   └── dashboard/       # Admin dashboard page
+│   │   ├── dashboard/       # Admin dashboard page
+│   │   ├── orders/[id]/     # Order detail page (admin-order-measurements-page;
+│   │   │                    # old /orders/[id]/measurements redirects here
+│   │   │                    # via next.config redirects)
+│   │   └── shipments/[id]/  # Shipment detail page (opened from the shipments
+│   │                        # tab's row menu or GHN code link)
+│   │                        # List tabs link to these pages; there is no
+│   │                        # order/shipment detail drawer.
 │   ├── (auth)/              # reset-password, verify-email, google callback,
 │   │   │                    # mobile-auth callback
 │   │   └── (split)/         # login, register, forgot-password: shared
@@ -72,13 +79,19 @@ src/
 │   │                        #        controller, returns panelProps),
 │   │                        #        use-admin-products/-orders/-shipments/
 │   │                        #        -order-issues/-users, use-admin-product-editor,
+│   │                        #        use-admin-shipment-detail (/admin/shipments/[id]:
+│   │                        #        load, GHN staging simulation, cancel),
 │   │                        #        use-admin-overview-data (stats, reviews),
 │   │                        #        use-admin-navigation, use-admin-auto-refresh,
 │   │                        #        use-latest-ref
 │   │                        # components: admin-dashboard-page (layout only),
 │   │                        #             admin-sidebar, admin-topbar,
 │   │                        #             dashboard-overview, admin-revenue-chart,
-│   │                        #             admin-*-panel, admin-*-modal,
+│   │                        #             admin-*-panel, admin-*-modal (product,
+│   │                        #             user, order issue),
+│   │                        #             admin-shipment-detail-page (shipment
+│   │                        #             page; simulations come from
+│   │                        #             SHIPMENT_SIMULATIONS in constants),
 │   │                        #             admin-refund-panel (return/refund state,
 │   │                        #             customer account, receipts, next step),
 │   │                        #             admin-refund-history,
