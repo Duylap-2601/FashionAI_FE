@@ -3,21 +3,30 @@
 import { fmt, fmtDateTime } from '@/features/admin/services/format';
 import { shipmentStatusLabel } from '@/features/orders/services/order-display';
 import type { AdminShipmentsPanelProps } from '@/features/admin/types/admin-shipments-panel';
+import { SHIPMENT_SIMULATIONS } from '@/features/admin/constants/admin-dashboard-page';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
 import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';
-import { PackageCheck, RotateCcw, Search, XCircle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Eye, MoreVertical, RotateCcw, Search, XCircle } from 'lucide-react';
+import Link from 'next/link';
 
 const STATUS_OPTIONS = ['READY_TO_PICK', 'CREATED', 'PICKING', 'PICKED', 'SHIPPING', 'IN_TRANSIT', 'DELIVERING', 'DELIVERED', 'DELIVERY_FAILED', 'RETURNING', 'RETURNED', 'CANCELLED', 'FAILED'];
-const PICKABLE_STATUSES = ['READY_TO_PICK', 'CREATED', 'PICKING'];
+const MENU_CONTENT = 'w-52 rounded-[2px] border-landing-line bg-landing-paper p-1 shadow-md';
+const MENU_ITEM = 'cursor-pointer rounded-[2px] px-3 py-2 text-landing-obsidian focus:bg-landing-ivory focus:text-landing-obsidian';
 
 export function AdminShipmentsPanel({
   shipments,
   filters,
   setFilters,
-  onView,
-  onSimulatePicked,
+  onSimulateStatus,
   onCancel,
-  onOpenOrder,
   currentPage = 1,
   totalPages = 1,
   totalItems = shipments.length,
@@ -120,17 +129,17 @@ export function AdminShipmentsPanel({
 
       <div className="bg-landing-ivory rounded-[2px] border border-landing-line overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="min-w-[860px]">
+          <div className="min-w-[930px]">
             {/* Fixed Header */}
             <div className="bg-landing-paper/60 border-b border-landing-line text-landing-muted text-label-sm font-semibold uppercase shrink-0 select-none">
-              <div className="grid grid-cols-[130px_100px_minmax(140px,1fr)_140px_100px_150px_110px] items-center">
+              <div className="grid grid-cols-[130px_120px_minmax(140px,1fr)_140px_130px_170px_90px] items-center">
                 <div className="px-5 py-3">Mã GHN</div>
                 <div className="px-3 py-3">Mã đơn</div>
                 <div className="px-4 py-3">Khách hàng</div>
                 <div className="px-3 py-3">Trạng thái</div>
                 <div className="px-3 py-3 text-right">Phí vận chuyển</div>
                 <div className="px-4 py-3">Thời gian</div>
-                <div className="px-5 py-3 text-right">Thao tác</div>
+                <div className="px-3 py-3 text-right">Thao tác</div>
               </div>
             </div>
 
@@ -145,15 +154,18 @@ export function AdminShipmentsPanel({
               {shipments.map(shipment => (
                 <div
                   key={shipment.id}
-                  className={`grid grid-cols-[130px_100px_minmax(140px,1fr)_140px_100px_150px_110px] items-center ${
+                  className={`grid grid-cols-[130px_120px_minmax(140px,1fr)_140px_130px_170px_90px] items-center ${
                     shipment.issue ? 'bg-destructive/10 hover:bg-destructive/10' : 'hover:bg-landing-paper/60'
                   } transition-colors`}
                 >
                   {/* Mã GHN & Provider */}
                   <div className="px-5 py-3.5 min-w-0">
-                    <span className="font-mono font-semibold text-landing-obsidian block truncate">
+                    <Link
+                      href={`/admin/shipments/${shipment.id}`}
+                      className="font-mono font-semibold text-landing-obsidian hover:text-landing-oxblood hover:underline block truncate"
+                    >
                       {shipment.providerOrderCode || '—'}
-                    </span>
+                    </Link>
                     <span className="text-[10px] text-landing-muted font-bold uppercase tracking-wider block mt-0.5">
                       {shipment.provider || 'GHN'}
                     </span>
@@ -161,13 +173,12 @@ export function AdminShipmentsPanel({
 
                   {/* Mã đơn nội bộ */}
                   <div className="px-3 py-3.5 truncate">
-                    <button
-                      type="button"
-                      onClick={() => onOpenOrder(shipment.order.orderCode)}
-                      className="text-landing-oxblood font-semibold hover:underline bg-transparent border-0 cursor-pointer"
+                    <Link
+                      href={`/admin/orders/${shipment.order.id}`}
+                      className="text-landing-oxblood font-semibold hover:underline"
                     >
                       #{shipment.order.orderCode}
-                    </button>
+                    </Link>
                   </div>
 
                   {/* Khách hàng & SĐT */}
@@ -222,37 +233,46 @@ export function AdminShipmentsPanel({
                   </div>
 
                   {/* Actions */}
-                  <div className="px-5 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onView(shipment)}
-                        className="text-landing-oxblood font-semibold hover:underline bg-transparent border-0 cursor-pointer text-body-sm"
-                      >
-                        Chi tiết
-                      </button>
-                      {PICKABLE_STATUSES.includes(shipment.status) && (
+                  <div className="px-3 py-3.5 flex justify-end">
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          onClick={() => onSimulatePicked(shipment.id)}
-                          title="Giả lập shipper đã lấy hàng (staging)"
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-[2px] text-metric-products bg-metric-products/10 hover:bg-metric-products/10 border-0 cursor-pointer text-label-sm font-semibold"
+                          aria-label={`Thao tác vận đơn ${shipment.providerOrderCode || shipment.order.orderCode}`}
+                          className="w-8 h-8 rounded-[2px] border-0 bg-transparent flex items-center justify-center text-landing-muted hover:bg-landing-paper hover:text-landing-oxblood data-[state=open]:bg-landing-paper data-[state=open]:text-landing-oxblood cursor-pointer transition-colors"
                         >
-                          <PackageCheck className="w-3.5 h-3.5" />
-                          <span>Lấy hàng</span>
+                          <MoreVertical className="w-4 h-4" />
                         </button>
-                      )}
-                      {shipment.canCancel && (
-                        <button
-                          type="button"
-                          onClick={() => onCancel(shipment)}
-                          title="Hủy vận đơn"
-                          className="p-1.5 rounded-[2px] hover:bg-destructive/10 text-destructive border-0 bg-transparent cursor-pointer"
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className={MENU_CONTENT}>
+                        <DropdownMenuItem asChild className={MENU_ITEM}>
+                          <Link href={`/admin/shipments/${shipment.id}`}>
+                            <Eye /> Xem chi tiết
+                          </Link>
+                        </DropdownMenuItem>
+                        {SHIPMENT_SIMULATIONS.some(sim => sim.from.includes(shipment.status)) && (
+                          <>
+                            <DropdownMenuSeparator className="bg-landing-line" />
+                            <DropdownMenuLabel className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-landing-muted">
+                              Giả lập GHN (staging)
+                            </DropdownMenuLabel>
+                            {SHIPMENT_SIMULATIONS.filter(sim => sim.from.includes(shipment.status)).map(sim => (
+                              <DropdownMenuItem key={sim.status} onSelect={() => onSimulateStatus(shipment.id, sim.status)} className={MENU_ITEM}>
+                                <sim.icon /> {sim.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </>
+                        )}
+                        {shipment.canCancel && (
+                          <>
+                            <DropdownMenuSeparator className="bg-landing-line" />
+                            <DropdownMenuItem variant="destructive" onSelect={() => onCancel(shipment)} className={MENU_ITEM}>
+                              <XCircle /> Hủy vận đơn
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}

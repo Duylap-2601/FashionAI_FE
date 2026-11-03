@@ -2,7 +2,7 @@ import type { AdminNavItem, AdminPage, AdminPagination, AdminSidebarItem, Garmen
 import type { AdminOrderIssueFilters } from '@/features/admin/types/admin-order-issues-panel';
 import type { AdminOrderFilters } from '@/features/admin/types/admin-orders-panel';
 import type { AdminProductFilters } from '@/features/admin/types/admin-products-panel';
-import type { AdminShipmentFilters } from '@/features/admin/types/admin-shipments-panel';
+import type { AdminShipmentFilters, ShipmentSimulation } from '@/features/admin/types/admin-shipments-panel';
 import type { AdminUserFilters } from '@/features/admin/types/admin-users-panel';
 import type { BackendOrderStatus, OrderDisplayStatus, OrderRefundStatus } from '@/features/orders/types/orders';
 import type { LucideIcon } from 'lucide-react';
@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Package,
+  PackageCheck,
   Radio,
   RotateCcw,
   Scissors,
@@ -151,6 +152,15 @@ export const EMPTY_PRODUCT_FILTERS: AdminProductFilters = { category: '', status
 export const EMPTY_ORDER_FILTERS: AdminOrderFilters = { search: '', status: '', paymentStatus: '', fromDate: '', toDate: '' };
 export const EMPTY_USER_FILTERS: AdminUserFilters = { search: '', tier: '', role: '', isVerified: '' };
 export const EMPTY_SHIPMENT_FILTERS: AdminShipmentFilters = {};
+
+// Giả lập GHN trên staging (sandbox không có shipper thật). Giao thất bại / hoàn hàng
+// giữ đơn ở "Đang giao" và gắn cờ sự cố cho vận đơn.
+export const SHIPMENT_SIMULATIONS: ShipmentSimulation[] = [
+  { status: 'PICKED', label: 'Giả lập đã lấy hàng', success: 'Đã giả lập shipper lấy hàng', icon: PackageCheck, from: ['CREATED', 'READY_TO_PICK', 'PICKING'] },
+  { status: 'DELIVERED', label: 'Giả lập đã giao', success: 'Đã giả lập giao hàng thành công', icon: CheckCircle2, from: ['PICKED', 'SHIPPING', 'IN_TRANSIT', 'DELIVERING', 'DELIVERY_FAILED'] },
+  { status: 'DELIVERY_FAILED', label: 'Giả lập giao thất bại', success: 'Đã giả lập giao hàng thất bại', icon: AlertTriangle, from: ['PICKED', 'SHIPPING', 'IN_TRANSIT', 'DELIVERING'] },
+  { status: 'RETURNED', label: 'Giả lập hoàn hàng về shop', success: 'Đã giả lập hoàn hàng về shop', icon: RotateCcw, from: ['DELIVERY_FAILED', 'RETURNING'] },
+];
 export const EMPTY_ORDER_ISSUE_FILTERS: AdminOrderIssueFilters = { status: '', reason: '' };
 
 /** Users được tải một lần rồi lọc/phân trang phía client. */

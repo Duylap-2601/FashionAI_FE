@@ -38,10 +38,6 @@ export function createShipment(id: string, payload?: { requestKey?: string }, co
   return http.post(`/orders/${id}/shipment`, payload || {}, config);
 }
 
-export function syncAdminShipment(id: string) {
-  return http.post(`/admin/shipments/${id}/sync`, {});
-}
-
 export function cancelAdminShipment(id: string, payload?: { reason?: string }) {
   return http.post(`/admin/shipments/${id}/cancel`, payload || {});
 }

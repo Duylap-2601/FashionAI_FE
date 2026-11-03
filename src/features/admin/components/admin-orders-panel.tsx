@@ -11,7 +11,6 @@ import Link from 'next/link';
 
 export function AdminOrdersPanel({
   orders,
-  setSelectedOrder,
   filters = {},
   onFilterChange,
   onResetFilters,
@@ -221,20 +220,19 @@ export function AdminOrdersPanel({
                           </span>
                         </div>
                         {(o.refundStatus === 'REQUIRED' || o.refundStatus === 'PROCESSING' || (o.status === 'RETURNED' && o.refundStatus !== 'COMPLETED')) && (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedOrder?.(o)}
-                            className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/30 cursor-pointer hover:bg-destructive/20 transition-colors"
+                          <Link
+                            href={`/admin/orders/${o.id}`}
+                            className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/30 cursor-pointer hover:bg-destructive/20 transition-colors no-underline"
                             title="Đơn cần xử lý hoàn tiền — Nhấn để mở chi tiết"
                           >
                             Cần hoàn tiền
-                          </button>
+                          </Link>
                         )}
                       </div>
                     </div>
                     <div className="px-6 py-3.5 text-right flex items-center justify-end">
                       <Link
-                        href={`/admin/orders/${o.id}/measurements`}
+                        href={`/admin/orders/${o.id}`}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[2px] text-xs font-semibold text-landing-oxblood bg-landing-oxblood/5 hover:bg-landing-oxblood/10 transition-colors no-underline whitespace-nowrap cursor-pointer"
                         title="Xem chi tiết đơn hàng và số đo"
                       >

@@ -27,33 +27,26 @@ export function useAdminDashboard() {
   const products = useAdminProducts();
   const productEditor = useAdminProductEditor({ setProducts: products.setItems, onSaved: products.fetchList });
   const overview = useAdminOverviewData({ products: products.items });
-  const orders = useAdminOrders({ onStatsRefresh: overview.fetchStats });
+  const orders = useAdminOrders();
   const shipments = useAdminShipments({
     isActive: activeTab === 'shipments',
     refreshOrders: orders.fetchList,
-    applyOrderUpdate: orders.applyOrderUpdate,
   });
   const issues = useAdminOrderIssues({ isActive: activeTab === 'order-issues' });
   const users = useAdminUsers();
 
   const { fetchList: fetchProducts } = products;
-  const { fetchList: fetchOrders, ordersRef, setSelectedOrder } = orders;
-  const { refreshShipments, setSelectedShipment, changeFilters: changeShipmentFilters } = shipments;
+  const { fetchList: fetchOrders } = orders;
+  const { refreshShipments, changeFilters: changeShipmentFilters } = shipments;
   const { fetchList: fetchIssues } = issues;
   const { fetchUsers } = users;
   const { fetchStats, fetchReviewStats } = overview;
-
-  const closeDetails = useCallback(() => {
-    setSelectedOrder(null);
-    setSelectedShipment(null);
-  }, [setSelectedOrder, setSelectedShipment]);
 
   useAdminNavigationEvents({
     setActiveTab,
     navigateAdminTab,
     onSearchOrder: setSearchQuery,
     onShipmentTarget: changeShipmentFilters,
-    onCloseDetails: closeDetails,
   });
 
   // Lần refresh trước bị huỷ (request bị thay thế) sẽ xong sớm: chỉ lần mới nhất được tắt loading.
@@ -96,13 +89,6 @@ export function useAdminDashboard() {
     setSearchQuery('');
   }, [navigateAdminTab]);
 
-  const openOrderByCode = useCallback((orderCode: number) => {
-    const order = ordersRef.current.find(item => item.orderCode === orderCode);
-    if (order) setSelectedOrder(order);
-    navigateAdminTab('orders', { orderCode: String(orderCode) });
-    setSearchQuery(String(orderCode));
-  }, [navigateAdminTab, ordersRef, setSelectedOrder]);
-
   const handleIssueResolved = useCallback(() => {
     void fetchIssues();
     void fetchOrders();
@@ -136,7 +122,6 @@ export function useAdminDashboard() {
     issues,
     users,
     overview,
-    openOrderByCode,
     handleIssueResolved,
   };
 }

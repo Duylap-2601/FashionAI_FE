@@ -1,5 +1,6 @@
 'use client';
 import { queryKeys as reviewsQueryKeys } from '@/features/reviews/services/query-keys';
+import { queryKeys as ordersQueryKeys } from '@/features/orders/services/query-keys';
 import { handleRemoteCartChange } from '@/features/cart/services/cart-sync';
 
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -73,6 +74,13 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.reviewStats() });
             queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.myReviews() });
             queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.adminReviews() });
+          }
+
+          // Đơn đổi trạng thái (admin chuyển bước hoặc tự đi theo GHN): tải lại đơn ngay,
+          // không đợi vòng polling 30 giây của trang chi tiết.
+          if (notification.type === 'ORDER_STATUS') {
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
           }
 
           // Show Toast

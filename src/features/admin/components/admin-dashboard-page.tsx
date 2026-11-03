@@ -5,14 +5,12 @@ import { AdminCouponsPanel } from '@/features/admin/components/admin-coupons-pan
 import { AdminLiveTryOnSettingsPanel } from '@/features/admin/components/admin-live-try-on-settings-panel';
 import { AdminOrderIssueModal } from '@/features/admin/components/admin-order-issue-modal';
 import { AdminOrderIssuesPanel } from '@/features/admin/components/admin-order-issues-panel';
-import { AdminOrderModal } from '@/features/admin/components/admin-order-modal';
 import { AdminOrdersPanel } from '@/features/admin/components/admin-orders-panel';
 import { AdminPlatformsPanel } from '@/features/admin/components/admin-platforms-panel';
 import { AdminProductModal } from '@/features/admin/components/admin-product-modal';
 import { AdminProductsPanel } from '@/features/admin/components/admin-products-panel';
 import { AdminReconciliationPanel } from '@/features/admin/components/admin-reconciliation-panel';
 import { AdminSaleCampaignsPanel } from '@/features/admin/components/admin-sale-campaigns-panel';
-import { AdminShipmentModal } from '@/features/admin/components/admin-shipment-modal';
 import { AdminShipmentsPanel } from '@/features/admin/components/admin-shipments-panel';
 import { AdminShippingSettingsPanel } from '@/features/admin/components/admin-shipping-settings-panel';
 import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
@@ -53,7 +51,6 @@ function AdminDashboardContent() {
     issues,
     users,
     overview,
-    openOrderByCode,
     handleIssueResolved,
   } = useAdminDashboard();
 
@@ -124,7 +121,7 @@ function AdminDashboardContent() {
           )}
 
           {activeTab === 'orders' && (
-            <AdminOrdersPanel {...orders.panelProps} orders={orders.items} setSelectedOrder={orders.setSelectedOrder} />
+            <AdminOrdersPanel {...orders.panelProps} orders={orders.items} />
           )}
 
           {activeTab === 'shipments' && (
@@ -133,10 +130,8 @@ function AdminDashboardContent() {
               shipments={shipments.items}
               filters={shipments.filters}
               setFilters={shipments.changeFilters}
-              onView={shipments.handleViewShipment}
-              onSimulatePicked={shipments.handleSimulatePickedShipment}
+              onSimulateStatus={shipments.handleSimulateShipmentStatus}
               onCancel={shipments.handleCancelShipment}
-              onOpenOrder={openOrderByCode}
             />
           )}
 
@@ -169,34 +164,6 @@ function AdminDashboardContent() {
           )}
         </AnimatePresence>
 
-        {/* ─── DRAWER: ORDER DETAIL ────────────────────────────────────────────── */}
-        <AnimatePresence>
-          {orders.selectedOrder && (
-            <AdminOrderModal
-              setSelectedOrder={orders.setSelectedOrder}
-              selectedOrder={orders.selectedOrder}
-              handleUpdateOrderStatus={orders.handleUpdateOrderStatus}
-              handleConfirmManualPayment={orders.handleConfirmManualPayment}
-              handleUpdateRefund={orders.handleUpdateRefund}
-              handleFinalizeRefund={orders.handleFinalizeRefund}
-              handleCreateShipment={shipments.handleCreateShipment}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* ─── DRAWER: SHIPMENT DETAIL ─────────────────────────────────────────── */}
-        <AnimatePresence>
-          {shipments.selectedShipment && (
-            <AdminShipmentModal
-              shipment={shipments.selectedShipment}
-              onClose={() => shipments.setSelectedShipment(null)}
-              onSync={shipments.handleSyncShipment}
-              onCancel={shipments.handleCancelShipment}
-              onSimulateDelivered={shipments.handleSimulateDelivered}
-              onOpenOrder={openOrderByCode}
-            />
-          )}
-        </AnimatePresence>
 
         {/* ─── DIALOG: PRODUCT EDITOR ─────────────────────────────────────────── */}
         <AnimatePresence>
