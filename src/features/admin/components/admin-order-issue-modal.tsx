@@ -1,8 +1,10 @@
 'use client';
 
+import { ImageFilePreviews } from '@/components/ui/image-file-previews';
 import { fmt } from '@/features/admin/services/format';
 import { reviewOrderIssue } from '@/features/admin/services/mutations';
 import type { OrderIssue, OrderIssueReason } from '@/features/orders/types/orders';
+import { describeImageFileRejection, useImageFileSelection } from '@/hooks/use-image-file-selection';
 import { getErrorMessage } from '@/lib/errors';
 import {
   Check,
@@ -16,7 +18,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface AdminOrderIssueModalProps {
@@ -34,6 +36,7 @@ const REASON_LABELS: Record<string, string> = {
   REFUND_NOT_RECEIVED: 'Chưa nhận được tiền hoàn',
 };
 
+const MAX_RECEIPT_IMAGES = 5;
 // Lỗi từ phía shop: chính sách hoàn cả phí ship ban đầu.
 const SHOP_FAULT_REASONS: OrderIssueReason[] = ['WRONG_SIZE', 'WRONG_COLOR', 'QUALITY_MISMATCH'];
 
@@ -46,6 +49,15 @@ export function AdminOrderIssueModal({
   const [activeAction, setActiveAction] = useState<'APPROVE_REFUND' | 'REJECT' | null>(null);
   const [adminNote, setAdminNote] = useState('');
   const [refundShipping, setRefundShipping] = useState(false);
+  // "Duyệt & hoàn ngay": chuyển khoản luôn, khách không cần gửi trả hàng.
+  const [refundNow, setRefundNow] = useState(false);
+  const [transferRef, setTransferRef] = useState('');
+  const receipts = useImageFileSelection({
+    maxFiles: MAX_RECEIPT_IMAGES,
+    onReject: (rejection) => toast.error(describeImageFileRejection(rejection, 'ảnh chứng từ')),
+  });
+  const clearReceipts = receipts.clear;
+  const receiptInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
   const [accountCopied, setAccountCopied] = useState(false);
@@ -58,7 +70,10 @@ export function AdminOrderIssueModal({
     setAdminNote('');
     // Lỗi từ phía shop mặc định hoàn cả phí ship ban đầu; admin bỏ chọn được.
     setRefundShipping(Boolean(issueReason && SHOP_FAULT_REASONS.includes(issueReason)));
-  }, [issue?.id, issueReason]);
+    setRefundNow(false);
+    setTransferRef('');
+    clearReceipts();
+  }, [issue?.id, issueReason, clearReceipts]);
 
   if (!isOpen || !issue) return null;
 
@@ -89,6 +104,10 @@ export function AdminOrderIssueModal({
       toast.error('Vui lòng nhập lý do từ chối yêu cầu.');
       return;
     }
+    if (activeAction === 'APPROVE_REFUND' && refundNow && (!transferRef.trim() || receipts.items.length === 0)) {
+      toast.error('Hoàn tiền ngay cần mã giao dịch và ảnh chứng từ chuyển khoản.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -106,12 +125,18 @@ export function AdminOrderIssueModal({
             approvedResolution: 'REFUND',
             adminNote: adminNote.trim() || undefined,
             refundShipping: canRefundShipping ? refundShipping : undefined,
+            refundNow: refundNow || undefined,
+            evidenceReference: refundNow ? transferRef.trim() : undefined,
           },
+          undefined,
+          refundNow ? receipts.files : undefined,
         );
         toast.success(
           issue.reason === 'REFUND_NOT_RECEIVED'
             ? 'Đã duyệt. Khoản hoàn trước bị đánh dấu thất bại, cần chuyển lại cho khách.'
-            : 'Đã duyệt hoàn tiền. Đơn hàng chuyển sang tiến trình hoàn trả!'
+            : refundNow
+              ? 'Đã duyệt và ghi nhận hoàn tiền cho khách.'
+              : 'Đã duyệt hoàn tiền. Đơn hàng chuyển sang tiến trình hoàn trả!'
         );
       }
       onSuccess();
@@ -384,6 +409,89 @@ export function AdminOrderIssueModal({
                     className="w-full px-3 py-2 bg-landing-ivory border border-landing-taupe rounded-[2px] text-body-sm focus:outline-none focus:border-landing-oxblood"
                   />
 
+                  {activeAction === 'APPROVE_REFUND' && (
+                    <fieldset className="flex flex-col gap-2">
+                      <legend className="mb-1 text-[12px] font-semibold text-landing-oxblood">Cách hoàn tiền</legend>
+                      {[
+                        {
+                          value: false,
+                          label: issue.reason === 'REFUND_NOT_RECEIVED' ? 'Duyệt, chuyển lại tiền sau ở trang đơn' : 'Duyệt, chờ khách gửi trả hàng',
+                          hint: 'Nhận và kiểm tra hàng hoàn rồi mới chuyển khoản ở trang đơn hàng.',
+                        },
+                        {
+                          value: true,
+                          label: issue.reason === 'REFUND_NOT_RECEIVED' ? 'Duyệt và chuyển lại tiền luôn' : 'Duyệt và hoàn tiền luôn',
+                          hint: 'Chuyển khoản ngay, khách không cần gửi trả hàng. Cần mã giao dịch và ảnh chứng từ.',
+                        },
+                      ].map((option) => (
+                        <label key={String(option.value)} className="flex cursor-pointer items-start gap-2 text-[12px] text-landing-obsidian">
+                          <input
+                            type="radio"
+                            name="refund-mode"
+                            checked={refundNow === option.value}
+                            onChange={() => setRefundNow(option.value)}
+                            disabled={isSubmitting}
+                            className="mt-0.5 accent-landing-oxblood"
+                          />
+                          <span>
+                            {option.label}
+                            <span className="block text-[11px] text-landing-muted">{option.hint}</span>
+                          </span>
+                        </label>
+                      ))}
+                    </fieldset>
+                  )}
+
+                  {activeAction === 'APPROVE_REFUND' && refundNow && (
+                    <div className="flex flex-col gap-2 border-l-2 border-landing-brass pl-3">
+                      <label htmlFor="refund-now-ref" className="text-[12px] font-semibold text-landing-oxblood">
+                        Mã giao dịch / ghi chú chuyển khoản <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        id="refund-now-ref"
+                        type="text"
+                        value={transferRef}
+                        onChange={(e) => setTransferRef(e.target.value)}
+                        placeholder="VD: VCB FT2611021234, chuyển tới STK của khách"
+                        disabled={isSubmitting}
+                        className="w-full px-3 py-2 bg-landing-ivory border border-landing-taupe rounded-[2px] text-body-sm focus:outline-none focus:border-landing-oxblood"
+                      />
+                      <input
+                        ref={receiptInputRef}
+                        type="file"
+                        multiple
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        disabled={isSubmitting}
+                        onChange={(e) => {
+                          receipts.add(e.target.files);
+                          e.target.value = '';
+                        }}
+                      />
+                      {receipts.items.length === 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => receiptInputRef.current?.click()}
+                          disabled={isSubmitting}
+                          className="inline-flex w-fit items-center gap-1.5 text-[12px] font-semibold text-landing-oxblood underline cursor-pointer bg-transparent border-0 p-0"
+                        >
+                          Đính kèm ảnh chứng từ chuyển khoản *
+                        </button>
+                      ) : (
+                        <ImageFilePreviews
+                          items={receipts.items}
+                          onRemove={receipts.remove}
+                          onAdd={receipts.canAddMore ? () => receiptInputRef.current?.click() : undefined}
+                          disabled={isSubmitting}
+                          tileClassName="size-20 rounded-[2px] border-landing-line bg-landing-paper"
+                        />
+                      )}
+                      <span className="text-[11px] text-landing-muted">
+                        Số tiền: tiền hàng của món (đã trừ phần mã giảm giá){refundShipping && canRefundShipping ? ' và phí ship ban đầu' : ''}. Khách thấy ảnh chứng từ trong mục Hoàn tiền.
+                      </span>
+                    </div>
+                  )}
+
                   {activeAction === 'APPROVE_REFUND' && canRefundShipping ? (
                     <label className="flex cursor-pointer items-start gap-2 text-[12px] text-landing-obsidian">
                       <input
@@ -406,7 +514,9 @@ export function AdminOrderIssueModal({
                     <p className="text-[11px] text-metric-products bg-metric-products/10 p-2 rounded-[2px]">
                       {issue.reason === 'REFUND_NOT_RECEIVED'
                         ? 'ℹ Duyệt sẽ đánh dấu khoản hoàn trước là thất bại và mở khoản hoàn mới. Sau đó vào trang đơn hàng để chuyển lại tiền cho khách.'
-                        : 'ℹ Duyệt chưa chuyển tiền nên không cần ảnh chứng từ. Đơn chuyển sang “Duyệt hoàn trả”; khi hàng hoàn về và kiểm tra xong, chuyển khoản rồi ghi nhận từng khoản (kèm ảnh chứng từ) ở trang đơn hàng.'}
+                        : refundNow
+                          ? 'ℹ Shop chuyển khoản trước, khách không cần gửi trả hàng. Đơn chuyển sang “Đã hoàn trả” và yêu cầu sang “Đã hoàn tiền”.'
+                          : 'ℹ Duyệt chưa chuyển tiền nên không cần ảnh chứng từ. Đơn chuyển sang “Duyệt hoàn trả”; khi hàng hoàn về và kiểm tra xong, chuyển khoản rồi ghi nhận từng khoản (kèm ảnh chứng từ) ở trang đơn hàng.'}
                     </p>
                   )}
 
@@ -424,7 +534,8 @@ export function AdminOrderIssueModal({
                       onClick={handleReview}
                       disabled={
                         isSubmitting ||
-                        (activeAction === 'REJECT' && !adminNote.trim())
+                        (activeAction === 'REJECT' && !adminNote.trim()) ||
+                        (activeAction === 'APPROVE_REFUND' && refundNow && (!transferRef.trim() || receipts.items.length === 0))
                       }
                       className={`px-4 py-1.5 rounded-[2px] text-xs font-bold text-landing-paper flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
                         activeAction === 'REJECT' ? 'bg-destructive hover:bg-destructive' : 'bg-landing-oxblood hover:bg-landing-oxblood/90'

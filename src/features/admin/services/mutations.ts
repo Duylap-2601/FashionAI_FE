@@ -137,7 +137,15 @@ export function deleteAdminSaleCampaign(id: string, config?: HttpOptions) {
 
 export type ReviewOrderIssueInput =
   | { decision: 'REJECT'; adminNote: string }
-  | { decision: 'APPROVE'; approvedResolution: 'REFUND'; adminNote?: string; refundShipping?: boolean };
+  | {
+      decision: 'APPROVE';
+      approvedResolution: 'REFUND';
+      adminNote?: string;
+      refundShipping?: boolean;
+      /** Duyệt và hoàn tiền luôn, không cần khách gửi trả hàng (kèm mã giao dịch + ảnh chứng từ). */
+      refundNow?: boolean;
+      evidenceReference?: string;
+    };
 
 export function reviewOrderIssue(
   issueId: string,
@@ -155,6 +163,10 @@ export function reviewOrderIssue(
   }
   if ('refundShipping' in payload && payload.refundShipping !== undefined) {
     formData.append('refundShipping', String(payload.refundShipping));
+  }
+  if ('refundNow' in payload && payload.refundNow) {
+    formData.append('refundNow', 'true');
+    if (payload.evidenceReference) formData.append('evidenceReference', payload.evidenceReference);
   }
   for (const file of receiptImages ?? []) {
     formData.append('receiptImages', file);
