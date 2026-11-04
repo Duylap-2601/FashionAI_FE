@@ -17,6 +17,8 @@ import { toast } from 'sonner';
 // handler cũ khi effect chạy lại.
 let reconnectCartHandler: (() => void) | null = null;
 
+const ORDER_NOTIFICATION_TYPES: NotificationType[] = ['ORDER_STATUS', 'PAYMENT', 'ORDER_ISSUE'];
+
 function getToastIcon(type: NotificationType) {
   switch (type) {
     case 'ORDER_STATUS':
@@ -76,11 +78,14 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.adminReviews() });
           }
 
-          // Đơn đổi trạng thái (admin chuyển bước hoặc tự đi theo GHN): tải lại đơn ngay,
-          // không đợi vòng polling 30 giây của trang chi tiết.
-          if (notification.type === 'ORDER_STATUS') {
+          // Đơn đổi trạng thái (admin chuyển bước hoặc tự đi theo GHN), yêu cầu đổi trả được
+          // duyệt (ORDER_ISSUE) hay shop ghi nhận hoàn tiền (PAYMENT): tải lại đơn và yêu cầu
+          // đổi trả ngay, không đợi vòng polling 30 giây của trang chi tiết.
+          if (ORDER_NOTIFICATION_TYPES.includes(notification.type)) {
             queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order() });
             queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderIssues() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderIssue() });
           }
 
           // Show Toast
