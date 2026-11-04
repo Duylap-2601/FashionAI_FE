@@ -121,7 +121,7 @@ export const RETURN_POLICY: PolicyDocument = {
           type: 'list',
           items: [
             'Số tiền hoàn bằng giá bạn thực trả cho sản phẩm đó (sau khi trừ phần mã giảm giá của sản phẩm).',
-            'Lỗi từ phía StAie. (sai số đo, sai màu / sai mẫu, lỗi may): hoàn thêm phí giao hàng ban đầu của sản phẩm. Đơn có nhiều sản phẩm được hoàn phần phí giao chia theo giá trị sản phẩm. StAie. hướng dẫn cách gửi trả và chịu phí gửi trả.',
+            'Lỗi từ phía StAie. (sai số đo, sai màu / sai mẫu, lỗi may): hoàn thêm toàn bộ phí giao hàng ban đầu của đơn, một lần cho mỗi đơn kể cả khi nhiều sản phẩm bị lỗi. StAie. hướng dẫn cách gửi trả và chịu phí gửi trả.',
             'Lý do khác, nếu được chấp thuận: hoàn giá sản phẩm, không hoàn phí giao hàng ban đầu và bạn tự chịu phí gửi trả.',
             'Tiền được hoàn qua chuyển khoản ngân hàng tới tài khoản bạn cung cấp khi gửi yêu cầu, trong 5 - 7 ngày làm việc sau khi StAie nhận lại và kiểm tra hàng hoàn.',
           ],
