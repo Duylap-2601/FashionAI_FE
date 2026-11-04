@@ -24,7 +24,7 @@ const STATUS_OPTIONS: { value: OrderIssueStatus | ''; label: string }[] = [
 const REASON_OPTIONS: { value: OrderIssueReason | ''; label: string }[] = [
   { value: '', label: 'Tất cả lý do' },
   { value: 'WRONG_SIZE', label: 'Sai kích thước / số đo' },
-  { value: 'WRONG_COLOR', label: 'Sai màu sắc' },
+  { value: 'WRONG_COLOR', label: 'Sai màu / sai mẫu' },
   { value: 'QUALITY_MISMATCH', label: 'Chất lượng / Đường may' },
   { value: 'OTHER', label: 'Lý do khác' },
   { value: 'REFUND_NOT_RECEIVED', label: 'Chưa nhận được tiền hoàn' },
@@ -236,7 +236,7 @@ export function AdminOrderIssuesPanel({
                           {issue.reason === 'WRONG_SIZE'
                             ? 'Sai số đo'
                             : issue.reason === 'WRONG_COLOR'
-                            ? 'Sai màu'
+                            ? 'Sai màu/mẫu'
                             : issue.reason === 'QUALITY_MISMATCH'
                             ? 'Lỗi may đo'
                             : issue.reason === 'REFUND_NOT_RECEIVED'

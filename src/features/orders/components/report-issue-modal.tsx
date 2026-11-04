@@ -42,8 +42,8 @@ const REASONS: { value: OrderIssueReason; label: string; desc: string }[] = [
   },
   {
     value: 'WRONG_COLOR',
-    label: 'Sai màu sắc',
-    desc: 'Màu sắc thực tế sai khác hoàn toàn so với mô tả đã chọn.',
+    label: 'Sai màu / sai mẫu',
+    desc: 'Nhận màu hoặc mẫu khác với lựa chọn khi đặt hàng.',
   },
   {
     value: 'QUALITY_MISMATCH',

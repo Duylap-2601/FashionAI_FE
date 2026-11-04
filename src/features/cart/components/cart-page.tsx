@@ -24,7 +24,7 @@ const outlineButton = cn(
 /** Những điều thật về đơn may đo, kèm link tới trang liên quan. */
 const ASSURANCES: { title: string; body: string; href?: string; link?: string }[] = [
   { title: 'May theo số đo của bạn', body: 'Mỗi đơn chụp lại số đo đã lưu trong hồ sơ lúc đặt.', href: '/profile/measurements', link: 'Xem số đo' },
-  { title: '7 ngày để báo lỗi', body: 'Tính từ khi đơn hoàn tất, nếu sai số đo, sai màu hoặc có lỗi may.', href: '/return-policy', link: 'Chính sách đổi trả' },
+  { title: '7 ngày để báo lỗi', body: 'Tính từ khi đơn hoàn tất, nếu sai số đo, sai màu, sai mẫu hoặc có lỗi may.', href: '/return-policy', link: 'Chính sách đổi trả' },
   { title: 'Thanh toán qua ZaloPay', body: 'Quét QR hoặc mở ứng dụng ZaloPay ở bước đặt hàng.' },
 ];
 

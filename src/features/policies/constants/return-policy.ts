@@ -7,8 +7,8 @@ export const RETURN_POLICY: PolicyDocument = {
   slug: 'return-policy',
   title: 'Chính sách đổi trả',
   summary:
-    'Mỗi sản phẩm StAie. được may riêng theo số đo của bạn. Nếu sản phẩm nhận được may sai số đo, sai màu hoặc có lỗi, bạn có 7 ngày để gửi yêu cầu hoàn tiền ngay trong trang đơn hàng.',
-  updatedAt: '19/10/2026',
+    'Mỗi sản phẩm StAie. được may riêng theo số đo của bạn. Nếu sản phẩm nhận được may sai số đo, sai màu, sai mẫu hoặc có lỗi, bạn có 7 ngày để gửi yêu cầu hoàn tiền ngay trong trang đơn hàng.',
+  updatedAt: '04/11/2026',
   highlights: [
     { label: 'Thời hạn gửi yêu cầu', value: '7 ngày' },
     { label: 'Tính từ', value: 'Khi đơn hoàn tất' },
@@ -21,7 +21,7 @@ export const RETURN_POLICY: PolicyDocument = {
       blocks: [
         {
           type: 'paragraph',
-          text: 'Chính sách áp dụng cho mọi đơn hàng đặt trên website và ứng dụng StAie. (FashionAI). Vì sản phẩm được cắt may theo số đo bạn lưu trong hồ sơ, việc đổi trả tập trung vào lỗi phát sinh từ phía StAie.: may sai số đo, giao sai màu hoặc lỗi chất lượng.',
+          text: 'Chính sách áp dụng cho mọi đơn hàng đặt trên website và ứng dụng StAie. (FashionAI). Vì sản phẩm được cắt may theo số đo bạn lưu trong hồ sơ, việc đổi trả tập trung vào lỗi phát sinh từ phía StAie.: may sai số đo, giao sai màu, sai mẫu hoặc lỗi chất lượng.',
         },
       ],
     },
@@ -47,10 +47,10 @@ export const RETURN_POLICY: PolicyDocument = {
           type: 'table',
           columns: ['Lý do', 'Ví dụ', 'Phí vận chuyển'],
           rows: [
-            ['Sai kích thước / số đo', 'Sản phẩm lệch so với số đo đã chốt trong đơn quá ±1 cm (số đo vòng) hoặc ±1,5 cm (số đo dài)', 'StAie. chịu'],
-            ['Sai màu sắc', 'Nhận màu khác với màu bạn đã chọn khi đặt hàng', 'StAie. chịu'],
-            ['Lỗi đường may / chất lượng vải', 'Bung chỉ, lệch đường may, vải lỗi, khuy hoặc khóa kéo hỏng', 'StAie. chịu'],
-            ['Lý do khác', 'Không còn ưng kiểu dáng, đổi ý sau khi nhận hàng', 'Thẩm định riêng; nếu được chấp thuận, bạn chịu phí vận chuyển'],
+            ['Sai kích thước / số đo', 'Sản phẩm lệch so với số đo đã chốt trong đơn quá ±1 cm (số đo vòng) hoặc ±1,5 cm (số đo dài)', 'StAie. hoàn phí giao ban đầu và chịu phí gửi trả'],
+            ['Sai màu / sai mẫu', 'Nhận màu hoặc mẫu khác với lựa chọn khi đặt hàng', 'StAie. hoàn phí giao ban đầu và chịu phí gửi trả'],
+            ['Lỗi đường may / chất lượng vải', 'Bung chỉ, lệch đường may, vải lỗi, khuy hoặc khóa kéo hỏng', 'StAie. hoàn phí giao ban đầu và chịu phí gửi trả'],
+            ['Lý do khác', 'Không còn ưng kiểu dáng, đổi ý sau khi nhận hàng', 'Thẩm định riêng; nếu được chấp thuận, không hoàn phí giao ban đầu và bạn chịu phí gửi trả'],
           ],
         },
         {
@@ -120,8 +120,9 @@ export const RETURN_POLICY: PolicyDocument = {
         {
           type: 'list',
           items: [
-            'Số tiền hoàn bằng giá bạn thực trả cho sản phẩm đó (sau khi trừ mã giảm giá).',
-            'Với lỗi từ phía StAie., phí vận chuyển của sản phẩm cũng được hoàn.',
+            'Số tiền hoàn bằng giá bạn thực trả cho sản phẩm đó (sau khi trừ phần mã giảm giá của sản phẩm).',
+            'Lỗi từ phía StAie. (sai số đo, sai màu / sai mẫu, lỗi may): hoàn thêm phí giao hàng ban đầu của sản phẩm. Đơn có nhiều sản phẩm được hoàn phần phí giao chia theo giá trị sản phẩm. StAie. hướng dẫn cách gửi trả và chịu phí gửi trả.',
+            'Lý do khác, nếu được chấp thuận: hoàn giá sản phẩm, không hoàn phí giao hàng ban đầu và bạn tự chịu phí gửi trả.',
             'Tiền được hoàn qua chuyển khoản ngân hàng tới tài khoản bạn cung cấp khi gửi yêu cầu, trong 5 - 7 ngày làm việc sau khi StAie nhận lại và kiểm tra hàng hoàn.',
           ],
         },

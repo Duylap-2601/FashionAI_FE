@@ -19,7 +19,7 @@ interface OrderIssuesListProps {
 
 const REASON_LABELS: Record<OrderIssueReason, string> = {
   WRONG_SIZE: 'Sai kích thước / số đo',
-  WRONG_COLOR: 'Sai màu sắc',
+  WRONG_COLOR: 'Sai màu / sai mẫu',
   QUALITY_MISMATCH: 'Lỗi đường may / chất lượng vải',
   OTHER: 'Lý do khác',
   REFUND_NOT_RECEIVED: 'Chưa nhận được tiền hoàn',
