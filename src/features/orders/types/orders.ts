@@ -121,10 +121,15 @@ export interface MeasurementDisplayItem {
 
 export type OrderRefundStatus = 'PENDING' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
+/** Khoản hoàn: tiền hàng hoặc phí ship ban đầu, chuyển và ghi nhận riêng. */
+export type OrderRefundKind = 'GOODS' | 'SHIPPING';
+
 export interface OrderRefund {
   id: string;
   paymentId: string;
   provider: string;
+  /** Khoản cũ (trước khi tách) không có `kind`: coi là tiền hàng. */
+  kind?: OrderRefundKind;
   amountVnd: number;
   reason?: string | null;
   status: OrderRefundStatus;
@@ -390,6 +395,10 @@ export interface OrderIssueOrderSummary {
   id: string;
   orderCode: number;
   status: BackendOrderStatus;
+  /** Phí ship ban đầu (Decimal từ BE, có thể là chuỗi). */
+  shippingFee?: string | number | null;
+  /** Khoản hoàn phí ship đang chờ hoặc đã chuyển của đơn (mỗi đơn tối đa một). */
+  refunds?: { id: string; status: OrderRefundStatus }[];
 }
 
 export interface OrderIssue {

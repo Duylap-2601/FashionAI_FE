@@ -5,7 +5,8 @@ import { fmt, fmtDateTime } from '@/features/admin/services/format';
 import { updateOrderRefund } from '@/features/admin/services/mutations';
 import type { AdminRefundPanelProps } from '@/features/admin/types/admin-refund-panel';
 import { RefundReceiptImages } from '@/features/orders/components/refund-receipt-images';
-import type { OrderRefundStatus } from '@/features/orders/types/orders';
+import { REFUND_KIND_LABELS } from '@/features/orders/constants/profile-orders-page';
+import type { OrderRefund, OrderRefundKind, OrderRefundStatus } from '@/features/orders/types/orders';
 import { describeImageFileRejection, useImageFileSelection } from '@/hooks/use-image-file-selection';
 import { getErrorMessage } from '@/lib/errors';
 import { cn, formatRefundEvidence, getRefundEvidenceImages } from '@/lib/utils';
@@ -17,6 +18,7 @@ import { toast } from 'sonner';
 
 const MAX_REFUND_RECEIPT_IMAGES = 5;
 const OPEN_REFUND_STATUSES: OrderRefundStatus[] = ['REQUIRED', 'PENDING', 'PROCESSING'];
+const REFUND_KINDS: OrderRefundKind[] = ['GOODS', 'SHIPPING'];
 const RETURN_STEPS = ['Khách yêu cầu', 'Duyệt hoàn tiền', 'Nhận hàng hoàn', 'Chuyển khoản'];
 const RETURN_STATUSES = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING', 'RETURNED'];
 
@@ -51,19 +53,201 @@ function MoneyRow({ label, value, strong = false }: { label: string; value: numb
   );
 }
 
+function refundKind(refund: OrderRefund): OrderRefundKind {
+  return refund.kind ?? 'GOODS';
+}
+
+/**
+ * Chuyển khoản và ghi nhận một khoản hoàn (tiền hàng hoặc phí ship). Mỗi khoản có số
+ * tiền, ảnh chứng từ và mã giao dịch riêng; khoản phí ship có thể chọn không hoàn.
+ */
+function RefundTransferForm({
+  orderId,
+  kind,
+  suggestedVnd,
+  approved,
+  hasReceipts,
+  onRecorded,
+}: {
+  orderId: string;
+  kind: OrderRefundKind;
+  suggestedVnd: number;
+  approved: boolean;
+  hasReceipts: boolean;
+  onRecorded: () => Promise<unknown> | void;
+}) {
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundNote, setRefundNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const receipts = useImageFileSelection({
+    maxFiles: MAX_REFUND_RECEIPT_IMAGES,
+    onReject: (rejection) => toast.error(describeImageFileRejection(rejection, 'ảnh chứng từ')),
+  });
+  const title = REFUND_KIND_LABELS[kind];
+  const inputId = `refund-receipt-input-${kind.toLowerCase()}`;
+
+  const confirmRefund = async () => {
+    if (!refundNote.trim()) {
+      toast.error('Vui lòng nhập mã giao dịch hoặc ghi chú chuyển khoản.');
+      return;
+    }
+    if (receipts.files.length === 0 && !hasReceipts) {
+      toast.error('Vui lòng đính kèm ảnh chứng từ chuyển khoản hoàn tiền để khách đối chiếu.');
+      return;
+    }
+    const parsedAmount = refundAmount.trim() ? parseInt(refundAmount.trim(), 10) : undefined;
+    if (parsedAmount !== undefined && (Number.isNaN(parsedAmount) || parsedAmount < 1)) {
+      toast.error('Số tiền hoàn phải là số nguyên từ 1 VNĐ.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await updateOrderRefund(orderId, {
+        refundStatus: 'COMPLETED',
+        kind,
+        amountVnd: parsedAmount,
+        evidenceReference: refundNote.trim(),
+        internalNote: refundNote.trim(),
+        receiptImages: receipts.files,
+      });
+      toast.success(`Đã ghi nhận hoàn ${title.toLowerCase()}`);
+      setRefundNote('');
+      setRefundAmount('');
+      receipts.clear();
+      await onRecorded();
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể ghi nhận hoàn tiền.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const skipShipping = async () => {
+    if (!window.confirm(`Không hoàn phí ship ${fmt(suggestedVnd)} cho đơn này?`)) return;
+    setSubmitting(true);
+    try {
+      await updateOrderRefund(orderId, {
+        refundStatus: 'CANCELLED',
+        kind,
+        internalNote: 'Admin chọn không hoàn phí ship ban đầu',
+      });
+      toast.success('Đã bỏ khoản hoàn phí ship');
+      await onRecorded();
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể bỏ khoản hoàn phí ship.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 rounded-[2px] border border-landing-line p-4" aria-label={`Hoàn ${title.toLowerCase()}`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <h4 className="text-xs font-semibold text-landing-obsidian">{title}</h4>
+        <span className="font-mono text-sm font-semibold text-landing-oxblood">{fmt(suggestedVnd)}</span>
+      </div>
+
+      <label className="block">
+        <span className={subLabelClassName}>1. Số tiền đã chuyển</span>
+        <input
+          type="number"
+          min={1}
+          step={1000}
+          value={refundAmount}
+          onChange={(e) => setRefundAmount(e.target.value)}
+          placeholder={suggestedVnd > 0 ? `Để trống = hoàn ${fmt(suggestedVnd)}` : 'Số tiền (VNĐ)'}
+          className={cn(inputClassName, 'mt-1.5 font-mono')}
+        />
+        {suggestedVnd > 0 ? (
+          <button
+            type="button"
+            onClick={() => setRefundAmount(String(suggestedVnd))}
+            className="mt-1 cursor-pointer border-0 bg-transparent p-0 text-[11px] text-landing-oxblood underline underline-offset-2"
+          >
+            Điền số {approved ? 'đã duyệt' : 'còn lại'}: {fmt(suggestedVnd)}
+          </button>
+        ) : null}
+      </label>
+
+      <div>
+        <span className={subLabelClassName}>
+          2. Ảnh chuyển khoản{hasReceipts ? '' : ' *'}{' '}
+          <span className="normal-case tracking-normal">
+            (tối đa {MAX_REFUND_RECEIPT_IMAGES} — khách thấy trong đơn hàng và email hoàn tiền)
+          </span>
+        </span>
+        <div className="mt-1.5">
+          {receipts.items.length > 0 ? (
+            <ImageFilePreviews
+              items={receipts.items}
+              onRemove={receipts.remove}
+              onAdd={receipts.canAddMore ? () => document.getElementById(inputId)?.click() : undefined}
+              disabled={submitting}
+            />
+          ) : (
+            <label
+              htmlFor={inputId}
+              className="flex cursor-pointer items-center justify-center rounded-[2px] border border-dashed border-landing-taupe px-3 py-4 text-xs text-landing-muted transition-colors hover:border-landing-oxblood hover:text-landing-oxblood"
+            >
+              Chọn ảnh chuyển khoản
+            </label>
+          )}
+          <input
+            id={inputId}
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              receipts.add(e.target.files);
+              e.target.value = '';
+            }}
+          />
+        </div>
+      </div>
+
+      <label className="block">
+        <span className={subLabelClassName}>3. Mã giao dịch / ghi chú *</span>
+        <input
+          type="text"
+          value={refundNote}
+          onChange={(e) => setRefundNote(e.target.value)}
+          placeholder="VD: VCB FT2611021234, chuyển tới STK của khách"
+          className={cn(inputClassName, 'mt-1.5')}
+        />
+      </label>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <button
+          type="button"
+          onClick={confirmRefund}
+          disabled={submitting}
+          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-[2px] border-0 bg-landing-oxblood px-5 py-2.5 text-xs font-bold text-landing-paper transition-colors hover:bg-landing-obsidian disabled:opacity-50"
+        >
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {submitting ? 'Đang ghi nhận' : `Xác nhận đã hoàn ${title.toLowerCase()}`}
+        </button>
+        {kind === 'SHIPPING' ? (
+          <button
+            type="button"
+            onClick={skipShipping}
+            disabled={submitting}
+            className="inline-flex cursor-pointer items-center justify-center rounded-[2px] border border-landing-line bg-transparent px-4 py-2.5 text-xs font-bold text-landing-obsidian transition-colors hover:border-landing-oxblood disabled:opacity-50"
+          >
+            Không hoàn phí ship
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Mọi thứ admin cần để hoàn tiền một đơn, gom về một chỗ: đang ở bước nào, chuyển vào
  * tài khoản nào bao nhiêu tiền, chứng từ đã gửi khách, và đúng một việc cần làm tiếp.
  */
 export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRefundRecorded }: AdminRefundPanelProps) {
-  const [refundAmount, setRefundAmount] = useState('');
-  const [refundNote, setRefundNote] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const receipts = useImageFileSelection({
-    maxFiles: MAX_REFUND_RECEIPT_IMAGES,
-    onReject: (rejection) => toast.error(describeImageFileRejection(rejection, 'ảnh chứng từ')),
-  });
 
   const status = order.status;
   const isReturnFlow = RETURN_STATUSES.includes(status);
@@ -84,15 +268,25 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
   const paidVnd = order.amountPaidVnd ?? 0;
   const refundedVnd = order.amountRefundedVnd ?? 0;
   const remainingVnd = Math.max(0, paidVnd - refundedVnd);
-  // Để trống thì BE hoàn đúng số đã duyệt (các món khách báo lỗi), chỉ khi chưa có
-  // khoản nào được duyệt mới lấy cả phần còn lại của đơn.
-  const approvedVnd =
-    [...(order.refunds ?? [])]
-      .filter((refund) => refund.provider === 'MANUAL' && OPEN_REFUND_STATUSES.includes(refund.status))
-      .sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())[0]?.amountVnd ?? 0;
-  const suggestedVnd = approvedVnd > 0 ? Math.min(approvedVnd, remainingVnd) : remainingVnd;
+  const refunds = order.refunds ?? [];
+  // Khoản đã duyệt chờ chuyển, tách tiền hàng và phí ship. Để trống ô số tiền thì BE
+  // hoàn đúng số đã duyệt của khoản; chưa có khoản nào (vd. hủy đơn sau khi thanh
+  // toán) thì một khoản tiền hàng bằng phần còn lại của đơn.
+  const openRefunds = REFUND_KINDS.flatMap((kind) => {
+    const latest = refunds
+      .filter((refund) => refund.provider === 'MANUAL' && refundKind(refund) === kind && OPEN_REFUND_STATUSES.includes(refund.status))
+      .sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())[0];
+    return latest ? [{ kind, amountVnd: Math.min(latest.amountVnd, remainingVnd) }] : [];
+  });
+  const refundedOf = (kind: OrderRefundKind) =>
+    refunds.filter((refund) => refundKind(refund) === kind && refund.status === 'COMPLETED').reduce((sum, refund) => sum + refund.amountVnd, 0);
+  const hasShippingRefund = refunds.some((refund) => refundKind(refund) === 'SHIPPING');
   // Hoàn một món thì đơn vẫn còn tiền chưa hoàn, nhưng shop không còn nợ khách.
-  const owedVnd = refundCompleted ? 0 : suggestedVnd;
+  const owedVnd = refundCompleted
+    ? 0
+    : openRefunds.length > 0
+      ? Math.min(openRefunds.reduce((sum, refund) => sum + refund.amountVnd, 0), remainingVnd)
+      : remainingVnd;
   const lastRefund = [...(order.refunds ?? [])]
     .filter((refund) => refund.status === 'COMPLETED')
     .sort((a, b) => new Date(b.processedAt ?? b.requestedAt).getTime() - new Date(a.processedAt ?? a.requestedAt).getTime())[0];
@@ -115,41 +309,6 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
       setTimeout(() => setCopied(false), 1500);
     } catch {
       toast.error('Không sao chép được số tài khoản.');
-    }
-  };
-
-  const confirmRefund = async () => {
-    if (!refundNote.trim()) {
-      toast.error('Vui lòng nhập mã giao dịch hoặc ghi chú chuyển khoản.');
-      return;
-    }
-    if (receipts.files.length === 0 && !hasReceipts) {
-      toast.error('Vui lòng đính kèm ảnh chứng từ chuyển khoản hoàn tiền để khách đối chiếu.');
-      return;
-    }
-    const parsedAmount = refundAmount.trim() ? parseInt(refundAmount.trim(), 10) : undefined;
-    if (parsedAmount !== undefined && (Number.isNaN(parsedAmount) || parsedAmount < 1)) {
-      toast.error('Số tiền hoàn phải là số nguyên từ 1 VNĐ.');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await updateOrderRefund(order.id, {
-        refundStatus: 'COMPLETED',
-        amountVnd: parsedAmount,
-        evidenceReference: refundNote.trim(),
-        internalNote: refundNote.trim(),
-        receiptImages: receipts.files,
-      });
-      toast.success('Đã ghi nhận hoàn tiền thành công');
-      setRefundNote('');
-      setRefundAmount('');
-      receipts.clear();
-      await onRefundRecorded();
-    } catch (e) {
-      toast.error(getErrorMessage(e, 'Không thể ghi nhận hoàn tiền.'));
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -215,7 +374,8 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
           <InfoBlock label="Số tiền">
             <div className="divide-y divide-landing-line/60">
               <MoneyRow label="Đã thu khách" value={paidVnd} />
-              <MoneyRow label="Đã hoàn" value={refundedVnd} />
+              <MoneyRow label="Đã hoàn tiền hàng" value={refundedOf('GOODS')} />
+              {hasShippingRefund ? <MoneyRow label="Đã hoàn phí ship" value={refundedOf('SHIPPING')} /> : null}
               <MoneyRow label="Còn phải hoàn" value={owedVnd} strong />
             </div>
           </InfoBlock>
@@ -255,85 +415,17 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
                   : 'Đơn đã hủy sau khi khách thanh toán. Chuyển khoản hoàn lại tiền rồi ghi nhận tại đây.'}
               </p>
 
-              <label className="block">
-                <span className={subLabelClassName}>1. Số tiền đã chuyển</span>
-                <input
-                  type="number"
-                  min={1}
-                  step={1000}
-                  value={refundAmount}
-                  onChange={(e) => setRefundAmount(e.target.value)}
-                  placeholder={suggestedVnd > 0 ? `Để trống = hoàn ${fmt(suggestedVnd)}` : 'Số tiền (VNĐ)'}
-                  className={cn(inputClassName, 'mt-1.5 font-mono')}
+              {(openRefunds.length > 0 ? openRefunds : [{ kind: 'GOODS' as const, amountVnd: remainingVnd }]).map((refund) => (
+                <RefundTransferForm
+                  key={refund.kind}
+                  orderId={order.id}
+                  kind={refund.kind}
+                  suggestedVnd={refund.amountVnd}
+                  approved={openRefunds.length > 0}
+                  hasReceipts={hasReceipts}
+                  onRecorded={onRefundRecorded}
                 />
-                {suggestedVnd > 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => setRefundAmount(String(suggestedVnd))}
-                    className="mt-1 cursor-pointer border-0 bg-transparent p-0 text-[11px] text-landing-oxblood underline underline-offset-2"
-                  >
-                    Điền số {approvedVnd > 0 ? 'đã duyệt' : 'còn lại'}: {fmt(suggestedVnd)}
-                  </button>
-                ) : null}
-              </label>
-
-              <div>
-                <span className={subLabelClassName}>
-                  2. Ảnh chuyển khoản *{' '}
-                  <span className="normal-case tracking-normal">
-                    (tối đa {MAX_REFUND_RECEIPT_IMAGES}, bắt buộc — khách thấy trong đơn hàng và email hoàn tiền)
-                  </span>
-                </span>
-                <div className="mt-1.5">
-                  {receipts.items.length > 0 ? (
-                    <ImageFilePreviews
-                      items={receipts.items}
-                      onRemove={receipts.remove}
-                      onAdd={receipts.canAddMore ? () => document.getElementById('refund-receipt-input')?.click() : undefined}
-                      disabled={submitting}
-                    />
-                  ) : (
-                    <label
-                      htmlFor="refund-receipt-input"
-                      className="flex cursor-pointer items-center justify-center rounded-[2px] border border-dashed border-landing-taupe px-3 py-4 text-xs text-landing-muted transition-colors hover:border-landing-oxblood hover:text-landing-oxblood"
-                    >
-                      Chọn ảnh chuyển khoản
-                    </label>
-                  )}
-                  <input
-                    id="refund-receipt-input"
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={(e) => {
-                      receipts.add(e.target.files);
-                      e.target.value = '';
-                    }}
-                  />
-                </div>
-              </div>
-
-              <label className="block">
-                <span className={subLabelClassName}>3. Mã giao dịch / ghi chú *</span>
-                <input
-                  type="text"
-                  value={refundNote}
-                  onChange={(e) => setRefundNote(e.target.value)}
-                  placeholder="VD: VCB FT2611021234, chuyển tới STK của khách"
-                  className={cn(inputClassName, 'mt-1.5')}
-                />
-              </label>
-
-              <button
-                type="button"
-                onClick={confirmRefund}
-                disabled={submitting}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-[2px] border-0 bg-landing-oxblood px-5 py-2.5 text-xs font-bold text-landing-paper transition-colors hover:bg-landing-obsidian disabled:opacity-50"
-              >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                {submitting ? 'Đang ghi nhận' : 'Xác nhận đã hoàn tiền'}
-              </button>
+              ))}
             </div>
           ) : returnInTransit ? (
             <div className="space-y-3">

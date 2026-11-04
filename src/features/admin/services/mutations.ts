@@ -6,7 +6,7 @@ import type {
   CreateSaleCampaignPayload,
   UpdateSaleCampaignPayload,
 } from '@/features/admin/types/admin-sale-campaigns';
-import type { OrderIssue } from '@/features/orders/types/orders';
+import type { OrderIssue, OrderRefundKind } from '@/features/orders/types/orders';
 import { api } from '@/lib/api';
 import { http, type HttpOptions } from '@/lib/http';
 
@@ -54,6 +54,7 @@ export function updateOrderRefund(
   id: string,
   payload: {
     refundStatus: string;
+    kind?: OrderRefundKind;
     amountVnd?: number;
     evidenceReference?: string;
     internalNote?: string;
@@ -62,6 +63,9 @@ export function updateOrderRefund(
 ) {
   const formData = new FormData();
   formData.append('refundStatus', payload.refundStatus);
+  if (payload.kind) {
+    formData.append('kind', payload.kind);
+  }
   if (payload.amountVnd !== undefined) {
     formData.append('amountVnd', String(payload.amountVnd));
   }
@@ -133,7 +137,7 @@ export function deleteAdminSaleCampaign(id: string, config?: HttpOptions) {
 
 export type ReviewOrderIssueInput =
   | { decision: 'REJECT'; adminNote: string }
-  | { decision: 'APPROVE'; approvedResolution: 'REFUND'; adminNote?: string };
+  | { decision: 'APPROVE'; approvedResolution: 'REFUND'; adminNote?: string; refundShipping?: boolean };
 
 export function reviewOrderIssue(
   issueId: string,
@@ -148,6 +152,9 @@ export function reviewOrderIssue(
   }
   if (payload.adminNote) {
     formData.append('adminNote', payload.adminNote);
+  }
+  if ('refundShipping' in payload && payload.refundShipping !== undefined) {
+    formData.append('refundShipping', String(payload.refundShipping));
   }
   for (const file of receiptImages ?? []) {
     formData.append('receiptImages', file);

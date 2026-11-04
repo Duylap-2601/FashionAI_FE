@@ -1,13 +1,16 @@
 'use client';
 
 import { ImageFilePreviews } from '@/components/ui/image-file-previews';
+import { fmt } from '@/features/admin/services/format';
 import { reviewOrderIssue } from '@/features/admin/services/mutations';
-import type { OrderIssue } from '@/features/orders/types/orders';
+import type { OrderIssue, OrderIssueReason } from '@/features/orders/types/orders';
 import { describeImageFileRejection, useImageFileSelection } from '@/hooks/use-image-file-selection';
 import { getErrorMessage } from '@/lib/errors';
 import {
+  Check,
   CheckCircle2,
   Clock,
+  Copy,
   Loader2,
   ShieldCheck,
   X,
@@ -33,6 +36,8 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 const MAX_RECEIPT_IMAGES = 5;
+// Lỗi từ phía shop: chính sách hoàn cả phí ship ban đầu.
+const SHOP_FAULT_REASONS: OrderIssueReason[] = ['WRONG_SIZE', 'WRONG_COLOR', 'QUALITY_MISMATCH'];
 
 export function AdminOrderIssueModal({
   issue,
@@ -42,6 +47,7 @@ export function AdminOrderIssueModal({
 }: AdminOrderIssueModalProps) {
   const [activeAction, setActiveAction] = useState<'APPROVE_REFUND' | 'REJECT' | null>(null);
   const [adminNote, setAdminNote] = useState('');
+  const [refundShipping, setRefundShipping] = useState(false);
   const receipts = useImageFileSelection({
     maxFiles: MAX_RECEIPT_IMAGES,
     onReject: (rejection) => toast.error(describeImageFileRejection(rejection, 'ảnh chứng từ')),
@@ -50,14 +56,18 @@ export function AdminOrderIssueModal({
   const receiptInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const [accountCopied, setAccountCopied] = useState(false);
 
   // The modal stays mounted between issues, so drop the decision and the picked
   // bills when another issue opens; they must never be sent for the wrong one.
+  const issueReason = issue?.reason;
   useEffect(() => {
     setActiveAction(null);
     setAdminNote('');
+    // Lỗi từ phía shop mặc định hoàn cả phí ship ban đầu; admin bỏ chọn được.
+    setRefundShipping(Boolean(issueReason && SHOP_FAULT_REASONS.includes(issueReason)));
     clearReceipts();
-  }, [issue?.id, clearReceipts]);
+  }, [issue?.id, issueReason, clearReceipts]);
 
   if (!isOpen || !issue) return null;
 
@@ -65,6 +75,21 @@ export function AdminOrderIssueModal({
   const rawImg = item?.productImageSnapshot;
   const itemImg = (typeof rawImg === 'object' && rawImg !== null ? (rawImg as { url?: string; imageUrl?: string }).url || (rawImg as { url?: string; imageUrl?: string }).imageUrl : rawImg) || '/images/726470431_1311184104081177_6052756217829444481_n.png';
   const itemName = item?.productNameSnapshot || `Món hàng #${issue.orderItemId.slice(0, 8)}`;
+  const shippingFeeVnd = Math.round(Number(issue.order?.shippingFee ?? 0));
+  // Phí ship ban đầu hoàn tối đa một lần mỗi đơn, thành một khoản riêng.
+  const canRefundShipping =
+    issue.reason !== 'REFUND_NOT_RECEIVED' && shippingFeeVnd > 0 && (issue.order?.refunds ?? []).length === 0;
+
+  const copyAccountNumber = async () => {
+    if (!issue.accountNumber) return;
+    try {
+      await navigator.clipboard.writeText(issue.accountNumber);
+      setAccountCopied(true);
+      setTimeout(() => setAccountCopied(false), 1500);
+    } catch {
+      toast.error('Không sao chép được số tài khoản.');
+    }
+  };
 
   const handleReview = async () => {
     if (!activeAction) return;
@@ -93,6 +118,7 @@ export function AdminOrderIssueModal({
             decision: 'APPROVE',
             approvedResolution: 'REFUND',
             adminNote: adminNote.trim() || undefined,
+            refundShipping: canRefundShipping ? refundShipping : undefined,
           },
           undefined,
           receipts.files,
@@ -231,20 +257,6 @@ export function AdminOrderIssueModal({
               </p>
             </div>
 
-            {/* Refund bank destination */}
-            {issue.accountNumber && (
-              <div className="p-3 bg-sky-50 rounded-lg border border-sky-200">
-                <span className="text-[11px] font-semibold text-sky-700 block mb-1">
-                  Tài khoản nhận hoàn tiền:
-                </span>
-                <p className="text-[13px] text-sky-900">
-                  {issue.bankName || 'Ngân hàng'} ·{' '}
-                  <span className="font-mono font-semibold">{issue.accountNumber}</span>
-                  {issue.accountHolder ? ` · ${issue.accountHolder}` : ''}
-                </p>
-              </div>
-            )}
-
             {/* Evidence Images */}
             {issue.evidenceImages && issue.evidenceImages.length > 0 && (
               <div>
@@ -273,6 +285,45 @@ export function AdminOrderIssueModal({
               </div>
             )}
           </div>
+
+          {/* Refund bank destination: section riêng để admin đối chiếu khi chuyển khoản */}
+          {issue.accountNumber && (
+            <section
+              aria-labelledby="issue-refund-account-title"
+              className="p-3.5 rounded-[2px] border border-landing-line bg-landing-paper/60"
+            >
+              <h3
+                id="issue-refund-account-title"
+                className="text-[11px] font-semibold text-landing-brass-ink uppercase tracking-[0.18em]"
+              >
+                Tài khoản nhận hoàn tiền
+              </h3>
+              <dl className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <dt className="text-[11px] text-landing-muted">Ngân hàng</dt>
+                  <dd className="mt-0.5 text-[13px] font-semibold text-landing-obsidian">{issue.bankName || 'Chưa có'}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-landing-muted">Số tài khoản</dt>
+                  <dd className="mt-0.5 flex items-center gap-1">
+                    <span className="font-mono text-[14px] font-semibold tracking-wide text-landing-obsidian">{issue.accountNumber}</span>
+                    <button
+                      type="button"
+                      onClick={copyAccountNumber}
+                      aria-label={accountCopied ? 'Đã sao chép số tài khoản' : 'Sao chép số tài khoản'}
+                      className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[2px] border-0 bg-transparent text-landing-muted hover:text-landing-oxblood"
+                    >
+                      {accountCopied ? <Check className="h-3.5 w-3.5 text-metric-products" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-landing-muted">Chủ tài khoản</dt>
+                  <dd className="mt-0.5 text-[13px] font-semibold uppercase text-landing-obsidian">{issue.accountHolder || 'Chưa có'}</dd>
+                </div>
+              </dl>
+            </section>
+          )}
 
           {/* Admin Note if already processed */}
           {issue.adminNote && (
@@ -389,6 +440,24 @@ export function AdminOrderIssueModal({
                       </span>
                     </div>
                   )}
+
+                  {activeAction === 'APPROVE_REFUND' && canRefundShipping ? (
+                    <label className="flex cursor-pointer items-start gap-2 text-[12px] text-landing-obsidian">
+                      <input
+                        type="checkbox"
+                        checked={refundShipping}
+                        onChange={(e) => setRefundShipping(e.target.checked)}
+                        disabled={isSubmitting}
+                        className="mt-0.5 accent-landing-oxblood"
+                      />
+                      <span>
+                        Hoàn phí ship ban đầu <span className="font-mono">{fmt(shippingFeeVnd)}</span>
+                        <span className="block text-[11px] text-landing-muted">
+                          Thành khoản hoàn riêng, chuyển và ghi nhận tách với tiền hàng. Mỗi đơn hoàn phí ship một lần.
+                        </span>
+                      </span>
+                    </label>
+                  ) : null}
 
                   {activeAction === 'APPROVE_REFUND' && (
                     <p className="text-[11px] text-metric-products bg-metric-products/10 p-2 rounded-[2px]">
