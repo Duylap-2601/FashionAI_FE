@@ -4,7 +4,7 @@ import { mutationKeys } from '@/features/stylist/services/mutation-keys';
 import { queryKeys as stylistQueryKeys } from '@/features/stylist/services/query-keys';
 import { queryKeys as subscriptionQueryKeys } from '@/features/subscription/services/query-keys';
 import { analyzeStylist, deleteStylistHistory } from '@/features/stylist/services/mutations';
-import { fetchStylistHistory } from '@/features/stylist/services/queries';
+import { fetchStylistHistory, fetchStylistResult } from '@/features/stylist/services/queries';
 import { extractErrorMessage } from '@/features/stylist/services/stylist-utils';
 import type { StylistHistoryMeta, StylistResult } from '@/features/stylist/types/stylist';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -67,4 +67,17 @@ export function useDeleteStylistHistory() {
     deleteAsync: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
   };
+}
+
+/** Mở lại một kết quả theo id (trang AI Stylist đọc từ `?result=` khi quay lại từ trang thử đồ). */
+export function useStylistResult(id: string | null) {
+  const status = useAuthStore((state) => state.status);
+  const query = useQuery<StylistResult>({
+    queryKey: stylistQueryKeys.stylistResult(id ?? ''),
+    queryFn: () => fetchStylistResult(id ?? ''),
+    enabled: Boolean(id) && status === 'authenticated',
+    retry: false,
+  });
+
+  return { result: query.data ?? null, isError: query.isError };
 }

@@ -119,12 +119,17 @@ export interface MeasurementDisplayItem {
   unit: string;
 }
 
-export type OrderRefundStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+export type OrderRefundStatus = 'PENDING' | 'REQUIRED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+
+/** Khoản hoàn: tiền hàng hoặc phí ship ban đầu, chuyển và ghi nhận riêng. */
+export type OrderRefundKind = 'GOODS' | 'SHIPPING';
 
 export interface OrderRefund {
   id: string;
   paymentId: string;
   provider: string;
+  /** Khoản cũ (trước khi tách) không có `kind`: coi là tiền hàng. */
+  kind?: OrderRefundKind;
   amountVnd: number;
   reason?: string | null;
   status: OrderRefundStatus;
@@ -167,6 +172,8 @@ export interface OrderItem {
   };
 }
 
+export type RefundEvidence = string | Record<string, unknown> | null;
+
 export interface Order {
   id: string;
   orderCode: number;
@@ -174,6 +181,8 @@ export interface Order {
   status: BackendOrderStatus;
   displayStatus?: OrderDisplayStatus;
   paymentStatus?: PaymentStatus;
+  // Hạn thanh toán (chỉ có khi đơn đang chờ thanh toán); quá hạn BE tự hủy đơn.
+  paymentDueAt?: string | null;
   refundStatus?: RefundStatus;
   fulfillmentFlowVersion?: number | null;
   currency?: string;
@@ -186,7 +195,7 @@ export interface Order {
   amountRefundedVnd?: number;
   shippingAddressSnapshot?: Record<string, unknown> | null;
   shippingQuoteSnapshot?: Record<string, unknown> | null;
-  refundEvidence?: string | null;
+  refundEvidence?: RefundEvidence;
   refundBankName?: string | null;
   refundAccountNumber?: string | null;
   refundAccountHolder?: string | null;
@@ -298,6 +307,7 @@ export interface BackendOrder {
   status: BackendOrderStatus;
   displayStatus?: OrderDisplayStatus;
   paymentStatus?: PaymentStatus;
+  paymentDueAt?: string | null;
   refundStatus?: RefundStatus;
   fulfillmentFlowVersion?: number | null;
   currency?: string;
@@ -310,7 +320,7 @@ export interface BackendOrder {
   amountRefundedVnd?: number | string | null;
   shippingAddressSnapshot?: Record<string, unknown> | null;
   shippingQuoteSnapshot?: Record<string, unknown> | null;
-  refundEvidence?: string | null;
+  refundEvidence?: RefundEvidence;
   refundBankName?: string | null;
   refundAccountNumber?: string | null;
   refundAccountHolder?: string | null;
@@ -361,7 +371,8 @@ export type OrderIssueReason =
   | 'WRONG_SIZE'
   | 'WRONG_COLOR'
   | 'QUALITY_MISMATCH'
-  | 'OTHER';
+  | 'OTHER'
+  | 'REFUND_NOT_RECEIVED';
 
 export type OrderIssueDesiredResolution = 'REFUND';
 
@@ -384,6 +395,10 @@ export interface OrderIssueOrderSummary {
   id: string;
   orderCode: number;
   status: BackendOrderStatus;
+  /** Phí ship ban đầu (Decimal từ BE, có thể là chuỗi). */
+  shippingFee?: string | number | null;
+  /** Khoản hoàn phí ship đang chờ hoặc đã chuyển của đơn (mỗi đơn tối đa một). */
+  refunds?: { id: string; status: OrderRefundStatus }[];
 }
 
 export interface OrderIssue {
@@ -412,6 +427,8 @@ export interface OrderIssue {
 export interface OrderIssueListParams {
   status?: OrderIssueStatus;
   reason?: OrderIssueReason;
+  /** Admin: tìm theo mã đơn, khách hoặc sản phẩm. */
+  q?: string;
   page?: number;
   limit?: number;
 }
@@ -440,3 +457,20 @@ export interface OrderIssuesResponse {
   meta: OrderIssueListMeta;
 }
 
+/** Một đơn có yêu cầu đổi trả (GET /order-issues/mine), cho trang Đổi trả & hoàn tiền. */
+export interface MyReturnOrder {
+  id: string;
+  orderCode: number;
+  status: BackendOrderStatus;
+  refundStatus?: string | null;
+  amountRefundedVnd: number;
+  createdAt: string;
+  updatedAt: string;
+  issues: {
+    id: string;
+    status: OrderIssueStatus;
+    reason: OrderIssueReason;
+    createdAt: string;
+    orderItem?: { productNameSnapshot?: string | null; productImageSnapshot?: string | null } | null;
+  }[];
+}

@@ -1,24 +1,26 @@
 'use client';
 
 import { useCart } from '@/features/cart/hooks/use-cart';
+import { ConfirmDeliveryDialog } from '@/features/orders/components/confirm-delivery-dialog';
 import { OrderStatusLabel } from '@/features/orders/components/order-status-label';
+import { OrderProgress, OrderThumb, SummaryRow } from '@/features/orders/components/order-ui';
 import {
   FILTER_TABS,
-  ORDER_IMAGE_FALLBACK,
-  ORDER_STEPS,
-  PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
   STATUS_CONFIG,
 } from '@/features/orders/constants/profile-orders-page';
 import { useCancelOrder, useConfirmDelivery, useInfiniteOrders } from '@/features/orders/hooks/useOrders';
 import {
   formatOrderDate,
+  formatOrderDateTime,
   formatVnd,
   getOrderCode,
   getOrderItemImage,
   getOrderItemName,
   getOrderTotal,
+  getPaymentMethodLabel,
 } from '@/features/orders/services/order-display';
+import { RETURN_FLOW_STATUSES, orderReturnsHref } from '@/features/orders/services/order-returns';
 import type { Order, OrderItem } from '@/features/orders/types/orders';
 import { AccountShell } from '@/features/profile/components/account-shell';
 import {
@@ -32,53 +34,9 @@ import {
 import { WriteReviewModal } from '@/features/reviews/components/WriteReviewModal';
 import { cn } from '@/lib/utils';
 import { Check, ChevronDown, Copy, Search } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
-import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-
-function OrderThumb({ item, className }: { item: OrderItem; className?: string }) {
-  const [src, setSrc] = useState(() => getOrderItemImage(item));
-  return (
-    <span className={cn('relative block shrink-0 overflow-hidden rounded-[2px] bg-landing-paper', className)}>
-      <Image src={src} alt={getOrderItemName(item)} fill sizes="64px" className="object-cover" onError={() => setSrc(ORDER_IMAGE_FALLBACK)} />
-    </span>
-  );
-}
-
-function OrderProgress({ step }: { step: number }) {
-  return (
-    <ol className="grid grid-cols-5 gap-1.5" aria-label="Tiến độ đơn hàng">
-      {ORDER_STEPS.map((label, index) => {
-        const done = index <= step;
-        const current = index === step;
-        return (
-          <li key={label} aria-current={current ? 'step' : undefined}>
-            <span aria-hidden="true" className={cn('block h-0.5', done ? 'bg-landing-oxblood' : 'bg-landing-taupe/60')} />
-            <span
-              className={cn(
-                'mt-2 block text-[11px] leading-snug',
-                current ? 'font-medium text-landing-oxblood' : done ? 'text-landing-obsidian/80' : 'text-landing-muted',
-              )}
-            >
-              {label}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function SummaryRow({ label, children, strong = false }: { label: string; children: React.ReactNode; strong?: boolean }) {
-  return (
-    <div className={cn('flex items-baseline justify-between gap-4 py-1.5', strong && 'mt-1 border-t border-landing-line/70 pt-3')}>
-      <dt className={cn('text-sm', strong ? 'font-medium text-landing-obsidian' : 'text-landing-muted')}>{label}</dt>
-      <dd className={cn('text-right text-sm', strong ? 'font-mono text-base text-landing-oxblood' : 'text-landing-obsidian')}>{children}</dd>
-    </div>
-  );
-}
 
 function OrderCard({
   order,
@@ -91,6 +49,7 @@ function OrderCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false);
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
 
@@ -117,7 +76,10 @@ function OrderCard({
 
   const handleConfirmDelivery = () => {
     confirmDelivery({ id: order.id }, {
-      onSuccess: () => toast.success('Cảm ơn bạn đã xác nhận nhận hàng'),
+      onSuccess: () => {
+        toast.success('Cảm ơn bạn đã xác nhận nhận hàng');
+        setShowDeliveryConfirm(false);
+      },
       onError: () => toast.error('Không thể xác nhận nhận hàng lúc này.'),
     });
   };
@@ -187,6 +149,21 @@ function OrderCard({
         <p className="font-mono text-base text-landing-oxblood">{formatVnd(getOrderTotal(order))}</p>
       </div>
 
+      {order.status === 'CREATED' && order.paymentStatus === 'PENDING' ? (
+        <p className="mx-4 mb-4 border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-sm text-landing-obsidian sm:mx-5">
+          Đơn đang chờ thanh toán
+          {order.paymentDueAt ? (
+            <>
+              , hạn <span className="font-mono">{formatOrderDateTime(order.paymentDueAt)}</span>
+            </>
+          ) : null}
+          .{' '}
+          <Link href={`/orders/${order.id}`} className={cn('text-landing-oxblood underline underline-offset-4', accountFocusRing)}>
+            Thanh toán
+          </Link>
+        </p>
+      ) : null}
+
       {order.allowedActions?.updateMeasurement ? (
         <p className="mx-4 mb-4 border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-sm text-landing-obsidian sm:mx-5">
           Shop cần bạn xem lại số đo cho đơn này.{' '}
@@ -214,13 +191,18 @@ function OrderCard({
             </button>
           ) : null}
           {order.allowedActions?.confirmDelivery ? (
-            <button type="button" onClick={handleConfirmDelivery} disabled={isConfirmingDelivery} className={accountButtonClassName('primary', 'sm')}>
+            <button type="button" onClick={() => setShowDeliveryConfirm(true)} disabled={isConfirmingDelivery} className={accountButtonClassName('primary', 'sm')}>
               {isConfirmingDelivery ? 'Đang xác nhận' : 'Đã nhận hàng'}
             </button>
           ) : null}
           <button type="button" onClick={handleReorder} className={accountButtonClassName('outline', 'sm')}>
             Mua lại
           </button>
+          {RETURN_FLOW_STATUSES.includes(order.status) ? (
+            <Link href={orderReturnsHref(order.id)} className={accountButtonClassName('outline', 'sm')}>
+              Đổi trả
+            </Link>
+          ) : null}
           <Link href={`/orders/${order.id}`} className={accountButtonClassName('outline', 'sm')}>
             Xem đơn
           </Link>
@@ -278,7 +260,7 @@ function OrderCard({
             <div>
               <p className={accountLabelClassName}>Thanh toán</p>
               <dl className="mt-2">
-                <SummaryRow label="Phương thức">{PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod}</SummaryRow>
+                <SummaryRow label="Phương thức">{getPaymentMethodLabel(order)}</SummaryRow>
                 <SummaryRow label="Trạng thái">
                   {order.paymentStatus ? PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus : 'Chưa xác định'}
                 </SummaryRow>
@@ -298,6 +280,14 @@ function OrderCard({
           </div>
         </div>
       ) : null}
+
+      <ConfirmDeliveryDialog
+        open={showDeliveryConfirm}
+        onOpenChange={setShowDeliveryConfirm}
+        orderCode={orderCode}
+        isPending={isConfirmingDelivery}
+        onConfirm={handleConfirmDelivery}
+      />
     </article>
   );
 }

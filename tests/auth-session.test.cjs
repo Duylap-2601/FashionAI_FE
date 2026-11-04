@@ -91,3 +91,64 @@ test('refresh rejection emits auth invalidation and does not retry indefinitely'
   assert.equal(events.length, 1);
   assert.equal(events[0].redirectTo, '/login');
 });
+
+test('bootstrap refresh and a 401 retry right after page load share one single-use refresh token', async () => {
+  let refreshCalls = 0;
+  let releaseRefresh;
+  const refreshReady = new Promise((resolve) => { releaseRefresh = resolve; });
+  const load = createSourceLoader({ globals: {
+    fetch: async (url) => {
+      assert.equal(url, '/api/backend/auth/refresh');
+      refreshCalls++;
+      await refreshReady;
+      if (refreshCalls > 1) return Response.json({ message: 'Refresh token đã dùng' }, { status: 401 });
+      return Response.json({ data: { accessToken: 'boot-token', accessTokenExpiresAt: later(), user } });
+    },
+  } });
+  const { refreshWebSession } = load('@/features/auth/services/mutations');
+  const { useAuthStore } = load('@/features/auth/store/authStore');
+  const { api } = load('@/lib/api');
+  // Page load: the store has no token yet, so the first request gets 401 while
+  // AuthBootstrap is already refreshing.
+  useAuthStore.getState().clearSession();
+  api.defaults.adapter = async (config) => {
+    if (config.headers.Authorization !== 'Bearer boot-token') {
+      throw new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', config, null, {
+        status: 401, statusText: 'Unauthorized', headers: {}, config, data: {},
+      });
+    }
+    return { status: 200, statusText: 'OK', headers: {}, config, data: { data: { id: 'order' } } };
+  };
+  const bootstrap = refreshWebSession();
+  const request = api.get('/users/me/addresses');
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  releaseRefresh();
+  const [payload, response] = await Promise.all([bootstrap, request]);
+  assert.equal(refreshCalls, 1);
+  assert.equal(payload.accessToken, 'boot-token');
+  assert.equal(response.data.id, 'order');
+});
+
+test('page-load refresh retries transient failures but gives up at once when the token is rejected', async () => {
+  const responses = [
+    () => Response.json({ message: 'Hệ thống đang bận' }, { status: 503 }),
+    () => { throw new TypeError('Failed to fetch'); },
+    () => Response.json({ data: { accessToken: 'retry-token', accessTokenExpiresAt: later(), user } }),
+  ];
+  let calls = 0;
+  const load = createSourceLoader({ globals: { fetch: async () => responses[calls++]() } });
+  const { isSessionRejected, refreshWebSessionWithRetry } = load('@/features/auth/services/mutations');
+
+  const payload = await refreshWebSessionWithRetry([0, 0]);
+  assert.equal(payload.accessToken, 'retry-token');
+  assert.equal(calls, 3);
+
+  const rejected = createSourceLoader({ globals: {
+    fetch: async () => { calls++; return Response.json({ message: 'Refresh token không hợp lệ' }, { status: 401 }); },
+  } })('@/features/auth/services/mutations');
+  calls = 0;
+  await assert.rejects(rejected.refreshWebSessionWithRetry([0, 0]), (error) => rejected.isSessionRejected(error));
+  assert.equal(calls, 1);
+
+  assert.equal(isSessionRejected(new TypeError('Failed to fetch')), false);
+});

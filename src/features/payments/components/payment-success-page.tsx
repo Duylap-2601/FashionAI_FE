@@ -1,15 +1,13 @@
 'use client';
 
-import { AtelierLoader } from '@/components/ui/AtelierLoader';
-import { fetchPaymentOrderByCodeResponse } from '@/features/payments/services/queries';
 import { useOrder } from '@/features/orders/hooks/useOrders';
-import { AlertCircle, CheckCircle2, ChevronRight, Clock, CreditCard } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { PaymentLoading, PaymentStatusCard } from '@/features/payments/components/payment-outcome';
+import { fetchPaymentOrderByCodeResponse } from '@/features/payments/services/queries';
+import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
-/** Đơn ở các trạng thái này chắc chắn thất bại/hủy, không phải "đang chờ xác nhận". */
-const FAILED_ORDER_STATUSES = ['CANCELLED', 'EXPIRED', 'FAILED'];
+/** Thanh toán ở các trạng thái này chắc chắn thất bại/hủy, không phải "đang chờ xác nhận". */
+const FAILED_PAYMENT_STATUSES = ['EXPIRED', 'FAILED'];
 /** IPN webhook của SePay/PayOS gọi ngược vào server độc lập với redirect trình
  * duyệt và có thể đến sau vài giây; poll trong lúc chờ để không báo "thất bại"
  * nhầm khi đơn vẫn PENDING ngay lúc trang vừa mở. */
@@ -18,8 +16,9 @@ const CONFIRM_POLL_INTERVAL_MS = 2_000;
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const orderCode = searchParams.get('orderCode') || searchParams.get('code');
+  // SePay trả kèm orderId (BE thêm vào URL trả về); link cũ chỉ có orderCode.
+  const orderIdParam = searchParams.get('orderId');
   const status = searchParams.get('status') || 'success';
   const [resolvedOrderId, setResolvedOrderId] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(true);
@@ -28,7 +27,10 @@ function PaymentSuccessContent() {
   const [confirmTimedOut, setConfirmTimedOut] = useState(false);
 
   useEffect(() => {
-    if (orderCode) {
+    if (orderIdParam) {
+      setResolvedOrderId(orderIdParam);
+      setIsResolving(false);
+    } else if (orderCode) {
       const findOrder = async () => {
         try {
           const res = await fetchPaymentOrderByCodeResponse(orderCode);
@@ -48,10 +50,12 @@ function PaymentSuccessContent() {
     } else {
       setIsResolving(false);
     }
-  }, [orderCode]);
+  }, [orderCode, orderIdParam]);
 
-  const isPaid = order?.status === 'PAID';
-  const isFailed = order ? FAILED_ORDER_STATUSES.includes(order.status) : false;
+  const isPaid = order?.paymentStatus === 'PAID';
+  const isFailed = order
+    ? order.status === 'CANCELLED' || FAILED_PAYMENT_STATUSES.includes(order.paymentStatus ?? '')
+    : false;
   const isAwaitingConfirmation = status !== 'cancel' && status !== 'error' && !!order && !isPaid && !isFailed;
 
   // IPN có thể đến sau khi trình duyệt vừa redirect về đây; poll nhanh trong
@@ -75,114 +79,63 @@ function PaymentSuccessContent() {
   }, [isAwaitingConfirmation, resolvedOrderId, refetch]);
 
   if (isResolving || (resolvedOrderId && isLoading)) {
+    return <PaymentLoading />;
+  }
+
+  const orderHref = resolvedOrderId ? `/orders/${resolvedOrderId}` : '/profile/orders';
+  const code = order?.orderCode ?? orderCode;
+
+  if (isPaid) {
     return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <AtelierLoader size="md" />
-          <p className="text-body-sm text-neutral-600">Đang kiểm tra trạng thái thanh toán...</p>
-        </div>
-      </div>
+      <PaymentStatusCard
+        title="Thanh toán thành công"
+        orderCode={code}
+        status={{ tone: 'done', label: 'Đã thanh toán' }}
+        description={<p>Shop đã nhận được thanh toán. Đơn chuyển sang bước duyệt số đo trước khi may.</p>}
+        primary={{ href: orderHref, label: 'Xem đơn hàng' }}
+      />
+    );
+  }
+
+  if (status === 'cancel') {
+    return (
+      <PaymentStatusCard
+        title="Thanh toán đã bị hủy"
+        orderCode={code}
+        status={{ tone: 'attention', label: 'Chờ thanh toán' }}
+        description={<p>Bạn đã hủy ở cổng thanh toán. Đơn vẫn được giữ ở trạng thái chờ thanh toán, bạn có thể thanh toán lại từ trang đơn hàng.</p>}
+        // Thanh toán lại ở trang đơn; /checkout sẽ tạo thêm một đơn mới.
+        primary={{ href: orderHref, label: 'Thanh toán lại' }}
+      />
+    );
+  }
+
+  if (isAwaitingConfirmation && !confirmTimedOut) {
+    return (
+      <PaymentStatusCard
+        title="Đang xác nhận thanh toán"
+        orderCode={code}
+        status={{ tone: 'attention', label: 'Đang xác nhận' }}
+        description={<p>Cổng thanh toán đang gửi xác nhận về hệ thống. Vui lòng đợi trong ít giây, trang sẽ tự cập nhật.</p>}
+        primary={{ href: orderHref, label: 'Xem đơn hàng' }}
+      />
     );
   }
 
   return (
-    <div className="bg-white min-h-screen py-16 px-4">
-      <div className="max-w-[560px] mx-auto">
-        <div className="bg-white border border-neutral-200 rounded-2xl p-8 shadow-sm text-center">
-          {isPaid ? (
-            <>
-              <div className="w-16 h-16 rounded-full bg-semantic-success flex items-center justify-center mx-auto mb-6 shadow-[0_0_0_12px_rgba(16,185,129,0.1)]">
-                <CheckCircle2 className="w-8 h-8 text-white" strokeWidth={3} />
-              </div>
-              <h1 className="text-[24px] font-bold text-brand-navy mb-3">Thanh toán thành công!</h1>
-              <p className="text-neutral-600 mb-6">
-                Đơn hàng <strong className="text-brand-navy">#{resolvedOrderId?.substring(0, 8).toUpperCase()}</strong> đã được thanh toán.
-              </p>
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-left">
-                <div className="flex items-center gap-2 text-green-700 mb-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="font-semibold">Đã xác nhận thanh toán</span>
-                </div>
-                <p className="text-[13px] text-green-600">
-                  Hệ thống đã ghi nhận thanh toán qua SePay/PayOS. Đơn hàng sẽ được xử lý sớm nhất.
-                </p>
-              </div>
-            </>
-          ) : status === 'cancel' ? (
-            <>
-              <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-8 h-8 text-amber-600" />
-              </div>
-              <h1 className="text-[24px] font-bold text-brand-navy mb-3">Thanh toán bị hủy</h1>
-              <p className="text-neutral-600 mb-6">Bạn đã hủy thanh toán. Đơn hàng vẫn ở trạng thái chờ thanh toán.</p>
-            </>
-          ) : isAwaitingConfirmation && !confirmTimedOut ? (
-            <>
-              <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-6">
-                <Clock className="w-8 h-8 text-amber-600" />
-              </div>
-              <h1 className="text-[24px] font-bold text-brand-navy mb-3">Đang xác nhận thanh toán...</h1>
-              <p className="text-neutral-600 mb-6">
-                Ngân hàng/cổng thanh toán đang gửi xác nhận về hệ thống. Vui lòng đợi trong ít giây, trang sẽ tự cập nhật.
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-8 h-8 text-red-600" />
-              </div>
-              <h1 className="text-[24px] font-bold text-brand-navy mb-3">Thanh toán thất bại</h1>
-              <p className="text-neutral-600 mb-6">Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.</p>
-            </>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href={resolvedOrderId ? `/orders/${resolvedOrderId}` : '/profile/orders'}
-              className="w-full sm:flex-1 h-[52px] bg-brand-navy text-white text-body-md font-bold rounded-xl flex items-center justify-center hover:bg-brand-navy/90 transition-colors shadow-sm"
-            >
-              <CreditCard className="w-4 h-4 mr-2" /> Xem đơn hàng
-            </Link>
-            <Link
-              href="/products"
-              className="w-full sm:flex-1 h-[52px] bg-white border border-neutral-200 text-neutral-700 text-body-md font-semibold rounded-xl flex items-center justify-center hover:bg-neutral-50 transition-colors"
-            >
-              Tiếp tục mua sắm <ChevronRight className="w-4 h-4 ml-2" />
-            </Link>
-          </div>
-
-          {status === 'cancel' || status === 'error' ? (
-            <button
-              onClick={() => {
-                if (resolvedOrderId) {
-                  router.push(`/checkout?reorder=${resolvedOrderId}`);
-                } else {
-                  router.push('/checkout');
-                }
-              }}
-              className="mt-4 w-full sm:flex-1 h-[48px] bg-[#FDFBF7] border border-[#E5DFD5] text-[#5D1C34] text-body-sm font-semibold rounded-xl hover:bg-[#F5EAD4] transition-colors flex items-center justify-center gap-2"
-            >
-              <AlertCircle className="w-4 h-4" /> Thử thanh toán lại
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </div>
+    <PaymentStatusCard
+      title="Thanh toán chưa thành công"
+      orderCode={code}
+      status={{ tone: 'error', label: 'Thất bại' }}
+      description={<p>Cổng thanh toán chưa xác nhận giao dịch. Đơn vẫn chờ thanh toán, bạn có thể thử lại từ trang đơn hàng.</p>}
+      primary={{ href: orderHref, label: 'Thanh toán lại' }}
+    />
   );
 }
 
 export default function PaymentSuccessPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="bg-white min-h-screen flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <AtelierLoader size="md" />
-            <p className="text-body-sm text-neutral-600">Đang kiểm tra trạng thái thanh toán...</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<PaymentLoading />}>
       <PaymentSuccessContent />
     </Suspense>
   );

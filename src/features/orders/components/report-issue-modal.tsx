@@ -1,11 +1,23 @@
 'use client';
 
+import { ImageFilePreviews } from '@/components/ui/image-file-previews';
+import { OrderThumb } from '@/features/orders/components/order-ui';
 import { useCreateOrderIssue } from '@/features/orders/hooks/useOrderIssues';
+import { getOrderItemName } from '@/features/orders/services/order-display';
 import type { OrderItem, OrderIssueReason } from '@/features/orders/types/orders';
+import {
+  AccountDialog,
+  accountButtonClassName,
+  accountFocusRing,
+  accountInputClassName,
+  accountLabelClassName,
+} from '@/features/profile/components/account-ui';
+import { describeImageFileRejection, useImageFileSelection } from '@/hooks/use-image-file-selection';
 import { getErrorMessage } from '@/lib/errors';
-import { AlertCircle, AlertTriangle, CheckCircle2, ImagePlus, Loader2, ShieldAlert, Trash2, X } from 'lucide-react';
-import Image from 'next/image';
-import React, { useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { ImagePlus, Loader2 } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface ReportIssueModalProps {
@@ -14,6 +26,12 @@ interface ReportIssueModalProps {
   orderId: string;
   orderItem: OrderItem | null;
   onSuccess?: () => void;
+  mode?: 'PRODUCT' | 'REFUND_NOT_RECEIVED';
+  defaultBank?: {
+    bankName?: string | null;
+    accountNumber?: string | null;
+    accountHolder?: string | null;
+  };
 }
 
 const REASONS: { value: OrderIssueReason; label: string; desc: string }[] = [
@@ -24,8 +42,8 @@ const REASONS: { value: OrderIssueReason; label: string; desc: string }[] = [
   },
   {
     value: 'WRONG_COLOR',
-    label: 'Sai màu sắc',
-    desc: 'Màu sắc thực tế sai khác hoàn toàn so với mô tả đã chọn.',
+    label: 'Sai màu / sai mẫu',
+    desc: 'Nhận màu hoặc mẫu khác với lựa chọn khi đặt hàng.',
   },
   {
     value: 'QUALITY_MISMATCH',
@@ -39,17 +57,29 @@ const REASONS: { value: OrderIssueReason; label: string; desc: string }[] = [
   },
 ];
 
+const MAX_EVIDENCE_IMAGES = 10;
+
 export function ReportIssueModal({
   isOpen,
   onClose,
   orderId,
   orderItem,
   onSuccess,
+  mode = 'PRODUCT',
+  defaultBank,
 }: ReportIssueModalProps) {
+  const isRefundMode = mode === 'REFUND_NOT_RECEIVED';
+  const defaultBankName = defaultBank?.bankName ?? '';
+  const defaultAccountNumber = defaultBank?.accountNumber ?? '';
+  const defaultAccountHolder = defaultBank?.accountHolder ?? '';
+
   const [reason, setReason] = useState<OrderIssueReason>('WRONG_SIZE');
   const [description, setDescription] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const evidence = useImageFileSelection({
+    maxFiles: MAX_EVIDENCE_IMAGES,
+    onReject: (rejection) => toast.error(describeImageFileRejection(rejection, 'ảnh minh chứng')),
+  });
+  const clearEvidence = evidence.clear;
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
@@ -61,82 +91,26 @@ export function ReportIssueModal({
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setReason('WRONG_SIZE');
+      setReason(isRefundMode ? 'REFUND_NOT_RECEIVED' : 'WRONG_SIZE');
       setDescription('');
-      setFiles([]);
-      setPreviewUrls([]);
-      setBankName('');
-      setAccountNumber('');
-      setAccountHolder('');
+      clearEvidence();
+      setBankName(defaultBankName);
+      setAccountNumber(defaultAccountNumber);
+      setAccountHolder(defaultAccountHolder);
       setSubmitError(null);
     }
-  }, [isOpen]);
-
-  // Handle ESC key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isPending) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isPending, onClose]);
-
-  // Clean up object URLs on unmount or file change
-  useEffect(() => {
-    return () => {
-      previewUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [previewUrls]);
-
-  if (!isOpen || !orderItem) return null;
-
-  const handleFilesSelected = (selectedFiles: FileList | null) => {
-    if (!selectedFiles) return;
-    setSubmitError(null);
-
-    const validNewFiles: File[] = [];
-    const validNewUrls: string[] = [];
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    const maxFiles = 10;
-    const maxSizeBytes = 10 * 1024 * 1024; // 10MB
-
-    const totalAllowed = maxFiles - files.length;
-    if (totalAllowed <= 0) {
-      toast.error('Chỉ được chọn tối đa 10 ảnh minh chứng.');
-      return;
-    }
-
-    const filesToProcess = Array.from(selectedFiles).slice(0, totalAllowed);
-
-    for (const file of filesToProcess) {
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(`Ảnh "${file.name}" không hợp lệ. Chỉ chấp nhận định dạng JPG, PNG, WEBP.`);
-        continue;
-      }
-      if (file.size > maxSizeBytes) {
-        toast.error(`Ảnh "${file.name}" vượt quá 10MB.`);
-        continue;
-      }
-      validNewFiles.push(file);
-      validNewUrls.push(URL.createObjectURL(file));
-    }
-
-    setFiles((prev) => [...prev, ...validNewFiles]);
-    setPreviewUrls((prev) => [...prev, ...validNewUrls]);
-  };
-
-  const handleRemoveImage = (index: number) => {
-    URL.revokeObjectURL(previewUrls[index]);
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, [
+    isOpen,
+    isRefundMode,
+    defaultBankName,
+    defaultAccountNumber,
+    defaultAccountHolder,
+    clearEvidence,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!orderItem) return;
     setSubmitError(null);
 
     const trimmedDesc = description.trim();
@@ -146,6 +120,14 @@ export function ReportIssueModal({
     }
     if (trimmedDesc.length > 2000) {
       setSubmitError('Mô tả không được vượt quá 2000 ký tự.');
+      return;
+    }
+    if (evidence.files.length === 0) {
+      setSubmitError(
+        isRefundMode
+          ? 'Vui lòng tải lên ít nhất 1 ảnh sao kê / chứng từ.'
+          : 'Vui lòng tải lên ít nhất 1 ảnh minh chứng lỗi.',
+      );
       return;
     }
 
@@ -172,13 +154,17 @@ export function ReportIssueModal({
         reason,
         description: trimmedDesc,
         desiredResolution: 'REFUND',
-        evidenceImages: files,
+        evidenceImages: evidence.files,
         bankName: trimmedBankName,
         accountNumber: trimmedAccountNumber,
         accountHolder: trimmedAccountHolder,
       });
 
-      toast.success('Gửi yêu cầu báo lỗi sản phẩm thành công. Đội ngũ FashionAI sẽ xem xét sớm nhất!');
+      toast.success(
+        isRefundMode
+          ? 'Đã gửi báo cáo chưa nhận được tiền hoàn. Shop sẽ kiểm tra và phản hồi sớm nhất!'
+          : 'Gửi yêu cầu báo lỗi sản phẩm thành công. Đội ngũ FashionAI sẽ xem xét sớm nhất!'
+      );
       onSuccess?.();
       onClose();
     } catch (err: unknown) {
@@ -188,286 +174,235 @@ export function ReportIssueModal({
     }
   };
 
-  const rawImg = orderItem.productImageSnapshot || orderItem.product?.images?.[0];
-  const itemImg = (typeof rawImg === 'object' && rawImg !== null ? (rawImg as { url?: string; imageUrl?: string }).url || (rawImg as { url?: string; imageUrl?: string }).imageUrl : rawImg) || '/images/726470431_1311184104081177_6052756217829444481_n.png';
-  const itemName = orderItem.productNameSnapshot || orderItem.product?.name || `Sản phẩm #${orderItem.productId}`;
+  const descriptionLength = description.trim().length;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="report-issue-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isPending) {
-          onClose();
-        }
+    <AccountDialog
+      open={isOpen && Boolean(orderItem)}
+      onOpenChange={(open) => {
+        if (!open && !isPending) onClose();
       }}
+      eyebrow={isRefundMode ? 'Hoàn tiền' : 'Báo lỗi sản phẩm'}
+      title={isRefundMode ? 'Chưa nhận được tiền hoàn' : 'Yêu cầu xử lý'}
+      description={
+        isRefundMode
+          ? 'Dùng khi shop đã ghi nhận hoàn tiền trong 7 ngày qua mà bạn chưa nhận được.'
+          : 'Áp dụng cho đơn đã hoàn tất trong vòng 7 ngày.'
+      }
+      className="sm:max-w-[600px]"
     >
-      <div className="bg-white rounded-2xl max-w-xl w-full my-8 p-6 shadow-2xl border border-neutral-100 animate-in zoom-in-95 duration-200 relative max-h-[90vh] flex flex-col">
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isPending}
-          className="absolute top-5 right-5 p-1 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors disabled:opacity-40 cursor-pointer z-10"
-          aria-label="Đóng"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Modal Header */}
-        <div className="flex items-start gap-4 mb-4 shrink-0">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200/70 flex items-center justify-center shrink-0">
-            <ShieldAlert className="w-6 h-6" />
+      {orderItem ? (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
+          <div className="flex items-center gap-3 border-b border-landing-line/70 pb-5">
+            <OrderThumb item={orderItem} className="h-16 w-12" />
+            <div className="min-w-0">
+              <p className="product-name-line line-clamp-1 text-landing-obsidian">{getOrderItemName(orderItem)}</p>
+              <p className="mt-0.5 text-xs text-landing-muted">
+                Màu: {orderItem.color || 'Mặc định'} · SL <span className="font-mono">{orderItem.quantity}</span>
+              </p>
+            </div>
           </div>
-          <div className="pr-6">
-            <h3 id="report-issue-modal-title" className="text-[18px] font-bold text-brand-navy">
-              Báo lỗi sản phẩm &amp; Yêu cầu xử lý
-            </h3>
-            <p className="text-[13px] text-neutral-500 mt-0.5">
-              Áp dụng cho đơn hàng đã hoàn tất trong vòng 7 ngày
+
+          {submitError ? (
+            <p role="alert" className="border-l-2 border-destructive bg-landing-ivory px-3 py-2 text-sm text-destructive">
+              {submitError}
             </p>
-          </div>
-        </div>
+          ) : null}
 
-        {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-1 flex flex-col gap-5">
-          {/* Product Snapshot Card */}
-          <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl border border-neutral-200/70">
-            <Image
-              src={itemImg}
-              alt={itemName}
-              width={56}
-              height={70}
-              className="w-14 h-16 object-cover rounded-lg bg-white border border-neutral-200 shrink-0"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = '/images/726470431_1311184104081177_6052756217829444481_n.png';
-              }}
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-bold text-brand-navy line-clamp-1">{itemName}</p>
-              <div className="flex flex-wrap gap-2 text-[12px] text-neutral-500 mt-0.5">
-                <span>Màu: <strong className="text-neutral-700">{orderItem.color || 'Mặc định'}</strong></span>
-                <span>•</span>
-                <span>Số lượng: <strong className="text-neutral-700">{orderItem.quantity}</strong></span>
+          {isRefundMode ? (
+            <div className="border-l-2 border-landing-brass bg-landing-ivory px-3 py-2.5">
+              <p className="text-sm font-medium text-landing-obsidian">Lý do: chưa nhận được tiền hoàn</p>
+              <p className="mt-1 text-xs leading-relaxed text-landing-muted">
+                Vui lòng kiểm tra sao kê ngân hàng trước khi gửi. Shop sẽ đối chiếu lại giao dịch và chuyển lại nếu tiền chưa
+                tới tài khoản của bạn.
+              </p>
+            </div>
+          ) : (
+            <fieldset>
+              <legend className={accountLabelClassName}>
+                Lý do báo lỗi <span className="text-destructive">*</span>
+              </legend>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {REASONS.map((option) => {
+                  const selected = reason === option.value;
+                  return (
+                    <label
+                      key={option.value}
+                      className={cn(
+                        'flex cursor-pointer flex-col gap-1 rounded-[2px] border px-3 py-2.5 transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-landing-oxblood',
+                        selected ? 'border-landing-oxblood bg-landing-ivory' : 'border-landing-line bg-landing-ivory/50 hover:border-landing-brass',
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="issue-reason"
+                        value={option.value}
+                        checked={selected}
+                        onChange={() => setReason(option.value)}
+                        className="sr-only"
+                      />
+                      <span className="flex items-center justify-between gap-3">
+                        <span className={cn('text-sm', selected ? 'font-medium text-landing-oxblood' : 'text-landing-obsidian')}>
+                          {option.label}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border',
+                            selected ? 'border-landing-oxblood' : 'border-landing-taupe',
+                          )}
+                        >
+                          {selected ? <span className="h-1.5 w-1.5 rounded-full bg-landing-oxblood" /> : null}
+                        </span>
+                      </span>
+                      <span className="text-xs leading-relaxed text-landing-muted">{option.desc}</span>
+                    </label>
+                  );
+                })}
               </div>
-            </div>
-          </div>
-
-          {/* Error Banner */}
-          {submitError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-[13px] flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{submitError}</span>
-            </div>
+              {reason === 'OTHER' ? (
+                <p className="mt-3 border-l-2 border-landing-brass pl-3 text-xs leading-relaxed text-landing-brass-ink">
+                  Yêu cầu vì lý do khác cần bộ phận chăm sóc khách hàng thẩm định riêng và có thể không được chấp thuận.
+                </p>
+              ) : null}
+            </fieldset>
           )}
 
-          {/* 1. Reason Selection */}
           <div>
-            <label className="block text-[13px] font-bold text-brand-navy mb-2">
-              Lý do báo lỗi <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {REASONS.map((r) => {
-                const isSelected = reason === r.value;
-                return (
-                  <button
-                    key={r.value}
-                    type="button"
-                    onClick={() => setReason(r.value)}
-                    className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-brand-navy bg-brand-navy/5 ring-1 ring-brand-navy'
-                        : 'border-neutral-200 hover:border-neutral-300 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[13px] font-bold ${isSelected ? 'text-brand-navy' : 'text-neutral-800'}`}>
-                        {r.label}
-                      </span>
-                      {isSelected && <CheckCircle2 className="w-4 h-4 text-brand-navy shrink-0" />}
-                    </div>
-                    <p className="text-[11px] text-neutral-500 mt-1 leading-relaxed">{r.desc}</p>
-                  </button>
-                );
-              })}
-            </div>
-            {reason === 'OTHER' && (
-              <p className="text-[12px] text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200/60 mt-2 flex items-start gap-1.5">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>
-                  Lưu ý: Theo chính sách đổi trả, các yêu cầu vì &quot;Lý do khác&quot; sẽ cần được bộ phận chăm sóc khách hàng thẩm định riêng và có thể không được chấp thuận.
-                </span>
-              </p>
-            )}
+            <p className={accountLabelClassName}>Hướng xử lý</p>
+            <p className="mt-2 text-sm font-medium text-landing-obsidian">Hoàn tiền</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-landing-muted">
+              {isRefundMode
+                ? 'Shop đối chiếu lại giao dịch và chuyển lại tiền vào tài khoản của bạn nếu chưa nhận được.'
+                : 'Shop hoàn tiền về tài khoản ngân hàng của bạn sau khi nhận lại và kiểm tra hàng hoàn.'}
+            </p>
           </div>
 
-          {/* 2. Desired Resolution */}
-          <div>
-            <label className="block text-[13px] font-bold text-brand-navy mb-2">
-              Hướng xử lý
-            </label>
-            <div className="p-3.5 rounded-xl border border-brand-navy/20 bg-brand-navy/5">
-              <div className="flex items-center justify-between">
-                <span className="text-[14px] font-bold text-brand-navy">Hoàn tiền</span>
-                <CheckCircle2 className="w-4 h-4 text-brand-navy" />
-              </div>
-              <p className="text-[11px] text-neutral-600 mt-1">
-                Shop hoàn tiền về tài khoản ngân hàng của bạn sau khi nhận lại và kiểm tra hàng hoàn.
-              </p>
-            </div>
-          </div>
-
-          {/* 2.1. Refund bank account */}
-          <div className="p-3.5 rounded-xl border border-amber-200/70 bg-amber-50/40">
-              <label className="block text-[13px] font-bold text-brand-navy mb-2">
-                Tài khoản ngân hàng nhận hoàn tiền <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <input
-                  type="text"
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                  placeholder="Tên ngân hàng (VD: Vietcombank)"
-                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all text-neutral-800 placeholder:text-neutral-400 bg-white"
-                />
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value.replace(/\s/g, ''))}
-                  placeholder="Số tài khoản"
-                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all text-neutral-800 placeholder:text-neutral-400 bg-white font-mono"
-                />
-              </div>
+          <fieldset>
+            <legend className={accountLabelClassName}>
+              {isRefundMode ? 'Tài khoản nhận lại tiền hoàn' : 'Tài khoản nhận hoàn tiền'} <span className="text-destructive">*</span>
+            </legend>
+            <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+              <input
+                type="text"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+                placeholder="Ngân hàng (VD: Vietcombank)"
+                aria-label="Tên ngân hàng"
+                className={accountInputClassName}
+              />
+              <input
+                type="text"
+                inputMode="numeric"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value.replace(/\s/g, ''))}
+                placeholder="Số tài khoản"
+                aria-label="Số tài khoản"
+                className={cn(accountInputClassName, 'font-mono')}
+              />
               <input
                 type="text"
                 value={accountHolder}
                 onChange={(e) => setAccountHolder(e.target.value)}
                 placeholder="Tên chủ tài khoản (không dấu)"
-                className="mt-2.5 w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all text-neutral-800 placeholder:text-neutral-400 bg-white uppercase"
+                aria-label="Tên chủ tài khoản"
+                className={cn(accountInputClassName, 'uppercase placeholder:normal-case sm:col-span-2')}
               />
-              <p className="text-[11px] text-neutral-500 mt-2 leading-relaxed">
-                Shop sẽ chuyển khoản hoàn tiền vào tài khoản này sau khi nhận và kiểm tra hàng hoàn.
-              </p>
             </div>
+            <p className="mt-2 text-xs leading-relaxed text-landing-muted">
+              {isRefundMode
+                ? 'Kiểm tra kỹ số tài khoản. Shop sẽ chuyển lại tiền vào đúng tài khoản này.'
+                : 'Shop chuyển khoản hoàn tiền vào tài khoản này sau khi nhận và kiểm tra hàng hoàn.'}
+            </p>
+          </fieldset>
 
-          {/* 3. Description */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="issue-description" className="text-[13px] font-bold text-brand-navy">
-                Mô tả chi tiết vấn đề <span className="text-red-500">*</span>
+            <div className="flex items-baseline justify-between gap-3">
+              <label htmlFor="issue-description" className={accountLabelClassName}>
+                Mô tả chi tiết <span className="text-destructive">*</span>
               </label>
-              <span className={`text-[11px] ${description.length < 10 ? 'text-amber-600' : 'text-neutral-400'}`}>
-                {description.length}/2000 ký tự (tối thiểu 10)
+              <span className={cn('font-mono text-[11px]', descriptionLength < 10 ? 'text-landing-brass-ink' : 'text-landing-muted')}>
+                {description.length}/2000
               </span>
             </div>
             <textarea
               id="issue-description"
-              rows={3}
+              rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Vui lòng mô tả cụ thể: ví dụ Áo bị lệch vai trái khoảng 4cm so với số đo đã đặt, đường chỉ tay áo bị tuột..."
-              className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all resize-y text-neutral-800 placeholder:text-neutral-400"
+              placeholder={
+                isRefundMode
+                  ? 'Ví dụ: đã kiểm tra sao kê Vietcombank từ 01/11 đến 03/11 nhưng chưa thấy khoản hoàn nào.'
+                  : 'Ví dụ: áo lệch vai trái khoảng 4cm so với số đo đã đặt, đường chỉ tay áo bị tuột.'
+              }
+              className={cn(accountInputClassName, 'mt-2 h-auto min-h-[104px] resize-y py-2.5 leading-relaxed')}
             />
+            <p className="mt-1.5 text-xs text-landing-muted">Tối thiểu 10 ký tự.</p>
           </div>
 
-          {/* 4. Evidence Images */}
           <div>
-            <label className="block text-[13px] font-bold text-brand-navy mb-1.5">
-              Ảnh minh chứng <span className="text-neutral-400 font-normal">(tối đa 10 ảnh, mỗi ảnh &lt; 10MB)</span>
-            </label>
+            <p className={accountLabelClassName}>
+              {isRefundMode ? 'Ảnh sao kê / chứng từ' : 'Ảnh minh chứng'} *{' '}
+              <span className="font-normal normal-case tracking-normal text-landing-muted">
+                (tối đa {MAX_EVIDENCE_IMAGES} ảnh, mỗi ảnh dưới 10MB, bắt buộc ít nhất 1 ảnh)
+              </span>
+            </p>
             <input
               ref={fileInputRef}
               type="file"
               multiple
               accept="image/jpeg,image/png,image/webp"
               className="hidden"
-              onChange={(e) => handleFilesSelected(e.target.files)}
+              onChange={(e) => {
+                setSubmitError(null);
+                evidence.add(e.target.files);
+                // Allow picking the same file again after removing it.
+                e.target.value = '';
+              }}
             />
-
-            {previewUrls.length > 0 && (
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mb-3">
-                {previewUrls.map((url, idx) => (
-                  <div key={url} className="relative group aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100">
-                    <Image
-                      src={url}
-                      alt={`Minh chứng ${idx + 1}`}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(idx)}
-                      disabled={isPending}
-                      className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-600 text-white rounded-md transition-colors cursor-pointer"
-                      title="Xóa ảnh"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-                {previewUrls.length < 10 && (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isPending}
-                    className="aspect-square rounded-xl border border-dashed border-neutral-300 hover:border-brand-navy hover:bg-neutral-50 flex flex-col items-center justify-center gap-1 text-neutral-500 hover:text-brand-navy transition-all cursor-pointer text-[11px]"
-                  >
-                    <ImagePlus className="w-5 h-5" />
-                    <span>Thêm ảnh</span>
-                  </button>
-                )}
-              </div>
-            )}
-
-            {previewUrls.length === 0 && (
+            {evidence.items.length > 0 ? (
+              <ImageFilePreviews
+                items={evidence.items}
+                onRemove={evidence.remove}
+                onAdd={evidence.canAddMore ? () => fileInputRef.current?.click() : undefined}
+                disabled={isPending}
+                className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5"
+                tileClassName="size-auto aspect-square"
+              />
+            ) : (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isPending}
-                className="w-full py-6 px-4 border-2 border-dashed border-neutral-200 hover:border-brand-navy hover:bg-brand-navy/5 rounded-xl flex flex-col items-center justify-center gap-2 text-neutral-500 hover:text-brand-navy transition-all cursor-pointer"
+                className={cn(
+                  'mt-3 flex w-full flex-col items-center justify-center gap-2 rounded-[2px] border border-dashed border-landing-taupe bg-landing-ivory/50 px-4 py-6 text-landing-muted transition-colors hover:border-landing-oxblood hover:text-landing-oxblood disabled:opacity-50',
+                  accountFocusRing,
+                )}
               >
-                <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600">
-                  <ImagePlus className="w-5 h-5" />
-                </div>
-                <div className="text-center">
-                  <span className="text-[13px] font-semibold">Tải lên hình ảnh chụp lỗi thực tế</span>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">JPG, PNG hoặc WEBP (tối đa 10MB/ảnh)</p>
-                </div>
+                <ImagePlus className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+                <span className="text-sm font-medium">
+                  {isRefundMode ? 'Tải lên ảnh sao kê' : 'Tải lên ảnh chụp lỗi thực tế'}
+                </span>
+                <span className="text-xs">Bắt buộc · JPG, PNG hoặc WEBP</span>
               </button>
             )}
           </div>
 
-          {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-100 mt-2 shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="px-4 py-2.5 rounded-xl border border-neutral-200 text-[13px] font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors disabled:opacity-40 cursor-pointer"
-            >
+          <div className="flex flex-col-reverse gap-2 border-t border-landing-line/70 pt-5 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onClose} disabled={isPending} className={accountButtonClassName('outline')}>
               Hủy
             </button>
             <button
               type="submit"
-              disabled={isPending || description.trim().length < 10}
-              className="px-5 py-2.5 rounded-xl bg-brand-navy text-white text-[13px] font-bold hover:bg-brand-navy/90 transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm"
+              disabled={isPending || descriptionLength < 10 || evidence.items.length === 0}
+              className={accountButtonClassName('primary')}
             >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Đang gửi yêu cầu...
-                </>
-              ) : (
-                'Gửi yêu cầu báo lỗi'
-              )}
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} /> : null}
+              {isPending ? 'Đang gửi' : isRefundMode ? 'Gửi báo cáo' : 'Gửi yêu cầu'}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      ) : null}
+    </AccountDialog>
   );
 }

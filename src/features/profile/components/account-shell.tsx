@@ -53,14 +53,18 @@ export function AccountShell({
   title,
   description,
   actions,
+  activeHref,
   children,
 }: {
   title: string;
   description?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Menu item to highlight on a nested page, e.g. `/profile/orders` for `/orders/[id]`. */
+  activeHref?: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const isActive = (href: string) => pathname === href || href === activeHref;
   const { logout } = useAuth();
   const authUser = useAuthStore((state) => state.user);
   // Tên từ /users/me (đúng UTF-8) ưu tiên hơn tên trong phiên.
@@ -90,13 +94,13 @@ export function AccountShell({
             <nav aria-label="Tài khoản" className="mt-8">
               <div className="flex flex-col border-l border-landing-line">
                 {ACCOUNT_PRIMARY_NAV.map((item) => (
-                  <DesktopNavLink key={item.href} item={item} active={pathname === item.href} unread={unreadCount} />
+                  <DesktopNavLink key={item.href} item={item} active={isActive(item.href)} unread={unreadCount} />
                 ))}
               </div>
               <p className={cn(accountLabelClassName, 'mb-2 mt-8')}>Lưu trữ & gói</p>
               <div className="flex flex-col border-l border-landing-line">
                 {ACCOUNT_SECONDARY_NAV.map((item) => (
-                  <DesktopNavLink key={item.href} item={item} active={pathname === item.href} unread={unreadCount} />
+                  <DesktopNavLink key={item.href} item={item} active={isActive(item.href)} unread={unreadCount} />
                 ))}
               </div>
             </nav>
@@ -122,7 +126,7 @@ export function AccountShell({
             className="no-scrollbar -mx-4 mb-8 flex gap-6 overflow-x-auto border-b border-landing-line px-4 md:-mx-8 md:px-8 lg:hidden"
           >
             {allItems.map((item) => {
-              const active = pathname === item.href;
+              const active = isActive(item.href);
               return (
                 <Link
                   key={item.href}

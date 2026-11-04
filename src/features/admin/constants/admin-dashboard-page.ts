@@ -1,10 +1,10 @@
-import type { AdminNavItem, AdminPage, AdminPagination, AdminSidebarItem, GarmentCategory, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
+import type { AdminNavItem, AdminPage, AdminPagination, AdminSidebarItem, GarmentCategory, ProductGender, ProductStatus } from '@/features/admin/types/admin-dashboard-page';
 import type { AdminOrderIssueFilters } from '@/features/admin/types/admin-order-issues-panel';
 import type { AdminOrderFilters } from '@/features/admin/types/admin-orders-panel';
 import type { AdminProductFilters } from '@/features/admin/types/admin-products-panel';
-import type { AdminShipmentFilters } from '@/features/admin/types/admin-shipments-panel';
+import type { AdminShipmentFilters, ShipmentSimulation } from '@/features/admin/types/admin-shipments-panel';
 import type { AdminUserFilters } from '@/features/admin/types/admin-users-panel';
-import type { BackendOrderStatus, OrderDisplayStatus } from '@/features/orders/types/orders';
+import type { BackendOrderStatus, OrderDisplayStatus, OrderRefundStatus } from '@/features/orders/types/orders';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Package,
+  PackageCheck,
   Radio,
   RotateCcw,
   Scissors,
@@ -147,11 +148,20 @@ export const DEFAULT_ADMIN_PAGINATION: AdminPagination = {
   totalPages: 1,
 };
 
-export const EMPTY_PRODUCT_FILTERS: AdminProductFilters = { category: '', status: '', search: '' };
+export const EMPTY_PRODUCT_FILTERS: AdminProductFilters = { category: '', status: '', gender: '', search: '' };
 export const EMPTY_ORDER_FILTERS: AdminOrderFilters = { search: '', status: '', paymentStatus: '', fromDate: '', toDate: '' };
 export const EMPTY_USER_FILTERS: AdminUserFilters = { search: '', tier: '', role: '', isVerified: '' };
 export const EMPTY_SHIPMENT_FILTERS: AdminShipmentFilters = {};
-export const EMPTY_ORDER_ISSUE_FILTERS: AdminOrderIssueFilters = { status: '', reason: '' };
+
+// Giả lập GHN trên staging (sandbox không có shipper thật). Giao thất bại / hoàn hàng
+// giữ đơn ở "Đang giao" và gắn cờ sự cố cho vận đơn.
+export const SHIPMENT_SIMULATIONS: ShipmentSimulation[] = [
+  { status: 'PICKED', label: 'Giả lập đã lấy hàng', success: 'Đã giả lập shipper lấy hàng', icon: PackageCheck, from: ['CREATED', 'READY_TO_PICK', 'PICKING'] },
+  { status: 'DELIVERED', label: 'Giả lập đã giao', success: 'Đã giả lập giao hàng thành công', icon: CheckCircle2, from: ['PICKED', 'SHIPPING', 'IN_TRANSIT', 'DELIVERING', 'DELIVERY_FAILED'] },
+  { status: 'DELIVERY_FAILED', label: 'Giả lập giao thất bại', success: 'Đã giả lập giao hàng thất bại', icon: AlertTriangle, from: ['PICKED', 'SHIPPING', 'IN_TRANSIT', 'DELIVERING'] },
+  { status: 'RETURNED', label: 'Giả lập hoàn hàng về shop', success: 'Đã giả lập hoàn hàng về shop', icon: RotateCcw, from: ['DELIVERY_FAILED', 'RETURNING'] },
+];
+export const EMPTY_ORDER_ISSUE_FILTERS: AdminOrderIssueFilters = { status: '', reason: '', search: '' };
 
 /** Users được tải một lần rồi lọc/phân trang phía client. */
 export const ADMIN_USERS_FETCH_LIMIT = 1000;
@@ -184,6 +194,12 @@ export const CATEGORY_LABEL: Record<GarmentCategory, string> = {
   UPPER: 'Áo',
   LOWER: 'Quần / Váy',
   FULL_BODY: 'Toàn thân',
+};
+
+export const PRODUCT_GENDER_LABEL: Record<ProductGender, string> = {
+  FEMALE: 'Nữ',
+  MALE: 'Nam',
+  UNISEX: 'Unisex',
 };
 
 export const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL', 'Free'];
@@ -226,6 +242,15 @@ export const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon
   RETURNED: { label: 'Hoàn trả', cls: 'bg-landing-paper text-landing-muted border border-landing-line', icon: RotateCcw },
   EXPIRED: { label: 'Hết hạn', cls: 'bg-landing-paper text-landing-muted border border-landing-line', icon: XCircle },
   FAILED: { label: 'Thất bại', cls: 'bg-destructive/10 text-destructive border border-destructive/30', icon: XCircle },
+};
+
+export const REFUND_STATUS_CFG: Record<OrderRefundStatus, { label: string; cls: string }> = {
+  PENDING: { label: 'Chờ xử lý', cls: 'bg-metric-users/10 text-metric-users border border-metric-users/30' },
+  REQUIRED: { label: 'Chờ chuyển tiền', cls: 'bg-metric-users/10 text-metric-users border border-metric-users/30' },
+  PROCESSING: { label: 'Đang xử lý', cls: 'bg-metric-orders/10 text-metric-orders border border-metric-orders/30' },
+  COMPLETED: { label: 'Thành công', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30' },
+  FAILED: { label: 'Thất bại', cls: 'bg-destructive/10 text-destructive border border-destructive/30' },
+  CANCELLED: { label: 'Đã hủy', cls: 'bg-landing-paper text-landing-muted border border-landing-line' },
 };
 
 export const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {

@@ -1,7 +1,10 @@
 'use client';
 
 import type { PaymentMethodSelectorProps } from '@/features/checkout/types/payment-method-selector';
+import { accountButtonClassName, accountInputClassName, accountLabelClassName } from '@/features/profile/components/account-ui';
+import { cn } from '@/lib/utils';
 
+/** Ô nhập mã giảm giá (tên file giữ theo lịch sử). */
 export function PaymentMethodSelector({
   coupon,
   setCoupon,
@@ -10,49 +13,52 @@ export function PaymentMethodSelector({
   handleApplyCoupon,
   couponError,
 }: PaymentMethodSelectorProps) {
+  const applied = discount > 0;
   return (
-    <section>
-      <h3 className="text-body-sm font-bold text-brand-navy mb-3">Mã giảm giá</h3>
-      <div className="flex gap-2">
+    <div>
+      <label htmlFor="checkout-coupon" className={accountLabelClassName}>
+        Mã giảm giá
+      </label>
+      <div className="mt-2 flex gap-2">
         <input
+          id="checkout-coupon"
           type="text"
           value={coupon}
           onChange={(e) => setCoupon(e.target.value)}
-          placeholder="Nhập mã giảm giá..."
-          className="min-w-0 flex-1 h-[44px] px-3 rounded-xl border border-neutral-200 bg-white text-body-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all uppercase"
-          disabled={discount > 0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              if (!applied) handleApplyCoupon();
+            }
+          }}
+          placeholder="Nhập mã"
+          autoComplete="off"
+          disabled={applied}
+          className={cn(accountInputClassName, 'min-w-0 flex-1 font-mono uppercase placeholder:font-sans placeholder:normal-case')}
         />
-        {discount > 0 ? (
+        {applied ? (
           <button
             type="button"
             onClick={() => {
               setDiscount(0);
               setCoupon('');
             }}
-            className="px-4 h-[44px] border border-neutral-200 text-neutral-700 text-body-sm font-medium rounded-xl hover:bg-neutral-50 transition-colors cursor-pointer"
+            className={accountButtonClassName('outline')}
           >
-            Hủy
+            Bỏ mã
           </button>
         ) : (
-          <button
-            type="button"
-            onClick={handleApplyCoupon}
-            className="px-4 h-[44px] bg-brand-navy text-white text-body-sm font-medium rounded-xl hover:bg-brand-navy/90 transition-colors cursor-pointer"
-          >
+          <button type="button" onClick={handleApplyCoupon} disabled={!coupon.trim()} className={accountButtonClassName('outline')}>
             Áp dụng
           </button>
         )}
       </div>
-      {couponError && discount === 0 && (
-        <p className="text-[13px] text-red-600 mt-2 font-medium">
-          {couponError}
+      {couponError && !applied ? <p className="mt-2 text-xs text-destructive">{couponError}</p> : null}
+      {applied ? (
+        <p className="mt-2 text-xs text-landing-sage-ink">
+          Đã giảm <span className="font-mono">{discount.toLocaleString('vi-VN')}đ</span>
         </p>
-      )}
-      {discount > 0 && (
-        <p className="text-[13px] text-semantic-success mt-2">
-          Đã áp dụng mã giảm giá {discount.toLocaleString('vi-VN')}đ
-        </p>
-      )}
-    </section>
+      ) : null}
+    </div>
   );
 }

@@ -67,8 +67,11 @@ export async function fetchReviewReplies(reviewId: string | undefined) {
   return (Array.isArray(data) ? data : data.data) || [];
 }
 
+// The admin review table pages on the client, so load up to the backend cap (500).
+const ADMIN_REVIEWS_LIMIT = 500;
+
 export function fetchAdminReviewsResponse() {
-  return http.get('/products/admin/reviews');
+  return http.get('/products/admin/reviews', { params: { limit: ADMIN_REVIEWS_LIMIT } });
 }
 
 export function fetchProductReviewsResponse(id: string, config: HttpOptions) {

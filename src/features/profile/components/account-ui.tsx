@@ -44,13 +44,31 @@ export function AccountSection({
   action,
   children,
   className,
+  variant = 'rule',
 }: {
   title: string;
   description?: React.ReactNode;
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  /** `panel`: khung ivory viền mảnh cho trang nhiều dữ liệu (chi tiết đơn), để nội dung không chìm vào nền paper. */
+  variant?: 'rule' | 'panel';
 }) {
+  if (variant === 'panel') {
+    return (
+      <section className={cn('rounded-[2px] border border-landing-line bg-landing-ivory', className)}>
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-landing-line/70 px-4 py-3.5 sm:px-5">
+          <div className="min-w-0">
+            <h2 className="font-display text-[1.25rem] leading-tight text-landing-obsidian">{title}</h2>
+            {description ? <p className="mt-1 text-sm text-landing-muted">{description}</p> : null}
+          </div>
+          {action}
+        </div>
+        <div className="px-4 py-5 sm:px-5">{children}</div>
+      </section>
+    );
+  }
+
   return (
     <section className={cn('border-t border-landing-line pt-6', className)}>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
@@ -187,6 +205,8 @@ export function AccountConfirmDialog({
   title,
   description,
   confirmLabel,
+  cancelLabel = 'Giữ lại',
+  tone = 'danger',
   isPending = false,
   onConfirm,
 }: {
@@ -195,6 +215,9 @@ export function AccountConfirmDialog({
   title: string;
   description: React.ReactNode;
   confirmLabel: string;
+  cancelLabel?: string;
+  /** `danger` cho thao tác xóa/hủy; `primary` cho xác nhận thường (vd. đã nhận hàng). */
+  tone?: 'danger' | 'primary';
   isPending?: boolean;
   onConfirm: () => void;
 }) {
@@ -202,9 +225,9 @@ export function AccountConfirmDialog({
     <AccountDialog open={open} onOpenChange={onOpenChange} title={title} description={description}>
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button type="button" onClick={() => onOpenChange(false)} disabled={isPending} className={accountButtonClassName('outline')}>
-          Giữ lại
+          {cancelLabel}
         </button>
-        <button type="button" onClick={onConfirm} disabled={isPending} className={accountButtonClassName('danger')}>
+        <button type="button" onClick={onConfirm} disabled={isPending} className={accountButtonClassName(tone)}>
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} /> : null}
           {confirmLabel}
         </button>

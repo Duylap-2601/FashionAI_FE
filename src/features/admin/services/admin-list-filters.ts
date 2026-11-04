@@ -20,7 +20,8 @@ export function filterProducts(list: AdminProduct[], filters: AdminProductFilter
   return list.filter(p =>
     (!q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)) &&
     (!isActiveFilter(filters.category) || p.category === filters.category) &&
-    (!isActiveFilter(filters.status) || p.status === filters.status)
+    (!isActiveFilter(filters.status) || p.status === filters.status) &&
+    (!isActiveFilter(filters.gender) || (p.gender ?? 'FEMALE') === filters.gender)
   );
 }
 

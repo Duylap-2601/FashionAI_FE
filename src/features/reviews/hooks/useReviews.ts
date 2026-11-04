@@ -11,6 +11,10 @@ import { useOrders } from '@/features/orders/hooks/useOrders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ─── Lấy danh sách reviews của 1 sản phẩm (phân trang + lọc theo số sao) ────
+// Stable fallback: ReviewSection syncs this array into state in an effect, so a
+// new [] on every render while loading loops forever.
+const EMPTY_REVIEWS: Review[] = [];
+
 export function useReviews(productId?: string, options?: { page?: number; limit?: number; rating?: number }) {
   const page = options?.page ?? 1;
   const limit = options?.limit ?? 10;
@@ -23,7 +27,7 @@ export function useReviews(productId?: string, options?: { page?: number; limit?
   });
 
   return {
-    reviews: query.data?.data || [],
+    reviews: query.data?.data ?? EMPTY_REVIEWS,
     meta: query.data?.meta,
     isLoading: query.isLoading,
     isError: query.isError,
@@ -139,7 +143,7 @@ export function useMyReviews(options?: { page?: number; limit?: number }) {
   });
 
   return {
-    reviews: query.data?.data || [],
+    reviews: query.data?.data ?? EMPTY_REVIEWS,
     meta: query.data?.meta,
     isLoading: status === 'loading' || query.isLoading,
     isError: query.isError,

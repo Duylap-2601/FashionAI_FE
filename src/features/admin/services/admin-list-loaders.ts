@@ -31,6 +31,7 @@ export async function loadAdminProducts(
   }
   if (filters.category && filters.category !== 'ALL') params.category = filters.category;
   if (filters.status && filters.status !== 'ALL') params.status = filters.status;
+  if (filters.gender && filters.gender !== 'ALL') params.gender = filters.gender;
 
   const { items, serverTotal, serverTotalPages } = readAdminList<AdminProductDto>(await fetchAdminProducts({ params, signal }));
   const products = items.map(toAdminProduct);
@@ -84,7 +85,7 @@ export async function loadAdminOrderIssues(
   signal?: AbortSignal,
 ): Promise<AdminListResult<OrderIssue>> {
   const res = await fetchAdminOrderIssues(
-    { page, limit: pageSize, status: filters.status || undefined, reason: filters.reason || undefined },
+    { page, limit: pageSize, status: filters.status || undefined, reason: filters.reason || undefined, q: filters.search?.trim() || undefined },
     { signal },
   );
   const resObj = res as { data?: OrderIssue[]; meta?: OrderIssueListMeta; items?: OrderIssue[]; total?: number; __meta?: OrderIssueListMeta } | undefined;

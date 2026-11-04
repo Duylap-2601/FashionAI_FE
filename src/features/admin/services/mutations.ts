@@ -6,7 +6,7 @@ import type {
   CreateSaleCampaignPayload,
   UpdateSaleCampaignPayload,
 } from '@/features/admin/types/admin-sale-campaigns';
-import type { OrderIssue } from '@/features/orders/types/orders';
+import type { OrderIssue, OrderRefundKind } from '@/features/orders/types/orders';
 import { api } from '@/lib/api';
 import { http, type HttpOptions } from '@/lib/http';
 
@@ -38,10 +38,6 @@ export function createShipment(id: string, payload?: { requestKey?: string }, co
   return http.post(`/orders/${id}/shipment`, payload || {}, config);
 }
 
-export function syncAdminShipment(id: string) {
-  return http.post(`/admin/shipments/${id}/sync`, {});
-}
-
 export function cancelAdminShipment(id: string, payload?: { reason?: string }) {
   return http.post(`/admin/shipments/${id}/cancel`, payload || {});
 }
@@ -58,12 +54,31 @@ export function updateOrderRefund(
   id: string,
   payload: {
     refundStatus: string;
+    kind?: OrderRefundKind;
     amountVnd?: number;
-    evidence?: Record<string, unknown>;
+    evidenceReference?: string;
     internalNote?: string;
+    receiptImages?: File[];
   }
 ) {
-  return http.patch(`/orders/${id}/refund`, payload);
+  const formData = new FormData();
+  formData.append('refundStatus', payload.refundStatus);
+  if (payload.kind) {
+    formData.append('kind', payload.kind);
+  }
+  if (payload.amountVnd !== undefined) {
+    formData.append('amountVnd', String(payload.amountVnd));
+  }
+  if (payload.internalNote) {
+    formData.append('internalNote', payload.internalNote);
+  }
+  if (payload.evidenceReference) {
+    formData.append('evidenceReference', payload.evidenceReference);
+  }
+  for (const file of payload.receiptImages ?? []) {
+    formData.append('receiptImages', file);
+  }
+  return http.patch(`/orders/${id}/refund`, formData);
 }
 
 export function finalizeRefund(
@@ -122,14 +137,41 @@ export function deleteAdminSaleCampaign(id: string, config?: HttpOptions) {
 
 export type ReviewOrderIssueInput =
   | { decision: 'REJECT'; adminNote: string }
-  | { decision: 'APPROVE'; approvedResolution: 'REFUND'; adminNote?: string };
+  | {
+      decision: 'APPROVE';
+      approvedResolution: 'REFUND';
+      adminNote?: string;
+      refundShipping?: boolean;
+      /** Duyệt và hoàn tiền luôn, không cần khách gửi trả hàng (kèm mã giao dịch + ảnh chứng từ). */
+      refundNow?: boolean;
+      evidenceReference?: string;
+    };
 
 export function reviewOrderIssue(
   issueId: string,
   payload: ReviewOrderIssueInput,
   config?: HttpOptions,
+  receiptImages?: File[],
 ) {
-  return http.patch<OrderIssue>(`/order-issues/${issueId}/review`, payload, config);
+  const formData = new FormData();
+  formData.append('decision', payload.decision);
+  if ('approvedResolution' in payload && payload.approvedResolution) {
+    formData.append('approvedResolution', payload.approvedResolution);
+  }
+  if (payload.adminNote) {
+    formData.append('adminNote', payload.adminNote);
+  }
+  if ('refundShipping' in payload && payload.refundShipping !== undefined) {
+    formData.append('refundShipping', String(payload.refundShipping));
+  }
+  if ('refundNow' in payload && payload.refundNow) {
+    formData.append('refundNow', 'true');
+    if (payload.evidenceReference) formData.append('evidenceReference', payload.evidenceReference);
+  }
+  for (const file of receiptImages ?? []) {
+    formData.append('receiptImages', file);
+  }
+  return http.patch<OrderIssue>(`/order-issues/${issueId}/review`, formData, config);
 }
 
 

@@ -595,7 +595,7 @@ export function DashboardOverview({
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
-                          href={`/admin/orders/${o.id}/measurements`}
+                          href={`/admin/orders/${o.id}`}
                           className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-landing-oxblood no-underline transition-colors hover:text-landing-obsidian hover:underline"
                           title="Xem chi tiết đơn hàng và số đo"
                         >

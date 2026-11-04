@@ -1,4 +1,4 @@
-import type { BackendOrderStatus } from '@/features/orders/types/orders';
+import type { BackendOrderStatus, OrderRefundKind } from '@/features/orders/types/orders';
 
 export type OrderStatusTone = 'attention' | 'active' | 'done' | 'closed' | 'error';
 
@@ -29,7 +29,8 @@ export const STATUS_CONFIG: Record<BackendOrderStatus, { label: string; tone: Or
   QUALITY_CHECK: { label: 'Kiểm tra chất lượng', tone: 'active', step: 2 },
   READY_TO_SHIP: { label: 'Chờ giao', tone: 'active', step: 3 },
   SHIPPING: { label: 'Đang giao', tone: 'active', step: 3 },
-  DELIVERED: { label: 'Đã giao', tone: 'done', step: 4 },
+  // Đơn vị vận chuyển báo đã giao nhưng khách chưa xác nhận: chưa tới bước "Đã nhận".
+  DELIVERED: { label: 'Đã giao', tone: 'done', step: 3 },
   COMPLETED: { label: 'Hoàn tất', tone: 'done', step: 4 },
   CANCELLED: { label: 'Đã hủy', tone: 'closed', step: -1 },
   RETURN_REQUESTED: { label: 'Yêu cầu hoàn trả', tone: 'attention', step: -1 },
@@ -73,7 +74,13 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   BANK_TRANSFER: 'Chuyển khoản',
   BANK: 'Chuyển khoản',
   SEPAY: 'Chuyển khoản',
+  MANUAL_ADMIN: 'Chuyển khoản (shop xác nhận)',
   MOMO: 'MoMo',
 };
 
 export const ORDER_IMAGE_FALLBACK = '/images/731163514_999523332788054_1114320478812927640_n.png';
+
+export const REFUND_KIND_LABELS: Record<OrderRefundKind, string> = {
+  GOODS: 'Tiền hàng',
+  SHIPPING: 'Phí ship ban đầu',
+};

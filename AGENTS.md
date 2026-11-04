@@ -28,7 +28,14 @@ src/
 ├── app/
 │   ├── (admin)/admin/
 │   │   ├── collections/     # Admin collection management page
-│   │   └── dashboard/       # Admin dashboard page
+│   │   ├── dashboard/       # Admin dashboard page
+│   │   ├── orders/[id]/     # Order detail page (admin-order-measurements-page;
+│   │   │                    # old /orders/[id]/measurements redirects here
+│   │   │                    # via next.config redirects)
+│   │   └── shipments/[id]/  # Shipment detail page (opened from the shipments
+│   │                        # tab's row menu or GHN code link)
+│   │                        # List tabs link to these pages; there is no
+│   │                        # order/shipment detail drawer.
 │   ├── (auth)/              # reset-password, verify-email, google callback,
 │   │   │                    # mobile-auth callback
 │   │   └── (split)/         # login, register, forgot-password: shared
@@ -40,14 +47,17 @@ src/
 │   │   ├── chat/
 │   │   ├── checkout/
 │   │   ├── notifications/
-│   │   ├── orders/
+│   │   ├── orders/          # [id]/ order detail, [id]/returns/ đổi trả & hoàn
+│   │   │                    #   tiền of one order (issues, refunds, history)
 │   │   ├── payment/
 │   │   ├── privacy/         # Public policy pages (feature: policies):
 │   │   │                    #   privacy/, return-policy/, size-guide/,
 │   │   │                    #   terms/, warranty/
 │   │   ├── products/[id]/
-│   │   ├── profile/         # + history/, measurements/, orders/, reviews/,
-│   │   │                    #   stylist-history/ sub-pages
+│   │   ├── profile/         # + history/, measurements/, orders/, returns/,
+│   │   │                    #   reviews/, stylist-history/ sub-pages
+│   │   │                    #   (returns/ lists orders with issues and links
+│   │   │                    #   to /orders/[id]/returns)
 │   │   ├── rack/
 │   │   ├── subscription/
 │   │   └── try-on/
@@ -72,13 +82,22 @@ src/
 │   │                        #        controller, returns panelProps),
 │   │                        #        use-admin-products/-orders/-shipments/
 │   │                        #        -order-issues/-users, use-admin-product-editor,
+│   │                        #        use-admin-shipment-detail (/admin/shipments/[id]:
+│   │                        #        load, GHN staging simulation, cancel),
 │   │                        #        use-admin-overview-data (stats, reviews),
 │   │                        #        use-admin-navigation, use-admin-auto-refresh,
 │   │                        #        use-latest-ref
 │   │                        # components: admin-dashboard-page (layout only),
 │   │                        #             admin-sidebar, admin-topbar,
 │   │                        #             dashboard-overview, admin-revenue-chart,
-│   │                        #             admin-*-panel, admin-*-modal,
+│   │                        #             admin-*-panel, admin-*-modal (product,
+│   │                        #             user, order issue),
+│   │                        #             admin-shipment-detail-page (shipment
+│   │                        #             page; simulations come from
+│   │                        #             SHIPMENT_SIMULATIONS in constants),
+│   │                        #             admin-refund-panel (return/refund state,
+│   │                        #             customer account, receipts, next step),
+│   │                        #             admin-refund-history,
 │   │                        #             admin-pagination,
 │   │                        #             admin-live-try-on-settings-panel,
 │   │                        #             admin-shipping-settings-panel,
@@ -130,6 +149,12 @@ src/
 │   │                        #   (`landing` default, `admin` in the admin topbar)
 │   │                        # store: notificationStore.ts (Zustand)
 │   ├── orders/              # components/ constants/ hooks/ services/ types/
+│   │                        # Issue reports, returns and refunds live on
+│   │                        # order-returns-page (/orders/[id]/returns) and
+│   │                        # profile-returns-page (/profile/returns); the order
+│   │                        # detail keeps a summary card linking there. Shared
+│   │                        # pieces: order-return-parts (notices, refund lines,
+│   │                        # history timeline), services/order-returns.ts.
 │   ├── payments/            # components/ hooks/ services/ types/
 │   ├── policies/            # components/ constants/ types/
 │   │                        # Public policy pages rendered from typed content
@@ -180,9 +205,12 @@ src/
 │   │                        #   primitives). See docs/table-design.md.
 │   └── ui/                  # shadcn/Radix primitives + custom: AnimateIn,
 │                            # AtelierLoader, HangerIcon, Logo, PageTransition,
+│                            # ImageLightbox, ImageFilePreviews (upload thumbnails),
 │                            # chart.tsx, sidebar.tsx, and full Radix component set
 ├── hooks/
-│   └── usePWAInstall.ts
+│   ├── usePWAInstall.ts
+│   └── use-image-file-selection.ts  # picked upload images + object URLs
+│                            # (previews never break when more are added)
 ├── lib/
 │   ├── http.ts              # Axios wrapper (GET/POST/PATCH/DELETE)
 │   ├── api.ts               # Legacy Axios instance (PUT until migrated)
@@ -324,8 +352,11 @@ src/
   progress affordances.
 - Preserve URLs, API payloads, cookies, storage keys, query keys, socket events, and streaming behavior.
 - Protected routes (middleware): `/try-on`, `/profile`, `/ai-stylist`, `/chat`, `/checkout`,
-  `/admin` — all guarded by the `auth_marker` cookie. Do not add or remove routes here
-  without updating both `middleware.ts` and the relevant feature guard.
+  `/payment`, `/orders`, `/admin` — all guarded by the `auth_marker` cookie. Do not add or
+  remove routes here without updating both `middleware.ts` and `PROTECTED_ROUTES` in
+  `features/auth/constants/auth-bootstrap.ts`.
+- Refresh tokens are single-use. Every refresh goes through `refreshWebSession`, which
+  shares one in-flight request, so `AuthBootstrap` and the 401 interceptor never send two.
 - Preserve checkout/order pricing ownership. Checkout requests should send cart
   items, structured GHN address fields, coupon code, and an optional total for
   backend double-checking; do not send client-resolved `shippingFee` or
@@ -345,6 +376,21 @@ src/
   `DELETE /cart` (it would drop items added from another device). Checkout keeps
   its item list locked while a payment is pending, so the cart refresh cannot
   unmount the checkout page or hide the payment modal.
+- Creating an order and paying for it are separate. Checkout creates the order,
+  then opens `PaymentDialog` (`features/payments/components/payment-dialog.tsx`).
+  An unpaid order (`CREATED` + `PENDING`) is paid again from its order page through
+  `OrderPaymentAction`, which calls `POST /payments/checkout { orderId }`. Payment
+  result pages and gateway returns send the customer to the order
+  (`getPaymentReturnTarget`), never to `/checkout`, which would create a second
+  order. `/checkout?orderCode=…&status=cancel|error` redirects to
+  `/payment/cancel|error`. The order page, the orders list and checkout show the
+  backend `paymentDueAt` deadline; checkout lists unpaid orders
+  (`useUnpaidOrders`) so the customer pays one instead of ordering twice.
+- Adding to the server cart is optimistic: a `pending:` line shows at once and
+  cannot be edited or removed until the backend returns the real line.
+- `AuthBootstrap` only drops the session when the backend rejects the refresh
+  token (4xx). Network errors and 5xx are retried (`refreshWebSessionWithRetry`)
+  and keep the auth marker.
 - `/payment/result` should be able to poll by `paymentId` when the backend embeds
   it in the redirect URL. If a gateway redirect lacks `paymentId`, send the user
   to their order history/detail page instead of assuming success.

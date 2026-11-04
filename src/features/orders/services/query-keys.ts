@@ -4,4 +4,5 @@ export const queryKeys = {
   order: <T extends readonly unknown[]>(...params: T) => ['order', ...params] as const,
   orderIssues: <T extends readonly unknown[]>(...params: T) => ['orderIssues', ...params] as const,
   orderIssue: <T extends readonly unknown[]>(...params: T) => ['orderIssue', ...params] as const,
+  myReturns: <T extends readonly unknown[]>(...params: T) => ['myReturns', ...params] as const,
 };

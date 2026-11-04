@@ -1,5 +1,5 @@
 import { mapOrder } from '@/features/orders/services/orders-utils';
-import type { BackendOrder, OrderIssue, OrderIssueListMeta, OrderIssueListParams, OrdersListParams, OrdersListResult } from '@/features/orders/types/orders';
+import type { BackendOrder, MyReturnOrder, OrderIssue, OrderIssueListMeta, OrderIssueListParams, OrdersListParams, OrdersListResult } from '@/features/orders/types/orders';
 import { http } from '@/lib/http';
 
 type BackendOrderList = BackendOrder[] & { __meta?: OrdersListResult['meta'] };
@@ -59,6 +59,22 @@ export async function fetchOrderIssues(
       totalPages: 1,
     },
   };
+}
+
+/** Các đơn của tôi có yêu cầu đổi trả, mới cập nhật trước. */
+export async function fetchMyReturns(
+  params?: OrderIssueListParams,
+): Promise<{ data: MyReturnOrder[]; meta: OrderIssueListMeta }> {
+  type ResponseType = (MyReturnOrder[] & { __meta?: OrderIssueListMeta }) | { data?: MyReturnOrder[]; meta?: OrderIssueListMeta };
+  const res = await http.get<ResponseType, OrderIssueListParams>('/order-issues/mine', { params });
+  const data = Array.isArray(res) ? res : res?.data || [];
+  const meta = (Array.isArray(res) ? (res as { __meta?: OrderIssueListMeta }).__meta : res?.meta) || {
+    total: data.length,
+    page: params?.page ?? 1,
+    limit: params?.limit ?? data.length,
+    totalPages: 1,
+  };
+  return { data, meta };
 }
 
 export async function fetchOrderIssue(issueId: string): Promise<OrderIssue> {

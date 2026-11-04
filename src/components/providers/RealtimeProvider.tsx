@@ -1,5 +1,6 @@
 'use client';
 import { queryKeys as reviewsQueryKeys } from '@/features/reviews/services/query-keys';
+import { queryKeys as ordersQueryKeys } from '@/features/orders/services/query-keys';
 import { handleRemoteCartChange } from '@/features/cart/services/cart-sync';
 
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -15,6 +16,8 @@ import { toast } from 'sonner';
 // Socket là singleton (lib/realtimeSocket) nên giữ handler 'reconnect' ở module để gỡ đúng
 // handler cũ khi effect chạy lại.
 let reconnectCartHandler: (() => void) | null = null;
+
+const ORDER_NOTIFICATION_TYPES: NotificationType[] = ['ORDER_STATUS', 'PAYMENT', 'ORDER_ISSUE'];
 
 function getToastIcon(type: NotificationType) {
   switch (type) {
@@ -73,6 +76,17 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.reviewStats() });
             queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.myReviews() });
             queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.adminReviews() });
+          }
+
+          // Đơn đổi trạng thái (admin chuyển bước hoặc tự đi theo GHN), yêu cầu đổi trả được
+          // duyệt (ORDER_ISSUE) hay shop ghi nhận hoàn tiền (PAYMENT): tải lại đơn và yêu cầu
+          // đổi trả ngay, không đợi vòng polling 30 giây của trang chi tiết.
+          if (ORDER_NOTIFICATION_TYPES.includes(notification.type)) {
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderIssues() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderIssue() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.myReturns() });
           }
 
           // Show Toast

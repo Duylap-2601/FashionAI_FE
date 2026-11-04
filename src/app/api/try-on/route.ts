@@ -8,6 +8,12 @@ const BACKEND_ORIGIN = (process.env.BACKEND_ORIGIN ?? 'http://localhost:3002')
   .replace(/\/+$/, '')
   .replace(/\/api$/, '');
 
+// Hop-by-hop headers must not be forwarded. fetch also decompresses the body
+// (the production backend answers with br through Cloudflare), so the original
+// content-encoding/content-length no longer match it and the browser fails with
+// ERR_CONTENT_DECODING_FAILED.
+const SKIPPED_RESPONSE_HEADERS = ['transfer-encoding', 'connection', 'keep-alive', 'content-encoding', 'content-length'];
+
 /**
  * Proxy handler for POST /api/try-on → backend /api/try-on
  *
@@ -53,8 +59,7 @@ export async function POST(req: NextRequest) {
     // Stream the response back; copy status + headers
     const responseHeaders = new Headers();
     backendRes.headers.forEach((value, key) => {
-      // Skip hop-by-hop headers that must not be forwarded
-      if (!['transfer-encoding', 'connection', 'keep-alive'].includes(key.toLowerCase())) {
+      if (!SKIPPED_RESPONSE_HEADERS.includes(key.toLowerCase())) {
         responseHeaders.set(key, value);
       }
     });

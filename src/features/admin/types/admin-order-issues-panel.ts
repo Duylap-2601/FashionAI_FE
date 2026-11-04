@@ -3,6 +3,8 @@ import type { OrderIssue, OrderIssueReason, OrderIssueStatus } from '@/features/
 export interface AdminOrderIssueFilters {
   status?: OrderIssueStatus | '';
   reason?: OrderIssueReason | '';
+  /** Mã đơn, tên / email khách hoặc tên sản phẩm (gửi lên BE dạng `q`). */
+  search?: string;
 }
 
 export interface AdminOrderIssuesPanelProps {

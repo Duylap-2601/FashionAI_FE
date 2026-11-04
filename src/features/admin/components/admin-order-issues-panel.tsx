@@ -11,22 +11,25 @@ import {
   RefreshCw,
   RotateCcw,
   XCircle,
+  Search,
 } from 'lucide-react';
 import Image from 'next/image';
 
 const STATUS_OPTIONS: { value: OrderIssueStatus | ''; label: string }[] = [
   { value: '', label: 'Tất cả trạng thái' },
   { value: 'PENDING', label: 'Chờ xem xét (PENDING)' },
-  { value: 'RESOLVED', label: 'Đã hoàn tất (RESOLVED)' },
+  { value: 'APPROVED', label: 'Đã duyệt, chờ hoàn tiền (APPROVED)' },
+  { value: 'RESOLVED', label: 'Đã hoàn tiền (RESOLVED)' },
   { value: 'REJECTED', label: 'Đã từ chối (REJECTED)' },
 ];
 
 const REASON_OPTIONS: { value: OrderIssueReason | ''; label: string }[] = [
   { value: '', label: 'Tất cả lý do' },
   { value: 'WRONG_SIZE', label: 'Sai kích thước / số đo' },
-  { value: 'WRONG_COLOR', label: 'Sai màu sắc' },
+  { value: 'WRONG_COLOR', label: 'Sai màu / sai mẫu' },
   { value: 'QUALITY_MISMATCH', label: 'Chất lượng / Đường may' },
   { value: 'OTHER', label: 'Lý do khác' },
+  { value: 'REFUND_NOT_RECEIVED', label: 'Chưa nhận được tiền hoàn' },
 ];
 
 function StatusBadge({ status }: { status: OrderIssueStatus }) {
@@ -45,14 +48,14 @@ function StatusBadge({ status }: { status: OrderIssueStatus }) {
       return (
         <span className="inline-flex items-center gap-1.5 py-0.5 text-xs font-medium text-landing-obsidian">
           <span className="w-2 h-2 rounded-full bg-metric-orders shrink-0" />
-          Đã duyệt
+          Chờ hoàn tiền
         </span>
       );
     case 'RESOLVED':
       return (
         <span className="inline-flex items-center gap-1.5 py-0.5 text-xs font-medium text-landing-obsidian">
           <span className="w-2 h-2 rounded-full bg-metric-products shrink-0" />
-          Hoàn tất
+          Đã hoàn tiền
         </span>
       );
     case 'REJECTED':
@@ -86,7 +89,7 @@ export function AdminOrderIssuesPanel({
   isFetching = false,
   onSelectIssue,
 }: AdminOrderIssuesPanelProps) {
-  const isFiltered = Boolean(filters.status || filters.reason);
+  const isFiltered = Boolean(filters.status || filters.reason || filters.search);
 
   return (
     <div className="flex flex-col gap-6">
@@ -111,7 +114,23 @@ export function AdminOrderIssuesPanel({
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-landing-ivory rounded-[2px] border border-landing-line p-4 flex flex-wrap items-center gap-3 shrink-0">
+      <div className="bg-landing-ivory rounded-[2px] border border-landing-line p-4 flex flex-wrap items-end gap-3 shrink-0">
+        <div className="flex-[2] min-w-[240px]">
+          <label htmlFor="order-issue-search" className="block text-[11px] font-semibold text-landing-muted uppercase tracking-wider mb-1">
+            Tìm kiếm
+          </label>
+          <div className="relative">
+            <Search className="w-4 h-4 text-landing-muted absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              id="order-issue-search"
+              type="search"
+              value={filters.search ?? ''}
+              onChange={(e) => onFilterChange?.({ search: e.target.value })}
+              placeholder="Mã đơn (35501248, ORD-35501248), tên / email khách, sản phẩm..."
+              className="w-full h-10 pl-9 pr-3 rounded-[2px] border border-landing-taupe text-body-sm focus:outline-none focus:border-landing-oxblood bg-landing-ivory"
+            />
+          </div>
+        </div>
         <div className="flex-1 min-w-[200px]">
           <label className="block text-[11px] font-semibold text-landing-muted uppercase tracking-wider mb-1">
             Trạng thái yêu cầu
@@ -235,9 +254,11 @@ export function AdminOrderIssuesPanel({
                           {issue.reason === 'WRONG_SIZE'
                             ? 'Sai số đo'
                             : issue.reason === 'WRONG_COLOR'
-                            ? 'Sai màu'
+                            ? 'Sai màu/mẫu'
                             : issue.reason === 'QUALITY_MISMATCH'
                             ? 'Lỗi may đo'
+                            : issue.reason === 'REFUND_NOT_RECEIVED'
+                            ? 'Chưa nhận tiền'
                             : 'Khác'}
                         </span>
                         <p className="text-[12px] text-landing-obsidian">
