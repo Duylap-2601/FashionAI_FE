@@ -47,14 +47,17 @@ src/
 │   │   ├── chat/
 │   │   ├── checkout/
 │   │   ├── notifications/
-│   │   ├── orders/
+│   │   ├── orders/          # [id]/ order detail, [id]/returns/ đổi trả & hoàn
+│   │   │                    #   tiền of one order (issues, refunds, history)
 │   │   ├── payment/
 │   │   ├── privacy/         # Public policy pages (feature: policies):
 │   │   │                    #   privacy/, return-policy/, size-guide/,
 │   │   │                    #   terms/, warranty/
 │   │   ├── products/[id]/
-│   │   ├── profile/         # + history/, measurements/, orders/, reviews/,
-│   │   │                    #   stylist-history/ sub-pages
+│   │   ├── profile/         # + history/, measurements/, orders/, returns/,
+│   │   │                    #   reviews/, stylist-history/ sub-pages
+│   │   │                    #   (returns/ lists orders with issues and links
+│   │   │                    #   to /orders/[id]/returns)
 │   │   ├── rack/
 │   │   ├── subscription/
 │   │   └── try-on/
@@ -146,6 +149,12 @@ src/
 │   │                        #   (`landing` default, `admin` in the admin topbar)
 │   │                        # store: notificationStore.ts (Zustand)
 │   ├── orders/              # components/ constants/ hooks/ services/ types/
+│   │                        # Issue reports, returns and refunds live on
+│   │                        # order-returns-page (/orders/[id]/returns) and
+│   │                        # profile-returns-page (/profile/returns); the order
+│   │                        # detail keeps a summary card linking there. Shared
+│   │                        # pieces: order-return-parts (notices, refund lines,
+│   │                        # history timeline), services/order-returns.ts.
 │   ├── payments/            # components/ hooks/ services/ types/
 │   ├── policies/            # components/ constants/ types/
 │   │                        # Public policy pages rendered from typed content

@@ -46,9 +46,12 @@ export function useOpenNotification() {
     }
 
     // Smart routing for Customer
-    if (notification.type === 'ORDER_STATUS' || notification.type === 'PAYMENT') {
-      // Refund event đi qua PAYMENT có thể chỉ có orderCode (cổng online) hoặc orderId (thủ công)
-      const orderRef = (notification.data?.orderId || notification.data?.orderCode) as string | number | undefined;
+    // Refund event đi qua PAYMENT có thể chỉ có orderCode (cổng online) hoặc orderId (thủ công)
+    const orderRef = (notification.data?.orderId || notification.data?.orderCode) as string | number | undefined;
+    if (notification.type === 'ORDER_ISSUE' || (notification.type === 'PAYMENT' && notification.data?.refundStatus)) {
+      // Duyệt yêu cầu đổi trả và các lần hoàn tiền mở trang Đổi trả & hoàn tiền của đơn.
+      router.push(orderRef ? `/orders/${orderRef}/returns` : '/profile/returns');
+    } else if (notification.type === 'ORDER_STATUS' || notification.type === 'PAYMENT') {
       router.push(orderRef ? `/orders/${orderRef}` : '/profile/orders');
     } else if (notification.type === 'PROMOTION') {
       router.push('/products');

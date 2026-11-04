@@ -10,6 +10,7 @@ export const ACCOUNT_PRIMARY_NAV: AccountNavItem[] = [
   { href: '/profile', label: 'Hồ sơ của tôi' },
   { href: '/profile/measurements', label: 'Số đo & chi tiết' },
   { href: '/profile/orders', label: 'Đơn hàng' },
+  { href: '/profile/returns', label: 'Đổi trả & hoàn tiền' },
   { href: '/profile/reviews', label: 'Đánh giá của tôi' },
   { href: '/notifications', label: 'Thông báo', showUnread: true },
 ];

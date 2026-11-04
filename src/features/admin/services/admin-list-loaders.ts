@@ -85,7 +85,7 @@ export async function loadAdminOrderIssues(
   signal?: AbortSignal,
 ): Promise<AdminListResult<OrderIssue>> {
   const res = await fetchAdminOrderIssues(
-    { page, limit: pageSize, status: filters.status || undefined, reason: filters.reason || undefined },
+    { page, limit: pageSize, status: filters.status || undefined, reason: filters.reason || undefined, q: filters.search?.trim() || undefined },
     { signal },
   );
   const resObj = res as { data?: OrderIssue[]; meta?: OrderIssueListMeta; items?: OrderIssue[]; total?: number; __meta?: OrderIssueListMeta } | undefined;

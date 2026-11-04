@@ -103,6 +103,14 @@ const STORAGE_KEY = 'fashionai_mock_collections_v1';
 /**
  * Get all collections. Uses localStorage if in browser and available, falls back to INITIAL_COLLECTIONS.
  */
+/**
+ * Bộ sưu tập mẫu và bộ lưu cục bộ (id `col-…`) không có trên backend: trang chủ hiện
+ * chúng trong lúc chờ API, gọi `/collections/col-1/products` chỉ nhận về 400.
+ */
+export function isLocalCollectionId(id: string): boolean {
+  return id.startsWith('col-');
+}
+
 export function getAllCollections(): Collection[] {
   if (typeof window !== 'undefined') {
     try {

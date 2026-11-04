@@ -3,6 +3,7 @@
 import { REFUND_STATUS_CFG } from '@/features/admin/constants/admin-dashboard-page';
 import { fmt, fmtDateTime } from '@/features/admin/services/format';
 import type { AdminRefundHistoryProps, RefundFinalizeOutcome } from '@/features/admin/types/admin-refund-history';
+import { REFUND_KIND_LABELS } from '@/features/orders/constants/profile-orders-page';
 import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
@@ -57,7 +58,10 @@ export function AdminRefundHistory({ refunds, onFinalize, children }: AdminRefun
           return (
             <li key={refund.id} className="space-y-2 py-3 text-xs first:pt-0 last:pb-0">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-sm font-semibold text-destructive">-{fmt(refund.amountVnd)}</span>
+                <span className="flex items-baseline gap-2">
+                  <span className="font-mono text-sm font-semibold text-destructive">-{fmt(refund.amountVnd)}</span>
+                  <span className="text-[11px] text-landing-muted">{REFUND_KIND_LABELS[refund.kind ?? 'GOODS']}</span>
+                </span>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.cls}`}>{status.label}</span>
               </div>
 

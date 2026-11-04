@@ -452,7 +452,7 @@ export function SiteFooter({ variant = 'simple' }: { variant?: Exclude<FooterVar
         <div className="flex items-center gap-6 text-body-sm font-medium text-neutral-600">
           <Link href="/terms" className="hover:text-brand-navy transition-colors">Điều khoản</Link>
           <Link href="/privacy" className="hover:text-brand-navy transition-colors">Bảo mật</Link>
-          <Link href="/support" className="hover:text-brand-navy transition-colors">Hỗ trợ</Link>
+          <Link href="/return-policy" className="hover:text-brand-navy transition-colors">Hỗ trợ</Link>
           <button type="button" onClick={openCookieSettings} className="hover:text-brand-navy transition-colors">Cài đặt cookie</button>
         </div>
       </div>

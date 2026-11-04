@@ -53,6 +53,7 @@ const LANDING_TONE: Record<NotificationType, string> = {
   PROMOTION: 'text-landing-brass-ink',
   REVIEW: 'text-landing-brass-ink',
   SYSTEM: 'text-landing-muted',
+  ORDER_ISSUE: 'text-landing-oxblood',
 };
 
 export function NotificationItem({ notification, onItemClick, tone = 'landing' }: NotificationItemProps) {

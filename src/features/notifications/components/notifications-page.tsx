@@ -14,7 +14,7 @@ import {
 } from '@/features/profile/components/account-ui';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
-import { CheckCheck, CreditCard, Info, MessageSquare, Package, Tag } from 'lucide-react';
+import { CheckCheck, CreditCard, Info, MessageSquare, Package, ShieldAlert, Tag } from 'lucide-react';
 import { useState } from 'react';
 
 const PAGE_SIZE = 15;
@@ -25,6 +25,7 @@ const TYPE_META: Record<NotificationType, { icon: LucideIcon; label: string; ton
   PROMOTION: { icon: Tag, label: 'Khuyến mãi', tone: 'text-landing-brass-ink' },
   REVIEW: { icon: MessageSquare, label: 'Đánh giá', tone: 'text-landing-brass-ink' },
   SYSTEM: { icon: Info, label: 'Hệ thống', tone: 'text-landing-muted' },
+  ORDER_ISSUE: { icon: ShieldAlert, label: 'Đổi trả', tone: 'text-landing-oxblood' },
 };
 
 function NotificationRow({ notification, onOpen }: { notification: AppNotification; onOpen: (notification: AppNotification) => void }) {

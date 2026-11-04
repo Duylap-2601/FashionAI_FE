@@ -161,7 +161,7 @@ export const SHIPMENT_SIMULATIONS: ShipmentSimulation[] = [
   { status: 'DELIVERY_FAILED', label: 'Giả lập giao thất bại', success: 'Đã giả lập giao hàng thất bại', icon: AlertTriangle, from: ['PICKED', 'SHIPPING', 'IN_TRANSIT', 'DELIVERING'] },
   { status: 'RETURNED', label: 'Giả lập hoàn hàng về shop', success: 'Đã giả lập hoàn hàng về shop', icon: RotateCcw, from: ['DELIVERY_FAILED', 'RETURNING'] },
 ];
-export const EMPTY_ORDER_ISSUE_FILTERS: AdminOrderIssueFilters = { status: '', reason: '' };
+export const EMPTY_ORDER_ISSUE_FILTERS: AdminOrderIssueFilters = { status: '', reason: '', search: '' };
 
 /** Users được tải một lần rồi lọc/phân trang phía client. */
 export const ADMIN_USERS_FETCH_LIMIT = 1000;

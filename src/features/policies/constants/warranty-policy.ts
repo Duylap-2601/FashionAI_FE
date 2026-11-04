@@ -6,7 +6,7 @@ export const WARRANTY_POLICY: PolicyDocument = {
   title: 'Chính sách bảo hành',
   summary:
     'StAie. bảo hành trọn đời, miễn phí đường may và phụ kiện cho mọi sản phẩm may đo, kèm một lần chỉnh form miễn phí để trang phục vừa vặn nhất với bạn.',
-  updatedAt: '19/10/2026',
+  updatedAt: '04/11/2026',
   highlights: [
     { label: 'Bảo hành đường may và phụ kiện', value: 'Trọn đời' },
     { label: 'Chi phí bảo hành', value: 'Miễn phí' },
@@ -66,7 +66,7 @@ export const WARRANTY_POLICY: PolicyDocument = {
         {
           type: 'note',
           tone: 'info',
-          text: 'Trong 7 ngày đầu sau khi đơn hoàn tất, nếu sản phẩm may sai số đo, sai màu hoặc lỗi chất lượng, hãy gửi yêu cầu hoàn tiền.',
+          text: 'Trong 7 ngày đầu sau khi đơn hoàn tất, nếu sản phẩm may sai số đo, sai màu, sai mẫu hoặc lỗi chất lượng, hãy gửi yêu cầu hoàn tiền.',
           link: { label: 'Xem Chính sách đổi trả', href: '/return-policy' },
         },
       ],

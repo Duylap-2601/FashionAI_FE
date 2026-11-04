@@ -135,20 +135,12 @@ export default function AdminOrderMeasurementsPage() {
     const finalRef = manualPaymentNote.trim() || `SEPAY-${order.orderCode}-${Date.now()}`;
     setSubmittingPayment(true);
     try {
+      // BE ghi nhận PAID và tự chuyển đơn sang "Kiểm tra số đo". Không tự đổi trạng thái ở
+      // đây: nếu BE không ghi nhận được tiền, đơn chưa thanh toán sẽ bị đẩy sang khâu may.
       await confirmManualPayment(order.orderCode, {
         reference: finalRef,
         note: finalNote,
       });
-
-      // Nếu đơn hàng đang ở trạng thái 'CREATED' (Đã tạo) hoặc 'PENDING',
-      // tự động chuyển trạng thái đơn hàng sang 'MEASUREMENT_REVIEW' (Kiểm tra số đo)
-      if (order.status === 'CREATED' || order.status === 'PENDING') {
-        try {
-          await updateOrderStatus(order.id, { status: 'MEASUREMENT_REVIEW' });
-        } catch (statusError) {
-          console.warn('Auto transition to MEASUREMENT_REVIEW failed:', statusError);
-        }
-      }
 
       toast.success('Xác nhận thanh toán thủ công thành công');
       setManualPaymentNote('');

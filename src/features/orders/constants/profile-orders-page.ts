@@ -1,4 +1,4 @@
-import type { BackendOrderStatus } from '@/features/orders/types/orders';
+import type { BackendOrderStatus, OrderRefundKind } from '@/features/orders/types/orders';
 
 export type OrderStatusTone = 'attention' | 'active' | 'done' | 'closed' | 'error';
 
@@ -79,3 +79,8 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
 };
 
 export const ORDER_IMAGE_FALLBACK = '/images/731163514_999523332788054_1114320478812927640_n.png';
+
+export const REFUND_KIND_LABELS: Record<OrderRefundKind, string> = {
+  GOODS: 'Tiền hàng',
+  SHIPPING: 'Phí ship ban đầu',
+};
