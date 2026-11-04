@@ -12,6 +12,12 @@ test('payment dialog stops waiting once the order is paid another way', () => {
   assert.equal(isPaymentSettled({ status: 'PAID', paymentStatus: 'PAID', orderStatus: 'MEASUREMENT_REVIEW' }), true);
 });
 
+test('an expired gateway attempt still reads as paid when the order was paid another way', () => {
+  // QR ZaloPay hết hạn sau khi admin đã xác nhận chuyển khoản: không được báo "thất bại".
+  assert.equal(isPaymentSettled({ status: 'FAILED', paymentStatus: 'PAID', orderStatus: 'MEASUREMENT_REVIEW' }), true);
+  assert.equal(isPaymentSettled({ status: 'FAILED', paymentStatus: 'PENDING', orderStatus: 'CREATED' }), false);
+});
+
 test('payment dialog keeps waiting while neither the attempt nor the order is paid', () => {
   assert.equal(isPaymentSettled({ status: 'PENDING', paymentStatus: 'PENDING', orderStatus: 'CREATED' }), false);
   assert.equal(isPaymentSettled(null), false);
