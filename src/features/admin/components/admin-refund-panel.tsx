@@ -5,6 +5,7 @@ import { fmt, fmtDateTime } from '@/features/admin/services/format';
 import { updateOrderRefund } from '@/features/admin/services/mutations';
 import type { AdminRefundPanelProps } from '@/features/admin/types/admin-refund-panel';
 import { RefundReceiptImages } from '@/features/orders/components/refund-receipt-images';
+import type { OrderRefundStatus } from '@/features/orders/types/orders';
 import { describeImageFileRejection, useImageFileSelection } from '@/hooks/use-image-file-selection';
 import { getErrorMessage } from '@/lib/errors';
 import { cn, formatRefundEvidence, getRefundEvidenceImages } from '@/lib/utils';
@@ -15,6 +16,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 const MAX_REFUND_RECEIPT_IMAGES = 5;
+const OPEN_REFUND_STATUSES: OrderRefundStatus[] = ['REQUIRED', 'PENDING', 'PROCESSING'];
 const RETURN_STEPS = ['Khách yêu cầu', 'Duyệt hoàn tiền', 'Nhận hàng hoàn', 'Chuyển khoản'];
 const RETURN_STATUSES = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING', 'RETURNED'];
 
@@ -82,6 +84,15 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
   const paidVnd = order.amountPaidVnd ?? 0;
   const refundedVnd = order.amountRefundedVnd ?? 0;
   const remainingVnd = Math.max(0, paidVnd - refundedVnd);
+  // Để trống thì BE hoàn đúng số đã duyệt (các món khách báo lỗi), chỉ khi chưa có
+  // khoản nào được duyệt mới lấy cả phần còn lại của đơn.
+  const approvedVnd =
+    [...(order.refunds ?? [])]
+      .filter((refund) => refund.provider === 'MANUAL' && OPEN_REFUND_STATUSES.includes(refund.status))
+      .sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())[0]?.amountVnd ?? 0;
+  const suggestedVnd = approvedVnd > 0 ? Math.min(approvedVnd, remainingVnd) : remainingVnd;
+  // Hoàn một món thì đơn vẫn còn tiền chưa hoàn, nhưng shop không còn nợ khách.
+  const owedVnd = refundCompleted ? 0 : suggestedVnd;
   const lastRefund = [...(order.refunds ?? [])]
     .filter((refund) => refund.status === 'COMPLETED')
     .sort((a, b) => new Date(b.processedAt ?? b.requestedAt).getTime() - new Date(a.processedAt ?? a.requestedAt).getTime())[0];
@@ -205,7 +216,7 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
             <div className="divide-y divide-landing-line/60">
               <MoneyRow label="Đã thu khách" value={paidVnd} />
               <MoneyRow label="Đã hoàn" value={refundedVnd} />
-              <MoneyRow label="Còn phải hoàn" value={remainingVnd} strong />
+              <MoneyRow label="Còn phải hoàn" value={owedVnd} strong />
             </div>
           </InfoBlock>
 
@@ -252,16 +263,16 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
                   step={1000}
                   value={refundAmount}
                   onChange={(e) => setRefundAmount(e.target.value)}
-                  placeholder={remainingVnd > 0 ? `Để trống = hoàn hết ${fmt(remainingVnd)}` : 'Số tiền (VNĐ)'}
+                  placeholder={suggestedVnd > 0 ? `Để trống = hoàn ${fmt(suggestedVnd)}` : 'Số tiền (VNĐ)'}
                   className={cn(inputClassName, 'mt-1.5 font-mono')}
                 />
-                {remainingVnd > 0 ? (
+                {suggestedVnd > 0 ? (
                   <button
                     type="button"
-                    onClick={() => setRefundAmount(String(remainingVnd))}
+                    onClick={() => setRefundAmount(String(suggestedVnd))}
                     className="mt-1 cursor-pointer border-0 bg-transparent p-0 text-[11px] text-landing-oxblood underline underline-offset-2"
                   >
-                    Điền số còn lại: {fmt(remainingVnd)}
+                    Điền số {approvedVnd > 0 ? 'đã duyệt' : 'còn lại'}: {fmt(suggestedVnd)}
                   </button>
                 ) : null}
               </label>
