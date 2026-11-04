@@ -4,7 +4,7 @@ import { mutationKeys } from '@/features/collections/services/mutation-keys';
 import { queryKeys as collectionsQueryKeys } from '@/features/collections/services/query-keys';
 import { addProductToCollection, createCollection, deleteCollection, removeProductFromCollection, updateCollection } from '@/features/collections/services/mutations';
 import { fetchAdminAllCollections, fetchCollection, fetchCollectionProducts, fetchPublishedCollections } from '@/features/collections/services/queries';
-import { INITIAL_COLLECTIONS } from '@/features/collections/services/local-collections';
+import { INITIAL_COLLECTIONS, isLocalCollectionId } from '@/features/collections/services/local-collections';
 import {
   Collection
 } from '@/features/collections/types/collection';
@@ -64,7 +64,7 @@ export function useCollectionProducts(collectionId?: string) {
   const query = useQuery<Product[]>({
     queryKey: collectionsQueryKeys.collectionProducts(collectionId),
     queryFn: () => fetchCollectionProducts(collectionId),
-    enabled: !!collectionId,
+    enabled: !!collectionId && !isLocalCollectionId(collectionId),
     staleTime: 60 * 1000,
   });
 
