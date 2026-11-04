@@ -46,9 +46,18 @@ export function RefundAccount({ order }: { order: Order }) {
   );
 }
 
-/** Các khoản shop chuyển hoàn (tiền hàng, phí ship) kèm mã giao dịch và ảnh chứng từ. */
+const GOODS_IN_TRANSIT_STATUSES = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING'];
+
+/**
+ * Các khoản shop chuyển hoàn (tiền hàng, phí ship). Chứng từ chuyển khoản chỉ hiện khi đã có
+ * khoản được hoàn; khoản đang chờ ghi rõ đang chờ hàng về hay shop đang chuyển khoản.
+ */
 export function OrderRefundLines({ order }: { order: Order }) {
-  const refundEvidenceText = formatRefundEvidence(order.refundEvidence);
+  const hasCompletedRefund = (order.refunds ?? []).some((refund) => refund.status === 'COMPLETED');
+  const refundEvidenceText = hasCompletedRefund ? formatRefundEvidence(order.refundEvidence) : null;
+  const waitingNote = GOODS_IN_TRANSIT_STATUSES.includes(order.status ?? '')
+    ? 'Shop chuyển khoản sau khi nhận lại và kiểm tra hàng.'
+    : 'Shop đang chuyển khoản cho bạn.';
   return (
     <>
       <ol className="divide-y divide-landing-line/60">
@@ -61,6 +70,9 @@ export function OrderRefundLines({ order }: { order: Order }) {
                 <ToneLabel tone={refundStatus.tone} label={refundStatus.label} />
                 {refund.status === 'FAILED' ? (
                   <p className="text-xs text-destructive">Lần chuyển trước chưa thành công, shop đang chuyển lại.</p>
+                ) : null}
+                {refund.status === 'REQUIRED' || refund.status === 'PENDING' ? (
+                  <p className="text-xs text-landing-muted">{waitingNote}</p>
                 ) : null}
                 <p className="text-xs text-landing-muted">
                   Yêu cầu <span className="font-mono">{formatOrderDateTime(refund.requestedAt)}</span>
@@ -76,7 +88,7 @@ export function OrderRefundLines({ order }: { order: Order }) {
           );
         })}
       </ol>
-      {refundEvidenceText || order.refundEvidence ? (
+      {hasCompletedRefund && (refundEvidenceText || order.refundEvidence) ? (
         <div className="mt-5 space-y-4 border-t border-landing-line/60 pt-5">
           {refundEvidenceText ? (
             /^https?:\/\//i.test(refundEvidenceText) ? (

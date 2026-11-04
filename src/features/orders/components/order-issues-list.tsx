@@ -31,8 +31,8 @@ const RESOLUTION_LABELS: Record<OrderIssueDesiredResolution, string> = {
 
 export const ISSUE_STATUS: Record<OrderIssueStatus, { label: string; tone: OrderStatusTone }> = {
   PENDING: { label: 'Chờ xem xét', tone: 'attention' },
-  APPROVED: { label: 'Đã duyệt', tone: 'active' },
-  RESOLVED: { label: 'Đã xử lý', tone: 'done' },
+  APPROVED: { label: 'Chờ hoàn tiền', tone: 'attention' },
+  RESOLVED: { label: 'Đã hoàn tiền', tone: 'done' },
   REJECTED: { label: 'Đã từ chối', tone: 'error' },
 };
 
@@ -115,10 +115,13 @@ function IssueCard({ issue, onZoom }: { issue: OrderIssue; onZoom: (src: string,
           </div>
         ) : null}
 
-        {issue.status === 'RESOLVED' && isRefund ? (
-          <p className="text-sm text-landing-sage-ink">
-            Shop đã duyệt hoàn tiền. Theo dõi khoản hoàn và chứng từ chuyển khoản ở mục Hoàn tiền.
+        {issue.status === 'APPROVED' && isRefund ? (
+          <p className="text-sm text-landing-obsidian">
+            Shop đã duyệt hoàn tiền. Shop chuyển khoản sau khi nhận lại và kiểm tra hàng; theo dõi ở mục Hoàn tiền.
           </p>
+        ) : null}
+        {issue.status === 'RESOLVED' && isRefund ? (
+          <p className="text-sm text-landing-sage-ink">Shop đã chuyển khoản hoàn tiền. Chứng từ nằm ở mục Hoàn tiền.</p>
         ) : null}
       </div>
     </article>

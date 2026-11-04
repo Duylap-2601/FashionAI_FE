@@ -105,10 +105,10 @@ export const RETURN_POLICY: PolicyDocument = {
         {
           type: 'list',
           items: [
-            { term: 'Chờ xử lý', text: 'Yêu cầu đã được gửi và đang thẩm định.' },
-            { term: 'Đã duyệt', text: 'Yêu cầu hoàn tiền được chấp thuận; StAie. hướng dẫn gửi trả sản phẩm để kiểm tra.' },
-            { term: 'Từ chối', text: 'Yêu cầu không được chấp thuận, kèm lý do cụ thể.' },
-            { term: 'Đã giải quyết', text: 'Đã hoàn tất chuyển khoản hoàn tiền cho bạn.' },
+            { term: 'Chờ xem xét', text: 'Yêu cầu đã được gửi và đang thẩm định.' },
+            { term: 'Chờ hoàn tiền', text: 'Yêu cầu được chấp thuận; StAie. hướng dẫn gửi trả sản phẩm và chuyển khoản sau khi nhận lại, kiểm tra hàng.' },
+            { term: 'Đã từ chối', text: 'Yêu cầu không được chấp thuận, kèm lý do cụ thể.' },
+            { term: 'Đã hoàn tiền', text: 'Đã chuyển khoản hoàn tiền cho bạn, chứng từ nằm ở trang Đổi trả & hoàn tiền của đơn.' },
           ],
         },
       ],

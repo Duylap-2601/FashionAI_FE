@@ -427,6 +427,8 @@ export interface OrderIssue {
 export interface OrderIssueListParams {
   status?: OrderIssueStatus;
   reason?: OrderIssueReason;
+  /** Admin: tìm theo mã đơn, khách hoặc sản phẩm. */
+  q?: string;
   page?: number;
   limit?: number;
 }
