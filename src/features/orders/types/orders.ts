@@ -455,3 +455,20 @@ export interface OrderIssuesResponse {
   meta: OrderIssueListMeta;
 }
 
+/** Một đơn có yêu cầu đổi trả (GET /order-issues/mine), cho trang Đổi trả & hoàn tiền. */
+export interface MyReturnOrder {
+  id: string;
+  orderCode: number;
+  status: BackendOrderStatus;
+  refundStatus?: string | null;
+  amountRefundedVnd: number;
+  createdAt: string;
+  updatedAt: string;
+  issues: {
+    id: string;
+    status: OrderIssueStatus;
+    reason: OrderIssueReason;
+    createdAt: string;
+    orderItem?: { productNameSnapshot?: string | null; productImageSnapshot?: string | null } | null;
+  }[];
+}

@@ -3,19 +3,14 @@
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { ConfirmDeliveryDialog } from '@/features/orders/components/confirm-delivery-dialog';
-import { OrderIssuesList } from '@/features/orders/components/order-issues-list';
+import { ISSUE_STATUS } from '@/features/orders/components/order-issues-list';
 import { OrderPaymentAction } from '@/features/orders/components/order-payment-action';
 import { OrderStatusLabel, ToneLabel } from '@/features/orders/components/order-status-label';
 import { OrderProgress, OrderThumb, SummaryRow } from '@/features/orders/components/order-ui';
-import { RefundReceiptImages } from '@/features/orders/components/refund-receipt-images';
+import { OrderHistoryTimeline, OrderNotice } from '@/features/orders/components/order-return-parts';
 import { ReportIssueModal } from '@/features/orders/components/report-issue-modal';
 import { ORDER_STATUS_DESCRIPTIONS } from '@/features/orders/constants/orders-id-page';
-import {
-  PAYMENT_STATUS_LABELS,
-  REFUND_KIND_LABELS,
-  STATUS_CONFIG,
-  type OrderStatusTone,
-} from '@/features/orders/constants/profile-orders-page';
+import { PAYMENT_STATUS_LABELS, STATUS_CONFIG } from '@/features/orders/constants/profile-orders-page';
 import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
 import { useOrderIssues } from '@/features/orders/hooks/useOrderIssues';
 import {
@@ -28,7 +23,8 @@ import {
   getPaymentMethodLabel,
   shipmentStatusLabel,
 } from '@/features/orders/services/order-display';
-import type { Order, OrderItem, OrderRefundStatus } from '@/features/orders/types/orders';
+import { RETURN_FLOW_STATUSES, orderReturnsHref } from '@/features/orders/services/order-returns';
+import type { OrderItem } from '@/features/orders/types/orders';
 import { AccountShell } from '@/features/profile/components/account-shell';
 import {
   AccountConfirmDialog,
@@ -38,47 +34,15 @@ import {
   accountFocusRing,
   accountLabelClassName,
 } from '@/features/profile/components/account-ui';
-import { cn, formatRefundEvidence } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import type React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-const ISSUE_EVENT_TONE: Record<string, string> = {
-  ORDER_ISSUE_REJECTED: 'text-destructive',
-  ORDER_ISSUE_REFUND_APPROVED: 'text-landing-sage-ink',
-};
-
-const REFUND_STATUS: Record<OrderRefundStatus, { label: string; tone: OrderStatusTone }> = {
-  PENDING: { label: 'Đang xử lý', tone: 'attention' },
-  REQUIRED: { label: 'Chờ chuyển tiền', tone: 'attention' },
-  PROCESSING: { label: 'Đang xử lý', tone: 'attention' },
-  COMPLETED: { label: 'Đã hoàn', tone: 'done' },
-  FAILED: { label: 'Chưa thành công', tone: 'error' },
-  CANCELLED: { label: 'Đã hủy', tone: 'closed' },
-};
-
-const RETURN_FLOW_TITLES: Record<string, string> = {
-  RETURN_REQUESTED: 'Yêu cầu hoàn trả đã được ghi nhận',
-  RETURN_APPROVED: 'Yêu cầu hoàn trả đã được duyệt',
-  RETURNING: 'Hàng đang trên đường gửi về cửa hàng',
-};
-
 const ISSUE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** Ghi chú có vạch trái: brass cho việc đang chờ, sage cho việc đã xong. */
-const HISTORY_PREVIEW = 5;
-
-function OrderNotice({ tone = 'attention', title, children }: { tone?: 'attention' | 'done'; title: string; children?: React.ReactNode }) {
-  return (
-    <div className={cn('border-l-2 bg-landing-ivory/70 px-4 py-3', tone === 'done' ? 'border-landing-sage' : 'border-landing-brass')}>
-      <p className={cn('text-sm font-medium', tone === 'done' ? 'text-landing-sage-ink' : 'text-landing-obsidian')}>{title}</p>
-      {children ? <div className="mt-1.5 space-y-2.5 text-sm leading-relaxed text-landing-muted">{children}</div> : null}
-    </div>
-  );
-}
 
 function SummaryTile({ label, value, sub }: { label: string; value: React.ReactNode; sub: React.ReactNode }) {
   return (
@@ -87,17 +51,6 @@ function SummaryTile({ label, value, sub }: { label: string; value: React.ReactN
       <dd className="mt-2 truncate text-sm font-medium text-landing-obsidian">{value}</dd>
       <dd className="mt-0.5 truncate text-xs text-landing-muted">{sub}</dd>
     </div>
-  );
-}
-
-function RefundAccount({ order }: { order: Order }) {
-  if (!order.refundAccountNumber) return null;
-  return (
-    <p>
-      Tài khoản nhận hoàn: <span className="text-landing-obsidian">{order.refundBankName || 'Ngân hàng'}</span> ·{' '}
-      <span className="font-mono text-landing-obsidian">{order.refundAccountNumber}</span>
-      {order.refundAccountHolder ? <span className="text-landing-obsidian"> · {order.refundAccountHolder}</span> : null}
-    </p>
   );
 }
 
@@ -143,6 +96,7 @@ function ItemMeasurements({ item }: { item: OrderItem }) {
 
 export default function OrderDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string;
   const { order, isLoading, isError } = useOrder(id);
   const { issues } = useOrderIssues(id);
@@ -150,10 +104,8 @@ export default function OrderDetailPage() {
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [showAllHistory, setShowAllHistory] = useState(false);
   const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false);
   const [reportingItem, setReportingItem] = useState<OrderItem | null>(null);
-  const [reportMode, setReportMode] = useState<'PRODUCT' | 'REFUND_NOT_RECEIVED'>('PRODUCT');
 
   // Item đã có yêu cầu đang xử lý hoặc đã xử lý xong thì không cho báo lỗi lại
   // (khớp điều kiện chặn ở BE). Báo "chưa nhận được tiền" có luồng riêng.
@@ -166,11 +118,6 @@ export default function OrderDetailPage() {
           issue.status === 'RESOLVED',
       )
       .map((issue) => issue.orderItemId),
-  );
-  const hasPendingRefundNotReceived = issues.some(
-    (issue) =>
-      issue.reason === 'REFUND_NOT_RECEIVED' &&
-      (issue.status === 'PENDING' || issue.status === 'APPROVED'),
   );
 
   if (isLoading) {
@@ -215,15 +162,6 @@ export default function OrderDetailPage() {
   const canReportIssue = (status === 'COMPLETED' || isInReturnFlow) && !isIssueWindowOver;
   const allItemsBlocked = order.items.length > 0 && order.items.every((item) => blockedReportItemIds.has(item.id));
 
-  // Báo "chưa nhận được tiền": chỉ khi shop đã chốt hoàn tiền và còn trong 7 ngày
-  // kể từ lần hoàn gần nhất (khớp điều kiện BE).
-  const lastCompletedRefund = (order.refunds ?? [])
-    .filter((r) => r.status === 'COMPLETED')
-    .sort((a, b) => new Date(b.processedAt ?? b.requestedAt).getTime() - new Date(a.processedAt ?? a.requestedAt).getTime())[0];
-  const refundedAt = lastCompletedRefund?.processedAt ?? lastCompletedRefund?.requestedAt;
-  const canReportNotReceived =
-    order.refundStatus === 'COMPLETED' && refundedAt != null && Date.now() - new Date(refundedAt).getTime() <= ISSUE_WINDOW_MS;
-  const refundEvidenceText = formatRefundEvidence(order.refundEvidence);
 
   const paymentLabel = (order.paymentStatus && PAYMENT_STATUS_LABELS[order.paymentStatus]) || 'Chờ thanh toán';
   const paymentMethodLabel = getPaymentMethodLabel(order);
@@ -237,19 +175,19 @@ export default function OrderDetailPage() {
   const refundedVnd = order.amountRefundedVnd ?? 0;
   const discount = order.discountVnd ?? order.discountAmount;
 
-  const openReport = (item: OrderItem | null, mode: 'PRODUCT' | 'REFUND_NOT_RECEIVED' = 'PRODUCT') => {
+  const openReport = (item: OrderItem | null) => {
     if (!item) return;
-    if (mode === 'PRODUCT' && blockedReportItemIds.has(item.id)) {
+    if (blockedReportItemIds.has(item.id)) {
       toast.info('Sản phẩm này đã có yêu cầu xử lý, vui lòng chờ shop phản hồi.');
       return;
     }
-    if (mode === 'REFUND_NOT_RECEIVED' && hasPendingRefundNotReceived) {
-      toast.info('Bạn đã gửi báo cáo chưa nhận được tiền, vui lòng chờ shop xử lý.');
-      return;
-    }
-    setReportMode(mode);
     setReportingItem(item);
   };
+
+  // Báo lỗi, trả hàng và hoàn tiền nằm ở trang riêng; trang đơn chỉ giữ thẻ tóm tắt.
+  const returnsHref = orderReturnsHref(order.id);
+  const hasReturns = issues.length > 0 || (order.refunds?.length ?? 0) > 0 || RETURN_FLOW_STATUSES.includes(status);
+  const latestIssueStatus = issues[0] ? ISSUE_STATUS[issues[0].status] : null;
 
   const handleCancel = () => {
     cancelOrder(order.id, {
@@ -320,10 +258,6 @@ export default function OrderDetailPage() {
     </>
   );
 
-  // Lịch sử dài (đổi trả, hoàn tiền) đẩy trang rất dài: mặc định chỉ hiện các cập nhật mới nhất.
-  const history = order.history ?? [];
-  const visibleHistory = showAllHistory ? history : history.slice(-HISTORY_PREVIEW);
-
   return (
     <AccountShell
       title="Chi tiết đơn hàng"
@@ -357,41 +291,35 @@ export default function OrderDetailPage() {
           </OrderNotice>
         ) : null}
 
-        {isInReturnFlow ? (
-          <OrderNotice title={RETURN_FLOW_TITLES[status]}>
-            <p>Vui lòng gửi hàng về cửa hàng. Sau khi nhận và kiểm tra, shop sẽ chuyển khoản hoàn tiền vào tài khoản bạn đã cung cấp.</p>
-            <RefundAccount order={order} />
-          </OrderNotice>
-        ) : null}
-
-        {status === 'RETURNED' ? (
-          <OrderNotice tone={order.refundStatus === 'COMPLETED' ? 'done' : 'attention'} title="Đơn hàng đã được hoàn trả">
-            <p>
-              {order.refundStatus === 'COMPLETED'
-                ? 'Shop đã chuyển khoản hoàn tiền cho bạn. Chứng từ chuyển khoản nằm ở mục Hoàn tiền.'
-                : 'Shop đang xử lý hoàn tiền cho đơn này. Kiểm tra tài khoản hoặc liên hệ hỗ trợ nếu cần.'}
-            </p>
-            <RefundAccount order={order} />
-            {canReportNotReceived ? (
-              hasPendingRefundNotReceived ? (
-                <p className="text-xs leading-relaxed text-landing-muted">
-                  Bạn đã báo chưa nhận được tiền.{' '}
-                  <a href="#order-issues" className="text-landing-oxblood underline underline-offset-2">
-                    Xem trạng thái xử lý
-                  </a>
-                  .
-                </p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => openReport(order.items[0] ?? null, 'REFUND_NOT_RECEIVED')}
-                  className={accountButtonClassName('outline', 'sm')}
-                >
-                  Chưa nhận được tiền hoàn
-                </button>
-              )
-            ) : null}
-          </OrderNotice>
+        {hasReturns ? (
+          <section
+            aria-labelledby="order-returns-summary-title"
+            className="flex flex-wrap items-center justify-between gap-4 rounded-[2px] border border-landing-line bg-landing-ivory px-4 py-4 sm:px-5"
+          >
+            <div className="min-w-0 space-y-1.5">
+              <p id="order-returns-summary-title" className={accountLabelClassName}>
+                Đổi trả & hoàn tiền
+              </p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                {RETURN_FLOW_STATUSES.includes(status) ? (
+                  <OrderStatusLabel status={status} />
+                ) : latestIssueStatus ? (
+                  <ToneLabel tone={latestIssueStatus.tone} label={latestIssueStatus.label} />
+                ) : null}
+                <span className="text-xs text-landing-muted">
+                  <span className="font-mono">{issues.length}</span> yêu cầu
+                  {refundedVnd > 0 ? (
+                    <>
+                      {' '}· Đã hoàn <span className="font-mono text-landing-obsidian">{formatVnd(refundedVnd)}</span>
+                    </>
+                  ) : null}
+                </span>
+              </div>
+            </div>
+            <Link href={returnsHref} className={accountButtonClassName('outline', 'sm')}>
+              Xem đổi trả & hoàn tiền
+            </Link>
+          </section>
         ) : null}
 
         <section className="rounded-[2px] border border-landing-line bg-landing-ivory">
@@ -427,7 +355,7 @@ export default function OrderDetailPage() {
 
         {/* Màn rộng: cột chính (sản phẩm, báo lỗi, lịch sử) và cột phụ (tiền, giao hàng) cố
             định khi cuộn. Màn hẹp: sản phẩm, báo lỗi, tiền và giao hàng, lịch sử cuối cùng. */}
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:grid-rows-[auto_auto_1fr] xl:items-start">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:grid-rows-[auto_1fr] xl:items-start">
         <AccountSection
           variant="panel"
           title="Sản phẩm"
@@ -472,12 +400,12 @@ export default function OrderDetailPage() {
                     <ItemMeasurements item={item} />
                     {canReportIssue ? (
                       blockedReportItemIds.has(item.id) ? (
-                        <a
-                          href="#order-issues"
+                        <Link
+                          href={returnsHref}
                           className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-landing-muted underline-offset-4 hover:text-landing-oxblood hover:underline"
                         >
                           Đã gửi yêu cầu · xem trạng thái
-                        </a>
+                        </Link>
                       ) : (
                         <button type="button" onClick={() => openReport(item)} className={accountButtonClassName('outline', 'sm')}>
                           Báo lỗi sản phẩm này
@@ -491,11 +419,7 @@ export default function OrderDetailPage() {
           </ul>
         </AccountSection>
 
-        <div className="min-w-0 empty:hidden xl:col-start-1 xl:row-start-2">
-          <OrderIssuesList orderId={order.id} />
-        </div>
-
-        <aside aria-label="Thanh toán và giao hàng" className="flex flex-col gap-6 xl:sticky xl:top-24 xl:col-start-2 xl:row-span-3 xl:row-start-1">
+        <aside aria-label="Thanh toán và giao hàng" className="flex flex-col gap-6 xl:sticky xl:top-24 xl:col-start-2 xl:row-span-2 xl:row-start-1">
           <AccountSection variant="panel" title="Thanh toán">
             <dl>
               <SummaryRow label="Phương thức">{paymentMethodLabel}</SummaryRow>
@@ -527,57 +451,6 @@ export default function OrderDetailPage() {
             </dl>
           </AccountSection>
 
-        {order.refunds && order.refunds.length > 0 ? (
-          <AccountSection variant="panel" title="Hoàn tiền" description="Các lần shop chuyển khoản hoàn tiền cho đơn này.">
-            <ol className="divide-y divide-landing-line/60">
-              {order.refunds.map((refund) => {
-                const refundStatus = REFUND_STATUS[refund.status] ?? { label: refund.status, tone: 'closed' as const };
-                return (
-                  <li key={refund.id} className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-3 first:pt-0 last:pb-0">
-                    <div className="min-w-0 space-y-1">
-                      <p className="text-sm font-medium text-landing-obsidian">{REFUND_KIND_LABELS[refund.kind ?? 'GOODS']}</p>
-                      <ToneLabel tone={refundStatus.tone} label={refundStatus.label} />
-                      {refund.status === 'FAILED' ? (
-                        <p className="text-xs text-destructive">Lần chuyển trước chưa thành công, shop đang chuyển lại.</p>
-                      ) : null}
-                      <p className="text-xs text-landing-muted">
-                        Yêu cầu <span className="font-mono">{formatOrderDateTime(refund.requestedAt)}</span>
-                        {refund.processedAt ? (
-                          <>
-                            {' '}· Hoàn tất <span className="font-mono">{formatOrderDateTime(refund.processedAt)}</span>
-                          </>
-                        ) : null}
-                      </p>
-                    </div>
-                    <p className="font-mono text-base text-landing-oxblood">{formatVnd(refund.amountVnd)}</p>
-                  </li>
-                );
-              })}
-            </ol>
-            {refundEvidenceText || order.refundEvidence ? (
-              <div className="mt-5 space-y-4 border-t border-landing-line/60 pt-5">
-                {refundEvidenceText ? (
-                  /^https?:\/\//i.test(refundEvidenceText) ? (
-                    <a
-                      href={refundEvidenceText}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={cn('text-sm text-landing-oxblood underline underline-offset-4', accountFocusRing)}
-                    >
-                      Xem chứng từ hoàn tiền
-                    </a>
-                  ) : (
-                    <p className="text-sm text-landing-muted">
-                      Mã giao dịch: <span className="font-mono text-landing-obsidian">{refundEvidenceText}</span>
-                    </p>
-                  )
-                ) : null}
-                <RefundReceiptImages evidence={order.refundEvidence} label="Ảnh chứng từ chuyển khoản" />
-              </div>
-            ) : null}
-          </AccountSection>
-        ) : null}
-
           <AccountSection variant="panel" title="Giao đến">
             <div className="space-y-1 text-sm text-landing-obsidian">
               <p className="font-medium">{order.shippingInfo?.name || 'Khách hàng'}</p>
@@ -592,47 +465,8 @@ export default function OrderDetailPage() {
           </AccountSection>
         </aside>
 
-        <AccountSection variant="panel" title="Lịch sử đơn hàng" className="min-w-0 xl:col-start-1 xl:row-start-3">
-          {history.length > 0 ? (
-            <>
-            {history.length > HISTORY_PREVIEW ? (
-              <button
-                type="button"
-                onClick={() => setShowAllHistory((value) => !value)}
-                className={cn(accountButtonClassName('quiet', 'sm'), 'mb-4 h-auto')}
-              >
-                {showAllHistory ? 'Chỉ xem các cập nhật mới nhất' : `Xem toàn bộ ${history.length} cập nhật`}
-              </button>
-            ) : null}
-            <ol className="border-l border-landing-line pl-5">
-              {visibleHistory.map((event, index) => {
-                const isLatest = index === visibleHistory.length - 1;
-                const issueId = (event.metadata as { issueId?: string } | undefined)?.issueId;
-                return (
-                  <li key={event.id} className="relative pb-5 last:pb-0">
-                    <span
-                      aria-hidden="true"
-                      className={cn('absolute -left-[24.5px] top-1.5 h-2 w-2 rounded-full', isLatest ? 'bg-landing-oxblood' : 'bg-landing-taupe')}
-                    />
-                    <p className={cn('text-sm leading-relaxed', ISSUE_EVENT_TONE[event.type] ?? 'text-landing-obsidian', isLatest && 'font-medium')}>
-                      {event.publicMessage || event.toStatus || event.type}
-                    </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-landing-muted">
-                      <span className="font-mono">{formatOrderDateTime(event.occurredAt)}</span>
-                      {issueId ? (
-                        <a href="#order-issues" className={cn('text-landing-oxblood underline-offset-4 hover:underline', accountFocusRing)}>
-                          Xem báo lỗi
-                        </a>
-                      ) : null}
-                    </p>
-                  </li>
-                );
-              })}
-            </ol>
-            </>
-          ) : (
-            <p className="text-sm text-landing-muted">Chưa có lịch sử chi tiết.</p>
-          )}
+        <AccountSection variant="panel" title="Lịch sử đơn hàng" className="min-w-0 xl:col-start-1 xl:row-start-2">
+          <OrderHistoryTimeline events={order.history ?? []} issueHref={returnsHref} emptyText="Chưa có lịch sử chi tiết." />
         </AccountSection>
         </div>
       </div>
@@ -661,13 +495,11 @@ export default function OrderDetailPage() {
 
       <ReportIssueModal
         isOpen={Boolean(reportingItem)}
-        onClose={() => {
-          setReportingItem(null);
-          setReportMode('PRODUCT');
-        }}
+        onClose={() => setReportingItem(null)}
+        // Gửi xong mở trang Đổi trả & hoàn tiền để khách theo dõi yêu cầu.
+        onSuccess={() => router.push(returnsHref)}
         orderId={order.id}
         orderItem={reportingItem}
-        mode={reportMode}
         defaultBank={{
           bankName: order.refundBankName,
           accountNumber: order.refundAccountNumber,

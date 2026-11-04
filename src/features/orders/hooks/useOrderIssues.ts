@@ -3,8 +3,8 @@
 import { mutationKeys } from '@/features/orders/services/mutation-keys';
 import { queryKeys as ordersQueryKeys } from '@/features/orders/services/query-keys';
 import { createOrderIssue } from '@/features/orders/services/mutations';
-import { fetchOrderIssue, fetchOrderIssues } from '@/features/orders/services/queries';
-import type { CreateOrderIssuePayload, OrderIssue, OrderIssueListMeta, OrderIssueListParams } from '@/features/orders/types/orders';
+import { fetchMyReturns, fetchOrderIssue, fetchOrderIssues } from '@/features/orders/services/queries';
+import type { CreateOrderIssuePayload, MyReturnOrder, OrderIssue, OrderIssueListMeta, OrderIssueListParams } from '@/features/orders/types/orders';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -22,6 +22,24 @@ export function useOrderIssues(orderId: string, params?: OrderIssueListParams) {
     isLoading: status === 'loading' || query.isLoading,
     isError: query.isError,
     error: query.error,
+    refetch: query.refetch,
+  };
+}
+
+/** Các đơn của tôi có yêu cầu đổi trả (trang Đổi trả & hoàn tiền). */
+export function useMyReturns(params?: OrderIssueListParams) {
+  const status = useAuthStore((state) => state.status);
+  const query = useQuery<{ data: MyReturnOrder[]; meta: OrderIssueListMeta }>({
+    queryKey: ordersQueryKeys.myReturns(params),
+    queryFn: () => fetchMyReturns(params),
+    enabled: status === 'authenticated',
+  });
+
+  return {
+    orders: query.data?.data || [],
+    meta: query.data?.meta,
+    isLoading: status === 'loading' || query.isLoading,
+    isError: query.isError,
     refetch: query.refetch,
   };
 }
@@ -52,6 +70,7 @@ export function useCreateOrderIssue() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderIssues(variables.orderId) });
       queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.myReturns() });
     },
   });
 

@@ -29,7 +29,7 @@ const RESOLUTION_LABELS: Record<OrderIssueDesiredResolution, string> = {
   REFUND: 'Hoàn tiền',
 };
 
-const ISSUE_STATUS: Record<OrderIssueStatus, { label: string; tone: OrderStatusTone }> = {
+export const ISSUE_STATUS: Record<OrderIssueStatus, { label: string; tone: OrderStatusTone }> = {
   PENDING: { label: 'Chờ xem xét', tone: 'attention' },
   APPROVED: { label: 'Đã duyệt', tone: 'active' },
   RESOLVED: { label: 'Đã xử lý', tone: 'done' },

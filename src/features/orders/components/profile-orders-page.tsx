@@ -20,6 +20,7 @@ import {
   getOrderTotal,
   getPaymentMethodLabel,
 } from '@/features/orders/services/order-display';
+import { RETURN_FLOW_STATUSES, orderReturnsHref } from '@/features/orders/services/order-returns';
 import type { Order, OrderItem } from '@/features/orders/types/orders';
 import { AccountShell } from '@/features/profile/components/account-shell';
 import {
@@ -197,6 +198,11 @@ function OrderCard({
           <button type="button" onClick={handleReorder} className={accountButtonClassName('outline', 'sm')}>
             Mua lại
           </button>
+          {RETURN_FLOW_STATUSES.includes(order.status) ? (
+            <Link href={orderReturnsHref(order.id)} className={accountButtonClassName('outline', 'sm')}>
+              Đổi trả
+            </Link>
+          ) : null}
           <Link href={`/orders/${order.id}`} className={accountButtonClassName('outline', 'sm')}>
             Xem đơn
           </Link>

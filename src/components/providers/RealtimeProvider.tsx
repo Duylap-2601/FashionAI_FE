@@ -86,6 +86,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
             queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderIssues() });
             queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderIssue() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.myReturns() });
           }
 
           // Show Toast
