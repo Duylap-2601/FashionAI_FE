@@ -52,8 +52,8 @@ function IssueCard({ issue, onZoom }: { issue: OrderIssue; onZoom: (src: string,
   const isRefund = issue.approvedResolution === 'REFUND' || issue.desiredResolution === 'REFUND';
 
   return (
-    <article className="rounded-[2px] border border-landing-line bg-landing-ivory">
-      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-landing-line/70 px-4 py-3 sm:px-5">
+    <article className="py-5 first:pt-0 last:pb-0">
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <ToneLabel tone={status.tone} label={status.label} />
           <span className="font-mono text-xs text-landing-muted">#{issue.id.slice(0, 8)}</span>
@@ -61,7 +61,7 @@ function IssueCard({ issue, onZoom }: { issue: OrderIssue; onZoom: (src: string,
         <span className="font-mono text-xs text-landing-muted">{formatOrderDateTime(issue.createdAt)}</span>
       </header>
 
-      <div className="space-y-5 px-4 py-4 sm:px-5">
+      <div className="mt-4 space-y-5">
         <div className="flex items-center gap-3">
           <span className="relative block h-14 w-11 shrink-0 overflow-hidden rounded-[2px] bg-landing-paper">
             <Image src={item?.productImageSnapshot || ORDER_IMAGE_FALLBACK} alt={itemName} fill sizes="44px" className="object-cover" />
@@ -85,12 +85,6 @@ function IssueCard({ issue, onZoom }: { issue: OrderIssue; onZoom: (src: string,
           <IssueField label="Mô tả của bạn" className="sm:col-span-2">
             <span className="whitespace-pre-wrap">{issue.description}</span>
           </IssueField>
-          {issue.accountNumber ? (
-            <IssueField label="Tài khoản nhận hoàn" className="sm:col-span-2">
-              {issue.bankName || 'Ngân hàng'} · <span className="font-mono">{issue.accountNumber}</span>
-              {issue.accountHolder ? ` · ${issue.accountHolder}` : ''}
-            </IssueField>
-          ) : null}
         </dl>
 
         {issue.evidenceImages?.length > 0 ? (
@@ -123,7 +117,7 @@ function IssueCard({ issue, onZoom }: { issue: OrderIssue; onZoom: (src: string,
 
         {issue.status === 'RESOLVED' && isRefund ? (
           <p className="text-sm text-landing-sage-ink">
-            Shop đã duyệt hoàn tiền. Theo dõi khoản hoàn và chứng từ chuyển khoản ở mục Hoàn tiền bên dưới.
+            Shop đã duyệt hoàn tiền. Theo dõi khoản hoàn và chứng từ chuyển khoản ở mục Hoàn tiền.
           </p>
         ) : null}
       </div>
@@ -147,11 +141,11 @@ export function OrderIssuesList({ orderId }: OrderIssuesListProps) {
 
   return (
     <AccountSection
+      variant="panel"
       title="Báo lỗi và hoàn trả"
       description={`${issues.length} yêu cầu cho sản phẩm trong đơn này.`}
-      className="border-t-0 pt-0"
     >
-      <div id="order-issues" className="flex scroll-mt-28 flex-col gap-4">
+      <div id="order-issues" className="scroll-mt-28 divide-y divide-landing-line/60">
         {issues.map((issue) => (
           <IssueCard
             key={issue.id}

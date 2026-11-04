@@ -12,6 +12,7 @@ import { ReportIssueModal } from '@/features/orders/components/report-issue-moda
 import { ORDER_STATUS_DESCRIPTIONS } from '@/features/orders/constants/orders-id-page';
 import {
   PAYMENT_STATUS_LABELS,
+  REFUND_KIND_LABELS,
   STATUS_CONFIG,
   type OrderStatusTone,
 } from '@/features/orders/constants/profile-orders-page';
@@ -68,6 +69,8 @@ const RETURN_FLOW_TITLES: Record<string, string> = {
 const ISSUE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Ghi chú có vạch trái: brass cho việc đang chờ, sage cho việc đã xong. */
+const HISTORY_PREVIEW = 5;
+
 function OrderNotice({ tone = 'attention', title, children }: { tone?: 'attention' | 'done'; title: string; children?: React.ReactNode }) {
   return (
     <div className={cn('border-l-2 bg-landing-ivory/70 px-4 py-3', tone === 'done' ? 'border-landing-sage' : 'border-landing-brass')}>
@@ -147,6 +150,7 @@ export default function OrderDetailPage() {
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false);
   const [reportingItem, setReportingItem] = useState<OrderItem | null>(null);
   const [reportMode, setReportMode] = useState<'PRODUCT' | 'REFUND_NOT_RECEIVED'>('PRODUCT');
@@ -316,6 +320,10 @@ export default function OrderDetailPage() {
     </>
   );
 
+  // Lịch sử dài (đổi trả, hoàn tiền) đẩy trang rất dài: mặc định chỉ hiện các cập nhật mới nhất.
+  const history = order.history ?? [];
+  const visibleHistory = showAllHistory ? history : history.slice(-HISTORY_PREVIEW);
+
   return (
     <AccountShell
       title="Chi tiết đơn hàng"
@@ -360,7 +368,7 @@ export default function OrderDetailPage() {
           <OrderNotice tone={order.refundStatus === 'COMPLETED' ? 'done' : 'attention'} title="Đơn hàng đã được hoàn trả">
             <p>
               {order.refundStatus === 'COMPLETED'
-                ? 'Shop đã chuyển khoản hoàn tiền cho bạn. Chứng từ chuyển khoản nằm ở mục Hoàn tiền bên dưới.'
+                ? 'Shop đã chuyển khoản hoàn tiền cho bạn. Chứng từ chuyển khoản nằm ở mục Hoàn tiền.'
                 : 'Shop đang xử lý hoàn tiền cho đơn này. Kiểm tra tài khoản hoặc liên hệ hỗ trợ nếu cần.'}
             </p>
             <RefundAccount order={order} />
@@ -417,7 +425,15 @@ export default function OrderDetailPage() {
           </div>
         </section>
 
-        <AccountSection variant="panel" title="Sản phẩm" description={`${itemCount} sản phẩm may đo theo số đo của bạn.`}>
+        {/* Màn rộng: cột chính (sản phẩm, báo lỗi, lịch sử) và cột phụ (tiền, giao hàng) cố
+            định khi cuộn. Màn hẹp: sản phẩm, báo lỗi, tiền và giao hàng, lịch sử cuối cùng. */}
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:grid-rows-[auto_auto_1fr] xl:items-start">
+        <AccountSection
+          variant="panel"
+          title="Sản phẩm"
+          description={`${itemCount} sản phẩm may đo theo số đo của bạn.`}
+          className="min-w-0 xl:col-start-1 xl:row-start-1"
+        >
           <ul id="order-items" className="scroll-mt-28 divide-y divide-landing-line/60">
             {order.items.map((item) => {
               const unitPrice = item.unitPriceVnd ?? item.price;
@@ -475,22 +491,11 @@ export default function OrderDetailPage() {
           </ul>
         </AccountSection>
 
-        <OrderIssuesList orderId={order.id} />
+        <div className="min-w-0 empty:hidden xl:col-start-1 xl:row-start-2">
+          <OrderIssuesList orderId={order.id} />
+        </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <AccountSection variant="panel" title="Giao đến">
-            <div className="space-y-1 text-sm text-landing-obsidian">
-              <p className="font-medium">{order.shippingInfo?.name || 'Khách hàng'}</p>
-              {order.shippingInfo?.phone ? <p className="font-mono text-xs">{order.shippingInfo.phone}</p> : null}
-              <p className="leading-relaxed text-landing-muted">{order.shippingInfo?.address || 'Chưa có địa chỉ'}</p>
-            </div>
-            {order.shippingInfo?.notes ? (
-              <p className="mt-4 text-xs leading-relaxed text-landing-muted">
-                Ghi chú: <span className="text-landing-obsidian">{order.shippingInfo.notes}</span>
-              </p>
-            ) : null}
-          </AccountSection>
-
+        <aside aria-label="Thanh toán và giao hàng" className="flex flex-col gap-6 xl:sticky xl:top-24 xl:col-start-2 xl:row-span-3 xl:row-start-1">
           <AccountSection variant="panel" title="Thanh toán">
             <dl>
               <SummaryRow label="Phương thức">{paymentMethodLabel}</SummaryRow>
@@ -521,7 +526,6 @@ export default function OrderDetailPage() {
               ) : null}
             </dl>
           </AccountSection>
-        </div>
 
         {order.refunds && order.refunds.length > 0 ? (
           <AccountSection variant="panel" title="Hoàn tiền" description="Các lần shop chuyển khoản hoàn tiền cho đơn này.">
@@ -531,6 +535,7 @@ export default function OrderDetailPage() {
                 return (
                   <li key={refund.id} className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-3 first:pt-0 last:pb-0">
                     <div className="min-w-0 space-y-1">
+                      <p className="text-sm font-medium text-landing-obsidian">{REFUND_KIND_LABELS[refund.kind ?? 'GOODS']}</p>
                       <ToneLabel tone={refundStatus.tone} label={refundStatus.label} />
                       {refund.status === 'FAILED' ? (
                         <p className="text-xs text-destructive">Lần chuyển trước chưa thành công, shop đang chuyển lại.</p>
@@ -573,11 +578,35 @@ export default function OrderDetailPage() {
           </AccountSection>
         ) : null}
 
-        <AccountSection variant="panel" title="Lịch sử đơn hàng">
-          {order.history && order.history.length > 0 ? (
+          <AccountSection variant="panel" title="Giao đến">
+            <div className="space-y-1 text-sm text-landing-obsidian">
+              <p className="font-medium">{order.shippingInfo?.name || 'Khách hàng'}</p>
+              {order.shippingInfo?.phone ? <p className="font-mono text-xs">{order.shippingInfo.phone}</p> : null}
+              <p className="leading-relaxed text-landing-muted">{order.shippingInfo?.address || 'Chưa có địa chỉ'}</p>
+            </div>
+            {order.shippingInfo?.notes ? (
+              <p className="mt-4 text-xs leading-relaxed text-landing-muted">
+                Ghi chú: <span className="text-landing-obsidian">{order.shippingInfo.notes}</span>
+              </p>
+            ) : null}
+          </AccountSection>
+        </aside>
+
+        <AccountSection variant="panel" title="Lịch sử đơn hàng" className="min-w-0 xl:col-start-1 xl:row-start-3">
+          {history.length > 0 ? (
+            <>
+            {history.length > HISTORY_PREVIEW ? (
+              <button
+                type="button"
+                onClick={() => setShowAllHistory((value) => !value)}
+                className={cn(accountButtonClassName('quiet', 'sm'), 'mb-4 h-auto')}
+              >
+                {showAllHistory ? 'Chỉ xem các cập nhật mới nhất' : `Xem toàn bộ ${history.length} cập nhật`}
+              </button>
+            ) : null}
             <ol className="border-l border-landing-line pl-5">
-              {order.history.map((event, index) => {
-                const isLatest = index === order.history!.length - 1;
+              {visibleHistory.map((event, index) => {
+                const isLatest = index === visibleHistory.length - 1;
                 const issueId = (event.metadata as { issueId?: string } | undefined)?.issueId;
                 return (
                   <li key={event.id} className="relative pb-5 last:pb-0">
@@ -600,10 +629,12 @@ export default function OrderDetailPage() {
                 );
               })}
             </ol>
+            </>
           ) : (
             <p className="text-sm text-landing-muted">Chưa có lịch sử chi tiết.</p>
           )}
         </AccountSection>
+        </div>
       </div>
 
       <AccountConfirmDialog
