@@ -11,6 +11,6 @@ export function isCapacitorNative(): boolean {
 
 export function isCapacitorWebView(): boolean {
   if (typeof window === 'undefined') return false;
-  return typeof (window as CapacitorWindow).Capacitor !== 'undefined';
+  return Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'web';
 }
 

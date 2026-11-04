@@ -74,10 +74,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AnalyticsBootstrap />
       <RealtimeProvider>
         {children}
-        <Toaster />
-        <InstallPrompt />
-        <NativeBackButtonHandler />
       </RealtimeProvider>
+      <Toaster />
+      <InstallPrompt />
+      <NativeBackButtonHandler />
     </QueryClientProvider>
   );
 }

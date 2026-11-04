@@ -6,34 +6,21 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const APK_URL = 'https://apkpure.com/staie/vn.fashionai.app';
-const STORAGE_KEY = 'staie_app_prompt_dismissed';
-
-function getSessionDismissed(): boolean {
-  try {
-    return typeof window !== 'undefined' && sessionStorage.getItem(STORAGE_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function setSessionDismissed(): void {
-  try {
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(STORAGE_KEY, 'true');
-    }
-  } catch {
-    // Ignore storage errors in private browsing modes
-  }
-}
+const LEGACY_STORAGE_KEY = 'staie_app_prompt_dismissed';
 
 export function InstallPrompt() {
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    // Không hiển thị nếu người dùng đã đóng/tương tác trong phiên làm việc này
-    if (getSessionDismissed()) {
-      return;
+    // Dọn dẹp key cũ trong sessionStorage để không chặn việc hiển thị khi người dùng truy cập web
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(LEGACY_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage errors in private browsing
     }
 
     // Không hiển thị nếu đang chạy trong ứng dụng di động (Capacitor native app)
@@ -50,27 +37,31 @@ export function InstallPrompt() {
   }, []);
 
   const handleDismiss = () => {
-    setSessionDismissed();
-    setIsVisible(false);
+    setIsDismissed(true);
   };
 
   const handleInstallClick = () => {
-    setSessionDismissed();
-    setIsVisible(false);
+    setIsDismissed(true);
   };
 
-  // Không hiển thị trên các trang quản trị (admin) hoặc quy trình thanh toán
-  const isExcludedRoute =
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/checkout') ||
-    pathname.startsWith('/payment');
+  // Không hiển thị nếu đã đóng trong phiên duyệt này hoặc chưa sẵn sàng
+  if (!isVisible || isDismissed) return null;
 
-  if (!isVisible || isExcludedRoute) return null;
+  // Không hiển thị trên các trang quản trị (admin) hoặc quy trình thanh toán
+  const isExcludedRoute = Boolean(
+    pathname && (
+      pathname.startsWith('/admin') ||
+      pathname.startsWith('/checkout') ||
+      pathname.startsWith('/payment')
+    )
+  );
+
+  if (isExcludedRoute) return null;
 
   return (
     <aside
       aria-label="Cài đặt ứng dụng StAie"
-      className="fixed bottom-20 md:bottom-6 left-4 right-4 sm:right-auto md:left-6 max-w-[calc(100vw-2rem)] sm:w-84 md:w-96 bg-brand-black text-brand-cream border border-brand-taupe/20 rounded-2xl p-4 shadow-2xl z-[95] flex items-center gap-3 animate-fadeInUp"
+      className="fixed bottom-20 md:bottom-6 left-4 right-4 sm:right-auto md:left-6 max-w-[calc(100vw-2rem)] sm:w-80 md:w-96 bg-brand-black text-brand-cream border border-brand-taupe/20 rounded-2xl p-4 shadow-2xl z-[95] flex items-center gap-3 animate-fadeInUp"
     >
       <Image
         src="/icons/icon-96x96.png"
