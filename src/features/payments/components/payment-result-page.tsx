@@ -46,7 +46,7 @@ function PaymentResultContent() {
       <PaymentStatusCard
         title="Thanh toán thành công"
         orderCode={payment.orderCode}
-        status={{ tone: 'done', label: 'Đã thanh toán' }}
+        status={{ tone: 'success', label: 'Đã thanh toán' }}
         description={<p>Shop đã nhận được thanh toán. Đơn chuyển sang bước duyệt số đo trước khi may.</p>}
         primary={order}
       />
@@ -60,7 +60,7 @@ function PaymentResultContent() {
       <PaymentStatusCard
         title="Đơn hàng đã được thanh toán"
         orderCode={payment.orderCode}
-        status={{ tone: 'done', label: 'Đã thanh toán' }}
+        status={{ tone: 'success', label: 'Đã thanh toán' }}
         description={<p>Shop đã xác nhận thanh toán cho đơn này, bạn không cần quét mã nữa. Theo dõi các bước tiếp theo ở trang đơn hàng.</p>}
         primary={order}
       />

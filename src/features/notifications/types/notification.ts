@@ -1,4 +1,4 @@
-export type NotificationType = 'ORDER_STATUS' | 'PAYMENT' | 'PROMOTION' | 'SYSTEM' | 'REVIEW' | 'ORDER_ISSUE';
+export type NotificationType = 'ORDER_STATUS' | 'PAYMENT' | 'PROMOTION' | 'SYSTEM' | 'REVIEW' | 'ORDER_ISSUE' | 'ORDER_CHAT';
 
 export interface AppNotification {
   id: string;

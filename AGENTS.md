@@ -149,6 +149,14 @@ src/
 │   │                        #   (`landing` default, `admin` in the admin topbar)
 │   │                        # store: notificationStore.ts (Zustand)
 │   ├── orders/              # components/ constants/ hooks/ services/ types/
+│   │                        # Per-order customer↔shop chat (1 conversation per
+│   │                        # order) and shop-requested measurement review live
+│   │                        # here: order-chat-panel, order-chat-widget
+│   │                        # (floating bubble with per-order session switcher;
+│   │                        # closed orders are hidden there but their history
+│   │                        # stays on the order detail page), useOrderChat,
+│   │                        # order-measurement-review. Chat notification type
+│   │                        # is ORDER_CHAT. The AI chatbot lives on /chat.
 │   │                        # Issue reports, returns and refunds live on
 │   │                        # order-returns-page (/orders/[id]/returns) and
 │   │                        # profile-returns-page (/profile/returns); the order

@@ -1,12 +1,13 @@
 import type { BackendOrderStatus, OrderRefundKind } from '@/features/orders/types/orders';
 
-export type OrderStatusTone = 'attention' | 'active' | 'done' | 'closed' | 'error';
+export type OrderStatusTone = 'attention' | 'active' | 'done' | 'success' | 'closed' | 'error';
 
 /** Màu chấm và chữ cho từng nhóm trạng thái, theo token Atelier Paper. */
 export const ORDER_STATUS_TONE_CLASSES: Record<OrderStatusTone, { dot: string; text: string }> = {
   attention: { dot: 'bg-landing-brass', text: 'text-landing-brass-ink' },
   active: { dot: 'bg-landing-oxblood', text: 'text-landing-obsidian' },
   done: { dot: 'bg-landing-sage', text: 'text-landing-sage-ink' },
+  success: { dot: 'bg-emerald-500', text: 'text-emerald-700' },
   closed: { dot: 'bg-landing-taupe', text: 'text-landing-muted' },
   error: { dot: 'bg-destructive', text: 'text-destructive' },
 };
@@ -31,6 +32,7 @@ export const STATUS_CONFIG: Record<BackendOrderStatus, { label: string; tone: Or
   SHIPPING: { label: 'Đang giao', tone: 'active', step: 3 },
   // Đơn vị vận chuyển báo đã giao nhưng khách chưa xác nhận: chưa tới bước "Đã nhận".
   DELIVERED: { label: 'Đã giao', tone: 'done', step: 3 },
+  DELIVERY_DISPUTED: { label: 'Chưa nhận được hàng', tone: 'attention', step: 3 },
   COMPLETED: { label: 'Hoàn tất', tone: 'done', step: 4 },
   CANCELLED: { label: 'Đã hủy', tone: 'closed', step: -1 },
   RETURN_REQUESTED: { label: 'Yêu cầu hoàn trả', tone: 'attention', step: -1 },
@@ -52,6 +54,7 @@ export const FILTER_TABS: { id: string; label: string; status?: BackendOrderStat
   { id: 'ready_to_ship', label: 'Chờ giao', status: 'READY_TO_SHIP' },
   { id: 'shipping', label: 'Đang giao', status: 'SHIPPING' },
   { id: 'delivered', label: 'Đã giao', status: 'DELIVERED' },
+  { id: 'delivery_disputed', label: 'Chưa nhận được hàng', status: 'DELIVERY_DISPUTED' },
   { id: 'completed', label: 'Hoàn tất', status: 'COMPLETED' },
   { id: 'cancelled', label: 'Đã hủy', status: 'CANCELLED' },
 ];

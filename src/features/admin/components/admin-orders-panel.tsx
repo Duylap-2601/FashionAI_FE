@@ -6,7 +6,7 @@ import { shipmentStatusLabel } from '@/features/orders/services/order-display';
 import type { AdminOrdersPanelProps } from '@/features/admin/types/admin-orders-panel';
 import { AdminPagination } from '@/features/admin/components/admin-pagination';
 import { AdminLoadingBar, AdminTableLoading } from '@/features/admin/components/admin-loading';
-import { Calendar, ChevronDown, Eye, RotateCcw, Search } from 'lucide-react';
+import { AlertTriangle, Calendar, ChevronDown, Eye, RotateCcw, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export function AdminOrdersPanel({
@@ -70,6 +70,7 @@ export function AdminOrdersPanel({
                 <option value="READY_TO_SHIP">Sẵn sàng giao</option>
                 <option value="SHIPPING">Đang giao</option>
                 <option value="DELIVERED">Đã giao</option>
+                <option value="DELIVERY_DISPUTED">Chưa nhận hàng</option>
                 <option value="COMPLETED">Hoàn tất</option>
                 <option value="CANCELLED">Đã hủy</option>
                 <option value="RETURN_REQUESTED">Yêu cầu hoàn trả</option>
@@ -165,7 +166,11 @@ export function AdminOrdersPanel({
                 return (
                   <div
                     key={o.id}
-                    className="grid grid-cols-[130px_minmax(180px,1fr)_140px_160px_130px_150px_130px] items-center hover:bg-landing-paper/80 transition-colors"
+                    className={`grid grid-cols-[130px_minmax(180px,1fr)_140px_160px_130px_150px_130px] items-center transition-colors hover:bg-landing-paper/80 ${
+                      o.status === 'DELIVERY_DISPUTED'
+                        ? 'border-l-2 border-l-metric-users bg-metric-users/[0.04]'
+                        : 'border-l-2 border-l-transparent'
+                    }`}
                   >
                     <div className="px-6 py-3.5 font-semibold text-landing-obsidian font-mono truncate">{o.code}</div>
                     <div className="px-4 py-3.5 min-w-0">
@@ -210,6 +215,8 @@ export function AdminOrdersPanel({
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-metric-orders shrink-0" />
                           ) : o.status === 'TAILORING' || o.status === 'MEASUREMENT_REVIEW' || o.status === 'MEASUREMENT_CONFIRMED' ? (
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-landing-oxblood shrink-0" />
+                          ) : o.status === 'DELIVERY_DISPUTED' ? (
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-metric-users shrink-0" />
                           ) : o.status === 'CANCELLED' || o.status === 'FAILED' ? (
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive shrink-0" />
                           ) : (
@@ -219,6 +226,16 @@ export function AdminOrdersPanel({
                             {cfg.label}
                           </span>
                         </div>
+                        {o.status === 'DELIVERY_DISPUTED' ? (
+                          <Link
+                            href={`/admin/orders/${o.id}#delivery-dispute`}
+                            className="inline-flex items-center gap-1 rounded-[2px] border border-metric-users/40 bg-metric-users/10 px-1.5 py-0.5 text-[10px] font-bold text-metric-users no-underline transition-colors hover:bg-metric-users/20"
+                            title="Khách báo chưa nhận được hàng — mở để xử lý"
+                          >
+                            <AlertTriangle className="h-3 w-3" strokeWidth={2} />
+                            Cần xử lý
+                          </Link>
+                        ) : null}
                         {(o.refundStatus === 'REQUIRED' || o.refundStatus === 'PROCESSING' || (o.status === 'RETURNED' && o.refundStatus !== 'COMPLETED')) && (
                           <Link
                             href={`/admin/orders/${o.id}`}

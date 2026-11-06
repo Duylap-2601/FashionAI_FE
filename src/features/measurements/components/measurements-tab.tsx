@@ -76,7 +76,7 @@ export function MeasurementsTab() {
     if (prefillDone.current) return;
     if (measurements && Object.keys(measurements).length > 0) {
       prefillDone.current = true;
-      const validFieldIds = new Set(allMeasurementFields.map(f => f.id));
+      const validFieldIds = new Set<string>(allMeasurementFields.map(f => f.id));
       const formatted: Record<string, string> = {};
       Object.entries(measurements).forEach(([k, v]) => {
         if (validFieldIds.has(k) && v !== undefined && v !== null) {
@@ -112,7 +112,7 @@ export function MeasurementsTab() {
       toast.error('Vui lòng kiểm tra lại các số đo chưa hợp lệ');
       return;
     }
-    const validFieldIds = new Set(allMeasurementFields.map(f => f.id));
+    const validFieldIds = new Set<string>(allMeasurementFields.map(f => f.id));
     const body: Record<string, number> = {};
     Object.entries(values).forEach(([k, v]) => {
       if (validFieldIds.has(k) && v !== undefined && v !== '' && !isNaN(parseFloat(v))) {

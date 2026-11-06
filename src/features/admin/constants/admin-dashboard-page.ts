@@ -234,6 +234,7 @@ export const ORDER_STATUS_CFG: Record<string, { label: string; cls: string; icon
   READY_TO_SHIP: { label: 'Sẵn sàng giao', cls: 'bg-metric-orders/10 text-metric-orders border border-metric-orders/30', icon: Truck },
   SHIPPING: { label: 'Đang giao', cls: 'bg-metric-orders/10 text-metric-orders border border-metric-orders/30', icon: Truck },
   DELIVERED: { label: 'Đã giao hàng', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30', icon: CheckCircle2 },
+  DELIVERY_DISPUTED: { label: 'Chưa nhận hàng', cls: 'bg-metric-users/10 text-metric-users border border-metric-users/30', icon: AlertTriangle },
   COMPLETED: { label: 'Hoàn thành', cls: 'bg-metric-products/10 text-metric-products border border-metric-products/30', icon: CheckCircle2 },
   CANCELLED: { label: 'Đã hủy', cls: 'bg-destructive/10 text-destructive border border-destructive/30', icon: XCircle },
   RETURN_REQUESTED: { label: 'Yêu cầu hoàn trả', cls: 'bg-metric-users/10 text-metric-users border border-metric-users/30', icon: RotateCcw },
@@ -267,6 +268,7 @@ export const ORDER_STATUS_OPTIONS: Record<BackendOrderStatus, string> = {
   READY_TO_SHIP: 'Sẵn sàng giao',
   SHIPPING: 'Đang giao hàng',
   DELIVERED: 'Đã giao hàng',
+  DELIVERY_DISPUTED: 'Chưa nhận hàng',
   COMPLETED: 'Hoàn tất',
   CANCELLED: 'Hủy đơn',
   RETURN_REQUESTED: 'Yêu cầu hoàn trả',
@@ -284,6 +286,7 @@ export function getAdminOrderStatusOptions(currentStatus: BackendOrderStatus): B
     'MEASUREMENT_CONFIRMED',
     'TAILORING',
     'READY_TO_SHIP',
+    'DELIVERY_DISPUTED',
   ];
 
   // RETURN_APPROVED đi từ SHIPPING / DELIVERED / COMPLETED / RETURN_REQUESTED
@@ -294,6 +297,10 @@ export function getAdminOrderStatusOptions(currentStatus: BackendOrderStatus): B
   // Hàng hoàn đang trên đường về -> admin chốt đã nhận hàng hoàn (RETURNED)
   if (['RETURN_APPROVED', 'RETURNING'].includes(currentStatus)) {
     options.push('RETURNING', 'RETURNED');
+  }
+
+  if (currentStatus === 'DELIVERY_DISPUTED') {
+    options.push('COMPLETED');
   }
 
   options.push('CANCELLED');

@@ -8,8 +8,8 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import type { UserTier } from '@/features/auth/types/auth';
 import { CartSlideOver } from '@/features/cart/components/CartSlideOver';
 import { useCart } from '@/features/cart/hooks/use-cart';
-import { FloatingChat } from '@/features/chat/components/FloatingChat';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { OrderChatWidget } from '@/features/orders/components/order-chat-widget';
 import { HeaderSearch } from '@/features/products/components/HeaderSearch';
 import { SEARCH_HISTORY_KEY } from '@/features/products/constants/header-search';
 import { ACCOUNT_TIER_LABELS } from '@/features/profile/constants/account-nav';
@@ -642,7 +642,7 @@ export function AppLayout({
         {children}
       </div>
       {shouldShowFooter && <SiteFooter variant={resolvedFooterVariant} />}
-      {shouldShowFloatingChat && <FloatingChat />}
+      {shouldShowFloatingChat && <OrderChatWidget />}
       <CartSlideOver isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       {shouldShowBottomTab && <BottomTabBar pathname={pathname} />}
     </div>

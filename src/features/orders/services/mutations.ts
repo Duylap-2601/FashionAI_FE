@@ -49,6 +49,68 @@ export async function confirmDelivery({ id, note }: { id: string; note?: string 
   return http.post<BackendOrder>(`/orders/${id}/confirm-delivery`, { note });
 }
 
+export async function updateOrderItemMeasurement({
+  orderId,
+  itemId,
+  measurementSnapshot,
+  syncToProfile,
+}: {
+  orderId: string;
+  itemId: string;
+  measurementSnapshot: Record<string, number | null>;
+  syncToProfile?: boolean;
+}) {
+  return http.patch<BackendOrder>(`/orders/${orderId}/items/${itemId}/measurement`, {
+    measurementSnapshot,
+    syncToProfile,
+  });
+}
+
+export async function sendOrderChatMessage({
+  orderId,
+  content,
+  images,
+  clientMessageId,
+}: {
+  orderId: string;
+  content?: string;
+  images?: File[];
+  clientMessageId?: string;
+}) {
+  const formData = new FormData();
+  if (content) formData.append('content', content);
+  if (clientMessageId) formData.append('clientMessageId', clientMessageId);
+  for (const image of images ?? []) {
+    formData.append('images', image);
+  }
+  return http.post(`/orders/${orderId}/chat/messages`, formData, { timeout: 30000 });
+}
+
+export async function createDeliveryDispute({
+  orderId,
+  description,
+  images,
+}: {
+  orderId: string;
+  description: string;
+  images?: File[];
+}) {
+  const formData = new FormData();
+  formData.append('description', description);
+  for (const image of images ?? []) {
+    formData.append('evidenceImages', image);
+  }
+  return http.post(`/orders/${orderId}/delivery-dispute`, formData, { timeout: 30000 });
+}
+
+export async function confirmRefundReceived(orderId: string) {
+  return http.post(`/orders/${orderId}/refund/confirm-received`);
+}
+
+export async function markOrderChatRead(orderId: string, upToMessageId?: string) {
+  return http.post(`/orders/${orderId}/chat/read`, { upToMessageId });
+}
+
 export async function createOrderIssue(payload: CreateOrderIssuePayload): Promise<OrderIssue> {
   const fd = new FormData();
   fd.append('reason', payload.reason);
