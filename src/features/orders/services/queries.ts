@@ -1,4 +1,5 @@
 import { mapOrder } from '@/features/orders/services/orders-utils';
+import type { MyOrderChats, OrderChatThread } from '@/features/orders/types/order-chat';
 import type { BackendOrder, MyReturnOrder, OrderIssue, OrderIssueListMeta, OrderIssueListParams, OrdersListParams, OrdersListResult } from '@/features/orders/types/orders';
 import { http } from '@/lib/http';
 
@@ -79,6 +80,16 @@ export async function fetchMyReturns(
 
 export async function fetchOrderIssue(issueId: string): Promise<OrderIssue> {
   return http.get<OrderIssue>(`/order-issues/${issueId}`);
+}
+
+export async function fetchOrderChat(orderId: string, before?: string, limit = 20): Promise<OrderChatThread> {
+  return http.get<OrderChatThread>(`/orders/${orderId}/chat`, {
+    params: { ...(before ? { before } : {}), limit },
+  });
+}
+
+export async function fetchMyOrderChats(): Promise<MyOrderChats> {
+  return http.get<MyOrderChats>('/order-chats/mine');
 }
 
 export { queryKeys } from './query-keys';

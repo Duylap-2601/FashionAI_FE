@@ -13,11 +13,12 @@ export function ConfirmDeliveryDialog({ open, onOpenChange, orderCode, isPending
       description={
         <>
           Xác nhận đơn <span className="font-mono">{orderCode}</span> đã đến tay bạn. Đơn sẽ chuyển sang Hoàn tất và không
-          hoàn tác được; nếu sản phẩm có vấn đề, bạn có 7 ngày để báo lỗi.
+          hoàn tác được; nếu sản phẩm có vấn đề, bạn có 7 ngày để báo lỗi. Nếu chưa nhận được hàng, đóng hộp thoại và chọn
+          “Tôi chưa nhận được hàng”.
         </>
       }
       confirmLabel="Đã nhận hàng"
-      cancelLabel="Chưa nhận"
+      cancelLabel="Để sau"
       tone="primary"
       isPending={isPending}
       onConfirm={onConfirm}

@@ -69,10 +69,12 @@ export function PaymentLoading() {
 function PaymentOutcomeContent({
   title,
   description,
+  status,
   children,
 }: {
   title: string;
   description: React.ReactNode;
+  status?: { tone: OrderStatusTone; label: string };
   children?: (params: URLSearchParams) => React.ReactNode;
 }) {
   const searchParams = useSearchParams();
@@ -84,6 +86,7 @@ function PaymentOutcomeContent({
       title={title}
       description={description}
       orderCode={params.get('orderCode')}
+      status={status}
       primary={{ href: target.href, label: target.retryLabel }}
     >
       {children?.(params)}

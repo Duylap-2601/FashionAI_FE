@@ -3,8 +3,26 @@ export type FigureVariant = 'female' | 'male';
 
 export type Tab = 'measurements' | 'sizes';
 
+export type MeasurementFieldId =
+  | 'height'
+  | 'weight'
+  | 'chest'
+  | 'waist'
+  | 'hip'
+  | 'shoulder'
+  | 'neck'
+  | 'sleeveLength'
+  | 'wrist'
+  | 'thigh'
+  | 'knee'
+  | 'calf'
+  | 'inseam'
+  | 'outseam'
+  | 'shirtLength'
+  | 'underbust';
+
 export interface MeasurementField {
-  id: string;
+  id: MeasurementFieldId;
   label: string;
   unit: string;
   min: number;

@@ -90,7 +90,7 @@ function PaymentSuccessContent() {
       <PaymentStatusCard
         title="Thanh toán thành công"
         orderCode={code}
-        status={{ tone: 'done', label: 'Đã thanh toán' }}
+        status={{ tone: 'success', label: 'Đã thanh toán' }}
         description={<p>Shop đã nhận được thanh toán. Đơn chuyển sang bước duyệt số đo trước khi may.</p>}
         primary={{ href: orderHref, label: 'Xem đơn hàng' }}
       />

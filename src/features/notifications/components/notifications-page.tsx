@@ -26,6 +26,7 @@ const TYPE_META: Record<NotificationType, { icon: LucideIcon; label: string; ton
   REVIEW: { icon: MessageSquare, label: 'Đánh giá', tone: 'text-landing-brass-ink' },
   SYSTEM: { icon: Info, label: 'Hệ thống', tone: 'text-landing-muted' },
   ORDER_ISSUE: { icon: ShieldAlert, label: 'Đổi trả', tone: 'text-landing-oxblood' },
+  ORDER_CHAT: { icon: MessageSquare, label: 'Tin nhắn', tone: 'text-landing-oxblood' },
 };
 
 function NotificationRow({ notification, onOpen }: { notification: AppNotification; onOpen: (notification: AppNotification) => void }) {

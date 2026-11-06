@@ -8,6 +8,9 @@ import {
   confirmManualPayment,
   createShipment,
   finalizeRefund,
+  requestMeasurementReview,
+  resolveDeliveryDispute,
+  updateMeasurementReview,
   updateOrderStatus,
 } from '@/features/admin/services/mutations';
 import { allMeasurementFields } from '@/features/measurements/constants/profile-measurements-page';
@@ -15,9 +18,11 @@ import { useUserMeasurements } from '@/features/measurements/hooks/useMeasuremen
 import { AdminRefundHistory } from '@/features/admin/components/admin-refund-history';
 import { AdminRefundPanel } from '@/features/admin/components/admin-refund-panel';
 import type { RefundFinalizeOutcome } from '@/features/admin/types/admin-refund-history';
+import { OrderChatPanel } from '@/features/orders/components/order-chat-panel';
 import { useOrder } from '@/features/orders/hooks/useOrders';
-import type { BackendOrderStatus } from '@/features/orders/types/orders';
+import type { BackendOrderStatus, OrderItem } from '@/features/orders/types/orders';
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
+import { AccountConfirmDialog } from '@/features/profile/components/account-ui';
 import { getErrorMessage } from '@/lib/errors';
 import {
   AlertTriangle,
@@ -83,6 +88,14 @@ export default function AdminOrderMeasurementsPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [manualPaymentNote, setManualPaymentNote] = useState('');
   const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [reviewItem, setReviewItem] = useState<OrderItem | null>(null);
+  const [reviewMessage, setReviewMessage] = useState('');
+  const [reviewFields, setReviewFields] = useState<string[]>([]);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [disputeNote, setDisputeNote] = useState('');
+  const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+  const [disputeConfirmReceived, setDisputeConfirmReceived] = useState(false);
+  const [cancelDisputeOpen, setCancelDisputeOpen] = useState(false);
 
 
   const [creatingShipment, setCreatingShipment] = useState(false);
@@ -189,6 +202,72 @@ export default function AdminOrderMeasurementsPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const openMeasurementReview = (item: OrderItem | null) => {
+    if (!item) return;
+    setReviewItem(item);
+    setReviewMessage(item.measurementReview?.message ?? 'Vui lòng kiểm tra và bổ sung số đo còn thiếu cho món này.');
+    setReviewFields(
+      item.measurementReview?.requestedFields?.length
+        ? item.measurementReview.requestedFields
+        : item.measurementMissingFields?.length
+          ? item.measurementMissingFields
+          : item.measurementRequiredFields ?? [],
+    );
+  };
+
+  const submitMeasurementReview = async () => {
+    if (!order || !reviewItem || !reviewMessage.trim() || reviewSubmitting) return;
+    setReviewSubmitting(true);
+    try {
+      if (reviewItem.measurementReview && ['OPEN', 'SUBMITTED'].includes(reviewItem.measurementReview.status ?? '')) {
+        await updateMeasurementReview(order.id, reviewItem.id, {
+          message: reviewMessage.trim(),
+          fields: reviewFields,
+        });
+      } else {
+        await requestMeasurementReview(order.id, reviewItem.id, {
+          message: reviewMessage.trim(),
+          fields: reviewFields,
+        });
+      }
+      toast.success('Đã gửi yêu cầu chỉnh số đo cho khách');
+      setReviewItem(null);
+      await refetch();
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể gửi yêu cầu số đo.'));
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const performResolveDeliveryDispute = async (
+    resolution: 'ADMIN_CONFIRMED_RECEIVED' | 'REFUNDED',
+  ) => {
+    if (!order || disputeSubmitting) return;
+    setDisputeSubmitting(true);
+    try {
+      await resolveDeliveryDispute(order.id, {
+        resolution,
+        adminNote: disputeNote.trim() || undefined,
+      });
+      toast.success('Đã xử lý tranh chấp giao vận');
+      setDisputeConfirmReceived(false);
+      setCancelDisputeOpen(false);
+      setDisputeNote('');
+      await refetch();
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể xử lý tranh chấp giao vận.'));
+    } finally {
+      setDisputeSubmitting(false);
+    }
+  };
+
+  const toggleReviewField = (fieldId: string) => {
+    setReviewFields((current) => (
+      current.includes(fieldId) ? current.filter((id) => id !== fieldId) : [...current, fieldId]
+    ));
   };
 
   if (isLoading) {
@@ -337,6 +416,31 @@ export default function AdminOrderMeasurementsPage() {
 
           {/* Action Banners for Admin Workflow (Hidden when printing) */}
           <div className="space-y-3 print:hidden">
+            {/* Ngoại lệ giao vận là việc gấp nhất: đặt lên đầu để admin thấy ngay. */}
+            {order.deliveryDispute ? (
+              <a
+                href="#delivery-dispute"
+                className="group flex flex-wrap items-center justify-between gap-3 rounded-[2px] border border-metric-users/40 border-l-2 border-l-metric-users bg-metric-users/[0.07] px-4 py-3 no-underline transition-colors hover:bg-metric-users/10"
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-metric-users/40 bg-landing-ivory text-metric-users">
+                    <AlertTriangle className="h-4 w-4" strokeWidth={1.75} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-metric-users">
+                      Ngoại lệ giao vận
+                    </span>
+                    <span className="block truncate text-sm text-landing-obsidian">
+                      Khách báo chưa nhận được hàng · Đơn #{order.orderCode}
+                    </span>
+                  </span>
+                </span>
+                <span className="shrink-0 text-xs font-semibold text-metric-users group-hover:underline">
+                  Xử lý ngay →
+                </span>
+              </a>
+            ) : null}
+
             {/* Manual Payment Confirmation Banner */}
             {isPending && (
               <div className="bg-metric-users/10 border border-metric-users rounded-[2px] sm:rounded-[2px] p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -378,6 +482,66 @@ export default function AdminOrderMeasurementsPage() {
               onReturnReceived={() => void handleStatusChange('RETURNED')}
               onRefundRecorded={refetch}
             />
+
+            {order.deliveryDispute ? (
+              <div id="delivery-dispute" className="scroll-mt-24 rounded-[2px] border border-metric-users bg-metric-users/10 p-5 md:p-6">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[2px] border border-metric-users bg-landing-ivory text-metric-users">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-[1.05rem] leading-tight text-metric-users">
+                      Khách báo chưa nhận được hàng
+                    </h3>
+                    <p className="mt-0.5 text-xs leading-relaxed text-metric-users">
+                      Gửi lúc {new Date(order.deliveryDispute.createdAt).toLocaleString('vi-VN')}
+                      {order.deliveryDispute.carrierDeliveredAt
+                        ? ` · Hãng báo giao: ${new Date(order.deliveryDispute.carrierDeliveredAt).toLocaleString('vi-VN')}`
+                        : ''}
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-landing-obsidian">
+                      {order.deliveryDispute.description}
+                    </p>
+                    {order.deliveryDispute.evidenceImages.length > 0 ? (
+                      <ul className="mt-3 flex flex-wrap gap-2">
+                        {order.deliveryDispute.evidenceImages.map((url, index) => (
+                          <li key={`${url}-${index}`}>
+                            <a href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-[2px] border border-landing-line">
+                              <Image src={url} alt={`Ảnh minh chứng ${index + 1}`} width={72} height={72} className="h-[72px] w-[72px] object-cover" unoptimized />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <textarea
+                      value={disputeNote}
+                      onChange={(event) => setDisputeNote(event.target.value)}
+                      rows={2}
+                      placeholder="Ghi chú nội bộ khi xử lý (không bắt buộc)…"
+                      className="mt-3 w-full rounded-[2px] border border-landing-line bg-landing-ivory px-3 py-2 text-xs text-landing-obsidian focus:border-landing-oxblood focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDisputeConfirmReceived(true)}
+                    disabled={disputeSubmitting}
+                    className="rounded-[2px] border border-landing-line bg-landing-ivory px-3.5 py-2 text-xs font-semibold text-landing-obsidian transition-colors hover:border-metric-products disabled:opacity-60"
+                  >
+                    Khách đã nhận
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCancelDisputeOpen(true)}
+                    disabled={disputeSubmitting}
+                    className="rounded-[2px] border border-metric-users px-3.5 py-2 text-xs font-semibold text-metric-users transition-colors hover:bg-metric-users/10 disabled:opacity-60"
+                  >
+                    Huỷ &amp; hoàn tiền
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Main Dossier Paper / Card */}
@@ -530,6 +694,8 @@ export default function AdminOrderMeasurementsPage() {
                       const name = item.productNameSnapshot || item.product?.name || `Trang phục #${item.productId}`;
                       const itemUnitPrice = item.unitPriceVnd ?? item.price;
                       const itemLineTotal = item.lineTotalVnd ?? (item.price * item.quantity);
+                      const itemReview = item.measurementReview;
+                      const reviewActive = itemReview?.status === 'OPEN' || itemReview?.status === 'SUBMITTED';
 
                       return (
                         <div key={itemId} className="rounded-[2px] sm:rounded-[2px] border border-landing-line overflow-hidden bg-landing-ivory">
@@ -600,14 +766,50 @@ export default function AdminOrderMeasurementsPage() {
                                   </div>
                                 ))}
                               </div>
-                            ) : item.measurementDisplay && item.measurementDisplay.length === 0 ? (
+                            ) : item.measurementDisplay && item.measurementDisplay.length === 0 && !reviewActive ? (
                               <div className="p-4 rounded-[2px] bg-metric-users/10 border border-metric-users/30 text-xs text-metric-users flex items-center gap-2">
                                 <AlertTriangle className="w-4 h-4 text-metric-users shrink-0" />
                                 <span>Chưa đủ dữ liệu số đo bắt buộc cho loại trang phục này. Thợ may cần yêu cầu khách bổ sung số đo.</span>
                               </div>
-                            ) : (
+                            ) : item.measurementDisplay && item.measurementDisplay.length === 0 ? null : (
                               <p className="text-xs text-landing-muted italic">Không có thông số may đo cho sản phẩm này.</p>
                             )}
+
+                            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-landing-line/70 pt-3.5 print:hidden">
+                              {itemReview ? (
+                                <span className="text-xs text-landing-obsidian">
+                                  Yêu cầu số đo:
+                                  <strong className="ml-1 text-landing-oxblood">
+                                    {itemReview.status === 'OPEN'
+                                      ? 'Đang chờ khách bổ sung'
+                                      : itemReview.status === 'SUBMITTED'
+                                        ? 'Khách đã gửi lại'
+                                        : itemReview.status === 'CLOSED'
+                                          ? 'Đã đóng'
+                                          : 'Đã xử lý'}
+                                  </strong>
+                                  {itemReview.message ? <span className="ml-2 text-landing-muted">— {itemReview.message}</span> : null}
+                                </span>
+                              ) : null}
+                              {order.status === 'MEASUREMENT_REVIEW' && itemReview?.status !== 'OPEN' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openMeasurementReview(item)}
+                                  className="inline-flex items-center gap-1.5 rounded-[2px] border border-landing-oxblood/30 bg-landing-oxblood/5 px-3 py-1.5 text-xs font-semibold text-landing-oxblood transition-colors hover:bg-landing-oxblood/10"
+                                >
+                                  {itemReview?.status === 'SUBMITTED' ? 'Yêu cầu chỉnh lại' : 'Yêu cầu khách chỉnh số đo'}
+                                </button>
+                              ) : null}
+                              {order.status === 'MEASUREMENT_REVIEW' && itemReview?.status === 'OPEN' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openMeasurementReview(item)}
+                                  className="inline-flex items-center gap-1.5 rounded-[2px] border border-landing-line px-3 py-1.5 text-xs font-semibold text-landing-obsidian transition-colors hover:border-landing-oxblood/40"
+                                >
+                                  Sửa yêu cầu số đo
+                                </button>
+                              ) : null}
+                            </div>
 
                             {/* Raw 16-field snapshot accordion for cross-referencing */}
                             {item.measurementSnapshot && Object.keys(item.measurementSnapshot).length > 0 && (
@@ -646,6 +848,10 @@ export default function AdminOrderMeasurementsPage() {
                     Đơn hàng không có sản phẩm nào.
                   </div>
                 )}
+
+                <div className="rounded-[2px] border border-landing-line bg-landing-ivory p-4 print:hidden">
+                  <OrderChatPanel orderId={order.id} orderCode={`#${order.orderCode}`} isAdmin />
+                </div>
               </div>
 
               {/* RIGHT: Customer Profile & Financial Breakdown */}
@@ -830,6 +1036,97 @@ export default function AdminOrderMeasurementsPage() {
           </div>
         </div>
       </div>
+
+      <AccountConfirmDialog
+        open={disputeConfirmReceived}
+        onOpenChange={(open) => {
+          if (!open && !disputeSubmitting) setDisputeConfirmReceived(false);
+        }}
+        title="Xác nhận khách đã nhận hàng?"
+        description={
+          <>Đơn sẽ chuyển sang <strong>Hoàn tất</strong> và tranh chấp giao vận được đóng. Chỉ chọn khi khách đã xác nhận nhận được hàng.</>
+        }
+        confirmLabel="Đã nhận hàng"
+        cancelLabel="Để sau"
+        tone="primary"
+        isPending={disputeSubmitting}
+        onConfirm={() => void performResolveDeliveryDispute('ADMIN_CONFIRMED_RECEIVED')}
+      />
+
+      <AccountConfirmDialog
+        open={cancelDisputeOpen}
+        onOpenChange={(open) => {
+          if (!open && !disputeSubmitting) setCancelDisputeOpen(false);
+        }}
+        title="Huỷ đơn và hoàn tiền?"
+        description="Đơn sẽ chuyển sang Đã huỷ và bật nghĩa vụ hoàn tiền. Việc chuyển tiền được xử lý thủ công ở panel Hoàn tiền."
+        confirmLabel="Huỷ & hoàn tiền"
+        cancelLabel="Để sau"
+        tone="danger"
+        isPending={disputeSubmitting}
+        onConfirm={() => void performResolveDeliveryDispute('REFUNDED')}
+      />
+
+      {reviewItem ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 print:hidden" role="dialog" aria-modal="true">
+          <div className="w-full max-w-lg rounded-[2px] border border-landing-line bg-landing-ivory p-5 shadow-xl">
+            <h3 className="font-display text-[1.05rem] leading-tight text-landing-oxblood">Yêu cầu khách chỉnh số đo</h3>
+            <p className="mt-1 text-xs text-landing-muted">
+              {reviewItem.productNameSnapshot || `Sản phẩm #${reviewItem.productId}`}
+            </p>
+
+            <label htmlFor="measurement-review-message" className="mt-4 block text-xs font-semibold text-landing-obsidian">
+              Nội dung gửi khách
+            </label>
+            <textarea
+              id="measurement-review-message"
+              rows={3}
+              value={reviewMessage}
+              onChange={(event) => setReviewMessage(event.target.value)}
+              className="mt-1 w-full rounded-[2px] border border-landing-line bg-landing-paper px-3 py-2 text-sm text-landing-obsidian focus:border-landing-oxblood focus:outline-none"
+            />
+
+            <fieldset className="mt-4">
+              <legend className="text-xs font-semibold text-landing-obsidian">
+                Field cần khách kiểm tra
+                <span className="ml-2 font-normal text-landing-muted">(các field này sẽ được highlight cho khách)</span>
+              </legend>
+              <div className="mt-2 grid max-h-52 grid-cols-1 gap-1.5 overflow-y-auto rounded-[2px] border border-landing-line bg-landing-paper/60 p-3 sm:grid-cols-2">
+                {allMeasurementFields.map((field) => (
+                  <label key={field.id} className="flex items-center gap-2 text-xs text-landing-obsidian">
+                    <input
+                      type="checkbox"
+                      checked={reviewFields.includes(field.id)}
+                      onChange={() => toggleReviewField(field.id)}
+                      className="h-3.5 w-3.5 accent-landing-oxblood"
+                    />
+                    {field.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setReviewItem(null)}
+                disabled={reviewSubmitting}
+                className="rounded-[2px] border border-landing-line px-4 py-2 text-xs font-semibold text-landing-obsidian hover:border-landing-oxblood/40 disabled:opacity-60"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() => void submitMeasurementReview()}
+                disabled={reviewSubmitting || !reviewMessage.trim()}
+                className="rounded-[2px] bg-landing-oxblood px-4 py-2 text-xs font-semibold text-landing-paper hover:bg-landing-obsidian disabled:opacity-60"
+              >
+                {reviewSubmitting ? 'Đang gửi' : 'Gửi yêu cầu'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AdminGuard>
   );
 }

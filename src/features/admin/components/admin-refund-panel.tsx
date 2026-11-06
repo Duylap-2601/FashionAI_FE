@@ -406,6 +406,13 @@ export function AdminRefundPanel({ order, updatingStatus, onReturnReceived, onRe
                   nhận được tiền.
                 </p>
               ) : null}
+              {order.refundConfirmedAt ? (
+                <p className="text-xs text-metric-products">
+                  Khách đã xác nhận nhận tiền lúc <span className="font-mono">{fmtDateTime(order.refundConfirmedAt)}</span>.
+                </p>
+              ) : (
+                <p className="text-xs text-landing-muted">Chưa có xác nhận nhận tiền từ khách.</p>
+              )}
             </div>
           ) : canConfirmRefund ? (
             <div className="space-y-4">

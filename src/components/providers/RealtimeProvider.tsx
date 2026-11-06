@@ -29,6 +29,8 @@ function getToastIcon(type: NotificationType) {
       return <Tag className="w-5 h-5 text-[#5D1C34]" />;
     case 'REVIEW':
       return <MessageSquare className="w-5 h-5 text-amber-600" />;
+    case 'ORDER_CHAT':
+      return <MessageSquare className="w-5 h-5 text-[#5D1C34]" />;
     case 'SYSTEM':
     default:
       return <Info className="w-5 h-5 text-neutral-600" />;
@@ -89,20 +91,54 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({ queryKey: ordersQueryKeys.myReturns() });
           }
 
-          // Show Toast
-          toast(notification.title, {
-            description: notification.message,
-            icon: getToastIcon(notification.type),
-            duration: 6000,
-          });
+          if (notification.type === 'ORDER_CHAT') {
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderChat() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order() });
+            queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+          }
+
+          // ORDER_CHAT toast do handler realtime của hội thoại đảm nhận (chỉ khi tab ẩn),
+          // tránh toast hai lần cho cùng một tin nhắn.
+          if (notification.type !== 'ORDER_CHAT') {
+            toast(notification.title, {
+              description: notification.message,
+              icon: getToastIcon(notification.type),
+              duration: 6000,
+            });
+          }
         };
 
         // Giỏ đổi ở thiết bị khác (hoặc BE vừa bỏ món đã thanh toán): tải lại giỏ. Kết nối
         // lại sau khi rớt mạng cũng tải lại vì có thể đã lỡ event trong lúc mất kết nối.
         const handleCartUpdated = () => handleRemoteCartChange(queryClient);
 
+        const handleOrderChatMessage = (payload: { orderId?: string; orderCode?: number; message?: { content?: string } }) => {
+          const orderId = payload?.orderId;
+          if (!orderId) return;
+          queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderChat(orderId) });
+          queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(orderId) });
+          queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+          if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+            toast(payload.orderCode ? `Tin nhắn mới cho đơn #${payload.orderCode}` : 'Tin nhắn mới', {
+              description: payload.message?.content || 'Bạn vừa nhận một ảnh.',
+              icon: <MessageSquare className="w-5 h-5 text-[#5D1C34]" />,
+              duration: 6000,
+            });
+          }
+        };
+        const handleOrderChatRead = (payload: { orderId?: string }) => {
+          if (!payload?.orderId) return;
+          queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orderChat(payload.orderId) });
+          queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(payload.orderId) });
+          queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+        };
+
         socket.off('notification');
         socket.on('notification', handleNotification);
+        socket.off('order_chat:message');
+        socket.on('order_chat:message', handleOrderChatMessage);
+        socket.off('order_chat:read');
+        socket.on('order_chat:read', handleOrderChatRead);
         socket.off('cart:updated');
         socket.on('cart:updated', handleCartUpdated);
         // off() không truyền handler sẽ gỡ mọi listener 'reconnect', nên chỉ gỡ handler cũ của mình.

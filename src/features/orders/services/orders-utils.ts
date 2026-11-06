@@ -9,6 +9,8 @@ export function mapOrder(order: BackendOrder): Order {
     userId: order.userId || order.user?.id,
     status: order.status,
     displayStatus: order.displayStatus,
+    chatUnreadForCustomer: order.chatUnreadForCustomer,
+    chatUnreadForAdmin: order.chatUnreadForAdmin,
     paymentStatus: order.paymentStatus,
     paymentDueAt: order.paymentDueAt ?? null,
     refundStatus: order.refundStatus,
@@ -21,6 +23,7 @@ export function mapOrder(order: BackendOrder): Order {
     totalVnd: order.totalVnd !== undefined && order.totalVnd !== null ? Number(order.totalVnd) : undefined,
     amountPaidVnd: order.amountPaidVnd !== undefined && order.amountPaidVnd !== null ? Number(order.amountPaidVnd) : undefined,
     amountRefundedVnd: order.amountRefundedVnd !== undefined && order.amountRefundedVnd !== null ? Number(order.amountRefundedVnd) : undefined,
+    refundConfirmedAt: order.refundConfirmedAt ?? null,
     shippingAddressSnapshot: order.shippingAddressSnapshot ?? null,
     shippingQuoteSnapshot: order.shippingQuoteSnapshot ?? null,
     refundEvidence: order.refundEvidence ?? null,
@@ -64,6 +67,8 @@ export function mapOrder(order: BackendOrder): Order {
       measurementSnapshot: item.measurementSnapshot || undefined,
       measurementDisplay: Array.isArray(item.measurementDisplay) ? item.measurementDisplay : undefined,
       measurementReview: item.measurementReview || undefined,
+      measurementRequiredFields: Array.isArray(item.measurementRequiredFields) ? item.measurementRequiredFields : undefined,
+      measurementMissingFields: Array.isArray(item.measurementMissingFields) ? item.measurementMissingFields : undefined,
       productNameSnapshot: item.productNameSnapshot,
       fabricSnapshot: item.fabricSnapshot,
       product: item.product || item.productImageSnapshot
@@ -89,6 +94,7 @@ export function mapOrder(order: BackendOrder): Order {
     currentShipment: order.currentShipment ?? order.shipment ?? null,
     shipmentHistory: order.shipmentHistory ?? (order.shipment ? [order.shipment] : []),
     history: order.history || [],
+    deliveryDispute: order.deliveryDispute ?? null,
     allowedActions: order.allowedActions,
   };
 }

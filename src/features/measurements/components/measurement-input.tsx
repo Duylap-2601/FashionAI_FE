@@ -13,23 +13,34 @@ export function MeasurementInput({
   value,
   initialValue,
   onChange,
+  idPrefix = 'measurement',
+  highlighted = false,
+  highlightLabel = 'Shop yêu cầu',
+  compact = false,
 }: {
   field: MeasurementField;
   value: string;
   initialValue: string;
   onChange: (v: string) => void;
+  idPrefix?: string;
+  highlighted?: boolean;
+  highlightLabel?: string;
+  compact?: boolean;
 }) {
   const isValid = validate(field.id, value, allMeasurementFields);
   const isDirty = value !== initialValue;
-  const inputId = `measurement-${field.id}`;
+  const inputId = `${idPrefix}-${field.id}`;
   const hintId = `${inputId}-hint`;
 
   return (
-    <div>
+    <div className={highlighted ? 'rounded-[2px] border-l-2 border-landing-brass bg-landing-brass/5 px-2 py-2' : undefined}>
       <div className="mb-1.5 flex items-start justify-between gap-2">
         <label htmlFor={inputId} className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-landing-obsidian">
           <span>{field.label}</span>
-          {field.requiredFor ? (
+          {highlighted ? (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-landing-brass-ink">{highlightLabel}</span>
+          ) : null}
+          {!compact && field.requiredFor ? (
             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-landing-brass-ink">{field.requiredFor}</span>
           ) : null}
           {isDirty ? (
@@ -84,9 +95,11 @@ export function MeasurementInput({
           <span className="font-mono text-xs text-landing-muted">{field.unit}</span>
         </div>
       </div>
-      <p id={hintId} className={cn('mt-1 text-xs', isValid === false ? 'text-destructive' : 'text-landing-muted')}>
-        {isValid === false ? `Nhập từ ${field.min} đến ${field.max} ${field.unit}.` : `${field.min}–${field.max} ${field.unit}`}
-      </p>
+      {compact && isValid !== false ? null : (
+        <p id={hintId} className={cn('mt-1 text-xs', isValid === false ? 'text-destructive' : 'text-landing-muted')}>
+          {isValid === false ? `Nhập từ ${field.min} đến ${field.max} ${field.unit}.` : `${field.min}–${field.max} ${field.unit}`}
+        </p>
+      )}
     </div>
   );
 }
