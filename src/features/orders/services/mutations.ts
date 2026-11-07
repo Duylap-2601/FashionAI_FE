@@ -1,11 +1,4 @@
-import type {
-  BackendOrder,
-  CreateOrderIssuePayload,
-  CreateOrderRequest,
-  OrderIssue,
-  OrderQuote,
-  UpdateOrderItemMeasurementInput,
-} from '@/features/orders/types/orders';
+import type { BackendOrder, CreateOrderIssuePayload, CreateOrderRequest, OrderIssue, OrderQuote } from '@/features/orders/types/orders';
 import { http } from '@/lib/http';
 
 function toCreateOrderBody(payload: CreateOrderRequest) {
@@ -58,14 +51,64 @@ export async function confirmDelivery({ id, note }: { id: string; note?: string 
 
 export async function updateOrderItemMeasurement({
   orderId,
-  orderItemId,
+  itemId,
   measurementSnapshot,
   syncToProfile,
-}: UpdateOrderItemMeasurementInput) {
-  return http.patch<BackendOrder>(`/orders/${orderId}/items/${orderItemId}/measurement`, {
+}: {
+  orderId: string;
+  itemId: string;
+  measurementSnapshot: Record<string, number | null>;
+  syncToProfile?: boolean;
+}) {
+  return http.patch<BackendOrder>(`/orders/${orderId}/items/${itemId}/measurement`, {
     measurementSnapshot,
     syncToProfile,
   });
+}
+
+export async function sendOrderChatMessage({
+  orderId,
+  content,
+  images,
+  clientMessageId,
+}: {
+  orderId: string;
+  content?: string;
+  images?: File[];
+  clientMessageId?: string;
+}) {
+  const formData = new FormData();
+  if (content) formData.append('content', content);
+  if (clientMessageId) formData.append('clientMessageId', clientMessageId);
+  for (const image of images ?? []) {
+    formData.append('images', image);
+  }
+  return http.post(`/orders/${orderId}/chat/messages`, formData, { timeout: 30000 });
+}
+
+export async function createDeliveryDispute({
+  orderId,
+  description,
+  images,
+}: {
+  orderId: string;
+  description: string;
+  images?: File[];
+}) {
+  const formData = new FormData();
+  formData.append('description', description);
+  for (const image of images ?? []) {
+    formData.append('evidenceImages', image);
+  }
+  return http.post(`/orders/${orderId}/delivery-dispute`, formData, { timeout: 30000 });
+}
+
+export async function confirmRefundReceived(orderId: string) {
+  return http.post(`/orders/${orderId}/refund/confirm-received`);
+}
+
+export async function markOrderChatRead(orderId: string, upToMessageId?: string) {
+  return http.post(`/orders/${orderId}/chat/read`, { upToMessageId });
 }
 
 export async function createOrderIssue(payload: CreateOrderIssuePayload): Promise<OrderIssue> {

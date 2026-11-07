@@ -34,7 +34,7 @@ export function updateOrderStatus(id: string, payload: PatchOrdersStatusInput) {
   return http.patch(`/orders/${id}/status`, payload);
 }
 
-export function openOrderMeasurementReview(
+export function requestMeasurementReview(
   orderId: string,
   itemId: string,
   payload: { message: string; internalNote?: string; fields?: string[] },
@@ -42,12 +42,19 @@ export function openOrderMeasurementReview(
   return http.post(`/orders/${orderId}/items/${itemId}/measurement-review`, payload);
 }
 
-export function reopenOrderMeasurementReview(
+export function updateMeasurementReview(
   orderId: string,
   itemId: string,
   payload: { message?: string; fields?: string[] },
 ) {
   return http.patch(`/orders/${orderId}/items/${itemId}/measurement-review`, payload);
+}
+
+export function resolveDeliveryDispute(
+  orderId: string,
+  payload: { resolution: 'CUSTOMER_CONFIRMED_RECEIVED' | 'ADMIN_CONFIRMED_RECEIVED' | 'REFUNDED' | 'LOST'; adminNote?: string },
+) {
+  return http.patch(`/orders/${orderId}/delivery-dispute`, payload);
 }
 
 export function createShipment(id: string, payload?: { requestKey?: string }, config?: HttpOptions) {

@@ -6,6 +6,7 @@ export default function PaymentErrorPage() {
   return (
     <PaymentOutcome
       title="Thanh toán chưa thành công"
+      status={{ tone: 'error', label: 'Thất bại' }}
       description={<p>Cổng thanh toán báo lỗi nên chưa trừ tiền cho đơn này. Đơn vẫn chờ thanh toán, bạn có thể thử lại từ trang đơn hàng.</p>}
     >
       {(params) => {

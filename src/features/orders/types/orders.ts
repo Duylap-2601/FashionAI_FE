@@ -1,4 +1,5 @@
 import type { ComboType } from '@/features/products/types/product-detail-config';
+import type { MeasurementFieldId } from '@/features/measurements/types/profile-measurements-page';
 
 export interface OrderItemInput {
   productId: string;
@@ -70,6 +71,7 @@ export type BackendOrderStatus =
   | 'READY_TO_SHIP'
   | 'SHIPPING'
   | 'DELIVERED'
+  | 'DELIVERY_DISPUTED'
   | 'COMPLETED'
   | 'CANCELLED'
   | 'RETURN_REQUESTED'
@@ -164,6 +166,8 @@ export interface OrderItem {
   measurementSnapshot?: MeasurementSnapshot;
   measurementDisplay?: MeasurementDisplayItem[];
   measurementReview?: MeasurementReview;
+  measurementRequiredFields?: MeasurementFieldId[];
+  measurementMissingFields?: MeasurementFieldId[];
   productNameSnapshot?: string | null;
   fabricSnapshot?: string | null;
   product?: {
@@ -180,6 +184,8 @@ export interface Order {
   userId?: string;
   status: BackendOrderStatus;
   displayStatus?: OrderDisplayStatus;
+  chatUnreadForCustomer?: number;
+  chatUnreadForAdmin?: number;
   paymentStatus?: PaymentStatus;
   // Hạn thanh toán (chỉ có khi đơn đang chờ thanh toán); quá hạn BE tự hủy đơn.
   paymentDueAt?: string | null;
@@ -193,6 +199,7 @@ export interface Order {
   totalVnd?: number;
   amountPaidVnd?: number;
   amountRefundedVnd?: number;
+  refundConfirmedAt?: string | null;
   shippingAddressSnapshot?: Record<string, unknown> | null;
   shippingQuoteSnapshot?: Record<string, unknown> | null;
   refundEvidence?: RefundEvidence;
@@ -217,7 +224,8 @@ export interface Order {
   currentShipment?: OrderShipment | null;
   shipmentHistory?: OrderShipment[];
   history?: OrderHistoryEvent[];
-  allowedActions?: { cancel?: boolean; confirmDelivery?: boolean; startShipmentCreation?: boolean; createReplacementShipment?: boolean; updateMeasurement?: boolean };
+  deliveryDispute?: DeliveryDispute | null;
+  allowedActions?: { cancel?: boolean; confirmDelivery?: boolean; reportDeliveryIssue?: boolean; startShipmentCreation?: boolean; createReplacementShipment?: boolean; updateMeasurement?: boolean };
 }
 
 export interface BackendOrderItem {
@@ -237,6 +245,8 @@ export interface BackendOrderItem {
   measurementSnapshot?: MeasurementSnapshot | null;
   measurementDisplay?: MeasurementDisplayItem[] | null;
   measurementReview?: MeasurementReview | null;
+  measurementRequiredFields?: MeasurementFieldId[] | null;
+  measurementMissingFields?: MeasurementFieldId[] | null;
   productNameSnapshot?: string | null;
   fabricSnapshot?: string | null;
   product?: {
@@ -262,31 +272,42 @@ export interface MeasurementSnapshot {
   outseam?: number | string | null;
   shirtLength?: number | string | null;
   underbust?: number | string | null;
+  bodyLength?: number | string | null;
+  trouserLength?: number | string | null;
   [key: string]: unknown;
 }
 
 export interface MeasurementReview {
   status?: 'OPEN' | 'SUBMITTED' | 'RESOLVED' | 'CLOSED' | string;
   message?: string;
-  /** Field thợ may cần khách xem lại (BE gộp field bắt buộc theo loại trang phục). */
-  fields?: string[];
-  /** Field admin yêu cầu thêm ngoài field bắt buộc. */
-  requestedFields?: string[];
+  /** Field shop chọn để khách kiểm tra (highlight trên form). */
+  requestedFields?: MeasurementFieldId[];
+  fields?: MeasurementFieldId[];
+  editable?: boolean;
   openedAt?: string;
   submittedAt?: string;
   resolvedAt?: string;
   closedAt?: string;
-  /** Chỉ true khi đơn đang ở bước kiểm tra số đo và yêu cầu đang OPEN. */
-  editable?: boolean;
 }
 
-export interface UpdateOrderItemMeasurementInput {
-  orderId: string;
-  orderItemId: string;
-  /** Chỉ gửi field cần đổi; BE merge với snapshot cũ. */
-  measurementSnapshot: Record<string, number | null>;
-  /** Ghi đè luôn vào hồ sơ số đo cá nhân. */
-  syncToProfile?: boolean;
+export type DeliveryDisputeStatus = 'OPEN' | 'RESOLVED' | 'CANCELLED';
+export type DeliveryDisputeResolution =
+  | 'CUSTOMER_CONFIRMED_RECEIVED'
+  | 'ADMIN_CONFIRMED_RECEIVED'
+  | 'REFUNDED'
+  | 'LOST';
+
+export interface DeliveryDispute {
+  id: string;
+  status: DeliveryDisputeStatus;
+  resolution?: DeliveryDisputeResolution | null;
+  description: string;
+  evidenceImages: string[];
+  carrierRawStatus?: string | null;
+  carrierDeliveredAt?: string | null;
+  adminNote?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
 }
 
 export interface OrderShipment {
@@ -323,6 +344,8 @@ export interface BackendOrder {
   user?: { id?: string; name?: string; email?: string } | null;
   status: BackendOrderStatus;
   displayStatus?: OrderDisplayStatus;
+  chatUnreadForCustomer?: number;
+  chatUnreadForAdmin?: number;
   paymentStatus?: PaymentStatus;
   paymentDueAt?: string | null;
   refundStatus?: RefundStatus;
@@ -335,6 +358,7 @@ export interface BackendOrder {
   totalVnd?: number | string | null;
   amountPaidVnd?: number | string | null;
   amountRefundedVnd?: number | string | null;
+  refundConfirmedAt?: string | null;
   shippingAddressSnapshot?: Record<string, unknown> | null;
   shippingQuoteSnapshot?: Record<string, unknown> | null;
   refundEvidence?: RefundEvidence;
@@ -359,7 +383,8 @@ export interface BackendOrder {
   currentShipment?: OrderShipment | null;
   shipmentHistory?: OrderShipment[];
   history?: OrderHistoryEvent[];
-  allowedActions?: { cancel?: boolean; confirmDelivery?: boolean; startShipmentCreation?: boolean; createReplacementShipment?: boolean; updateMeasurement?: boolean };
+  deliveryDispute?: DeliveryDispute | null;
+  allowedActions?: { cancel?: boolean; confirmDelivery?: boolean; reportDeliveryIssue?: boolean; startShipmentCreation?: boolean; createReplacementShipment?: boolean; updateMeasurement?: boolean };
 }
 
 export interface OrdersListParams {

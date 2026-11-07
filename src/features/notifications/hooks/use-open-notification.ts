@@ -51,7 +51,11 @@ export function useOpenNotification() {
     if (notification.type === 'ORDER_ISSUE' || (notification.type === 'PAYMENT' && notification.data?.refundStatus)) {
       // Duyệt yêu cầu đổi trả và các lần hoàn tiền mở trang Đổi trả & hoàn tiền của đơn.
       router.push(orderRef ? `/orders/${orderRef}/returns` : '/profile/returns');
-    } else if (notification.type === 'ORDER_STATUS' || notification.type === 'PAYMENT') {
+    } else if (
+      notification.type === 'ORDER_STATUS' ||
+      notification.type === 'PAYMENT' ||
+      notification.type === 'ORDER_CHAT'
+    ) {
       router.push(orderRef ? `/orders/${orderRef}` : '/profile/orders');
     } else if (notification.type === 'PROMOTION') {
       router.push('/products');

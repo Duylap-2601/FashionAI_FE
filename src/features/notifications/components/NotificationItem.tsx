@@ -36,6 +36,13 @@ function getNotificationMeta(type: NotificationType) {
         bgColor: 'bg-amber-50',
         borderColor: 'border-amber-200',
       };
+    case 'ORDER_CHAT':
+      return {
+        icon: MessageSquare,
+        color: 'text-landing-oxblood',
+        bgColor: 'bg-landing-paper',
+        borderColor: 'border-landing-line',
+      };
     case 'SYSTEM':
     default:
       return {
@@ -54,6 +61,7 @@ const LANDING_TONE: Record<NotificationType, string> = {
   REVIEW: 'text-landing-brass-ink',
   SYSTEM: 'text-landing-muted',
   ORDER_ISSUE: 'text-landing-oxblood',
+  ORDER_CHAT: 'text-landing-oxblood',
 };
 
 export function NotificationItem({ notification, onItemClick, tone = 'landing' }: NotificationItemProps) {

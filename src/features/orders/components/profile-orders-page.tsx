@@ -122,6 +122,11 @@ function OrderCard({
         </div>
         <div className="flex flex-col items-start gap-1 sm:items-end">
           <OrderStatusLabel status={status} />
+          {order.chatUnreadForCustomer ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-landing-oxblood">
+              {order.chatUnreadForCustomer} tin nhắn mới từ shop
+            </span>
+          ) : null}
           {carrierLabel ? <span className="text-xs text-landing-muted">Vận chuyển: {carrierLabel}</span> : null}
         </div>
       </header>
@@ -166,7 +171,7 @@ function OrderCard({
 
       {order.allowedActions?.updateMeasurement ? (
         <p className="mx-4 mb-4 border-l-2 border-landing-brass bg-landing-paper px-3 py-2 text-sm text-landing-obsidian sm:mx-5">
-          Shop cần bạn xem lại số đo cho đơn này.{' '}
+          Shop cần bạn bổ sung hoặc chỉnh lại số đo cho đơn này.{' '}
           <Link href={`/orders/${order.id}`} className={cn('text-landing-oxblood underline underline-offset-4', accountFocusRing)}>
             Mở đơn
           </Link>

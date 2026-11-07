@@ -2,7 +2,8 @@
 
 import { mutationKeys } from '@/features/orders/services/mutation-keys';
 import { queryKeys as ordersQueryKeys } from '@/features/orders/services/query-keys';
-import { cancelOrder, confirmDelivery, createOrder, updateOrderItemMeasurement } from '@/features/orders/services/mutations';
+import { cancelOrder, confirmDelivery, confirmRefundReceived, createDeliveryDispute, createOrder, updateOrderItemMeasurement } from '@/features/orders/services/mutations';
+import { queryKeys as measurementsQueryKeys } from '@/features/measurements/services/query-keys';
 import { fetchOrder, fetchOrders, fetchOrdersPage } from '@/features/orders/services/queries';
 import { isTerminalOrderStatus, mapOrder } from '@/features/orders/services/orders-utils';
 import type { Order, OrdersListParams, OrdersListResult } from '@/features/orders/types/orders';
@@ -132,22 +133,64 @@ export function useCancelOrder() {
   };
 }
 
-export function useUpdateOrderItemMeasurement() {
+export function useUpdateItemMeasurement() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationKey: mutationKeys.updateOrderItemMeasurement(),
+    mutationKey: mutationKeys.updateItemMeasurement(),
     mutationFn: updateOrderItemMeasurement,
-    onSuccess: (data, variables) => {
-      // BE trả đơn mới với review đã chuyển SUBMITTED: cập nhật ngay để form khoá lại.
-      queryClient.setQueryData(ordersQueryKeys.order(variables.orderId), mapOrder(data));
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+      if (variables.syncToProfile) {
+        queryClient.invalidateQueries({ queryKey: measurementsQueryKeys.measurements() });
+        queryClient.invalidateQueries({ queryKey: measurementsQueryKeys.measurementsCompleteness() });
+      }
+    },
+  });
+
+  return {
+    updateItemMeasurement: mutation.mutate,
+    updateItemMeasurementAsync: mutation.mutateAsync,
+    isUpdatingMeasurement: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+export function useCreateDeliveryDispute() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationKey: mutationKeys.createDeliveryDispute(),
+    mutationFn: createDeliveryDispute,
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(variables.orderId) });
       queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
     },
   });
 
   return {
-    updateMeasurement: mutation.mutateAsync,
-    isUpdatingMeasurement: mutation.isPending,
+    createDeliveryDispute: mutation.mutate,
+    createDeliveryDisputeAsync: mutation.mutateAsync,
+    isCreatingDeliveryDispute: mutation.isPending,
+  };
+}
+
+export function useConfirmRefundReceived() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationKey: mutationKeys.confirmRefundReceived(),
+    mutationFn: confirmRefundReceived,
+    onSuccess: (_data, orderId) => {
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(orderId) });
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+    },
+  });
+
+  return {
+    confirmRefundReceived: mutation.mutate,
+    isConfirmingRefund: mutation.isPending,
   };
 }
 

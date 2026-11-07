@@ -3,8 +3,10 @@
 import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { ConfirmDeliveryDialog } from '@/features/orders/components/confirm-delivery-dialog';
+import { DeliveryDisputeModal } from '@/features/orders/components/delivery-dispute-modal';
 import { ISSUE_STATUS } from '@/features/orders/components/order-issues-list';
-import { OrderItemMeasurementForm } from '@/features/orders/components/order-item-measurement-form';
+import { OrderChatPanel } from '@/features/orders/components/order-chat-panel';
+import { OrderMeasurementReview } from '@/features/orders/components/order-measurement-review';
 import { OrderPaymentAction } from '@/features/orders/components/order-payment-action';
 import { OrderStatusLabel, ToneLabel } from '@/features/orders/components/order-status-label';
 import { OrderProgress, OrderThumb, SummaryRow } from '@/features/orders/components/order-ui';
@@ -12,7 +14,7 @@ import { OrderHistoryTimeline, OrderNotice } from '@/features/orders/components/
 import { ReportIssueModal } from '@/features/orders/components/report-issue-modal';
 import { ORDER_STATUS_DESCRIPTIONS } from '@/features/orders/constants/orders-id-page';
 import { PAYMENT_STATUS_LABELS, STATUS_CONFIG } from '@/features/orders/constants/profile-orders-page';
-import { useCancelOrder, useConfirmDelivery, useOrder } from '@/features/orders/hooks/useOrders';
+import { useCancelOrder, useConfirmDelivery, useConfirmRefundReceived, useOrder } from '@/features/orders/hooks/useOrders';
 import { useOrderIssues } from '@/features/orders/hooks/useOrderIssues';
 import {
   formatOrderDateTime,
@@ -56,7 +58,12 @@ function SummaryTile({ label, value, sub }: { label: string; value: React.ReactN
 }
 
 function ItemMeasurements({ item }: { item: OrderItem }) {
+  // Khi form chỉnh số đo đang mở, các giá trị đã nằm trong form nên ẩn khối
+  // read-only để tránh lặp lại cùng một bảng số.
+  if (item.measurementReview?.status === 'OPEN') return null;
+  const reviewActive = item.measurementReview?.status === 'SUBMITTED';
   if (item.measurementDisplay && item.measurementDisplay.length === 0) {
+    if (reviewActive) return null;
     return (
       <p className="border-l-2 border-landing-brass pl-3 text-xs text-landing-brass-ink">Chưa đủ dữ liệu số đo bắt buộc cho món này.</p>
     );
@@ -103,9 +110,11 @@ export default function OrderDetailPage() {
   const { issues } = useOrderIssues(id);
   const { cancelOrder, isCancelling } = useCancelOrder();
   const { confirmDelivery, isConfirmingDelivery } = useConfirmDelivery();
+  const { confirmRefundReceived, isConfirmingRefund } = useConfirmRefundReceived();
   const { addToCart, setIsCartOpen } = useCart();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false);
+  const [showDeliveryDispute, setShowDeliveryDispute] = useState(false);
   const [reportingItem, setReportingItem] = useState<OrderItem | null>(null);
 
   // Item đã có yêu cầu đang xử lý hoặc đã xử lý xong thì không cho báo lỗi lại
@@ -154,8 +163,6 @@ export default function OrderDetailPage() {
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const isInReturnFlow = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING'].includes(status);
   const isAwaitingPayment = status === 'CREATED' && order.paymentStatus === 'PENDING';
-  const isMeasurementReview = status === 'MEASUREMENT_REVIEW';
-  const hasOpenMeasurementReview = order.items.some((item) => item.measurementReview?.status === 'OPEN');
 
   const completedEvent = order.history
     ?.filter((e) => e.toStatus === 'COMPLETED' || e.type?.includes('COMPLETED'))
@@ -238,6 +245,11 @@ export default function OrderDetailPage() {
           {isConfirmingDelivery ? 'Đang xác nhận' : 'Tôi đã nhận hàng'}
         </button>
       ) : null}
+      {order.allowedActions?.reportDeliveryIssue ? (
+        <button type="button" onClick={() => setShowDeliveryDispute(true)} className={accountButtonClassName('outline')}>
+          Tôi chưa nhận được hàng
+        </button>
+      ) : null}
       {canReportIssue && !allItemsBlocked ? (
         <button
           type="button"
@@ -294,19 +306,46 @@ export default function OrderDetailPage() {
           </OrderNotice>
         ) : null}
 
-        {isMeasurementReview ? (
-          <OrderNotice title={hasOpenMeasurementReview ? 'Shop cần bạn xem lại số đo' : 'Số đo đang được shop kiểm tra'}>
-            {hasOpenMeasurementReview ? (
+        {order.refundStatus === 'COMPLETED' ? (
+          order.refundConfirmedAt ? (
+            <OrderNotice title="Đã xác nhận nhận tiền hoàn">
               <p>
-                Đơn đang ở bước kiểm tra số đo. Bạn có thể chỉnh lại các thông số được yêu cầu ngay trong
-                từng sản phẩm bên dưới; shop sẽ duyệt lại trước khi may.
+                Bạn đã xác nhận nhận được tiền hoàn lúc{' '}
+                <span className="font-mono">{formatOrderDateTime(order.refundConfirmedAt)}</span>.
               </p>
-            ) : (
-              <p>
-                Bạn đã gửi số đo cho đơn này. Nếu shop cần chỉnh thêm, yêu cầu mới sẽ hiện trong từng
-                sản phẩm bên dưới.
-              </p>
-            )}
+            </OrderNotice>
+          ) : (
+            <OrderNotice title="Bạn đã nhận được tiền hoàn?">
+              <p>Shop đã ghi nhận hoàn tiền cho đơn. Xác nhận để đóng hỗ trợ, hoặc báo lại nếu chưa nhận được.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => confirmRefundReceived(order.id, {
+                    onSuccess: () => toast.success('Đã xác nhận nhận tiền hoàn.'),
+                    onError: () => toast.error('Không thể xác nhận lúc này.'),
+                  })}
+                  disabled={isConfirmingRefund}
+                  className={accountButtonClassName('primary', 'sm')}
+                >
+                  {isConfirmingRefund ? 'Đang xác nhận' : 'Đã nhận được tiền'}
+                </button>
+                <Link href={returnsHref} className={accountButtonClassName('outline', 'sm')}>
+                  Chưa nhận được tiền hoàn
+                </Link>
+              </div>
+            </OrderNotice>
+          )
+        ) : null}
+
+        {order.deliveryDispute?.status === 'OPEN' ? (
+          <OrderNotice title="Bạn đã báo chưa nhận được hàng">
+            <p>Shop đang kiểm tra với đơn vị vận chuyển. Nếu hàng đã tới, bấm “Tôi đã nhận hàng” để hoàn tất đơn.</p>
+            <p className="text-xs leading-relaxed text-landing-muted">
+              Nội dung đã gửi: <span className="text-landing-obsidian">{order.deliveryDispute.description}</span>
+            </p>
+            <p className="text-xs">
+              Gửi lúc <span className="font-mono">{formatOrderDateTime(order.deliveryDispute.createdAt)}</span>
+            </p>
           </OrderNotice>
         ) : null}
 
@@ -417,17 +456,11 @@ export default function OrderDetailPage() {
                       </div>
                     </div>
                     <ItemMeasurements item={item} />
-                    {isMeasurementReview && item.measurementReview?.status === 'OPEN' ? (
-                      <OrderItemMeasurementForm
-                        key={`${item.id}:${item.measurementReview.openedAt ?? ''}`}
-                        orderId={order.id}
-                        item={item}
-                      />
-                    ) : isMeasurementReview && item.measurementReview?.status === 'SUBMITTED' ? (
-                      <p className="border-l-2 border-landing-sage pl-3 text-xs text-landing-sage-ink">
-                        Đã gửi số đo, đang chờ shop kiểm tra lại.
-                      </p>
-                    ) : null}
+                    <OrderMeasurementReview
+                      key={`${item.id}:${item.measurementReview?.openedAt ?? ''}`}
+                      item={item}
+                      orderId={order.id}
+                    />
                     {canReportIssue ? (
                       blockedReportItemIds.has(item.id) ? (
                         <Link
@@ -499,6 +532,10 @@ export default function OrderDetailPage() {
           <OrderHistoryTimeline events={order.history ?? []} issueHref={returnsHref} emptyText="Chưa có lịch sử chi tiết." />
         </AccountSection>
         </div>
+
+        <div className="rounded-[2px] border border-landing-line bg-landing-ivory px-4 py-4 sm:px-5">
+          <OrderChatPanel orderId={order.id} orderCode={orderCode} />
+        </div>
       </div>
 
       <AccountConfirmDialog
@@ -521,6 +558,13 @@ export default function OrderDetailPage() {
         orderCode={orderCode}
         isPending={isConfirmingDelivery}
         onConfirm={handleConfirmDelivery}
+      />
+
+      <DeliveryDisputeModal
+        open={showDeliveryDispute}
+        onOpenChange={setShowDeliveryDispute}
+        orderId={order.id}
+        orderCode={orderCode}
       />
 
       <ReportIssueModal
