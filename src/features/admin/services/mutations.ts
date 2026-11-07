@@ -34,6 +34,22 @@ export function updateOrderStatus(id: string, payload: PatchOrdersStatusInput) {
   return http.patch(`/orders/${id}/status`, payload);
 }
 
+export function openOrderMeasurementReview(
+  orderId: string,
+  itemId: string,
+  payload: { message: string; internalNote?: string; fields?: string[] },
+) {
+  return http.post(`/orders/${orderId}/items/${itemId}/measurement-review`, payload);
+}
+
+export function reopenOrderMeasurementReview(
+  orderId: string,
+  itemId: string,
+  payload: { message?: string; fields?: string[] },
+) {
+  return http.patch(`/orders/${orderId}/items/${itemId}/measurement-review`, payload);
+}
+
 export function createShipment(id: string, payload?: { requestKey?: string }, config?: HttpOptions) {
   return http.post(`/orders/${id}/shipment`, payload || {}, config);
 }

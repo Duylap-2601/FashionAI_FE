@@ -8,6 +8,8 @@ import {
   confirmManualPayment,
   createShipment,
   finalizeRefund,
+  openOrderMeasurementReview,
+  reopenOrderMeasurementReview,
   updateOrderStatus,
 } from '@/features/admin/services/mutations';
 import { allMeasurementFields } from '@/features/measurements/constants/profile-measurements-page';
@@ -31,6 +33,7 @@ import {
   Loader2,
   Mail,
   MapPin,
+  MessageSquare,
   Phone,
   Printer,
   Receipt,
@@ -44,6 +47,13 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
+const MEASUREMENT_REVIEW_STATUS_LABEL: Record<string, string> = {
+  OPEN: 'Đang chờ khách chỉnh',
+  SUBMITTED: 'Khách đã gửi lại',
+  RESOLVED: 'Đã duyệt',
+  CLOSED: 'Đã đóng',
+};
 
 function getPaymentBadgeStyle(status?: string) {
   switch (status?.toUpperCase()) {
@@ -80,6 +90,8 @@ export default function AdminOrderMeasurementsPage() {
   );
 
   const [expandedSnapshots, setExpandedSnapshots] = useState<Record<string, boolean>>({});
+  const [measurementReviewMessages, setMeasurementReviewMessages] = useState<Record<string, string>>({});
+  const [measurementReviewItemId, setMeasurementReviewItemId] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [manualPaymentNote, setManualPaymentNote] = useState('');
   const [submittingPayment, setSubmittingPayment] = useState(false);
@@ -125,6 +137,33 @@ export default function AdminOrderMeasurementsPage() {
       toast.error(getErrorMessage(e, 'Không thể cập nhật trạng thái đơn hàng.'));
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleMeasurementReview = async (itemId: string, mode: 'open' | 'reopen') => {
+    if (!order?.id || measurementReviewItemId) return;
+    const message = (measurementReviewMessages[itemId] ?? '').trim();
+    if (!message) {
+      toast.error('Nhập lời nhắn cho khách trước khi gửi.');
+      return;
+    }
+
+    setMeasurementReviewItemId(itemId);
+    try {
+      if (mode === 'open') {
+        await openOrderMeasurementReview(order.id, itemId, { message });
+      } else {
+        await reopenOrderMeasurementReview(order.id, itemId, { message });
+      }
+      toast.success(
+        mode === 'open' ? 'Đã gửi yêu cầu bổ sung số đo' : 'Đã mở lại yêu cầu số đo',
+      );
+      setMeasurementReviewMessages((prev) => ({ ...prev, [itemId]: '' }));
+      await refetch();
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Không thể gửi yêu cầu số đo.'));
+    } finally {
+      setMeasurementReviewItemId(null);
     }
   };
 
@@ -607,6 +646,56 @@ export default function AdminOrderMeasurementsPage() {
                               </div>
                             ) : (
                               <p className="text-xs text-landing-muted italic">Không có thông số may đo cho sản phẩm này.</p>
+                            )}
+
+                            {/* Yêu cầu khách chỉnh số đo trong bước MEASUREMENT_REVIEW */}
+                            {order.status === 'MEASUREMENT_REVIEW' && (
+                              <div className="mt-4 border-t border-landing-line/70 pt-4">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-landing-oxblood">
+                                    <MessageSquare className="h-3.5 w-3.5" />
+                                    <span>Yêu cầu khách chỉnh số đo</span>
+                                  </span>
+                                  {item.measurementReview?.status ? (
+                                    <span className="rounded-full border border-landing-line bg-landing-paper px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-landing-muted">
+                                      {MEASUREMENT_REVIEW_STATUS_LABEL[item.measurementReview.status] ?? item.measurementReview.status}
+                                    </span>
+                                  ) : null}
+                                </div>
+
+                                {item.measurementReview?.message ? (
+                                  <p className="mt-1.5 text-xs text-landing-muted">
+                                    Lời nhắn trước: {item.measurementReview.message}
+                                  </p>
+                                ) : null}
+
+                                {(!item.measurementReview || ['OPEN', 'SUBMITTED'].includes(item.measurementReview.status ?? '')) && (
+                                  <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-start">
+                                    <textarea
+                                      value={measurementReviewMessages[itemId] ?? ''}
+                                      onChange={(event) =>
+                                        setMeasurementReviewMessages((prev) => ({ ...prev, [itemId]: event.target.value }))
+                                      }
+                                      rows={2}
+                                      placeholder="Lời nhắn cho khách, ví dụ: vui lòng đo lại vòng ngực và vai."
+                                      className="min-h-[44px] flex-1 rounded-[2px] border border-landing-line bg-landing-ivory px-3 py-2 text-xs text-landing-obsidian focus:border-landing-oxblood focus:outline-none"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleMeasurementReview(itemId, item.measurementReview ? 'reopen' : 'open')}
+                                      disabled={measurementReviewItemId === itemId}
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-[2px] bg-landing-oxblood px-4 py-2 text-xs font-bold text-landing-paper transition-colors hover:bg-landing-obsidian disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {measurementReviewItemId === itemId ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <MessageSquare className="h-4 w-4" />
+                                      )}
+                                      <span>{item.measurementReview ? 'Mở lại yêu cầu' : 'Yêu cầu bổ sung'}</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             )}
 
                             {/* Raw 16-field snapshot accordion for cross-referencing */}

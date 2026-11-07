@@ -266,10 +266,27 @@ export interface MeasurementSnapshot {
 }
 
 export interface MeasurementReview {
-  status?: 'OPEN' | 'SUBMITTED' | string;
+  status?: 'OPEN' | 'SUBMITTED' | 'RESOLVED' | 'CLOSED' | string;
   message?: string;
+  /** Field thợ may cần khách xem lại (BE gộp field bắt buộc theo loại trang phục). */
+  fields?: string[];
+  /** Field admin yêu cầu thêm ngoài field bắt buộc. */
+  requestedFields?: string[];
   openedAt?: string;
   submittedAt?: string;
+  resolvedAt?: string;
+  closedAt?: string;
+  /** Chỉ true khi đơn đang ở bước kiểm tra số đo và yêu cầu đang OPEN. */
+  editable?: boolean;
+}
+
+export interface UpdateOrderItemMeasurementInput {
+  orderId: string;
+  orderItemId: string;
+  /** Chỉ gửi field cần đổi; BE merge với snapshot cũ. */
+  measurementSnapshot: Record<string, number | null>;
+  /** Ghi đè luôn vào hồ sơ số đo cá nhân. */
+  syncToProfile?: boolean;
 }
 
 export interface OrderShipment {

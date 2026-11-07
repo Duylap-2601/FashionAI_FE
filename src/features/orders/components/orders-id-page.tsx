@@ -4,6 +4,7 @@ import { AtelierLoader } from '@/components/ui/AtelierLoader';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { ConfirmDeliveryDialog } from '@/features/orders/components/confirm-delivery-dialog';
 import { ISSUE_STATUS } from '@/features/orders/components/order-issues-list';
+import { OrderItemMeasurementForm } from '@/features/orders/components/order-item-measurement-form';
 import { OrderPaymentAction } from '@/features/orders/components/order-payment-action';
 import { OrderStatusLabel, ToneLabel } from '@/features/orders/components/order-status-label';
 import { OrderProgress, OrderThumb, SummaryRow } from '@/features/orders/components/order-ui';
@@ -153,6 +154,8 @@ export default function OrderDetailPage() {
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const isInReturnFlow = ['RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURNING'].includes(status);
   const isAwaitingPayment = status === 'CREATED' && order.paymentStatus === 'PENDING';
+  const isMeasurementReview = status === 'MEASUREMENT_REVIEW';
+  const hasOpenMeasurementReview = order.items.some((item) => item.measurementReview?.status === 'OPEN');
 
   const completedEvent = order.history
     ?.filter((e) => e.toStatus === 'COMPLETED' || e.type?.includes('COMPLETED'))
@@ -291,6 +294,22 @@ export default function OrderDetailPage() {
           </OrderNotice>
         ) : null}
 
+        {isMeasurementReview ? (
+          <OrderNotice title={hasOpenMeasurementReview ? 'Shop cần bạn xem lại số đo' : 'Số đo đang được shop kiểm tra'}>
+            {hasOpenMeasurementReview ? (
+              <p>
+                Đơn đang ở bước kiểm tra số đo. Bạn có thể chỉnh lại các thông số được yêu cầu ngay trong
+                từng sản phẩm bên dưới; shop sẽ duyệt lại trước khi may.
+              </p>
+            ) : (
+              <p>
+                Bạn đã gửi số đo cho đơn này. Nếu shop cần chỉnh thêm, yêu cầu mới sẽ hiện trong từng
+                sản phẩm bên dưới.
+              </p>
+            )}
+          </OrderNotice>
+        ) : null}
+
         {hasReturns ? (
           <section
             aria-labelledby="order-returns-summary-title"
@@ -398,6 +417,17 @@ export default function OrderDetailPage() {
                       </div>
                     </div>
                     <ItemMeasurements item={item} />
+                    {isMeasurementReview && item.measurementReview?.status === 'OPEN' ? (
+                      <OrderItemMeasurementForm
+                        key={`${item.id}:${item.measurementReview.openedAt ?? ''}`}
+                        orderId={order.id}
+                        item={item}
+                      />
+                    ) : isMeasurementReview && item.measurementReview?.status === 'SUBMITTED' ? (
+                      <p className="border-l-2 border-landing-sage pl-3 text-xs text-landing-sage-ink">
+                        Đã gửi số đo, đang chờ shop kiểm tra lại.
+                      </p>
+                    ) : null}
                     {canReportIssue ? (
                       blockedReportItemIds.has(item.id) ? (
                         <Link

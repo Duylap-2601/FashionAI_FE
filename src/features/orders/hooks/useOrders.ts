@@ -2,7 +2,7 @@
 
 import { mutationKeys } from '@/features/orders/services/mutation-keys';
 import { queryKeys as ordersQueryKeys } from '@/features/orders/services/query-keys';
-import { cancelOrder, confirmDelivery, createOrder } from '@/features/orders/services/mutations';
+import { cancelOrder, confirmDelivery, createOrder, updateOrderItemMeasurement } from '@/features/orders/services/mutations';
 import { fetchOrder, fetchOrders, fetchOrdersPage } from '@/features/orders/services/queries';
 import { isTerminalOrderStatus, mapOrder } from '@/features/orders/services/orders-utils';
 import type { Order, OrdersListParams, OrdersListResult } from '@/features/orders/types/orders';
@@ -129,6 +129,25 @@ export function useCancelOrder() {
   return {
     cancelOrder: cancelMutation.mutate,
     isCancelling: cancelMutation.isPending,
+  };
+}
+
+export function useUpdateOrderItemMeasurement() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationKey: mutationKeys.updateOrderItemMeasurement(),
+    mutationFn: updateOrderItemMeasurement,
+    onSuccess: (data, variables) => {
+      // BE trả đơn mới với review đã chuyển SUBMITTED: cập nhật ngay để form khoá lại.
+      queryClient.setQueryData(ordersQueryKeys.order(variables.orderId), mapOrder(data));
+      queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+    },
+  });
+
+  return {
+    updateMeasurement: mutation.mutateAsync,
+    isUpdatingMeasurement: mutation.isPending,
   };
 }
 

@@ -1,4 +1,11 @@
-import type { BackendOrder, CreateOrderIssuePayload, CreateOrderRequest, OrderIssue, OrderQuote } from '@/features/orders/types/orders';
+import type {
+  BackendOrder,
+  CreateOrderIssuePayload,
+  CreateOrderRequest,
+  OrderIssue,
+  OrderQuote,
+  UpdateOrderItemMeasurementInput,
+} from '@/features/orders/types/orders';
 import { http } from '@/lib/http';
 
 function toCreateOrderBody(payload: CreateOrderRequest) {
@@ -47,6 +54,18 @@ export async function cancelOrder(id: string) {
 
 export async function confirmDelivery({ id, note }: { id: string; note?: string }) {
   return http.post<BackendOrder>(`/orders/${id}/confirm-delivery`, { note });
+}
+
+export async function updateOrderItemMeasurement({
+  orderId,
+  orderItemId,
+  measurementSnapshot,
+  syncToProfile,
+}: UpdateOrderItemMeasurementInput) {
+  return http.patch<BackendOrder>(`/orders/${orderId}/items/${orderItemId}/measurement`, {
+    measurementSnapshot,
+    syncToProfile,
+  });
 }
 
 export async function createOrderIssue(payload: CreateOrderIssuePayload): Promise<OrderIssue> {
