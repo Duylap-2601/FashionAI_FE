@@ -48,6 +48,7 @@ export function mapOrder(order: BackendOrder): Order {
     },
     paymentMethod: order.paymentMethod || order.payments?.[0]?.provider || 'Chưa xác định',
     paymentProvider: order.paymentProvider,
+    targetTier: order.targetTier ?? null,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     items: (order.items || []).map((item) => ({

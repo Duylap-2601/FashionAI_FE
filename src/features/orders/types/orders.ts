@@ -1,5 +1,6 @@
 import type { ComboType } from '@/features/products/types/product-detail-config';
 import type { MeasurementFieldId } from '@/features/measurements/types/profile-measurements-page';
+import type { TargetTier } from '@/features/payments/types/payments';
 
 export interface OrderItemInput {
   productId: string;
@@ -214,6 +215,8 @@ export interface Order {
   shippingInfo: ShippingInfo;
   paymentMethod: string;
   paymentProvider?: string | null;
+  // Khác null khi đơn là một lần mua gói thành viên (không có sản phẩm may đo).
+  targetTier?: TargetTier | null;
   createdAt: string;
   updatedAt?: string;
   items: OrderItem[];
@@ -373,6 +376,7 @@ export interface BackendOrder {
   shippingInfo?: ShippingInfo | null;
   paymentMethod?: string | null;
   paymentProvider?: string | null;
+  targetTier?: TargetTier | null;
   createdAt: string;
   updatedAt?: string;
   items?: BackendOrderItem[];

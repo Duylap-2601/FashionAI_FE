@@ -7,6 +7,7 @@ import { getOrderCode, getOrderTotal } from '@/features/orders/services/order-di
 import type { Order } from '@/features/orders/types/orders';
 import { PaymentDialog } from '@/features/payments/components/payment-dialog';
 import { useCheckout } from '@/features/payments/hooks/usePayments';
+import { invalidateAfterPayment } from '@/features/payments/services/payment-cache';
 import type { CheckoutResponse } from '@/features/payments/types/payments';
 import { AccountDialog, accountButtonClassName, accountLabelClassName } from '@/features/profile/components/account-ui';
 import { getErrorMessage } from '@/lib/errors';
@@ -42,6 +43,12 @@ export function OrderPaymentAction({ order }: { order: Order }) {
   const refreshOrder = () => {
     void queryClient.invalidateQueries({ queryKey: ordersQueryKeys.order(order.id) });
     void queryClient.invalidateQueries({ queryKey: ordersQueryKeys.orders() });
+  };
+
+  const handlePaid = () => {
+    refreshOrder();
+    // Đơn vừa trả tiền: gói thành viên / hạn mức AI cũng đổi nếu đây là đơn mua gói.
+    void invalidateAfterPayment(queryClient);
   };
 
   return (
@@ -80,7 +87,7 @@ export function OrderPaymentAction({ order }: { order: Order }) {
             setPayment(null);
             refreshOrder();
           }}
-          onPaid={refreshOrder}
+          onPaid={handlePaid}
         />
       ) : null}
     </>

@@ -1,6 +1,7 @@
 export type SubscriptionTier = 'FREE' | 'MEMBER' | 'VIP';
 
-export type SubscriptionStatus = 'ACTIVE' | 'SCHEDULED' | 'EXPIRED' | 'CANCELLED';
+/** RENEWED: bản ghi của một lần gia hạn đã nối thêm 30 ngày vào gói đang dùng. */
+export type SubscriptionStatus = 'ACTIVE' | 'RENEWED' | 'SCHEDULED' | 'EXPIRED' | 'CANCELLED';
 
 export interface PlanQuota {
   action: 'TRY_ON' | 'STYLIST' | 'CHATBOT' | string;

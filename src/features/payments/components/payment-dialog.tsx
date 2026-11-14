@@ -1,11 +1,13 @@
 'use client';
 
 import { usePaymentStatus } from '@/features/payments/hooks/usePayments';
+import { invalidateAfterPayment } from '@/features/payments/services/payment-cache';
 import { getTransferContent, openPaymentGateway } from '@/features/payments/services/payment-gateway';
 import { isPaymentSettled } from '@/features/payments/services/payments-utils';
 import type { PaymentDialogProps } from '@/features/payments/types/payment-dialog';
 import { AccountDialog, accountButtonClassName, accountFocusRing, accountLabelClassName } from '@/features/profile/components/account-ui';
 import { cn, formatPrice } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, Copy, ExternalLink, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -27,6 +29,7 @@ function OrderLink({ href, children }: { href: string; children: React.ReactNode
 
 function ZaloPayPaymentDialog({ checkoutResult, total, orderHref, onClose, onPaid }: PaymentDialogProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const paymentId = checkoutResult.paymentId ?? null;
   const { data: payment, isLoading } = usePaymentStatus(paymentId);
   const qrValue = checkoutResult.qrCode || checkoutResult.checkoutUrl || checkoutResult.payUrl || '';
@@ -36,10 +39,13 @@ function ZaloPayPaymentDialog({ checkoutResult, total, orderHref, onClose, onPai
 
   useEffect(() => {
     if (!isPaid || !paymentId) return;
+    // Đơn/gói đã được thanh toán: xoá cache đơn, gói thành viên, hạn mức AI trước khi
+    // điều hướng, để trang kết quả và trang gói không đọc dữ liệu cũ (staleTime 60s).
+    void invalidateAfterPayment(queryClient);
     onPaid?.();
     toast.success('Thanh toán ZaloPay thành công');
     router.push(`/payment/result?paymentId=${encodeURIComponent(paymentId)}`);
-  }, [isPaid, onPaid, paymentId, router]);
+  }, [isPaid, onPaid, paymentId, queryClient, router]);
 
   const openGateway = () => {
     if (!checkoutResult.checkoutUrl) return;
