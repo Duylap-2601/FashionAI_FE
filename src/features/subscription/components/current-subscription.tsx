@@ -79,7 +79,7 @@ export function CurrentSubscription({ tier, current, getStatusBadge, setActiveTa
             <p className="mt-1 text-sm leading-relaxed text-landing-muted">
               {current.autoRenew
                 ? 'Bạn sẽ nhận email nhắc trước 3 ngày khi gói sắp hết hạn.'
-                : 'Đã tắt nhắc. Khi hết hạn, tài khoản tự về gói miễn phí.'}
+                : 'Đã tắt nhắc gia hạn. Khi hết hạn, tài khoản tự về gói miễn phí.'}
             </p>
           </div>
           <button type="button" onClick={handleToggleAutoRenew} disabled={isCancelling || isResuming} className={accountButtonClassName('outline')}>

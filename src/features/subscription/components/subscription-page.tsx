@@ -185,10 +185,10 @@ export default function SubscriptionPage() {
     try {
       if (current.autoRenew) {
         await cancelSubscription();
-        toast.success('Đã tắt nhắc tự động gia hạn. Bạn vẫn dùng gói đến hết ngày hết hạn.');
+        toast.success('Đã tắt nhắc gia hạn. Bạn vẫn dùng gói đến hết ngày hết hạn.');
       } else {
         await resumeSubscription();
-        toast.success('Đã bật lại nhắc tự động gia hạn.');
+        toast.success('Đã bật lại nhắc gia hạn.');
       }
     } catch (err: unknown) {
       const msg = readSubscriptionErrorMessage(err) || 'Không thể thay đổi trạng thái gia hạn.';
@@ -240,6 +240,8 @@ export default function SubscriptionPage() {
   const getStatusBadge = (subStatus: SubscriptionStatus) => {
     const meta: Record<string, { label: string; dot: string; text: string }> = {
       ACTIVE: { label: 'Đang hoạt động', dot: 'bg-landing-sage', text: 'text-landing-sage-ink' },
+      // Bản ghi của một lần gia hạn đã nối thêm 30 ngày vào gói đang dùng.
+      RENEWED: { label: 'Đã gia hạn', dot: 'bg-landing-taupe', text: 'text-landing-muted' },
       SCHEDULED: { label: 'Chờ kích hoạt', dot: 'bg-landing-brass', text: 'text-landing-brass-ink' },
       EXPIRED: { label: 'Đã hết hạn', dot: 'bg-landing-taupe', text: 'text-landing-muted' },
       CANCELLED: { label: 'Đã huỷ', dot: 'bg-landing-taupe', text: 'text-landing-muted' },
