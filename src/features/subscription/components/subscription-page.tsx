@@ -5,7 +5,10 @@ import { SubscriptionHistory } from '@/features/subscription/components/subscrip
 import { SubscriptionPlans } from '@/features/subscription/components/subscription-plans';
 import type { SubscriptionErrorBody } from '@/features/subscription/types/subscription-page';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { DeliveryOptions } from '@/features/checkout/components/delivery-options';
+import type { CheckoutPaymentMethod } from '@/features/checkout/types/delivery-options';
 import { useCheckout } from '@/features/payments/hooks/usePayments';
+import { openPaymentGateway } from '@/features/payments/services/payment-gateway';
 import type { CheckoutResponse, ProrationBreakdown, TargetTier } from '@/features/payments/types/payments';
 import { useUserProfile } from '@/features/profile/hooks/use-profile';
 import {
@@ -48,6 +51,8 @@ export default function SubscriptionPage() {
 
   const [activeTab, setActiveTab] = useState<'plans' | 'my-sub' | 'history'>('plans');
   const [upgradeConfirmTier, setUpgradeConfirmTier] = useState<TargetTier | null>(null);
+  // Gói đăng ký chỉ hỗ trợ ZaloPay / SePay (SePay = chuyển khoản ngân hàng).
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('zalopay');
 
   // Proration & Conflict modals state
   const pendingCheckoutResultRef = useRef<CheckoutResponse | null>(null);
@@ -101,49 +106,7 @@ export default function SubscriptionPage() {
   };
 
   const redirectToCheckout = (result: CheckoutResponse) => {
-    if (result.checkoutUrl) {
-      if (result.extra?.formAction && result.extra?.formFields) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = result.extra.formAction;
-        Object.entries(result.extra.formFields).forEach(([key, value]) => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = String(value);
-          form.appendChild(input);
-        });
-        document.body.appendChild(form);
-        form.submit();
-        return;
-      }
-
-      try {
-        const parsedUrl = new URL(result.checkoutUrl, window.location.origin);
-        if (
-          (parsedUrl.hostname.includes('sepay.vn') || parsedUrl.pathname.includes('/checkout/init')) &&
-          parsedUrl.searchParams.size > 0
-        ) {
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = `${parsedUrl.origin}${parsedUrl.pathname}`;
-          parsedUrl.searchParams.forEach((value, key) => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = value;
-            form.appendChild(input);
-          });
-          document.body.appendChild(form);
-          form.submit();
-          return;
-        }
-      } catch (urlErr) {
-        console.warn('Could not parse checkoutUrl:', urlErr);
-      }
-
-      window.location.href = result.checkoutUrl;
-    } else {
+    if (!openPaymentGateway(result)) {
       throw new Error('Không nhận được link thanh toán từ hệ thống');
     }
   };
@@ -152,7 +115,10 @@ export default function SubscriptionPage() {
     setUpgradeConfirmTier(null);
     try {
       toast.loading('Đang khởi tạo cổng thanh toán...', { id: 'checkout' });
-      const result = await checkout({ targetTier, provider: 'MOMO' });
+      const result = await checkout({
+        targetTier,
+        provider: paymentMethod === 'sepay' ? 'SEPAY' : 'ZALOPAY',
+      });
       toast.dismiss('checkout');
 
       if (result.proration != null) {
@@ -328,15 +294,26 @@ export default function SubscriptionPage() {
       ) : null}
 
       {activeTab === 'plans' && (
-        <SubscriptionPlans
-          status={status}
-          tier={tier}
-          expirationInfo={expirationInfo}
-          scheduled={scheduled}
-          handleInitiateUpgrade={handleInitiateUpgrade}
-          isCheckoutLoading={isCheckoutLoading}
-          apiPlans={apiPlans}
-        />
+        <>
+          {status === 'authenticated' ? (
+            <section className="mb-10 flex flex-col gap-3">
+              <p className={accountLabelClassName}>Phương thức thanh toán</p>
+              <DeliveryOptions paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
+              <p className="text-xs leading-relaxed text-landing-muted">
+                Gói thành viên hỗ trợ ZaloPay hoặc chuyển khoản ngân hàng qua SePay.
+              </p>
+            </section>
+          ) : null}
+          <SubscriptionPlans
+            status={status}
+            tier={tier}
+            expirationInfo={expirationInfo}
+            scheduled={scheduled}
+            handleInitiateUpgrade={handleInitiateUpgrade}
+            isCheckoutLoading={isCheckoutLoading}
+            apiPlans={apiPlans}
+          />
+        </>
       )}
 
       {activeTab === 'my-sub' && (

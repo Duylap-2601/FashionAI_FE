@@ -1,4 +1,4 @@
-export type PaymentProvider = 'PAYOS' | 'SEPAY' | 'MOMO' | 'ZALOPAY';
+export type PaymentProvider = 'PAYOS' | 'SEPAY' | 'ZALOPAY';
 
 export type TargetTier = 'MEMBER' | 'VIP';
 
