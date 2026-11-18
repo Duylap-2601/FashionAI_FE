@@ -6,7 +6,6 @@ export interface StylistAnalysisRequest {
   /** Người dùng đã đồng ý cho dùng ảnh; BE bắt buộc khi có `humanImage`. */
   imageConsent?: boolean;
   productId?: string;
-  garmentDescription?: string;
   occasion?: string;
   stylePreference?: string;
   budget?: string;
@@ -49,7 +48,6 @@ export interface StylistAnalysisResult {
   personalColor: string | null;
   fitRecommendation: string;
   fitAdvice?: string | null;
-  recommendedSize?: string | null;
   productCompatibilityScore?: number | null;
   colorSuggestions: string[] | { name: string; hex: string | null }[];
   outfitCombinations: OutfitCombination[] | string[];
@@ -75,7 +73,6 @@ export interface StylistResult extends Partial<Omit<StylistAnalysisResult, 'outf
   budget?: string;
   genderPreference?: string;
   fitAdvice?: string | null;
-  recommendedSize?: string | null;
   productCompatibilityScore?: number | null;
   product?: StylistProduct | null;
   model?: string;
