@@ -18,6 +18,21 @@ export interface PlanItem {
   quotas: PlanQuota[];
 }
 
+/** Báo giá trước khi thanh toán; `proration` có khi nâng cấp giữa kỳ. */
+export interface SubscriptionQuote {
+  targetTier: SubscriptionTier;
+  listPrice: number;
+  amount: number;
+  proration: {
+    oldTier: string;
+    newTier: string;
+    remainingDays: number;
+    credit: number;
+    debit: number;
+    net: number;
+  } | null;
+}
+
 export interface SubscriptionDetail {
   id: string;
   tier: SubscriptionTier;

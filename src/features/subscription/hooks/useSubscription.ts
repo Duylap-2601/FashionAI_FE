@@ -3,8 +3,8 @@
 import { mutationKeys } from '@/features/subscription/services/mutation-keys';
 import { queryKeys as subscriptionQueryKeys } from '@/features/subscription/services/query-keys';
 import { cancelSubscription, cancelScheduledSubscription, resumeSubscription } from '@/features/subscription/services/mutations';
-import { fetchMySubscription, fetchPlans, fetchSubscriptionHistory } from '@/features/subscription/services/queries';
-import type { MySubscriptionResponse, PlanItem, SubscriptionHistoryResponse } from '@/features/subscription/types/subscription';
+import { fetchMySubscription, fetchPlans, fetchSubscriptionHistory, fetchSubscriptionQuote } from '@/features/subscription/services/queries';
+import type { MySubscriptionResponse, PlanItem, SubscriptionHistoryResponse, SubscriptionQuote } from '@/features/subscription/types/subscription';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -48,6 +48,26 @@ export function useMySubscription() {
     isLoading: status === 'loading' || query.isLoading,
     isError: query.isError,
     refetch: query.refetch,
+  };
+}
+
+/**
+ * GET /api/payments/subscriptions/quote - Giá thực thu cho một gói (requires login)
+ */
+export function useSubscriptionQuote(targetTier: 'MEMBER' | 'VIP', enabled: boolean) {
+  const status = useAuthStore((state) => state.status);
+
+  const query = useQuery<SubscriptionQuote>({
+    queryKey: subscriptionQueryKeys.subscriptionQuote(targetTier),
+    queryFn: () => fetchSubscriptionQuote(targetTier),
+    enabled: enabled && status === 'authenticated',
+    staleTime: 60 * 1000,
+  });
+
+  return {
+    quote: query.data ?? null,
+    isLoading: query.isLoading,
+    isError: query.isError,
   };
 }
 

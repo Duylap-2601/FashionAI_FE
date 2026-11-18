@@ -8,4 +8,6 @@ export interface SubscriptionPlansProps {
   handleInitiateUpgrade: (targetTier: TargetTier) => void;
   isCheckoutLoading: boolean;
   apiPlans?: import("@/features/subscription/types/subscription").PlanItem[];
+  /** Báo giá nâng cấp VIP giữa kỳ (chỉ có khi user đang dùng MEMBER). */
+  vipQuote?: import("@/features/subscription/types/subscription").SubscriptionQuote | null;
 }

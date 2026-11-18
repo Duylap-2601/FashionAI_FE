@@ -42,7 +42,7 @@ function formatVnd(value: number) {
   return value === 0 ? '0đ' : `${value.toLocaleString('vi-VN')}đ`;
 }
 
-export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, handleInitiateUpgrade, isCheckoutLoading, apiPlans }: SubscriptionPlansProps) {
+export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, handleInitiateUpgrade, isCheckoutLoading, apiPlans, vipQuote }: SubscriptionPlansProps) {
   // Giá, thời hạn và lượt lấy từ GET /payments/plans; DEFAULT_PLANS chỉ dự phòng khi API lỗi.
   const plans = useMemo(() => DEFAULT_PLANS.map((plan) => {
     const apiPlan: PlanItem | undefined = apiPlans?.find((p) => p.tier === plan.id);
@@ -114,6 +114,13 @@ export function SubscriptionPlans({ status, tier, expirationInfo, scheduled, han
                 <span className="font-mono text-3xl text-landing-oxblood">{formatVnd(plan.price)}</span>
                 <span className="text-sm text-landing-muted">{plan.periodText}</span>
               </p>
+              {plan.id === 'VIP' && vipQuote?.proration ? (
+                <p className="pt-4 text-xs leading-relaxed text-landing-brass-ink">
+                  Nâng cấp giữa kỳ: trừ {formatVnd(vipQuote.proration.credit)} giá trị {vipQuote.proration.oldTier} còn{' '}
+                  {vipQuote.proration.remainingDays} ngày, chỉ còn{' '}
+                  <span className="font-mono font-semibold">{formatVnd(vipQuote.amount)}</span>.
+                </p>
+              ) : null}
               <ul className="mt-5 flex-1 space-y-3">
                 {plan.features.map((feature) => (
                   <li key={feature.text} className="flex items-start gap-2.5 text-sm">

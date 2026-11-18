@@ -1,6 +1,6 @@
 import type { AiActionName, UserQuota } from '@/features/subscription/types/quota';
 import type { LiveTryOnQuota } from '@/features/subscription/types/live-try-on-quota';
-import type { MySubscriptionResponse, PlanItem, SubscriptionHistoryItem, SubscriptionHistoryResponse } from '@/features/subscription/types/subscription';
+import type { MySubscriptionResponse, PlanItem, SubscriptionHistoryItem, SubscriptionHistoryResponse, SubscriptionQuote } from '@/features/subscription/types/subscription';
 import { http } from '@/lib/http';
 
 export async function fetchQuota(action: AiActionName): Promise<UserQuota> {
@@ -23,6 +23,11 @@ export async function fetchPlans() {
 
 export async function fetchMySubscription() {
   return http.get<MySubscriptionResponse>('/payments/subscriptions/me');
+}
+
+/** Giá thực thu cho một gói: nâng cấp giữa kỳ trả kèm proration. */
+export async function fetchSubscriptionQuote(targetTier: 'MEMBER' | 'VIP'): Promise<SubscriptionQuote> {
+  return http.get<SubscriptionQuote>('/payments/subscriptions/quote', { params: { targetTier } });
 }
 
 export async function fetchSubscriptionHistory(page: number, limit: number): Promise<SubscriptionHistoryResponse> {

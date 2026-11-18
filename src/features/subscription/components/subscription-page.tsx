@@ -18,6 +18,7 @@ import {
   usePlans,
   useResumeSubscription,
   useSubscriptionHistory,
+  useSubscriptionQuote,
 } from '@/features/subscription/hooks/useSubscription';
 import type { SubscriptionStatus } from '@/features/subscription/types/subscription';
 import { AccountShell } from '@/features/profile/components/account-shell';
@@ -65,6 +66,10 @@ export default function SubscriptionPage() {
   const rawTier = subTier || profile?.tier || user?.tier || 'FREE';
   const tier = rawTier.toUpperCase() as 'FREE' | 'MEMBER' | 'VIP';
   const rawExpiresAt = tierExpiresAt || profile?.tierExpiresAt || user?.tierExpiresAt;
+
+  // Giá VIP thực thu: nâng cấp từ MEMBER giữa kỳ chỉ còn phải trả phần chênh lệch,
+  // nên card gói phải hiện đúng số tiền thay vì giá niêm yết.
+  const { quote: vipQuote } = useSubscriptionQuote('VIP', status === 'authenticated' && tier === 'MEMBER');
 
   const expirationInfo = useMemo(() => {
     if (!rawExpiresAt || tier === 'FREE') return null;
@@ -314,6 +319,7 @@ export default function SubscriptionPage() {
             handleInitiateUpgrade={handleInitiateUpgrade}
             isCheckoutLoading={isCheckoutLoading}
             apiPlans={apiPlans}
+            vipQuote={vipQuote}
           />
         </>
       )}

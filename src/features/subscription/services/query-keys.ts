@@ -3,5 +3,6 @@ export const queryKeys = {
   quota: <T extends readonly unknown[]>(...params: T) => ['quota', ...params] as const,
   subscriptionPlans: <T extends readonly unknown[]>(...params: T) => ['subscription-plans', ...params] as const,
   subscriptionMe: <T extends readonly unknown[]>(...params: T) => ['subscription-me', ...params] as const,
+  subscriptionQuote: <T extends readonly unknown[]>(...params: T) => ['subscription-quote', ...params] as const,
   subscriptionHistory: <T extends readonly unknown[]>(...params: T) => ['subscription-history', ...params] as const,
 };
