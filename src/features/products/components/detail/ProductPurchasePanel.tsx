@@ -156,7 +156,7 @@ export function ProductPurchasePanel({
   const tryOnHref = product.colors?.length && selectedColor
     ? `/try-on?productId=${product.id}&color=${encodeURIComponent(selectedColor)}`
     : `/try-on?productId=${product.id}`;
-  const stylistHref = `/chat?productId=${product.id}&message=${encodeURIComponent(`Tư vấn giúp tôi về kích thước và cách phối đồ với sản phẩm ${product.name}`)}`;
+  const stylistHref = `/ai-stylist?productId=${encodeURIComponent(product.id)}`;
 
   return (
     <div className="flex flex-col border border-landing-line bg-landing-ivory p-5 md:p-7">

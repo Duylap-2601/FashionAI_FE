@@ -122,7 +122,7 @@ export function ProductDetailTabs({ product, activeTab, isComboSuit, onTabChange
                     <p className="mt-1 text-xs leading-relaxed text-landing-muted">Hỏi AI Stylist cách mix và match sản phẩm này.</p>
                   </div>
                   <Link
-                    href={`/chat?productId=${product.id}&message=${encodeURIComponent(`Gợi ý cho tôi cách phối đồ đẹp và chuẩn dáng nhất với ${product.name}`)}`}
+                    href={`/ai-stylist?productId=${encodeURIComponent(product.id)}`}
                     className={cn(
                       'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-[2px] border border-landing-line px-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-landing-obsidian',
                       'transition-colors hover:border-landing-oxblood hover:text-landing-oxblood',

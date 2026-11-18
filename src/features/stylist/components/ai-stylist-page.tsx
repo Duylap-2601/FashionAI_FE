@@ -1,17 +1,28 @@
 'use client';
-import { getErrorStatus } from '@/lib/errors';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 import { StylistBriefSummary } from '@/features/stylist/components/stylist-brief-summary';
 import { StylistHistoryPanel } from '@/features/stylist/components/stylist-history-panel';
 import { StylistInputPanel } from '@/features/stylist/components/stylist-input-panel';
 import { StylistResultPanel } from '@/features/stylist/components/stylist-result-panel';
 import { StylistResultSkeleton } from '@/features/stylist/components/stylist-result-skeleton';
 import type { GenderPref, Status } from '@/features/stylist/types/ai-stylist-page';
-import { PRODUCTS } from '@/features/products/constants/products';
 import { useProductCatalog } from '@/features/products/hooks/useProducts';
 import { ProductPickerModal } from '@/features/stylist/components/ProductPickerModal';
 import { QuotaExhaustedModal } from '@/features/stylist/components/QuotaExhaustedModal';
 import { useAnalyzeStylist, useDeleteStylistHistory, useStylistHistory, useStylistResult } from '@/features/stylist/hooks/useStylist';
-import { validateStylistRequest } from '@/features/stylist/services/stylist-utils';
+import {
+  STYLIST_IMAGE_ACCEPT,
+  validateStylistImage,
+  validateStylistRequest,
+} from '@/features/stylist/services/stylist-utils';
+import {
+  EMPTY_QUOTA_MODAL,
+  buildStylistDeepLink,
+  parseQuotaErrorDetails,
+  parseStylistDeepLink,
+  resolveQuotaGate,
+  type QuotaModalState,
+} from '@/features/stylist/services/stylist-page-state';
 import type { StylistAnalysisRequest, StylistProduct, StylistResult } from '@/features/stylist/types/stylist';
 import { useQuota } from '@/features/subscription/hooks/useQuota';
 import { trackEvent } from '@/lib/analytics';
@@ -19,14 +30,17 @@ import { History as HistoryIcon, Sparkles } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default function AIStylistPage() {
   const { analyzeAsync, isAnalyzing, errorMessage, reset: resetAnalyzeError } = useAnalyzeStylist();
-  const { quota, refetch: refetchQuota } = useQuota('STYLIST');
+  const { quota, refetch: refetchQuota, isError: quotaError, isLoading: quotaLoading } = useQuota('STYLIST');
   const { products: backendProducts, isLoading: productsLoading } = useProductCatalog();
-  const catalogProducts = backendProducts.length > 0 ? backendProducts : PRODUCTS;
+  // Chỉ dùng catalog thật: id tĩnh kiểu `p1` không phải UUID nên BE sẽ trả 400 (BUG-050).
+  const catalogProducts = backendProducts;
 
   const [page, setPage] = useState(1);
-  const { history, meta, isLoading: historyLoading } = useStylistHistory(page, 5);
+  const { history, meta, isLoading: historyLoading, isError: historyError, refetch: refetchHistory } = useStylistHistory(page, 5);
   const { deleteAsync, isDeleting } = useDeleteStylistHistory();
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -41,6 +55,8 @@ export default function AIStylistPage() {
   const [selectedProduct, setSelectedProduct] = useState<StylistProduct | null>(null);
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [quotaDetails, setQuotaDetails] = useState<QuotaModalState>(EMPTY_QUOTA_MODAL);
+  const [pendingProductId, setPendingProductId] = useState<string | null>(null);
   const [pageState, setPageState] = useState<Status>('idle');
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedResult, setSelectedResult] = useState<StylistResult | null>(null);
@@ -51,16 +67,31 @@ export default function AIStylistPage() {
   const { result: restoredResult, isError: restoreFailed } = useStylistResult(restoreResultId);
 
   const syncResultUrl = (id: string | null) => {
-    const nextUrl = id ? `/ai-stylist?result=${encodeURIComponent(id)}` : '/ai-stylist';
+    const nextUrl = buildStylistDeepLink(id, pendingProductId);
     if (window.location.pathname + window.location.search !== nextUrl) {
       window.history.replaceState(window.history.state, '', nextUrl);
     }
   };
 
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get('result');
-    if (id) setRestoreResultId(id);
+    const { resultId, productId } = parseStylistDeepLink(window.location.search);
+    if (resultId) setRestoreResultId(resultId);
+    // CTA "Hỏi AI Stylist" ở trang sản phẩm mở /ai-stylist?productId=... (BUG-049).
+    if (productId) setPendingProductId(productId);
   }, []);
+
+  // Chờ catalog thật tải xong rồi mới chọn sản phẩm neo từ query param.
+  useEffect(() => {
+    if (!pendingProductId || selectedProduct) return;
+    const match = backendProducts.find((product) => product.id === pendingProductId);
+    if (!match) return;
+    setSelectedProduct({
+      id: match.id,
+      name: match.name,
+      price: match.numericPrice,
+      garmentUrl: match.image,
+    });
+  }, [pendingProductId, backendProducts, selectedProduct]);
 
   useEffect(() => {
     if (!restoredResult) return;
@@ -75,29 +106,57 @@ export default function AIStylistPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
+
+  // Mỗi lần đổi/xoá ảnh phải thu hồi blob URL cũ, và thu hồi nốt khi rời trang (BUG-053).
+  const replacePhotoUrl = (file: File | null) => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    if (!file) {
+      setPhotoUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    objectUrlRef.current = url;
+    setPhotoUrl(url);
+  };
+
+  useEffect(() => () => {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+  }, []);
 
   const handleFileSelect = (file: File | null) => {
     setImageConsent(false);
     setShowConsentError(false);
     if (!file) {
-      setPhotoUrl(null);
       setPhotoFile(null);
+      replacePhotoUrl(null);
       return;
     }
-    setPhotoUrl(URL.createObjectURL(file));
+    // BE chỉ nhận JPEG/PNG/WebP ≤ 10 MB; chặn ngay tại client (BUG-047).
+    const validationError = validateStylistImage(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    replacePhotoUrl(file);
     setPhotoFile(file);
   };
 
   const handleRemovePhoto = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setPhotoUrl(null);
+    replacePhotoUrl(null);
     setPhotoFile(null);
     setImageConsent(false);
     setShowConsentError(false);
   };
 
-  const remainingQuota = quota ? (quota.unlimited || quota.limit === null ? Infinity : (quota.limit ?? 0) - quota.used) : null;
-  const hasQuota = remainingQuota === null || remainingQuota > 0;
+  const quotaGate = resolveQuotaGate({ quota, isLoading: quotaLoading, isError: quotaError });
+  const remainingQuota = quotaGate.state === 'allowed' ? quotaGate.remaining : null;
+  const quotaUnavailable = quotaGate.state === 'unavailable';
+  const hasQuota = quotaGate.state === 'allowed';
 
   const handleImageConsentChange = (checked: boolean) => {
     setImageConsent(checked);
@@ -105,7 +164,17 @@ export default function AIStylistPage() {
   };
 
   const handleAnalyze = async () => {
-    if (!hasQuota) {
+    if (quotaGate.state === 'loading') {
+      toast.error('Đang tải thông tin lượt dùng. Vui lòng thử lại sau giây lát.');
+      return;
+    }
+    if (quotaGate.state === 'unavailable') {
+      toast.error('Chưa tải được số lượt còn lại. Vui lòng thử lại.');
+      refetchQuota();
+      return;
+    }
+    if (quotaGate.state === 'blocked') {
+      setQuotaDetails(EMPTY_QUOTA_MODAL);
       setShowQuotaModal(true);
       return;
     }
@@ -146,10 +215,20 @@ export default function AIStylistPage() {
       setPageState('idle');
       console.error('Stylist analyze error:', error);
       const status = getErrorStatus(error);
-      if (status === 429) {
+      if (status === 429 || status === 402) {
+        // BE trả details.remaining/resetAt/requested; modal phải hiện đúng số đó (BUG-045).
+        setQuotaDetails(parseQuotaErrorDetails(error));
         setShowQuotaModal(true);
+      } else if (status === 400) {
+        toast.error(getErrorMessage(error, 'Yêu cầu chưa hợp lệ. Vui lòng kiểm tra lại thông tin.'));
+      } else if (status === 503) {
+        toast.error('Tính năng AI Stylist đang tạm tắt. Vui lòng thử lại sau.');
+      } else if (status === 502) {
+        toast.error('AI trả về kết quả không hợp lệ. Vui lòng thử lại.');
+      } else if (status === undefined) {
+        toast.error('Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.');
       } else {
-        toast.error('Không thể phân tích phong cách. Vui lòng thử lại sau.');
+        toast.error('Hệ thống đang gặp lỗi. Vui lòng thử lại sau.');
       }
     }
   };
@@ -195,17 +274,17 @@ export default function AIStylistPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg"
+          accept={STYLIST_IMAGE_ACCEPT}
           className="hidden"
-          onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0]); }}
+          onChange={(e) => { handleFileSelect(e.target.files?.[0] ?? null); e.target.value = ''; }}
         />
         <input
           ref={cameraInputRef}
           type="file"
-          accept="image/*"
+          accept={STYLIST_IMAGE_ACCEPT}
           capture="user"
           className="hidden"
-          onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0]); }}
+          onChange={(e) => { handleFileSelect(e.target.files?.[0] ?? null); e.target.value = ''; }}
         />
 
         <ProductPickerModal
@@ -213,10 +292,24 @@ export default function AIStylistPage() {
           onClose={() => setShowCatalogModal(false)}
           products={catalogProducts}
           currentProductId={selectedProduct?.id}
-          onSelect={(p) => setSelectedProduct({ id: p.id, name: p.name, price: p.numericPrice, garmentUrl: p.image })}
+          onSelect={(p) => {
+            // Chỉ sản phẩm thật (UUID) mới dùng làm neo được; catalog fallback cũ dùng id `p1`.
+            if (!UUID_PATTERN.test(p.id)) {
+              toast.error('Sản phẩm này chưa sẵn sàng để phối. Vui lòng thử lại sau.');
+              return;
+            }
+            setSelectedProduct({ id: p.id, name: p.name, price: p.numericPrice, garmentUrl: p.image });
+          }}
         />
 
-        {showQuotaModal && <QuotaExhaustedModal onClose={() => setShowQuotaModal(false)} />}
+        {showQuotaModal && (
+          <QuotaExhaustedModal
+            onClose={() => setShowQuotaModal(false)}
+            resetAt={quotaDetails.resetAt}
+            requested={quotaDetails.requested}
+            remaining={quotaDetails.remaining}
+          />
+        )}
 
         <header className="mb-8 flex flex-col gap-5 border-b border-landing-line pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -227,17 +320,29 @@ export default function AIStylistPage() {
             <p className="mt-3 max-w-xl text-landing-body text-landing-muted">Chọn dịp mặc, nhận bộ phối từ sản phẩm của cửa hàng.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              role="status"
-              className={`inline-flex h-10 items-center gap-2 rounded-[2px] border px-3 font-mono text-[11px] uppercase tracking-[0.12em] ${hasQuota ? 'border-landing-line text-landing-obsidian/80' : 'border-destructive/40 text-destructive'}`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${hasQuota ? 'bg-landing-sage-ink' : 'bg-destructive'}`} />
-              {remainingQuota === null
-                ? 'Đang tải lượt'
-                : remainingQuota === Infinity
-                  ? 'Không giới hạn lượt'
-                  : `Còn ${remainingQuota}/${quota?.limit} lượt hôm nay`}
-            </span>
+            {quotaUnavailable ? (
+              <button
+                type="button"
+                onClick={() => refetchQuota()}
+                role="status"
+                className="inline-flex h-10 items-center gap-2 rounded-[2px] border border-destructive/40 px-3 font-mono text-[11px] uppercase tracking-[0.12em] text-destructive transition-colors hover:border-destructive"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+                Không tải được lượt · Thử lại
+              </button>
+            ) : (
+              <span
+                role="status"
+                className={`inline-flex h-10 items-center gap-2 rounded-[2px] border px-3 font-mono text-[11px] uppercase tracking-[0.12em] ${hasQuota ? 'border-landing-line text-landing-obsidian/80' : 'border-destructive/40 text-destructive'}`}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${hasQuota ? 'bg-landing-sage-ink' : 'bg-destructive'}`} />
+                {remainingQuota === null
+                  ? 'Đang tải lượt'
+                  : remainingQuota === Infinity
+                    ? 'Không giới hạn lượt'
+                    : `Còn ${remainingQuota}/${quota?.limit} lượt hôm nay`}
+              </span>
+            )}
             {!historyLoading && history.length > 0 && (
               <button
                 type="button"
@@ -250,6 +355,19 @@ export default function AIStylistPage() {
             )}
           </div>
         </header>
+
+        {historyError && (
+          <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 border-l-2 border-destructive bg-landing-ivory px-4 py-3 text-sm text-landing-obsidian">
+            <span>Không tải được lịch sử tư vấn.</span>
+            <button
+              type="button"
+              onClick={() => refetchHistory()}
+              className="text-[11px] font-semibold uppercase tracking-[0.16em] text-landing-oxblood underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-oxblood"
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
 
         {showForm ? (
           <StylistInputPanel

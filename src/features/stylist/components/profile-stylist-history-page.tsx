@@ -12,7 +12,6 @@ import {
   accountLabelClassName,
 } from '@/features/profile/components/account-ui';
 import { OutfitSuggestionList } from '@/features/stylist/components/outfit-suggestion-list';
-import { OCCASION_LABELS } from '@/features/stylist/constants/profile-stylist-history-page';
 import { useDeleteStylistHistory, useStylistHistory } from '@/features/stylist/hooks/useStylist';
 import type { StylistResult } from '@/features/stylist/types/stylist';
 import { cn } from '@/lib/utils';
@@ -55,7 +54,8 @@ function StylistCard({ item, onDelete, isDeleting }: { item: StylistResult; onDe
   // Lịch sử cũ chưa có bộ phối từ catalog (`outfits` rỗng): hiện gợi ý dạng chữ như trước.
   const legacyOutfits = item.outfits.length === 0 && Array.isArray(item.outfitCombinations) ? item.outfitCombinations : [];
   const colors = Array.isArray(item.colorSuggestions) ? item.colorSuggestions : [];
-  const occasion = (item.occasion && OCCASION_LABELS[item.occasion]) || item.occasion || 'Tư vấn phối đồ';
+  // Dịp mặc là chuỗi tự do (VD "Họp quan trọng"), hiển thị nguyên văn thay vì map sai key.
+  const occasion = item.occasion || 'Tư vấn phối đồ';
   const hasDetails = Boolean(item.fitRecommendation || item.stylingTips || colors.length > 0 || item.outfits.length > 0 || legacyOutfits.length > 0 || item.product);
 
   return (
